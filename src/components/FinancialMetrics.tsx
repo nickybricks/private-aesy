@@ -44,10 +44,15 @@ const MetricStatus: React.FC<{ status: string }> = ({ status }) => {
 const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
   const { name, value, formula, explanation, threshold, status } = metric;
   
+  // Prüfen ob der Wert "N/A" ist (String) oder ob es ein numerischer Wert im String-Format ist
+  const displayValue = value === 'N/A' || 
+                       (typeof value === 'string' && value.includes('N/A')) ? 
+                       'Keine Daten' : value;
+  
   return (
     <Card className="metric-card p-4">
       <h3 className="text-lg font-medium mb-1">{name}</h3>
-      <div className="text-2xl font-semibold mb-2">{value}</div>
+      <div className="text-2xl font-semibold mb-2">{displayValue}</div>
       
       <div className="text-sm text-buffett-subtext mb-1">
         <span className="font-medium">Formel:</span> {formula}
@@ -67,13 +72,6 @@ const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
 
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData }) => {
   if (!metrics) return null;
-  
-  // Helper function to format financial values
-  const formatFinancialValue = (value: number | undefined | null): string => {
-    if (value === undefined || value === null) return 'N/A';
-    if (value === 0) return 'N/A'; // Often zero means data is not available
-    return value.toFixed(2);
-  };
   
   return (
     <div className="animate-fade-in">
@@ -99,35 +97,42 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
               </TableRow>
             </TableHeader>
             <TableBody>
-              {historicalData.revenue.map((item, i) => (
-                <TableRow key={item.year || i}>
-                  <TableCell>{item.year || 'N/A'}</TableCell>
-                  <TableCell className="text-right">
-                    {typeof item.value === 'number' && item.value !== 0 
-                      ? item.value.toFixed(2) 
-                      : 'N/A'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {historicalData.earnings && historicalData.earnings[i] && 
-                     typeof historicalData.earnings[i].value === 'number' && 
-                     historicalData.earnings[i].value !== 0
-                      ? historicalData.earnings[i].value.toFixed(2) 
-                      : 'N/A'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {historicalData.eps && historicalData.eps[i] && 
-                     typeof historicalData.eps[i].value === 'number' && 
-                     historicalData.eps[i].value !== 0
-                      ? historicalData.eps[i].value.toFixed(2) 
-                      : 'N/A'}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {historicalData.revenue.map((item, i) => {
+                // Entsprechende EPS-Daten finden
+                const epsDataForYear = historicalData.eps && historicalData.eps.find(e => e.year === item.year);
+                // Entsprechende Gewinn-Daten finden
+                const earningsDataForYear = historicalData.earnings && historicalData.earnings.find(e => e.year === item.year);
+                
+                return (
+                  <TableRow key={item.year || i}>
+                    <TableCell>{item.year || 'N/A'}</TableCell>
+                    <TableCell className="text-right">
+                      {typeof item.value === 'number' && item.value !== 0 
+                        ? item.value.toFixed(2) 
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {earningsDataForYear && 
+                      typeof earningsDataForYear.value === 'number' && 
+                      earningsDataForYear.value !== 0
+                        ? earningsDataForYear.value.toFixed(2) 
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {epsDataForYear && 
+                      typeof epsDataForYear.value === 'number' && 
+                      epsDataForYear.value !== 0
+                        ? epsDataForYear.value.toFixed(2) 
+                        : 'N/A'}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           
           <div className="mt-4 text-sm text-buffett-subtext">
-            <p>Hinweis: 'N/A' bedeutet, dass keine Daten verfügbar sind oder der Wert 0 ist.</p>
+            <p>Hinweis: 'N/A' bedeutet, dass keine Daten verfügbar sind.</p>
           </div>
         </Card>
       )}
