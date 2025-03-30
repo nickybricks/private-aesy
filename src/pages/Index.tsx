@@ -31,6 +31,7 @@ interface HistoricalData {
   eps: { year: string; value: number }[];
 }
 
+// Updated interface to include metrics and historicalData properties
 interface FinancialMetricsData {
   eps?: any;
   roe?: any;
@@ -38,8 +39,8 @@ interface FinancialMetricsData {
   roic?: any;
   debtToAssets?: any;
   interestCoverage?: any;
-  metrics?: FinancialMetric[];
-  historicalData?: HistoricalData;
+  metrics: FinancialMetric[];
+  historicalData: HistoricalData;
 }
 
 const Index = () => {
@@ -124,10 +125,15 @@ const Index = () => {
       
       setBuffettCriteria(criteria);
       
-      // Initialize metrics object with proper structure
+      // Initialize metrics object with proper structure, ensuring all required properties exist
       const processedMetrics: FinancialMetricsData = {
-        ...metrics,
-        metrics: [],
+        eps: metrics.eps,
+        roe: metrics.roe,
+        netMargin: metrics.netMargin,
+        roic: metrics.roic,
+        debtToAssets: metrics.debtToAssets,
+        interestCoverage: metrics.interestCoverage,
+        metrics: metrics.metrics || [],
         historicalData: metrics.historicalData || {
           revenue: [],
           earnings: [],
@@ -136,7 +142,7 @@ const Index = () => {
       };
       
       // If metrics.metrics is not an array, create one from the financial data
-      if (!metrics.metrics || !Array.isArray(metrics.metrics)) {
+      if (!processedMetrics.metrics || !Array.isArray(processedMetrics.metrics)) {
         console.log('Creating metrics array from financial data');
         const metricsArray: FinancialMetric[] = [];
         
@@ -209,9 +215,6 @@ const Index = () => {
         
         // Update metrics to have an array of metrics objects
         processedMetrics.metrics = metricsArray;
-      } else {
-        // If metrics.metrics is already an array, use it directly
-        processedMetrics.metrics = metrics.metrics;
       }
       
       setFinancialMetrics(processedMetrics);
