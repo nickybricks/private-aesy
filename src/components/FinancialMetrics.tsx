@@ -45,7 +45,7 @@ const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
   const { name, value, formula, explanation, threshold, status } = metric;
   
   return (
-    <Card className="metric-card">
+    <Card className="metric-card p-4">
       <h3 className="text-lg font-medium mb-1">{name}</h3>
       <div className="text-2xl font-semibold mb-2">{value}</div>
       
@@ -78,8 +78,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
         ))}
       </div>
       
-      {historicalData && historicalData.revenue && historicalData.earnings && historicalData.eps && (
-        <Card className="buffett-card">
+      {historicalData && historicalData.revenue && historicalData.revenue.length > 0 && (
+        <Card className="buffett-card p-6">
           <h3 className="text-lg font-semibold mb-4">Finanzielle Entwicklung (10 Jahre)</h3>
           
           <Table>
@@ -93,14 +93,18 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             </TableHeader>
             <TableBody>
               {historicalData.revenue.map((item, i) => (
-                <TableRow key={item.year}>
-                  <TableCell>{item.year}</TableCell>
-                  <TableCell className="text-right">{item.value.toFixed(2)}</TableCell>
+                <TableRow key={item.year || i}>
+                  <TableCell>{item.year || 'N/A'}</TableCell>
+                  <TableCell className="text-right">{typeof item.value === 'number' ? item.value.toFixed(2) : '0.00'}</TableCell>
                   <TableCell className="text-right">
-                    {historicalData.earnings[i] ? historicalData.earnings[i].value.toFixed(2) : '-'}
+                    {historicalData.earnings && historicalData.earnings[i] && typeof historicalData.earnings[i].value === 'number' 
+                      ? historicalData.earnings[i].value.toFixed(2) 
+                      : '-'}
                   </TableCell>
                   <TableCell className="text-right">
-                    {historicalData.eps[i] ? historicalData.eps[i].value.toFixed(2) : '-'}
+                    {historicalData.eps && historicalData.eps[i] && typeof historicalData.eps[i].value === 'number'
+                      ? historicalData.eps[i].value.toFixed(2) 
+                      : '-'}
                   </TableCell>
                 </TableRow>
               ))}

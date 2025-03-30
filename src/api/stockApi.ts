@@ -98,13 +98,17 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   const latestMetrics = keyMetrics[0];
   const companyProfile = profile[0];
   
+  // Sicherstellen, dass alle erforderlichen Werte existieren
+  // Falls nicht, Standardwerte oder 0 verwenden
+  const safeValue = (value: any) => (value !== undefined && value !== null) ? value : 0;
+  
   // Business Model Analyse
   const businessModelStatus = companyProfile.description && companyProfile.description.length > 100 ? 'pass' : 'warning';
   
-  // Economic Moat Analyse
-  const grossMargin = latestRatios.grossProfitMargin * 100;
-  const operatingMargin = latestRatios.operatingProfitMargin * 100;
-  const roic = latestMetrics.roic * 100;
+  // Economic Moat Analyse - mit Sicherheitsprüfungen
+  const grossMargin = safeValue(latestRatios.grossProfitMargin) * 100;
+  const operatingMargin = safeValue(latestRatios.operatingProfitMargin) * 100;
+  const roic = safeValue(latestMetrics.roic) * 100;
   
   let economicMoatStatus = 'fail';
   if (grossMargin > 40 && operatingMargin > 20 && roic > 15) {
@@ -113,9 +117,9 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     economicMoatStatus = 'warning';
   }
   
-  // Finanzkennzahlen Analyse
-  const roe = latestRatios.returnOnEquity * 100;
-  const netMargin = latestRatios.netProfitMargin * 100;
+  // Finanzkennzahlen Analyse - mit Sicherheitsprüfungen
+  const roe = safeValue(latestRatios.returnOnEquity) * 100;
+  const netMargin = safeValue(latestRatios.netProfitMargin) * 100;
   
   let financialMetricsStatus = 'fail';
   if (roe > 15 && netMargin > 10) {
@@ -124,10 +128,10 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     financialMetricsStatus = 'warning';
   }
   
-  // Finanzielle Stabilität
-  const debtToAssets = latestRatios.debtToAssets * 100;
-  const interestCoverage = latestRatios.interestCoverage;
-  const currentRatio = latestRatios.currentRatio;
+  // Finanzielle Stabilität - mit Sicherheitsprüfungen
+  const debtToAssets = safeValue(latestRatios.debtToAssets) * 100;
+  const interestCoverage = safeValue(latestRatios.interestCoverage);
+  const currentRatio = safeValue(latestRatios.currentRatio);
   
   let financialStabilityStatus = 'fail';
   if (debtToAssets < 50 && interestCoverage > 5 && currentRatio > 1.5) {
@@ -140,9 +144,9 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   // Hier benötigen wir mehr Daten, die in der API nicht direkt verfügbar sind
   const managementStatus = 'warning';
   
-  // Bewertung
-  const pe = latestRatios.priceEarningsRatio;
-  const dividendYield = latestRatios.dividendYield * 100;
+  // Bewertung - mit Sicherheitsprüfungen
+  const pe = safeValue(latestRatios.priceEarningsRatio);
+  const dividendYield = safeValue(latestRatios.dividendYield) * 100;
   
   let valuationStatus = 'fail';
   if (pe < 15 && dividendYield > 2) {
@@ -152,7 +156,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   }
   
   // Langfristiger Horizont
-  const sector = companyProfile.sector;
+  const sector = companyProfile.sector || 'Unbekannt';
   
   // Vereinfachte Bewertung basierend auf Branche
   const stableSectors = [
@@ -167,10 +171,10 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     businessModel: {
       status: businessModelStatus,
       title: 'Geschäftsmodell verstehen',
-      description: `${companyProfile.companyName} ist tätig im Bereich ${companyProfile.industry}.`,
+      description: `${companyProfile.companyName} ist tätig im Bereich ${companyProfile.industry || 'Unbekannt'}.`,
       details: [
-        `Hauptgeschäftsbereich: ${companyProfile.industry}`,
-        `Sektor: ${companyProfile.sector}`,
+        `Hauptgeschäftsbereich: ${companyProfile.industry || 'Unbekannt'}`,
+        `Sektor: ${sector}`,
         `Gründungsjahr: ${companyProfile.ipoDate ? new Date(companyProfile.ipoDate).getFullYear() : 'N/A'}`,
         `Beschreibung: ${companyProfile.description ? companyProfile.description.substring(0, 200) + '...' : 'Keine Beschreibung verfügbar'}`
       ]
@@ -193,8 +197,8 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       details: [
         `Eigenkapitalrendite (ROE): ${roe.toFixed(2)}% (Buffett bevorzugt >15%)`,
         `Nettomarge: ${netMargin.toFixed(2)}% (Buffett bevorzugt >10%)`,
-        `Gewinn pro Aktie: ${latestMetrics.eps.toFixed(2)} ${companyProfile.currency}`,
-        `Umsatz pro Aktie: ${latestMetrics.revenuePerShare.toFixed(2)} ${companyProfile.currency}`
+        `Gewinn pro Aktie: ${safeValue(latestMetrics.eps).toFixed(2)} ${companyProfile.currency || 'USD'}`,
+        `Umsatz pro Aktie: ${safeValue(latestMetrics.revenuePerShare).toFixed(2)} ${companyProfile.currency || 'USD'}`
       ]
     },
     financialStability: {
@@ -205,7 +209,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
         `Schulden zu Vermögen: ${debtToAssets.toFixed(2)}% (Buffett bevorzugt <50%)`,
         `Zinsdeckungsgrad: ${interestCoverage.toFixed(2)} (Buffett bevorzugt >5)`,
         `Current Ratio: ${currentRatio.toFixed(2)} (Buffett bevorzugt >1.5)`,
-        `Schulden zu EBITDA: ${latestRatios.debtToEBITDA.toFixed(2)} (niedriger ist besser)`
+        `Schulden zu EBITDA: ${safeValue(latestRatios.debtToEBITDA).toFixed(2)} (niedriger ist besser)`
       ]
     },
     management: {
@@ -226,8 +230,8 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       details: [
         `KGV (P/E): ${pe.toFixed(2)} (Buffett bevorzugt <15)`,
         `Dividendenrendite: ${dividendYield.toFixed(2)}% (Buffett bevorzugt >2%)`,
-        `Kurs zu Buchwert: ${latestRatios.priceToBookRatio.toFixed(2)} (niedriger ist besser)`,
-        `Kurs zu Cashflow: ${latestRatios.priceCashFlowRatio.toFixed(2)} (niedriger ist besser)`
+        `Kurs zu Buchwert: ${safeValue(latestRatios.priceToBookRatio).toFixed(2)} (niedriger ist besser)`,
+        `Kurs zu Cashflow: ${safeValue(latestRatios.priceCashFlowRatio).toFixed(2)} (niedriger ist besser)`
       ]
     },
     longTermOutlook: {
@@ -235,8 +239,8 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       title: 'Langfristiger Horizont',
       description: `${companyProfile.companyName} operiert in einer Branche mit ${longTermStatus === 'pass' ? 'guten' : 'moderaten'} langfristigen Aussichten.`,
       details: [
-        `Branche: ${companyProfile.industry}`,
-        `Sektor: ${companyProfile.sector}`,
+        `Branche: ${companyProfile.industry || 'Unbekannt'}`,
+        `Sektor: ${sector}`,
         `Börsennotiert seit: ${companyProfile.ipoDate ? new Date(companyProfile.ipoDate).toLocaleDateString() : 'N/A'}`,
         'Eine tiefere Analyse der langfristigen Branchentrends wird empfohlen'
       ]
@@ -272,6 +276,9 @@ export const getFinancialMetrics = async (ticker: string) => {
   const latestMetrics = keyMetrics[0];
   const latestGrowth = financialGrowth[0];
   
+  // Sicherstellen, dass alle erforderlichen Werte existieren
+  const safeValue = (value: any) => (value !== undefined && value !== null) ? value : 0;
+  
   // Historische Daten verarbeiten
   const incomeStatements = historicalData[0];
   const historicalMetrics = historicalData[1];
@@ -284,92 +291,90 @@ export const getFinancialMetrics = async (ticker: string) => {
   const metrics = [
     {
       name: 'Return on Equity (ROE)',
-      value: `${(latestRatios.returnOnEquity * 100).toFixed(2)}%`,
+      value: `${(safeValue(latestRatios.returnOnEquity) * 100).toFixed(2)}%`,
       formula: 'Jahresgewinn / Eigenkapital',
       explanation: 'Zeigt, wie effizient das Unternehmen das Eigenkapital einsetzt.',
       threshold: '>15%',
-      status: latestRatios.returnOnEquity * 100 > 15 ? 'pass' : latestRatios.returnOnEquity * 100 > 10 ? 'warning' : 'fail'
+      status: safeValue(latestRatios.returnOnEquity) * 100 > 15 ? 'pass' : safeValue(latestRatios.returnOnEquity) * 100 > 10 ? 'warning' : 'fail'
     },
     {
       name: 'Nettomarge',
-      value: `${(latestRatios.netProfitMargin * 100).toFixed(2)}%`,
+      value: `${(safeValue(latestRatios.netProfitMargin) * 100).toFixed(2)}%`,
       formula: 'Nettogewinn / Umsatz',
       explanation: 'Gibt an, wie viel vom Umsatz als Gewinn übrig bleibt.',
       threshold: '>10%',
-      status: latestRatios.netProfitMargin * 100 > 10 ? 'pass' : latestRatios.netProfitMargin * 100 > 5 ? 'warning' : 'fail'
+      status: safeValue(latestRatios.netProfitMargin) * 100 > 10 ? 'pass' : safeValue(latestRatios.netProfitMargin) * 100 > 5 ? 'warning' : 'fail'
     },
     {
       name: 'ROIC',
-      value: `${(latestMetrics.roic * 100).toFixed(2)}%`,
+      value: `${(safeValue(latestMetrics.roic) * 100).toFixed(2)}%`,
       formula: 'NOPAT / (Eigenkapital + langfristige Schulden)',
       explanation: 'Zeigt, wie effizient das investierte Kapital eingesetzt wird.',
       threshold: '>10%',
-      status: latestMetrics.roic * 100 > 10 ? 'pass' : latestMetrics.roic * 100 > 7 ? 'warning' : 'fail'
+      status: safeValue(latestMetrics.roic) * 100 > 10 ? 'pass' : safeValue(latestMetrics.roic) * 100 > 7 ? 'warning' : 'fail'
     },
     {
       name: 'Schuldenquote',
-      value: `${(latestRatios.debtToAssets * 100).toFixed(2)}%`,
+      value: `${(safeValue(latestRatios.debtToAssets) * 100).toFixed(2)}%`,
       formula: 'Gesamtschulden / Gesamtvermögen',
       explanation: 'Gibt an, wie stark das Unternehmen fremdfinanziert ist.',
       threshold: '<70%',
-      status: latestRatios.debtToAssets * 100 < 50 ? 'pass' : latestRatios.debtToAssets * 100 < 70 ? 'warning' : 'fail'
+      status: safeValue(latestRatios.debtToAssets) * 100 < 50 ? 'pass' : safeValue(latestRatios.debtToAssets) * 100 < 70 ? 'warning' : 'fail'
     },
     {
       name: 'Zinsdeckungsgrad',
-      value: latestRatios.interestCoverage.toFixed(2),
+      value: safeValue(latestRatios.interestCoverage).toFixed(2),
       formula: 'EBIT / Zinsaufwand',
       explanation: 'Zeigt, wie oft die Zinsen aus dem Gewinn bezahlt werden können.',
       threshold: '>5',
-      status: latestRatios.interestCoverage > 5 ? 'pass' : latestRatios.interestCoverage > 3 ? 'warning' : 'fail'
+      status: safeValue(latestRatios.interestCoverage) > 5 ? 'pass' : safeValue(latestRatios.interestCoverage) > 3 ? 'warning' : 'fail'
     },
     {
       name: 'Current Ratio',
-      value: latestRatios.currentRatio.toFixed(2),
+      value: safeValue(latestRatios.currentRatio).toFixed(2),
       formula: 'Umlaufvermögen / Kurzfristige Verbindlichkeiten',
       explanation: 'Misst die kurzfristige Liquidität des Unternehmens.',
       threshold: '>1',
-      status: latestRatios.currentRatio > 1.5 ? 'pass' : latestRatios.currentRatio > 1 ? 'warning' : 'fail'
+      status: safeValue(latestRatios.currentRatio) > 1.5 ? 'pass' : safeValue(latestRatios.currentRatio) > 1 ? 'warning' : 'fail'
     },
     {
       name: 'KGV',
-      value: latestRatios.priceEarningsRatio.toFixed(2),
+      value: safeValue(latestRatios.priceEarningsRatio).toFixed(2),
       formula: 'Aktienkurs / Gewinn pro Aktie',
       explanation: 'Gibt an, wie hoch die Aktie im Verhältnis zum Gewinn bewertet ist.',
       threshold: '<25 (für Wachstumsunternehmen)',
-      status: latestRatios.priceEarningsRatio < 15 ? 'pass' : latestRatios.priceEarningsRatio < 25 ? 'warning' : 'fail'
+      status: safeValue(latestRatios.priceEarningsRatio) < 15 ? 'pass' : safeValue(latestRatios.priceEarningsRatio) < 25 ? 'warning' : 'fail'
     },
     {
       name: 'Dividendenrendite',
-      value: `${(latestRatios.dividendYield * 100).toFixed(2)}%`,
+      value: `${(safeValue(latestRatios.dividendYield) * 100).toFixed(2)}%`,
       formula: 'Jahresdividende / Aktienkurs',
       explanation: 'Zeigt, wie viel Dividendenertrag im Verhältnis zum Aktienkurs ausgezahlt wird.',
       threshold: '>2%',
-      status: latestRatios.dividendYield * 100 > 2 ? 'pass' : latestRatios.dividendYield * 100 > 1 ? 'warning' : 'fail'
+      status: safeValue(latestRatios.dividendYield) * 100 > 2 ? 'pass' : safeValue(latestRatios.dividendYield) * 100 > 1 ? 'warning' : 'fail'
     },
     {
       name: 'Umsatzwachstum (5J)',
-      value: `${(latestGrowth.fiveYRevenueGrowthPerShare * 100).toFixed(2)}%`,
+      value: `${(safeValue(latestGrowth.fiveYRevenueGrowthPerShare) * 100).toFixed(2)}%`,
       formula: '(Aktueller Umsatz / Umsatz vor 5 Jahren)^(1/5) - 1',
       explanation: 'Durchschnittliches jährliches Umsatzwachstum über die letzten 5 Jahre.',
       threshold: '>5%',
-      status: latestGrowth.fiveYRevenueGrowthPerShare * 100 > 10 ? 'pass' : latestGrowth.fiveYRevenueGrowthPerShare * 100 > 5 ? 'warning' : 'fail'
+      status: safeValue(latestGrowth.fiveYRevenueGrowthPerShare) * 100 > 10 ? 'pass' : safeValue(latestGrowth.fiveYRevenueGrowthPerShare) * 100 > 5 ? 'warning' : 'fail'
     }
   ];
   
   // Historische Daten für Charts aufbereiten
+  const processHistoricalData = (data, valueKey) => {
+    return data.map(item => ({
+      year: item.date ? item.date.substring(0, 4) : 'N/A',
+      value: safeValue(item[valueKey]) / (valueKey === 'eps' ? 1 : 1000000) // Umrechnung in Millionen außer für EPS
+    }));
+  };
+  
   const historicalDataFormatted = {
-    revenue: incomeStatements.map(statement => ({
-      year: statement.date.substring(0, 4),
-      value: statement.revenue / 1000000 // Umrechnung in Millionen
-    })),
-    earnings: incomeStatements.map(statement => ({
-      year: statement.date.substring(0, 4),
-      value: statement.netIncome / 1000000 // Umrechnung in Millionen
-    })),
-    eps: historicalMetrics.map(metric => ({
-      year: metric.date.substring(0, 4),
-      value: metric.eps
-    }))
+    revenue: processHistoricalData(incomeStatements, 'revenue'),
+    earnings: processHistoricalData(incomeStatements, 'netIncome'),
+    eps: processHistoricalData(historicalMetrics, 'eps')
   };
   
   // Daten nach Jahr sortieren (älteste zuerst)
