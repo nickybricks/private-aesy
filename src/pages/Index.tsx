@@ -106,10 +106,28 @@ const Index = () => {
     } catch (error) {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
-      setError(errorMessage);
+      
+      // Verbesserte Fehlermeldung mit Vorschlägen für häufige Fehler
+      let enhancedErrorMessage = errorMessage;
+      if(errorMessage.includes("Keine Daten gefunden für")) {
+        const searchedTicker = ticker.toUpperCase();
+        
+        // Häufige Fehler korrigieren
+        if(searchedTicker === "APPL") {
+          enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Meinten Sie vielleicht AAPL (Apple)?`;
+        } else if(searchedTicker === "GOOGL" || searchedTicker === "GOOG") {
+          enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Versuchen Sie es mit GOOGL oder GOOG (Alphabet/Google).`;
+        } else if(searchedTicker === "FB") {
+          enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Meta (ehemals Facebook) wird jetzt als META gehandelt.`;
+        } else {
+          enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Bitte überprüfen Sie das Aktiensymbol.`;
+        }
+      }
+      
+      setError(enhancedErrorMessage);
       toast({
         title: "Fehler",
-        description: errorMessage,
+        description: enhancedErrorMessage,
         variant: "destructive",
       });
     } finally {
