@@ -10,15 +10,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { 
-  Command,
-  CommandInput,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList
-} from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface StockSearchProps {
   onSearch: (ticker: string) => void;
@@ -29,7 +20,6 @@ interface StockSearchProps {
 const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false }) => {
   const [ticker, setTicker] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
-  const [open, setOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +41,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     onSearch(correctTicker);
   };
 
-  // Erweiterte Liste mit US-Aktien und europäischen Aktien
   const commonTickers = [
     { symbol: 'AAPL', name: 'Apple' },
     { symbol: 'MSFT', name: 'Microsoft' },
@@ -60,25 +49,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     { symbol: 'META', name: 'Meta (Facebook)' },
     { symbol: 'TSLA', name: 'Tesla' },
   ];
-
-  // Europäische Aktien
-  const europeanTickers = [
-    { symbol: 'RNMBF', name: 'Rheinmetall AG' },
-    { symbol: 'BAYN.DE', name: 'Bayer AG' },
-    { symbol: 'SAP.DE', name: 'SAP SE' },
-    { symbol: 'SIEGY', name: 'Siemens AG' },
-    { symbol: 'VOW3.DE', name: 'Volkswagen AG' },
-    { symbol: 'BMW.DE', name: 'BMW AG' },
-    { symbol: 'DAI.DE', name: 'Mercedes-Benz Group AG' },
-    { symbol: 'BAS.DE', name: 'BASF SE' },
-    { symbol: 'ALV.DE', name: 'Allianz SE' }
-  ];
-
-  const handleSelectTicker = (selectedTicker: string) => {
-    setTicker(selectedTicker);
-    setOpen(false);
-    setShowAppleCorrection(false);
-  };
 
   return (
     <div className="buffett-card mb-8 animate-fade-in">
@@ -105,52 +75,15 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       <form onSubmit={handleSubmit} className="flex gap-2">
         <div className="relative flex-1">
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <div className="relative">
-                <Input
-                  type="text"
-                  value={ticker}
-                  onChange={(e) => setTicker(e.target.value)}
-                  placeholder="AAPL, MSFT, RNMBF (Rheinmetall)..."
-                  className="apple-input pl-10"
-                  disabled={disabled || isLoading}
-                  onClick={() => setOpen(true)}
-                />
-                <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="p-0" align="start" sideOffset={5}>
-              <Command>
-                <CommandInput placeholder="Suche nach Aktien..." />
-                <CommandList>
-                  <CommandEmpty>Keine Aktien gefunden.</CommandEmpty>
-                  <CommandGroup heading="US Aktien">
-                    {commonTickers.map((stock) => (
-                      <CommandItem 
-                        key={stock.symbol}
-                        onSelect={() => handleSelectTicker(stock.symbol)}
-                      >
-                        <span className="font-medium mr-2">{stock.symbol}</span>
-                        <span className="text-gray-500 text-sm">({stock.name})</span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                  <CommandGroup heading="Europäische Aktien">
-                    {europeanTickers.map((stock) => (
-                      <CommandItem 
-                        key={stock.symbol}
-                        onSelect={() => handleSelectTicker(stock.symbol)}
-                      >
-                        <span className="font-medium mr-2">{stock.symbol}</span>
-                        <span className="text-gray-500 text-sm">({stock.name})</span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          <Input
+            type="text"
+            value={ticker}
+            onChange={(e) => setTicker(e.target.value)}
+            placeholder="AAPL, MSFT, AMZN, META..."
+            className="apple-input pl-10"
+            disabled={disabled || isLoading}
+          />
+          <Search className="absolute left-3 top-3 text-gray-400" size={20} />
         </div>
         <Button 
           type="submit" 
@@ -177,21 +110,25 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         </Tooltip>
       </div>
       
+      {/* Häufig verwendete Aktiensymbole */}
       <div className="mt-6">
-        <Alert className="bg-gray-50 border-gray-200">
-          <AlertTitle className="font-medium">Hinweis zum Aktiensymbol-Format</AlertTitle>
-          <AlertDescription>
-            <p className="mt-1 text-sm">
-              Für <strong>US-Aktien</strong>: Verwenden Sie das normale Tickersymbol (z.B. AAPL, MSFT).
-            </p>
-            <p className="mt-1 text-sm">
-              Für <strong>europäische Aktien</strong>: Verwenden Sie die OTC-Symbole oder hinzugefügte Länderkennungen (z.B. RNMBF für Rheinmetall).
-            </p>
-            <p className="mt-1 text-sm text-gray-500">
-              Wenn eine Aktie nicht gefunden wird, versuchen Sie ein alternatives Symbol oder suchen Sie nach dem OTC-Ticker.
-            </p>
-          </AlertDescription>
-        </Alert>
+        <p className="text-sm font-medium mb-2">Häufig verwendete Symbole:</p>
+        <div className="flex flex-wrap gap-2">
+          {commonTickers.map((item) => (
+            <Button
+              key={item.symbol}
+              variant="outline"
+              size="sm"
+              className="text-xs py-1 h-auto"
+              onClick={() => {
+                setTicker(item.symbol);
+                setShowAppleCorrection(false);
+              }}
+            >
+              {item.symbol} ({item.name})
+            </Button>
+          ))}
+        </div>
       </div>
     </div>
   );
