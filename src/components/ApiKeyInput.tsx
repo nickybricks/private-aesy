@@ -11,7 +11,6 @@ const ApiKeyInput = () => {
   const [apiKey, setApiKey] = useState('');
   const [isSaved, setIsSaved] = useState(false);
 
-  // Lade gespeicherten API-Key beim Start
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
     if (savedKey) {
@@ -70,18 +69,15 @@ const ApiKeyInput = () => {
               className="w-full"
             />
           </div>
-          <div className="text-sm text-buffett-subtext">
-            <p className="mb-2">
-              Sie können einen kostenlosen API-Key bei Financial Modeling Prep erhalten:
-            </p>
-            <a 
-              href="https://financialmodelingprep.com/developer/docs/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center text-buffett-blue hover:underline"
-            >
-              Zu Financial Modeling Prep gehen <ExternalLink size={14} className="ml-1" />
-            </a>
+          <div className="text-sm text-buffett-subtext border p-4 rounded-md bg-gray-50">
+            <h4 className="font-medium mb-2">So erhalten Sie einen API-Key:</h4>
+            <ol className="list-decimal ml-5 space-y-1">
+              <li>Besuchen Sie <a href="https://financialmodelingprep.com/register" target="_blank" rel="noopener noreferrer" className="text-buffett-blue hover:underline">financialmodelingprep.com/register</a></li>
+              <li>Erstellen Sie ein kostenloses Konto</li>
+              <li>Nach der Anmeldung finden Sie Ihren API-Key im Dashboard</li>
+              <li>Kopieren Sie den Schlüssel und fügen Sie ihn hier ein</li>
+            </ol>
+            <p className="mt-2">Der kostenlose Plan ermöglicht bereits einige API-Aufrufe pro Tag.</p>
           </div>
         </div>
       </CardContent>
