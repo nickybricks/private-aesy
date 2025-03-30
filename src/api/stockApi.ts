@@ -141,8 +141,10 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       const mockCompanyName = `Mock ${standardizedTicker}`;
       
       // Firmenname in allen relevanten Feldern ersetzen
-      for (const criterion of Object.values(mockCriteria)) {
-        if (criterion.description) {
+      // Hier ist die Typecast-Fix für das TypeScript-Problem
+      for (const key in mockCriteria) {
+        const criterion = mockCriteria[key] as { description?: string };
+        if (criterion && typeof criterion === 'object' && criterion.description) {
           criterion.description = criterion.description.replace('Apple Inc.', mockCompanyName);
         }
       }
