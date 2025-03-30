@@ -239,6 +239,31 @@ const BuffettCriteriaSection: React.FC = () => {
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData }) => {
   if (!metrics) return null;
   
+  // Check if metrics is an array, if not, log an error and return null
+  if (!Array.isArray(metrics)) {
+    console.error('Expected metrics to be an array but received:', metrics);
+    return (
+      <div className="animate-fade-in">
+        <h2 className="text-2xl font-semibold mb-6">Buffett-Analyse Framework</h2>
+        <Card className="p-6 mb-8">
+          <h3 className="text-lg font-semibold mb-4">Fehler bei der Datenverarbeitung</h3>
+          <p>Die Finanzkennzahlen konnten nicht korrekt geladen werden. Bitte versuchen Sie es später erneut.</p>
+        </Card>
+        
+        {/* Show debug data */}
+        <Card className="buffett-card p-6 mb-8">
+          <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
+            <pre className="text-xs whitespace-pre-wrap break-words">
+              <strong>Metrics-Daten:</strong>
+              {JSON.stringify(metrics, null, 2)}
+            </pre>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+  
   return (
     <div className="animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Buffett-Analyse Framework</h2>

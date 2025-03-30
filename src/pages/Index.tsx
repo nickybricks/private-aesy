@@ -96,6 +96,84 @@ const Index = () => {
       console.log('Overall Rating:', JSON.stringify(rating, null, 2));
       
       setBuffettCriteria(criteria);
+      
+      // Ensure metrics.metrics is an array before passing it to FinancialMetrics
+      if (metrics && metrics.metrics && !Array.isArray(metrics.metrics)) {
+        console.error('metrics.metrics is not an array:', metrics.metrics);
+        // Convert metrics.metrics to an array of FinancialMetric objects
+        const metricsArray = [];
+        
+        // Add financial metrics based on properties from metrics object
+        if (metrics.eps !== undefined) {
+          metricsArray.push({
+            name: 'Gewinn pro Aktie (EPS)',
+            value: metrics.eps || 'N/A',
+            formula: 'Nettogewinn / Anzahl der Aktien',
+            explanation: 'Zeigt den Gewinn pro ausstehender Aktie',
+            threshold: 'Stetig steigend (>5% pro Jahr)',
+            status: metrics.eps > 0 ? 'pass' : 'fail'
+          });
+        }
+        
+        if (metrics.roe !== undefined) {
+          metricsArray.push({
+            name: 'Eigenkapitalrendite (ROE)',
+            value: metrics.roe ? `${(metrics.roe * 100).toFixed(2)}%` : 'N/A',
+            formula: 'Nettogewinn / Eigenkapital',
+            explanation: 'Misst die Effizienz der Eigenkapitalnutzung',
+            threshold: '>15%',
+            status: metrics.roe > 0.15 ? 'pass' : metrics.roe > 0.10 ? 'warning' : 'fail'
+          });
+        }
+        
+        if (metrics.netMargin !== undefined) {
+          metricsArray.push({
+            name: 'Nettomarge',
+            value: metrics.netMargin ? `${(metrics.netMargin * 100).toFixed(2)}%` : 'N/A',
+            formula: 'Nettogewinn / Umsatz',
+            explanation: 'Zeigt den Anteil des Umsatzes, der als Gewinn verbleibt',
+            threshold: '>10%',
+            status: metrics.netMargin > 0.10 ? 'pass' : metrics.netMargin > 0.05 ? 'warning' : 'fail'
+          });
+        }
+        
+        if (metrics.roic !== undefined) {
+          metricsArray.push({
+            name: 'ROIC',
+            value: metrics.roic ? `${(metrics.roic * 100).toFixed(2)}%` : 'N/A',
+            formula: 'NOPAT / Investiertes Kapital',
+            explanation: 'Misst die Rendite auf das investierte Kapital',
+            threshold: '>15%',
+            status: metrics.roic > 0.15 ? 'pass' : metrics.roic > 0.10 ? 'warning' : 'fail'
+          });
+        }
+        
+        if (metrics.debtToAssets !== undefined) {
+          metricsArray.push({
+            name: 'Schulden zu Vermögen',
+            value: metrics.debtToAssets ? `${(metrics.debtToAssets * 100).toFixed(2)}%` : 'N/A',
+            formula: 'Gesamtschulden / Gesamtvermögen',
+            explanation: 'Zeigt den Anteil der Schulden am Gesamtvermögen',
+            threshold: '<50%',
+            status: metrics.debtToAssets < 0.5 ? 'pass' : metrics.debtToAssets < 0.7 ? 'warning' : 'fail'
+          });
+        }
+        
+        if (metrics.interestCoverage !== undefined) {
+          metricsArray.push({
+            name: 'Zinsdeckungsgrad',
+            value: metrics.interestCoverage || 'N/A',
+            formula: 'EBIT / Zinsaufwand',
+            explanation: 'Misst die Fähigkeit, Zinszahlungen zu decken',
+            threshold: '>5',
+            status: metrics.interestCoverage > 5 ? 'pass' : metrics.interestCoverage > 3 ? 'warning' : 'fail'
+          });
+        }
+        
+        // Update metrics to have an array of metrics objects
+        metrics.metrics = metricsArray;
+      }
+      
       setFinancialMetrics(metrics);
       setOverallRating(rating);
       
