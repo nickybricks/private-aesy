@@ -1,7 +1,8 @@
+
 import axios from 'axios';
 
 // OpenAI API Key handling - now with a fixed key
-const FIXED_OPENAI_API_KEY = "sk-your-openai-api-key-here"; // Ersetzen Sie diesen Wert mit Ihrem tatsächlichen OpenAI API-Key
+const FIXED_OPENAI_API_KEY = "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";
 
 const getOpenAiApiKey = () => {
   return FIXED_OPENAI_API_KEY;
