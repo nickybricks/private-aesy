@@ -15,9 +15,11 @@ const Index = () => {
   const [buffettCriteria, setBuffettCriteria] = useState(null);
   const [financialMetrics, setFinancialMetrics] = useState(null);
   const [overallRating, setOverallRating] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async (ticker: string) => {
     setIsLoading(true);
+    setError(null);
     try {
       // Reset all states
       setStockInfo(null);
@@ -52,9 +54,11 @@ const Index = () => {
       });
     } catch (error) {
       console.error('Error searching for stock:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      setError(errorMessage);
       toast({
         title: "Fehler",
-        description: "Es ist ein Fehler bei der Aktienanalyse aufgetreten. Bitte versuchen Sie es erneut.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -72,6 +76,17 @@ const Index = () => {
       </header>
       
       <StockSearch onSearch={handleSearch} isLoading={isLoading} />
+      
+      {error && (
+        <div className="mb-6 p-4 border border-red-300 bg-red-50 rounded-md text-red-700">
+          <p className="font-semibold">Fehler bei der Datenabfrage:</p>
+          <p>{error}</p>
+          <p className="mt-2 text-sm">
+            Bitte überprüfen Sie das eingegebene Aktiensymbol oder versuchen Sie es später erneut.
+            Der kostenlose API-Schlüssel hat möglicherweise Zugriffsbeschränkungen.
+          </p>
+        </div>
+      )}
       
       {stockInfo && (
         <StockHeader stockInfo={stockInfo} />
@@ -113,6 +128,9 @@ const Index = () => {
       <footer className="mt-12 pt-8 border-t border-gray-200 text-buffett-subtext text-sm text-center">
         <p className="mb-2">
           Buffett Benchmark Tool - Analysieren Sie Aktien nach Warren Buffetts Investmentprinzipien
+        </p>
+        <p className="mb-2">
+          Dieses Tool verwendet die Financial Modeling Prep API zur Datenabfrage in Echtzeit.
         </p>
         <p>
           Dieses Tool bietet keine Anlageberatung. Alle Analysen dienen nur zu Informationszwecken.
