@@ -68,6 +68,13 @@ const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData }) => {
   if (!metrics) return null;
   
+  // Helper function to format financial values
+  const formatFinancialValue = (value: number | undefined | null): string => {
+    if (value === undefined || value === null) return 'N/A';
+    if (value === 0) return 'N/A'; // Often zero means data is not available
+    return value.toFixed(2);
+  };
+  
   return (
     <div className="animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
@@ -95,23 +102,33 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
               {historicalData.revenue.map((item, i) => (
                 <TableRow key={item.year || i}>
                   <TableCell>{item.year || 'N/A'}</TableCell>
-                  <TableCell className="text-right">{typeof item.value === 'number' ? item.value.toFixed(2) : '0.00'}</TableCell>
                   <TableCell className="text-right">
-                    {historicalData.earnings && historicalData.earnings[i] && typeof historicalData.earnings[i].value === 'number' 
-                      ? historicalData.earnings[i].value.toFixed(2) 
-                      : '-'}
+                    {typeof item.value === 'number' && item.value !== 0 
+                      ? item.value.toFixed(2) 
+                      : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right">
-                    {historicalData.eps && historicalData.eps[i] && typeof historicalData.eps[i].value === 'number'
+                    {historicalData.earnings && historicalData.earnings[i] && 
+                     typeof historicalData.earnings[i].value === 'number' && 
+                     historicalData.earnings[i].value !== 0
+                      ? historicalData.earnings[i].value.toFixed(2) 
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {historicalData.eps && historicalData.eps[i] && 
+                     typeof historicalData.eps[i].value === 'number' && 
+                     historicalData.eps[i].value !== 0
                       ? historicalData.eps[i].value.toFixed(2) 
-                      : '-'}
+                      : 'N/A'}
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
           
-          {/* In a full implementation, we'd render charts here using recharts */}
+          <div className="mt-4 text-sm text-buffett-subtext">
+            <p>Hinweis: 'N/A' bedeutet, dass keine Daten verfügbar sind oder der Wert 0 ist.</p>
+          </div>
         </Card>
       )}
     </div>
