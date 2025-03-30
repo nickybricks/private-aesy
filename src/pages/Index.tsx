@@ -9,57 +9,39 @@ import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import OpenAiKeyInput from '@/components/OpenAiKeyInput';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
-import { 
-  hasOpenAiApiKey, 
-  analyzeBusinessModel, 
-  analyzeEconomicMoat, 
-  analyzeManagementQuality, 
-  analyzeLongTermProspects,
-  analyzeCyclicalBehavior,
-  analyzeOneTimeEffects,
-  analyzeTurnaround,
-  analyzeRationalBehavior
-} from '@/api/openaiApi';
+import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-// Konfiguration für Mock-Daten-Modus
-const USE_MOCK_DATA = true; // Sollte mit der Konfiguration in stockApi.ts übereinstimmen
-
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isGptLoading, setIsGptLoading] = useState(false);
   const [stockInfo, setStockInfo] = useState(null);
   const [buffettCriteria, setBuffettCriteria] = useState(null);
   const [financialMetrics, setFinancialMetrics] = useState(null);
   const [overallRating, setOverallRating] = useState(null);
   const [error, setError] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
-  const [hasGptApiKey, setHasGptApiKey] = useState(hasOpenAiApiKey());
+  const [hasGptApiKey, setHasGptApiKey] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
 
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
-    setHasApiKey(!!savedKey || USE_MOCK_DATA);
-    setHasGptApiKey(hasOpenAiApiKey());
+    setHasApiKey(!!savedKey);
     
-    // Zeige einen Toast, wenn Mock-Daten verwendet werden
-    if (USE_MOCK_DATA) {
-      toast({
-        title: "Mock-Daten aktiviert",
-        description: "Die Anwendung verwendet Beispieldaten für Finanzkennzahlen. GPT-Integration ist aktiv.",
-      });
-    }
-  }, [toast]);
+    const openAiKey = localStorage.getItem('openai_api_key');
+    setHasGptApiKey(!!openAiKey);
+  }, []);
 
   useEffect(() => {
     const handleStorageChange = () => {
       const savedKey = localStorage.getItem('fmp_api_key');
-      setHasApiKey(!!savedKey || USE_MOCK_DATA);
-      setHasGptApiKey(hasOpenAiApiKey());
+      setHasApiKey(!!savedKey);
+      
+      const openAiKey = localStorage.getItem('openai_api_key');
+      setHasGptApiKey(!!openAiKey);
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -68,7 +50,9 @@ const Index = () => {
     localStorage.setItem = function(key, value) {
       originalSetItem.apply(this, [key, value]);
       if (key === 'fmp_api_key') {
-        setHasApiKey(!!value || USE_MOCK_DATA);
+        setHasApiKey(!!value);
+      } else if (key === 'openai_api_key') {
+        setHasGptApiKey(!!value);
       }
     };
     
@@ -77,95 +61,6 @@ const Index = () => {
       localStorage.setItem = originalSetItem;
     };
   }, []);
-
-  const runGptAnalysis = async () => {
-    if (!stockInfo || !buffettCriteria) return;
-    
-    setIsGptLoading(true);
-    try {
-      toast({
-        title: "GPT-Analyse läuft",
-        description: `Analysiere ${stockInfo.name} mit GPT. Dies kann einen Moment dauern...`,
-      });
-
-      const updatedCriteria = JSON.parse(JSON.stringify(buffettCriteria));
-      
-      try {
-        const [
-          businessModelAnalysis,
-          economicMoatAnalysis,
-          managementAnalysis,
-          longTermAnalysis,
-          cyclicalAnalysis,
-          oneTimeEffectAnalysis,
-          turnaroundAnalysis,
-          rationalBehaviorAnalysis
-        ] = await Promise.all([
-          analyzeBusinessModel(
-            stockInfo.name, 
-            stockInfo.industry || 'Unknown', 
-            stockInfo.description || 'Ein Technologieunternehmen.'
-          ),
-          analyzeEconomicMoat(
-            stockInfo.name, 
-            stockInfo.industry || 'Unknown', 
-            financialMetrics?.metrics?.grossMargin || 40, 
-            financialMetrics?.metrics?.operatingMargin || 25, 
-            financialMetrics?.metrics?.roic || 15
-          ),
-          analyzeManagementQuality(stockInfo.name, stockInfo.ceo || 'Unbekannt'),
-          analyzeLongTermProspects(stockInfo.name, stockInfo.industry || 'Unknown', stockInfo.sector || 'Unknown'),
-          analyzeCyclicalBehavior(stockInfo.name, stockInfo.industry || 'Unknown'),
-          analyzeOneTimeEffects(stockInfo.name, stockInfo.industry || 'Unknown'),
-          analyzeTurnaround(stockInfo.name, stockInfo.industry || 'Unknown'),
-          analyzeRationalBehavior(stockInfo.name, stockInfo.industry || 'Unknown')
-        ]);
-        
-        console.log('GPT Analyses results:', {
-          businessModelAnalysis,
-          economicMoatAnalysis,
-          managementAnalysis,
-          longTermAnalysis,
-          cyclicalAnalysis,
-          oneTimeEffectAnalysis,
-          turnaroundAnalysis,
-          rationalBehaviorAnalysis
-        });
-        
-        updatedCriteria.businessModel.gptAnalysis = businessModelAnalysis;
-        updatedCriteria.economicMoat.gptAnalysis = economicMoatAnalysis;
-        updatedCriteria.management.gptAnalysis = managementAnalysis;
-        updatedCriteria.longTermOutlook.gptAnalysis = longTermAnalysis;
-        updatedCriteria.cyclicalBehavior.gptAnalysis = cyclicalAnalysis;
-        updatedCriteria.oneTimeEffects.gptAnalysis = oneTimeEffectAnalysis;
-        updatedCriteria.turnaround.gptAnalysis = turnaroundAnalysis;
-        updatedCriteria.rationalBehavior.gptAnalysis = rationalBehaviorAnalysis;
-        
-        setBuffettCriteria(updatedCriteria);
-        
-        toast({
-          title: "GPT-Analyse abgeschlossen",
-          description: `Die GPT-Analyse für ${stockInfo.name} wurde erfolgreich durchgeführt.`,
-        });
-        
-        setActiveTab('gpt');
-      } catch (gptError) {
-        console.error('Error in GPT analysis:', gptError);
-        throw new Error(`Fehler bei der GPT-Analyse: ${gptError.message || 'Unbekannter Fehler'}`);
-      }
-    } catch (error) {
-      console.error('Error running GPT analysis:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler bei der GPT-Analyse';
-      
-      toast({
-        title: "GPT-Analysefehler",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsGptLoading(false);
-    }
-  };
 
   const handleSearch = async (ticker: string) => {
     setIsLoading(true);
@@ -185,6 +80,11 @@ const Index = () => {
         description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
       });
       
+      // Wenn GPT verfügbar ist, entsprechenden Tab aktivieren
+      if (hasGptApiKey) {
+        setActiveTab('gpt');
+      }
+      
       const [criteria, metrics, rating] = await Promise.all([
         analyzeBuffettCriteria(ticker),
         getFinancialMetrics(ticker),
@@ -203,19 +103,16 @@ const Index = () => {
         title: "Analyse abgeschlossen",
         description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
       });
-      
-      // Automatically run GPT analysis if API key is available
-      if (hasGptApiKey) {
-        await runGptAnalysis();
-      }
     } catch (error) {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
       
+      // Verbesserte Fehlermeldung mit Vorschlägen für häufige Fehler
       let enhancedErrorMessage = errorMessage;
       if(errorMessage.includes("Keine Daten gefunden für")) {
         const searchedTicker = ticker.toUpperCase();
         
+        // Häufige Fehler korrigieren
         if(searchedTicker === "APPL") {
           enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Meinten Sie vielleicht AAPL (Apple)?`;
         } else if(searchedTicker === "GOOGL" || searchedTicker === "GOOG") {
@@ -247,18 +144,7 @@ const Index = () => {
         </p>
       </header>
       
-      {USE_MOCK_DATA && (
-        <Alert className="mb-8 bg-blue-50 border-blue-200">
-          <InfoIcon className="h-4 w-4 text-blue-500" />
-          <AlertTitle>Mock-Daten-Modus für Finanzkennzahlen aktiviert</AlertTitle>
-          <AlertDescription>
-            Die Anwendung verwendet Beispieldaten für Apple (AAPL) und Microsoft (MSFT).
-            Die GPT-Integration bleibt aktiv und nutzt die vorhandenen Daten für die erweiterte Analyse.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {!hasApiKey && !USE_MOCK_DATA && (
+      {!hasApiKey && (
         <div className="mb-8 animate-fade-in">
           <Alert className="mb-4">
             <InfoIcon className="h-4 w-4" />
@@ -273,14 +159,14 @@ const Index = () => {
         </div>
       )}
       
-      {!hasGptApiKey && (
+      {hasApiKey && !hasGptApiKey && (
         <div className="mb-8 animate-fade-in">
-          <Alert className="mb-4 bg-indigo-50 border-indigo-200">
-            <InfoIcon className="h-4 w-4 text-indigo-500" />
-            <AlertTitle>GPT-Funktionalität aktivieren</AlertTitle>
+          <Alert className="mb-4">
+            <InfoIcon className="h-4 w-4" />
+            <AlertTitle>GPT-Integration (optional)</AlertTitle>
             <AlertDescription>
-              Für eine erweiterte Analyse mit GPT benötigen Sie einen OpenAI API-Key.
-              Mit GPT erhalten Sie tiefere Einblicke zu allen 11 Buffett-Kriterien.
+              Für eine erweiterte Analyse aller 11 Buffett-Kriterien empfehlen wir die Integration mit OpenAI GPT.
+              Dies ermöglicht tiefere Einblicke zu den qualitativen Aspekten wie Geschäftsmodell, Management und langfristige Perspektiven.
             </AlertDescription>
           </Alert>
           
@@ -288,7 +174,7 @@ const Index = () => {
         </div>
       )}
       
-      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey && !USE_MOCK_DATA} />
+      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
       
       {error && (
         <Alert variant="destructive" className="mb-6">
@@ -315,13 +201,11 @@ const Index = () => {
         <StockHeader stockInfo={stockInfo} />
       )}
       
-      {isLoading || isGptLoading ? (
+      {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-buffett-blue border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status"></div>
-            <p className="mt-4 text-lg">
-              {isGptLoading ? 'Führe GPT-Analyse der 11 Buffett-Kriterien durch...' : 'Analysiere Aktie nach Warren Buffett\'s Kriterien...'}
-            </p>
+            <p className="mt-4 text-lg">Analysiere Aktie nach Warren Buffett's Kriterien...</p>
             <p className="text-buffett-subtext mt-2">Dies kann einige Momente dauern</p>
           </div>
         </div>
@@ -332,27 +216,25 @@ const Index = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-4">
                   <TabsTrigger value="standard">Standard-Analyse</TabsTrigger>
-                  <TabsTrigger value="gpt" disabled={!hasGptApiKey || !buffettCriteria.businessModel.gptAnalysis}>
-                    GPT-Analyse (11 Kriterien)
-                    {hasGptApiKey && !buffettCriteria.businessModel.gptAnalysis && !isGptLoading && (
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault(); 
-                          e.stopPropagation(); 
-                          runGptAnalysis();
-                        }}
-                        className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors"
-                      >
-                        Starten
-                      </button>
-                    )}
+                  <TabsTrigger value="gpt" disabled={!hasGptApiKey}>
+                    {hasGptApiKey ? 'GPT-Analyse (11 Kriterien)' : 'GPT-Analyse (Nicht verfügbar)'}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="standard">
                   <BuffettCriteria criteria={buffettCriteria} />
                 </TabsContent>
                 <TabsContent value="gpt">
-                  <BuffettCriteriaGPT criteria={buffettCriteria} />
+                  {hasGptApiKey ? (
+                    <BuffettCriteriaGPT criteria={buffettCriteria} />
+                  ) : (
+                    <Alert>
+                      <InfoIcon className="h-4 w-4" />
+                      <AlertTitle>GPT-Analyse nicht verfügbar</AlertTitle>
+                      <AlertDescription>
+                        Bitte konfigurieren Sie Ihren OpenAI API-Key, um Zugang zur erweiterten GPT-Analyse zu erhalten.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </TabsContent>
               </Tabs>
             </div>
@@ -380,9 +262,7 @@ const Index = () => {
           Buffett Benchmark Tool - Analysieren Sie Aktien nach Warren Buffetts Investmentprinzipien
         </p>
         <p className="mb-2">
-          {USE_MOCK_DATA 
-            ? "Diese Version verwendet vordefinierte Beispieldaten für Finanzkennzahlen, aber nutzt GPT für die qualitative Analyse."
-            : "Dieses Tool verwendet die Financial Modeling Prep API zur Datenabfrage in Echtzeit."}
+          Dieses Tool verwendet die Financial Modeling Prep API zur Datenabfrage in Echtzeit.
         </p>
         <p>
           Dieses Tool bietet keine Anlageberatung. Alle Analysen dienen nur zu Informationszwecken.

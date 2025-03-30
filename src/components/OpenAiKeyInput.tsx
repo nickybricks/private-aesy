@@ -1,21 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { setOpenAiApiKey, hasOpenAiApiKey } from '@/api/openaiApi';
+import { setOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
-import { InfoIcon, Check } from 'lucide-react';
+import { InfoIcon } from 'lucide-react';
 
 const OpenAiKeyInput: React.FC = () => {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState('');
-  const [isKeyAvailable, setIsKeyAvailable] = useState(hasOpenAiApiKey());
-
-  useEffect(() => {
-    // Check if the API key is available when the component mounts
-    setIsKeyAvailable(hasOpenAiApiKey());
-  }, []);
 
   const handleSaveKey = () => {
     if (!apiKey || apiKey.trim() === '') {
@@ -39,7 +33,6 @@ const OpenAiKeyInput: React.FC = () => {
 
     try {
       setOpenAiApiKey(apiKey.trim());
-      setIsKeyAvailable(true);
       toast({
         title: "API-Key gespeichert",
         description: "Ihr OpenAI API-Key wurde erfolgreich gespeichert.",
@@ -53,32 +46,6 @@ const OpenAiKeyInput: React.FC = () => {
       });
     }
   };
-
-  if (isKeyAvailable) {
-    return (
-      <Card className="bg-green-50 border-green-200">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>OpenAI API-Key konfiguriert</CardTitle>
-            <Check className="h-6 w-6 text-green-500" />
-          </div>
-          <CardDescription>
-            GPT-Integration ist aktiv und kann für die erweiterte Buffett-Kriterien-Analyse verwendet werden
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex items-start space-x-2">
-              <InfoIcon className="h-5 w-5 text-green-500 mt-0.5" />
-              <p className="text-sm text-green-700">
-                Ihr API-Key wurde konfiguriert. GPT ist einsatzbereit für die Analyse der 11 Buffett-Kriterien.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>

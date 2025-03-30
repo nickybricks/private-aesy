@@ -1,20 +1,22 @@
 
 import axios from 'axios';
 
-// OpenAI API Key handling - now with a fixed key
-const FIXED_OPENAI_API_KEY = "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";
-
+// OpenAI API Key handling
 const getOpenAiApiKey = () => {
-  return FIXED_OPENAI_API_KEY;
+  const savedApiKey = localStorage.getItem('openai_api_key');
+  if (savedApiKey) {
+    return savedApiKey;
+  }
+  return null;
+};
+
+export const setOpenAiApiKey = (key: string) => {
+  localStorage.setItem('openai_api_key', key);
+  window.dispatchEvent(new Event('storage'));
 };
 
 export const hasOpenAiApiKey = (): boolean => {
-  return true; // Immer true, da wir jetzt einen festen Key haben
-};
-
-// Diese Funktion behalten wir für den Fall bei, dass wir in Zukunft wieder umstellen wollen
-export const setOpenAiApiKey = (key: string) => {
-  console.log('Fixed OpenAI API key is being used. The provided key will be ignored.');
+  return !!localStorage.getItem('openai_api_key');
 };
 
 // OpenAI API Service
@@ -35,6 +37,10 @@ export interface OpenAIResponse {
 export const queryGPT = async (prompt: string): Promise<string> => {
   try {
     const apiKey = getOpenAiApiKey();
+    
+    if (!apiKey) {
+      throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte geben Sie Ihren OpenAI API-Key ein.');
+    }
     
     const response = await axios.post<OpenAIResponse>(
       OPENAI_API_URL,
@@ -65,7 +71,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
   } catch (error) {
     console.error('Error querying OpenAI:', error);
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      throw new Error('Der integrierte OpenAI API-Key ist ungültig. Bitte kontaktieren Sie den Administrator.');
+      throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key.');
     }
     throw new Error('Fehler bei der Anfrage an OpenAI. Bitte versuchen Sie es später erneut.');
   }

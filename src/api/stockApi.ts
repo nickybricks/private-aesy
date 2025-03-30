@@ -11,10 +11,6 @@ import {
   analyzeRationalBehavior,
   hasOpenAiApiKey
 } from './openaiApi';
-import { mockStockInfo, mockBuffettCriteria, mockFinancialMetrics, mockOverallRating } from './mockData';
-
-// Konfigurationsoption für Mock-Daten
-const USE_MOCK_DATA = true; // Auf false setzen, um wieder echte API-Aufrufe zu verwenden
 
 // Financial Modeling Prep API Key
 // Sie müssen diesen API-Key durch Ihre eigene ersetzen
@@ -33,11 +29,6 @@ const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
 // Hilfsfunktion, um API-Anfragen zu machen
 const fetchFromFMP = async (endpoint: string, params = {}) => {
-  if (USE_MOCK_DATA) {
-    console.log(`Using mock data for endpoint: ${endpoint}`);
-    return Promise.resolve([]); // Dummy return - wird nicht wirklich verwendet, wenn Mock-Daten aktiv sind
-  }
-  
   try {
     const apiKey = getApiKey();
     
@@ -69,25 +60,6 @@ export const fetchStockInfo = async (ticker: string) => {
   // Standardisieren des Tickers für die API
   const standardizedTicker = ticker.trim().toUpperCase();
   
-  // Mock-Daten verwenden, wenn aktiviert
-  if (USE_MOCK_DATA) {
-    console.log('Using mock stock info data');
-    
-    // Überprüfen, ob wir Mock-Daten für diesen Ticker haben
-    if (mockStockInfo[standardizedTicker]) {
-      return mockStockInfo[standardizedTicker];
-    } else {
-      // Fallback auf Apple-Daten, wenn der angeforderte Ticker nicht in den Mock-Daten vorhanden ist
-      console.log(`No mock data for ${standardizedTicker}, using AAPL data instead`);
-      return {
-        ...mockStockInfo['AAPL'],
-        name: `Mock ${standardizedTicker}`,
-        ticker: standardizedTicker
-      };
-    }
-  }
-  
-  // Echter API-Aufruf, wenn Mock-Daten deaktiviert sind
   // Profil- und Kursdaten parallel abrufen
   const [profileData, quoteData] = await Promise.all([
     fetchFromFMP(`/profile/${standardizedTicker}`),
@@ -110,10 +82,6 @@ export const fetchStockInfo = async (ticker: string) => {
     changePercent: quote.changesPercentage,
     currency: profile.currency,
     marketCap: profile.mktCap,
-    description: profile.description || '',  // Hinzufügen von description
-    industry: profile.industry || '',        // Hinzufügen von industry
-    sector: profile.sector || '',            // Hinzufügen von sector
-    ceo: profile.ceo || ''                   // Hinzufügen von CEO
   };
 };
 
@@ -124,37 +92,406 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   // Standardisieren des Tickers für die API
   const standardizedTicker = ticker.trim().toUpperCase();
   
-  // Mock-Daten verwenden, wenn aktiviert
-  if (USE_MOCK_DATA) {
-    console.log('Using mock Buffett criteria data');
-    
-    // Überprüfen, ob wir Mock-Daten für diesen Ticker haben
-    if (mockBuffettCriteria[standardizedTicker]) {
-      return mockBuffettCriteria[standardizedTicker];
-    } else {
-      // Fallback auf Apple-Daten, wenn der angeforderte Ticker nicht in den Mock-Daten vorhanden ist
-      console.log(`No mock data for ${standardizedTicker}, using AAPL data instead`);
-      const appleCriteria = mockBuffettCriteria['AAPL'];
-      
-      // Kopie erstellen und Unternehmensnamen anpassen
-      const mockCriteria = JSON.parse(JSON.stringify(appleCriteria));
-      const mockCompanyName = `Mock ${standardizedTicker}`;
-      
-      // Firmenname in allen relevanten Feldern ersetzen
-      // Hier ist die Typecast-Fix für das TypeScript-Problem
-      for (const key in mockCriteria) {
-        const criterion = mockCriteria[key] as { description?: string };
-        if (criterion && typeof criterion === 'object' && criterion.description) {
-          criterion.description = criterion.description.replace('Apple Inc.', mockCompanyName);
-        }
-      }
-      
-      return mockCriteria;
+  // Verschiedene Finanzdaten abrufen
+  const [ratios, keyMetrics, profile, incomeStatements, balanceSheets] = await Promise.all([
+    fetchFromFMP(`/ratios/${standardizedTicker}`),
+    fetchFromFMP(`/key-metrics/${standardizedTicker}`),
+    fetchFromFMP(`/profile/${standardizedTicker}`),
+    fetchFromFMP(`/income-statement/${standardizedTicker}`),
+    fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}`)
+  ]);
+  
+  // Überprüfen, ob Daten zurückgegeben wurden
+  if (!ratios || ratios.length === 0 || !keyMetrics || keyMetrics.length === 0 || !profile || profile.length === 0) {
+    throw new Error(`Keine ausreichenden Finanzkennzahlen gefunden für ${standardizedTicker}`);
+  }
+  
+  // Die neuesten Daten verwenden
+  const latestRatios = ratios[0];
+  const latestMetrics = keyMetrics[0];
+  const companyProfile = profile[0];
+  const latestIncomeStatement = incomeStatements && incomeStatements.length > 0 ? incomeStatements[0] : null;
+  const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
+  
+  // Sicherstellen, dass alle erforderlichen Werte existieren
+  // Falls nicht, Standardwerte oder 0 verwenden
+  const safeValue = (value: any) => (value !== undefined && value !== null && !isNaN(Number(value))) ? Number(value) : 0;
+  
+  // Business Model Analyse
+  const businessModelStatus = companyProfile.description && companyProfile.description.length > 100 ? 'pass' : 'warning';
+  
+  // GPT-basierte Analyse des Geschäftsmodells
+  let businessModelGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      businessModelGptAnalysis = await analyzeBusinessModel(
+        companyProfile.companyName, 
+        companyProfile.industry || 'Unbekannt', 
+        companyProfile.description || 'Keine Beschreibung verfügbar'
+      );
+    } catch (error) {
+      console.error('Error analyzing business model with GPT:', error);
+      businessModelGptAnalysis = 'GPT-Analyse nicht verfügbar.';
     }
   }
   
-  // Echter API-Aufruf, wenn Mock-Daten deaktiviert sind
-  // ... keep existing code (from the original analyzeBuffettCriteria function) ...
+  // Verbesserte Berechnungen für finanzielle Kennzahlen
+  
+  // Bruttomarge direkt aus Ratios oder berechnen
+  const grossMargin = safeValue(latestRatios.grossProfitMargin) * 100;
+  
+  // Operative Marge direkt aus Ratios oder berechnen
+  const operatingMargin = safeValue(latestRatios.operatingProfitMargin) * 100;
+  
+  // ROIC direkt aus Metriken oder berechnen
+  let roic = safeValue(latestMetrics.roic) * 100;
+  
+  let economicMoatStatus = 'fail';
+  if (grossMargin > 40 && operatingMargin > 20 && roic > 15) {
+    economicMoatStatus = 'pass';
+  } else if (grossMargin > 30 && operatingMargin > 15 && roic > 10) {
+    economicMoatStatus = 'warning';
+  }
+  
+  // GPT-basierte Analyse des wirtschaftlichen Burggrabens
+  let economicMoatGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      economicMoatGptAnalysis = await analyzeEconomicMoat(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt',
+        grossMargin,
+        operatingMargin,
+        roic
+      );
+    } catch (error) {
+      console.error('Error analyzing economic moat with GPT:', error);
+      economicMoatGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // Verbesserte ROE Berechnung
+  let roe = safeValue(latestRatios.returnOnEquity) * 100;
+  if (roe === 0 && latestIncomeStatement && latestBalanceSheet) {
+    const netIncome = safeValue(latestIncomeStatement.netIncome);
+    const equity = safeValue(latestBalanceSheet.totalStockholdersEquity);
+    if (equity > 0) {
+      roe = (netIncome / equity) * 100;
+    }
+  }
+  
+  // Verbesserte Nettomarge Berechnung
+  let netMargin = safeValue(latestRatios.netProfitMargin) * 100;
+  if (netMargin === 0 && latestIncomeStatement) {
+    const netIncome = safeValue(latestIncomeStatement.netIncome);
+    const revenue = safeValue(latestIncomeStatement.revenue);
+    if (revenue > 0) {
+      netMargin = (netIncome / revenue) * 100;
+    }
+  }
+  
+  let financialMetricsStatus = 'fail';
+  if (roe > 15 && netMargin > 10) {
+    financialMetricsStatus = 'pass';
+  } else if (roe > 10 && netMargin > 5) {
+    financialMetricsStatus = 'warning';
+  }
+  
+  // Verbesserte Verschuldungsquote Berechnung
+  let debtToAssets = safeValue(latestRatios.debtToAssets) * 100;
+  if (debtToAssets === 0 && latestBalanceSheet) {
+    const totalDebt = safeValue(latestBalanceSheet.totalDebt) || 
+                     (safeValue(latestBalanceSheet.shortTermDebt) + safeValue(latestBalanceSheet.longTermDebt));
+    const totalAssets = safeValue(latestBalanceSheet.totalAssets);
+    if (totalAssets > 0) {
+      debtToAssets = (totalDebt / totalAssets) * 100;
+    }
+  }
+  
+  // Verbesserte Zinsdeckungsgrad Berechnung
+  let interestCoverage = safeValue(latestRatios.interestCoverage);
+  if (interestCoverage === 0 && latestIncomeStatement) {
+    const ebit = safeValue(latestIncomeStatement.ebitda) - safeValue(latestIncomeStatement.depreciationAndAmortization);
+    const interestExpense = safeValue(latestIncomeStatement.interestExpense);
+    if (interestExpense !== 0) {
+      interestCoverage = ebit / Math.abs(interestExpense);
+    }
+  }
+  
+  // Verbesserte Current Ratio Berechnung
+  let currentRatio = safeValue(latestRatios.currentRatio);
+  if (currentRatio === 0 && latestBalanceSheet) {
+    const currentAssets = safeValue(latestBalanceSheet.totalCurrentAssets);
+    const currentLiabilities = safeValue(latestBalanceSheet.totalCurrentLiabilities);
+    if (currentLiabilities > 0) {
+      currentRatio = currentAssets / currentLiabilities;
+    }
+  }
+  
+  // Verbesserte Debt to EBITDA Berechnung
+  let debtToEBITDA = safeValue(latestRatios.debtToEBITDA);
+  if (debtToEBITDA === 0 && latestIncomeStatement && latestBalanceSheet) {
+    const totalDebt = safeValue(latestBalanceSheet.totalDebt) || 
+                     (safeValue(latestBalanceSheet.shortTermDebt) + safeValue(latestBalanceSheet.longTermDebt));
+    const ebitda = safeValue(latestIncomeStatement.ebitda);
+    if (ebitda > 0) {
+      debtToEBITDA = totalDebt / ebitda;
+    }
+  }
+  
+  // Finanzielle Stabilität bewerten
+  let financialStabilityStatus = 'fail';
+  if (debtToAssets < 50 && interestCoverage > 5 && currentRatio > 1.5) {
+    financialStabilityStatus = 'pass';
+  } else if (debtToAssets < 70 && interestCoverage > 3 && currentRatio > 1) {
+    financialStabilityStatus = 'warning';
+  }
+  
+  // Management Qualität (vereinfacht)
+  const managementStatus = 'warning';
+  
+  // GPT-basierte Analyse der Managementqualität
+  let managementGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      managementGptAnalysis = await analyzeManagementQuality(
+        companyProfile.companyName,
+        companyProfile.ceo || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing management quality with GPT:', error);
+      managementGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // Verbesserte KGV Berechnung
+  let pe = safeValue(latestRatios.priceEarningsRatio);
+  
+  // Verbesserte Dividendenrendite Berechnung
+  let dividendYield = safeValue(latestRatios.dividendYield) * 100;
+  
+  // Bewertung basierend auf KGV und Dividendenrendite
+  let valuationStatus = 'fail';
+  if (pe < 15 && dividendYield > 2) {
+    valuationStatus = 'pass';
+  } else if (pe < 25 && dividendYield > 1) {
+    valuationStatus = 'warning';
+  }
+  
+  // Langfristiger Horizont
+  const sector = companyProfile.sector || 'Unbekannt';
+  
+  // GPT-basierte Analyse der langfristigen Perspektiven
+  let longTermGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      longTermGptAnalysis = await analyzeLongTermProspects(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt',
+        sector
+      );
+    } catch (error) {
+      console.error('Error analyzing long-term prospects with GPT:', error);
+      longTermGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // GPT-basierte Analyse des rationalen Verhaltens
+  let rationalBehaviorGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      rationalBehaviorGptAnalysis = await analyzeRationalBehavior(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing rational behavior with GPT:', error);
+      rationalBehaviorGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // GPT-basierte Analyse des antizyklischen Verhaltens
+  let cyclicalBehaviorGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      cyclicalBehaviorGptAnalysis = await analyzeCyclicalBehavior(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing cyclical behavior with GPT:', error);
+      cyclicalBehaviorGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // GPT-basierte Analyse der Einmaleffekte
+  let oneTimeEffectsGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      oneTimeEffectsGptAnalysis = await analyzeOneTimeEffects(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing one-time effects with GPT:', error);
+      oneTimeEffectsGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // GPT-basierte Analyse, ob es sich um einen Turnaround-Fall handelt
+  let turnaroundGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      turnaroundGptAnalysis = await analyzeTurnaround(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing turnaround with GPT:', error);
+      turnaroundGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // Vereinfachte Bewertung basierend auf Branche
+  const stableSectors = [
+    'Consumer Defensive', 'Healthcare', 'Utilities', 
+    'Financial Services', 'Technology', 'Communication Services'
+  ];
+  
+  const longTermStatus = stableSectors.includes(sector) ? 'pass' : 'warning';
+  
+  // Erstellen des Analyseobjekts mit verbesserten Kennzahlen
+  return {
+    businessModel: {
+      status: businessModelStatus,
+      title: '1. Verstehbares Geschäftsmodell',
+      description: `${companyProfile.companyName} ist tätig im Bereich ${companyProfile.industry || 'Unbekannt'}.`,
+      details: [
+        `Hauptgeschäftsbereich: ${companyProfile.industry || 'Unbekannt'}`,
+        `Sektor: ${companyProfile.sector || 'Unbekannt'}`,
+        `Gründungsjahr: ${companyProfile.ipoDate ? new Date(companyProfile.ipoDate).getFullYear() : 'N/A'}`,
+        `Beschreibung: ${companyProfile.description ? companyProfile.description.substring(0, 200) + '...' : 'Keine Beschreibung verfügbar'}`
+      ],
+      gptAnalysis: businessModelGptAnalysis
+    },
+    economicMoat: {
+      status: economicMoatStatus,
+      title: '2. Wirtschaftlicher Burggraben (Moat)',
+      description: `${companyProfile.companyName} zeigt ${economicMoatStatus === 'pass' ? 'starke' : economicMoatStatus === 'warning' ? 'moderate' : 'schwache'} Anzeichen eines wirtschaftlichen Burggrabens.`,
+      details: [
+        `Bruttomarge: ${grossMargin.toFixed(2)}% (Buffett bevorzugt >40%)`,
+        `Operative Marge: ${operatingMargin.toFixed(2)}% (Buffett bevorzugt >20%)`,
+        `ROIC: ${roic.toFixed(2)}% (Buffett bevorzugt >15%)`,
+        `Marktposition: ${companyProfile.isActivelyTrading ? 'Aktiv am Markt' : 'Eingeschränkte Marktpräsenz'}`
+      ],
+      gptAnalysis: economicMoatGptAnalysis
+    },
+    financialMetrics: {
+      status: financialMetricsStatus,
+      title: '3. Finanzkennzahlen (10 Jahre Rückblick)',
+      description: `Die Finanzkennzahlen von ${companyProfile.companyName} sind ${financialMetricsStatus === 'pass' ? 'stark' : financialMetricsStatus === 'warning' ? 'moderat' : 'schwach'}.`,
+      details: [
+        `Eigenkapitalrendite (ROE): ${roe.toFixed(2)}% (Buffett bevorzugt >15%)`,
+        `Nettomarge: ${netMargin.toFixed(2)}% (Buffett bevorzugt >10%)`,
+        `Gewinn pro Aktie: ${latestIncomeStatement && latestIncomeStatement.eps ? Number(latestIncomeStatement.eps).toFixed(2) + ' ' + companyProfile.currency : 'N/A'} ${companyProfile.currency || 'USD'}`,
+        `Umsatz pro Aktie: ${safeValue(latestMetrics.revenuePerShare).toFixed(2)} ${companyProfile.currency || 'USD'}`
+      ]
+    },
+    financialStability: {
+      status: financialStabilityStatus,
+      title: '4. Finanzielle Stabilität & Verschuldung',
+      description: `${companyProfile.companyName} zeigt ${financialStabilityStatus === 'pass' ? 'starke' : financialStabilityStatus === 'warning' ? 'moderate' : 'schwache'} finanzielle Stabilität.`,
+      details: [
+        `Schulden zu Vermögen: ${debtToAssets.toFixed(2)}% (Buffett bevorzugt <50%)`,
+        `Zinsdeckungsgrad: ${interestCoverage.toFixed(2)} (Buffett bevorzugt >5)`,
+        `Current Ratio: ${currentRatio.toFixed(2)} (Buffett bevorzugt >1.5)`,
+        `Schulden zu EBITDA: ${debtToEBITDA.toFixed(2)} (niedriger ist besser)`
+      ]
+    },
+    management: {
+      status: managementStatus,
+      title: '5. Qualität des Managements',
+      description: 'Die Qualität des Managements erfordert weitere Recherche.',
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie Insider-Beteiligungen, Kapitalallokation und Kommunikation',
+        `CEO: ${companyProfile.ceo || 'Keine Informationen verfügbar'}`,
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: managementGptAnalysis
+    },
+    valuation: {
+      status: valuationStatus,
+      title: '6. Bewertung (nicht zu teuer kaufen)',
+      description: `${companyProfile.companyName} ist aktuell ${valuationStatus === 'pass' ? 'angemessen' : valuationStatus === 'warning' ? 'moderat' : 'hoch'} bewertet.`,
+      details: [
+        `KGV (P/E): ${pe.toFixed(2)} (Buffett bevorzugt <15)`,
+        `Dividendenrendite: ${dividendYield.toFixed(2)}% (Buffett bevorzugt >2%)`,
+        `Kurs zu Buchwert: ${safeValue(latestRatios.priceToBookRatio).toFixed(2)} (niedriger ist besser)`,
+        `Kurs zu Cashflow: ${safeValue(latestRatios.priceCashFlowRatio).toFixed(2)} (niedriger ist besser)`
+      ]
+    },
+    longTermOutlook: {
+      status: longTermStatus,
+      title: '7. Langfristiger Horizont',
+      description: `${companyProfile.companyName} operiert in einer Branche mit ${longTermStatus === 'pass' ? 'guten' : 'moderaten'} langfristigen Aussichten.`,
+      details: [
+        `Branche: ${companyProfile.industry || 'Unbekannt'}`,
+        `Sektor: ${sector}`,
+        `Börsennotiert seit: ${companyProfile.ipoDate ? new Date(companyProfile.ipoDate).toLocaleDateString() : 'N/A'}`,
+        'Eine tiefere Analyse der langfristigen Branchentrends wird empfohlen'
+      ],
+      gptAnalysis: longTermGptAnalysis
+    },
+    rationalBehavior: {
+      status: 'warning', // Vereinfachte Standardbewertung
+      title: '8. Rationalität & Disziplin',
+      description: 'Rationalität und Disziplin erfordern tiefere Analyse.',
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie Kapitalallokation, Akquisitionen und Ausgaben',
+        'Analysieren Sie, ob das Management bewusst und diszipliniert handelt',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: rationalBehaviorGptAnalysis
+    },
+    cyclicalBehavior: {
+      status: 'warning', // Vereinfachte Standardbewertung
+      title: '9. Antizyklisches Verhalten',
+      description: 'Antizyklisches Verhalten erfordert tiefere Analyse.',
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie das Verhalten in Marktkrisen',
+        'Analysieren Sie, ob das Unternehmen kauft, wenn andere verkaufen',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: cyclicalBehaviorGptAnalysis
+    },
+    oneTimeEffects: {
+      status: 'warning', // Vereinfachte Standardbewertung
+      title: '10. Vergangenheit ≠ Zukunft',
+      description: 'Die Nachhaltigkeit des Erfolgs erfordert tiefere Analyse.',
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie einmalige Ereignisse, die Ergebnisse beeinflusst haben',
+        'Analysieren Sie, ob das Wachstum organisch oder durch Übernahmen getrieben ist',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: oneTimeEffectsGptAnalysis
+    },
+    turnaround: {
+      status: 'warning', // Vereinfachte Standardbewertung
+      title: '11. Keine Turnarounds',
+      description: 'Turnaround-Status erfordert tiefere Analyse.',
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie Anzeichen für Restrukturierung oder Sanierung',
+        'Analysieren Sie, ob das Unternehmen sich in einer Erholungsphase befindet',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: turnaroundGptAnalysis
+    }
+  };
 };
 
 // Funktion, um Finanzkennzahlen zu holen
@@ -163,20 +500,6 @@ export const getFinancialMetrics = async (ticker: string) => {
   
   // Standardisieren des Tickers für die API
   const standardizedTicker = ticker.trim().toUpperCase();
-  
-  // Mock-Daten verwenden, wenn aktiviert
-  if (USE_MOCK_DATA) {
-    console.log('Using mock financial metrics data');
-    
-    // Überprüfen, ob wir Mock-Daten für diesen Ticker haben
-    if (mockFinancialMetrics[standardizedTicker]) {
-      return mockFinancialMetrics[standardizedTicker];
-    } else {
-      // Fallback auf Apple-Daten, wenn der angeforderte Ticker nicht in den Mock-Daten vorhanden ist
-      console.log(`No mock data for ${standardizedTicker}, using AAPL data instead`);
-      return mockFinancialMetrics['AAPL'];
-    }
-  }
   
   try {
     // Finanzkennzahlen abrufen - erweiterte Datenquellen für präzisere EPS und andere Werte
@@ -398,26 +721,6 @@ export const getFinancialMetrics = async (ticker: string) => {
 export const getOverallRating = async (ticker: string) => {
   // Diese Funktion soll eine Gesamtbewertung der Aktie liefern
   // Basierend auf den Ergebnissen der analyzeBuffettCriteria-Funktion
-  
-  // Standardisieren des Tickers für die API
-  const standardizedTicker = ticker.trim().toUpperCase();
-  
-  // Mock-Daten verwenden, wenn aktiviert
-  if (USE_MOCK_DATA) {
-    console.log('Using mock overall rating data');
-    
-    // Überprüfen, ob wir Mock-Daten für diesen Ticker haben
-    if (mockOverallRating[standardizedTicker]) {
-      return mockOverallRating[standardizedTicker];
-    } else {
-      // Fallback auf Apple-Daten, wenn der angeforderte Ticker nicht in den Mock-Daten vorhanden ist
-      console.log(`No mock data for ${standardizedTicker}, using AAPL data instead`);
-      const appleRating = mockOverallRating['AAPL'];
-      
-      // Kopie erstellen und anpassen, wenn nötig
-      return JSON.parse(JSON.stringify(appleRating));
-    }
-  }
   
   try {
     const criteria = await analyzeBuffettCriteria(ticker);
