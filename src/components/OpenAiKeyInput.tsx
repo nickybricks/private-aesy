@@ -21,6 +21,16 @@ const OpenAiKeyInput: React.FC = () => {
       return;
     }
 
+    // Einfache Validierung für OpenAI API-Keys
+    if (!apiKey.startsWith('sk-')) {
+      toast({
+        title: "Fehler",
+        description: "Der API-Key scheint ungültig zu sein. OpenAI API-Keys beginnen mit 'sk-'.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setOpenAiApiKey(apiKey.trim());
       toast({

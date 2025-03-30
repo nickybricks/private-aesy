@@ -239,6 +239,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     }
   }
   
+  // Finanzielle Stabilität bewerten
   let financialStabilityStatus = 'fail';
   if (debtToAssets < 50 && interestCoverage > 5 && currentRatio > 1.5) {
     financialStabilityStatus = 'pass';
@@ -269,6 +270,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   // Verbesserte Dividendenrendite Berechnung
   let dividendYield = safeValue(latestRatios.dividendYield) * 100;
   
+  // Bewertung basierend auf KGV und Dividendenrendite
   let valuationStatus = 'fail';
   if (pe < 15 && dividendYield > 2) {
     valuationStatus = 'pass';
@@ -286,7 +288,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       longTermGptAnalysis = await analyzeLongTermProspects(
         companyProfile.companyName,
         companyProfile.industry || 'Unbekannt',
-        companyProfile.sector || 'Unbekannt'
+        sector
       );
     } catch (error) {
       console.error('Error analyzing long-term prospects with GPT:', error);
@@ -349,32 +351,6 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       turnaroundGptAnalysis = 'GPT-Analyse nicht verfügbar.';
     }
   }
-  
-  let financialStabilityStatus = 'fail';
-  if (debtToAssets < 50 && interestCoverage > 5 && currentRatio > 1.5) {
-    financialStabilityStatus = 'pass';
-  } else if (debtToAssets < 70 && interestCoverage > 3 && currentRatio > 1) {
-    financialStabilityStatus = 'warning';
-  }
-  
-  // Management Qualität (vereinfacht)
-  const managementStatus = 'warning';
-  
-  // Verbesserte KGV Berechnung
-  let pe = safeValue(latestRatios.priceEarningsRatio);
-  
-  // Verbesserte Dividendenrendite Berechnung
-  let dividendYield = safeValue(latestRatios.dividendYield) * 100;
-  
-  let valuationStatus = 'fail';
-  if (pe < 15 && dividendYield > 2) {
-    valuationStatus = 'pass';
-  } else if (pe < 25 && dividendYield > 1) {
-    valuationStatus = 'warning';
-  }
-  
-  // Langfristiger Horizont
-  const sector = companyProfile.sector || 'Unbekannt';
   
   // Vereinfachte Bewertung basierend auf Branche
   const stableSectors = [
@@ -461,7 +437,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       description: `${companyProfile.companyName} operiert in einer Branche mit ${longTermStatus === 'pass' ? 'guten' : 'moderaten'} langfristigen Aussichten.`,
       details: [
         `Branche: ${companyProfile.industry || 'Unbekannt'}`,
-        `Sektor: ${companyProfile.sector || 'Unbekannt'}`,
+        `Sektor: ${sector}`,
         `Börsennotiert seit: ${companyProfile.ipoDate ? new Date(companyProfile.ipoDate).toLocaleDateString() : 'N/A'}`,
         'Eine tiefere Analyse der langfristigen Branchentrends wird empfohlen'
       ],
@@ -737,6 +713,103 @@ export const getFinancialMetrics = async (ticker: string) => {
     };
   } catch (error) {
     console.error('Error fetching financial metrics:', error);
+    throw error;
+  }
+};
+
+// Hilfsfunktion zur Berechnung einer Gesamtbewertung
+export const getOverallRating = async (ticker: string) => {
+  // Diese Funktion soll eine Gesamtbewertung der Aktie liefern
+  // Basierend auf den Ergebnissen der analyzeBuffettCriteria-Funktion
+  
+  try {
+    const criteria = await analyzeBuffettCriteria(ticker);
+    
+    // Zählen, wie viele Kriterien erfüllt sind
+    const criteriaStatuses = [
+      criteria.businessModel.status,
+      criteria.economicMoat.status,
+      criteria.financialMetrics.status,
+      criteria.financialStability.status,
+      criteria.management.status,
+      criteria.valuation.status,
+      criteria.longTermOutlook.status
+    ];
+    
+    const passCount = criteriaStatuses.filter(status => status === 'pass').length;
+    const warningCount = criteriaStatuses.filter(status => status === 'warning').length;
+    
+    let overall;
+    let summary;
+    
+    if (passCount >= 5) {
+      overall = 'buy';
+      summary = 'Nach Warren Buffetts Kriterien eine vielversprechende Investition.';
+    } else if (passCount >= 3 || (passCount >= 2 && warningCount >= 3)) {
+      overall = 'watch';
+      summary = 'Einige Buffett-Kriterien erfüllt, aber weitere Recherche nötig.';
+    } else {
+      overall = 'avoid';
+      summary = 'Entspricht nicht ausreichend den Buffett-Kriterien für eine Investition.';
+    }
+    
+    // Stärken und Schwächen identifizieren
+    const strengths = [];
+    const weaknesses = [];
+    
+    if (criteria.businessModel.status === 'pass') {
+      strengths.push('Klares, verständliches Geschäftsmodell');
+    } else if (criteria.businessModel.status === 'fail') {
+      weaknesses.push('Komplexes oder schwer verständliches Geschäftsmodell');
+    }
+    
+    if (criteria.economicMoat.status === 'pass') {
+      strengths.push('Starker wirtschaftlicher Burggraben (Moat)');
+    } else if (criteria.economicMoat.status === 'fail') {
+      weaknesses.push('Kein erkennbarer wirtschaftlicher Burggraben');
+    }
+    
+    if (criteria.financialMetrics.status === 'pass') {
+      strengths.push('Hervorragende Finanzkennzahlen (ROE, Nettomarge)');
+    } else if (criteria.financialMetrics.status === 'fail') {
+      weaknesses.push('Schwache Finanzkennzahlen');
+    }
+    
+    if (criteria.financialStability.status === 'pass') {
+      strengths.push('Solide finanzielle Stabilität mit geringer Verschuldung');
+    } else if (criteria.financialStability.status === 'fail') {
+      weaknesses.push('Bedenken hinsichtlich finanzieller Stabilität oder hoher Verschuldung');
+    }
+    
+    if (criteria.valuation.status === 'pass') {
+      strengths.push('Attraktive Bewertung (KGV und Dividendenrendite)');
+    } else if (criteria.valuation.status === 'fail') {
+      weaknesses.push('Hohe Bewertung im Verhältnis zu den fundamentalen Daten');
+    }
+    
+    if (criteria.longTermOutlook.status === 'pass') {
+      strengths.push('Vielversprechende langfristige Perspektiven');
+    }
+    
+    // Allgemeine Empfehlung basierend auf der Gesamtbewertung
+    let recommendation;
+    if (overall === 'buy') {
+      recommendation = 'Diese Aktie erfüllt viele von Buffetts Kriterien und könnte eine gute langfristige Investition sein. Wie immer sollten Sie Ihre eigene Due Diligence durchführen und Ihr Portfolio diversifizieren.';
+    } else if (overall === 'watch') {
+      recommendation = 'Behalten Sie diese Aktie auf Ihrer Beobachtungsliste. Die Aktie erfüllt einige, aber nicht alle Buffett-Kriterien. Warten Sie möglicherweise auf einen besseren Einstiegspunkt oder vertiefen Sie Ihre Recherche.';
+    } else {
+      recommendation = 'Diese Aktie entspricht nicht ausreichend Buffetts Investitionskriterien. Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen, die mehr von Buffetts Prinzipien erfüllen.';
+    }
+    
+    return {
+      overall,
+      summary,
+      strengths,
+      weaknesses,
+      recommendation
+    };
+  } catch (error) {
+    console.error('Error generating overall rating:', error);
     throw error;
   }
 };
