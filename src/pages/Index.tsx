@@ -7,7 +7,17 @@ import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
-import { hasOpenAiApiKey } from '@/api/openaiApi';
+import { 
+  hasOpenAiApiKey, 
+  analyzeBusinessModel, 
+  analyzeEconomicMoat, 
+  analyzeManagementQuality, 
+  analyzeLongTermProspects,
+  analyzeCyclicalBehavior,
+  analyzeOneTimeEffects,
+  analyzeTurnaround,
+  analyzeRationalBehavior
+} from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
@@ -16,13 +26,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGptLoading, setIsGptLoading] = useState(false);
   const [stockInfo, setStockInfo] = useState(null);
   const [buffettCriteria, setBuffettCriteria] = useState(null);
   const [financialMetrics, setFinancialMetrics] = useState(null);
   const [overallRating, setOverallRating] = useState(null);
   const [error, setError] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
-  const [hasGptApiKey, setHasGptApiKey] = useState(true);
+  const [hasGptApiKey, setHasGptApiKey] = useState(hasOpenAiApiKey());
   const [activeTab, setActiveTab] = useState('standard');
 
   useEffect(() => {
@@ -51,6 +62,75 @@ const Index = () => {
       localStorage.setItem = originalSetItem;
     };
   }, []);
+
+  const runGptAnalysis = async () => {
+    if (!stockInfo || !buffettCriteria) return;
+    
+    setIsGptLoading(true);
+    try {
+      toast({
+        title: "GPT-Analyse läuft",
+        description: `Analysiere ${stockInfo.name} mit GPT. Dies kann einen Moment dauern...`,
+      });
+
+      const updatedCriteria = JSON.parse(JSON.stringify(buffettCriteria));
+      
+      const [
+        businessModelAnalysis,
+        economicMoatAnalysis,
+        managementAnalysis,
+        longTermAnalysis,
+        cyclicalAnalysis,
+        oneTimeEffectAnalysis,
+        turnaroundAnalysis,
+        rationalBehaviorAnalysis
+      ] = await Promise.all([
+        analyzeBusinessModel(stockInfo.name, stockInfo.industry || 'Unknown', stockInfo.description || ''),
+        analyzeEconomicMoat(
+          stockInfo.name, 
+          stockInfo.industry || 'Unknown', 
+          financialMetrics?.metrics?.grossMargin || 0, 
+          financialMetrics?.metrics?.operatingMargin || 0, 
+          financialMetrics?.metrics?.roic || 0
+        ),
+        analyzeManagementQuality(stockInfo.name, stockInfo.ceo || ''),
+        analyzeLongTermProspects(stockInfo.name, stockInfo.industry || 'Unknown', stockInfo.sector || 'Unknown'),
+        analyzeCyclicalBehavior(stockInfo.name, stockInfo.industry || 'Unknown'),
+        analyzeOneTimeEffects(stockInfo.name, stockInfo.industry || 'Unknown'),
+        analyzeTurnaround(stockInfo.name, stockInfo.industry || 'Unknown'),
+        analyzeRationalBehavior(stockInfo.name, stockInfo.industry || 'Unknown')
+      ]);
+      
+      updatedCriteria.businessModel.gptAnalysis = businessModelAnalysis;
+      updatedCriteria.economicMoat.gptAnalysis = economicMoatAnalysis;
+      updatedCriteria.management.gptAnalysis = managementAnalysis;
+      updatedCriteria.longTermOutlook.gptAnalysis = longTermAnalysis;
+      updatedCriteria.cyclicalBehavior.gptAnalysis = cyclicalAnalysis;
+      updatedCriteria.oneTimeEffects.gptAnalysis = oneTimeEffectAnalysis;
+      updatedCriteria.turnaround.gptAnalysis = turnaroundAnalysis;
+      updatedCriteria.rationalBehavior.gptAnalysis = rationalBehaviorAnalysis;
+      
+      setBuffettCriteria(updatedCriteria);
+      
+      toast({
+        title: "GPT-Analyse abgeschlossen",
+        description: `Die GPT-Analyse für ${stockInfo.name} wurde erfolgreich durchgeführt.`,
+      });
+      
+      setActiveTab('gpt');
+    } catch (error) {
+      console.error('Error running GPT analysis:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler bei der GPT-Analyse';
+      
+      toast({
+        title: "GPT-Analysefehler",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGptLoading(false);
+    }
+  };
 
   const handleSearch = async (ticker: string) => {
     setIsLoading(true);
@@ -88,6 +168,10 @@ const Index = () => {
         title: "Analyse abgeschlossen",
         description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
       });
+      
+      if (hasGptApiKey) {
+        await runGptAnalysis();
+      }
     } catch (error) {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
@@ -169,11 +253,13 @@ const Index = () => {
         <StockHeader stockInfo={stockInfo} />
       )}
       
-      {isLoading ? (
+      {isLoading || isGptLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-buffett-blue border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status"></div>
-            <p className="mt-4 text-lg">Analysiere Aktie nach Warren Buffett's Kriterien...</p>
+            <p className="mt-4 text-lg">
+              {isGptLoading ? 'Führe GPT-Analyse durch...' : 'Analysiere Aktie nach Warren Buffett\'s Kriterien...'}
+            </p>
             <p className="text-buffett-subtext mt-2">Dies kann einige Momente dauern</p>
           </div>
         </div>
@@ -184,7 +270,21 @@ const Index = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-4">
                   <TabsTrigger value="standard">Standard-Analyse</TabsTrigger>
-                  <TabsTrigger value="gpt">GPT-Analyse (11 Kriterien)</TabsTrigger>
+                  <TabsTrigger value="gpt" disabled={!hasGptApiKey || !buffettCriteria.businessModel.gptAnalysis}>
+                    GPT-Analyse (11 Kriterien)
+                    {hasGptApiKey && !buffettCriteria.businessModel.gptAnalysis && !isGptLoading && (
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault(); 
+                          e.stopPropagation(); 
+                          runGptAnalysis();
+                        }}
+                        className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors"
+                      >
+                        Starten
+                      </button>
+                    )}
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="standard">
                   <BuffettCriteria criteria={buffettCriteria} />
