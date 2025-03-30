@@ -1,8 +1,14 @@
 
 import React, { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface StockSearchProps {
   onSearch: (ticker: string) => void;
@@ -46,8 +52,18 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading }) => {
         </Button>
       </form>
       
-      <div className="mt-4 text-sm text-buffett-subtext">
+      <div className="mt-4 text-sm text-buffett-subtext flex items-center">
         <p>Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung.</p>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info size={16} className="ml-2 cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs p-4">
+            <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
+            <p>Dieses Tool verwendet die Financial Modeling Prep API. Es ist ein "Demo"-API-Schlüssel für Testzwecke konfiguriert, der beschränkte Abfragen erlaubt.</p>
+            <p className="mt-2">Für uneingeschränkten Zugriff registrieren Sie sich für einen eigenen API-Schlüssel unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">financialmodelingprep.com</a>.</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );

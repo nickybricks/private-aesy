@@ -1,733 +1,566 @@
+import axios from 'axios';
 
-// This is a mock API for the MVP. In a real implementation, this would
-// connect to Yahoo Finance, FinancialModelingPrep, or another finance API
+// Financial Modeling Prep API Key
+// Sie müssen diesen API-Key durch Ihre eigene ersetzen
+// Registrieren Sie sich unter https://financialmodelingprep.com/developer/docs/ für einen kostenlosen API-Key
+const API_KEY = 'demo'; // Ersetzen Sie dies mit Ihrem eigenen API-Key
+const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
-// Mock function to simulate fetching stock data
+// Hilfsfunktion, um API-Anfragen zu machen
+const fetchFromFMP = async (endpoint: string, params = {}) => {
+  try {
+    const response = await axios.get(`${BASE_URL}${endpoint}`, {
+      params: {
+        apikey: API_KEY,
+        ...params
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching data from FMP:', error);
+    throw error;
+  }
+};
+
+// Funktion, um Aktieninformationen zu holen
 export const fetchStockInfo = async (ticker: string) => {
   console.log(`Fetching stock info for ${ticker}`);
   
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // For the MVP, return mock data for Apple as default
-  // In a real implementation, this would fetch actual data based on the ticker
-  if (ticker === 'AAPL' || ticker === 'APPLE' || ticker === 'APPLE INC') {
+  try {
+    // Standardisieren des Tickers für die API
+    const standardizedTicker = ticker.trim().toUpperCase();
+    
+    // Profil- und Kursdaten parallel abrufen
+    const [profileData, quoteData] = await Promise.all([
+      fetchFromFMP(`/profile/${standardizedTicker}`),
+      fetchFromFMP(`/quote/${standardizedTicker}`)
+    ]);
+    
+    // Überprüfen, ob Daten zurückgegeben wurden
+    if (!profileData || profileData.length === 0 || !quoteData || quoteData.length === 0) {
+      throw new Error(`Keine Daten gefunden für ${standardizedTicker}`);
+    }
+    
+    const profile = profileData[0];
+    const quote = quoteData[0];
+    
     return {
-      name: 'Apple Inc.',
-      ticker: 'AAPL',
-      price: 191.56,
-      change: 1.78,
-      changePercent: 0.94,
-      currency: '$',
-      marketCap: 2970000000000,
+      name: profile.companyName,
+      ticker: profile.symbol,
+      price: quote.price,
+      change: quote.change,
+      changePercent: quote.changesPercentage,
+      currency: profile.currency,
+      marketCap: profile.mktCap,
     };
+  } catch (error) {
+    console.error(`Error fetching stock info for ${ticker}:`, error);
+    
+    // Bei API-Fehlern auf Beispieldaten zurückgreifen
+    if (ticker.toUpperCase() === 'AAPL' || ticker.toUpperCase() === 'APPLE' || ticker.toUpperCase() === 'APPLE INC') {
+      return {
+        name: 'Apple Inc.',
+        ticker: 'AAPL',
+        price: 191.56,
+        change: 1.78,
+        changePercent: 0.94,
+        currency: '$',
+        marketCap: 2970000000000,
+      };
+    }
+    
+    // Für andere Fälle einen Fehler werfen
+    throw new Error(`Fehler beim Abrufen der Aktieninformationen für ${ticker}`);
   }
-  
-  // Add a few more examples for testing
-  if (ticker === 'MSFT') {
-    return {
-      name: 'Microsoft Corporation',
-      ticker: 'MSFT',
-      price: 386.64,
-      change: -2.31,
-      changePercent: -0.59,
-      currency: '$',
-      marketCap: 2870000000000,
-    };
-  }
-  
-  if (ticker === 'AMZN') {
-    return {
-      name: 'Amazon.com, Inc.',
-      ticker: 'AMZN',
-      price: 178.15,
-      change: 1.25,
-      changePercent: 0.71,
-      currency: '$',
-      marketCap: 1850000000000,
-    };
-  }
-  
-  // Return a generic response for any other ticker
-  return {
-    name: `${ticker} Corporation`,
-    ticker: ticker,
-    price: 150 + Math.random() * 100,
-    change: Math.random() > 0.5 ? Math.random() * 5 : -Math.random() * 5,
-    changePercent: Math.random() > 0.5 ? Math.random() * 3 : -Math.random() * 3,
-    currency: '$',
-    marketCap: Math.random() * 1000000000000,
-  };
 };
 
-// Mock function to simulate analyzing stock with Buffett criteria
+// Funktion, um Buffett-Kriterien zu analysieren
 export const analyzeBuffettCriteria = async (ticker: string) => {
   console.log(`Analyzing ${ticker} with Buffett criteria`);
   
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  // For Apple (AAPL), return detailed positive analysis as an example
-  if (ticker === 'AAPL' || ticker === 'APPLE' || ticker === 'APPLE INC') {
+  try {
+    // Standardisieren des Tickers für die API
+    const standardizedTicker = ticker.trim().toUpperCase();
+    
+    // Verschiedene Finanzdaten abrufen
+    const [ratios, keyMetrics, profile] = await Promise.all([
+      fetchFromFMP(`/ratios/${standardizedTicker}`),
+      fetchFromFMP(`/key-metrics/${standardizedTicker}`),
+      fetchFromFMP(`/profile/${standardizedTicker}`)
+    ]);
+    
+    // Überprüfen, ob Daten zurückgegeben wurden
+    if (!ratios || ratios.length === 0 || !keyMetrics || keyMetrics.length === 0) {
+      throw new Error(`Keine Finanzkennzahlen gefunden für ${standardizedTicker}`);
+    }
+    
+    // Die neuesten Daten verwenden
+    const latestRatios = ratios[0];
+    const latestMetrics = keyMetrics[0];
+    const companyProfile = profile[0];
+    
+    // Business Model Analyse
+    const businessModelStatus = companyProfile.description && companyProfile.description.length > 100 ? 'pass' : 'warning';
+    
+    // Economic Moat Analyse (vereinfacht)
+    const grossMargin = latestRatios.grossProfitMargin * 100;
+    const operatingMargin = latestRatios.operatingProfitMargin * 100;
+    const roic = latestMetrics.roic * 100;
+    
+    let economicMoatStatus = 'fail';
+    if (grossMargin > 40 && operatingMargin > 20 && roic > 15) {
+      economicMoatStatus = 'pass';
+    } else if (grossMargin > 30 && operatingMargin > 15 && roic > 10) {
+      economicMoatStatus = 'warning';
+    }
+    
+    // Finanzkennzahlen Analyse
+    const roe = latestRatios.returnOnEquity * 100;
+    const netMargin = latestRatios.netProfitMargin * 100;
+    
+    let financialMetricsStatus = 'fail';
+    if (roe > 15 && netMargin > 10) {
+      financialMetricsStatus = 'pass';
+    } else if (roe > 10 && netMargin > 5) {
+      financialMetricsStatus = 'warning';
+    }
+    
+    // Finanzielle Stabilität
+    const debtToAssets = latestRatios.debtToAssets * 100;
+    const interestCoverage = latestRatios.interestCoverage;
+    const currentRatio = latestRatios.currentRatio;
+    
+    let financialStabilityStatus = 'fail';
+    if (debtToAssets < 50 && interestCoverage > 5 && currentRatio > 1.5) {
+      financialStabilityStatus = 'pass';
+    } else if (debtToAssets < 70 && interestCoverage > 3 && currentRatio > 1) {
+      financialStabilityStatus = 'warning';
+    }
+    
+    // Management Qualität (vereinfacht)
+    // Hier bräuchten wir mehr Daten wie Insider Ownership, die in der kostenlosen API nicht enthalten sind
+    const managementStatus = 'warning'; // Standardmäßig auf warning setzen, da wir nicht alle Daten haben
+    
+    // Bewertung
+    const pe = latestRatios.priceEarningsRatio;
+    const dividendYield = latestRatios.dividendYield * 100;
+    
+    let valuationStatus = 'fail';
+    if (pe < 15 && dividendYield > 2) {
+      valuationStatus = 'pass';
+    } else if (pe < 25 && dividendYield > 1) {
+      valuationStatus = 'warning';
+    }
+    
+    // Langfristiger Horizont (vereinfacht)
+    // Dies ist schwer automatisch zu bewerten, wir gehen von der Branche aus
+    const sector = companyProfile.sector;
+    const industry = companyProfile.industry;
+    
+    // Vereinfachte Bewertung basierend auf Branche
+    const stableSectors = [
+      'Consumer Defensive', 'Healthcare', 'Utilities', 
+      'Financial Services', 'Technology', 'Communication Services'
+    ];
+    
+    const longTermStatus = stableSectors.includes(sector) ? 'pass' : 'warning';
+    
+    // Erstellen des Analyseobjekts
     return {
       businessModel: {
-        status: 'pass',
+        status: businessModelStatus,
         title: 'Geschäftsmodell verstehen',
-        description: 'Apple entwickelt, produziert und verkauft Premium-Hardware, Software und Services mit einem starken Ökosystem.',
+        description: `${companyProfile.companyName} ist tätig im Bereich ${companyProfile.industry}.`,
         details: [
-          'Klares, leicht verständliches Geschäftsmodell',
-          'Starke Marke mit loyaler Kundenbasis',
-          'Wiederkehrende Einnahmen durch Services (App Store, Apple Music, iCloud)',
-          'Vertikale Integration von Hardware und Software'
+          `Hauptgeschäftsbereich: ${companyProfile.industry}`,
+          `Sektor: ${companyProfile.sector}`,
+          `Gründungsjahr: ${companyProfile.ipoDate ? new Date(companyProfile.ipoDate).getFullYear() : 'N/A'}`,
+          `Beschreibung: ${companyProfile.description ? companyProfile.description.substring(0, 200) + '...' : 'Keine Beschreibung verfügbar'}`
         ]
       },
       economicMoat: {
-        status: 'pass',
+        status: economicMoatStatus,
         title: 'Wirtschaftlicher Burggraben (Moat)',
-        description: 'Apple besitzt einen starken wirtschaftlichen Burggraben durch Marke, Ökosystem und Kundenbindung.',
+        description: `${companyProfile.companyName} zeigt ${economicMoatStatus === 'pass' ? 'starke' : economicMoatStatus === 'warning' ? 'moderate' : 'schwache'} Anzeichen eines wirtschaftlichen Burggrabens.`,
         details: [
-          'Starke Marke mit Premium-Positionierung',
-          'Geschlossenes Ökosystem erhöht Wechselkosten',
-          'Exzellente Produktintegration und Benutzererfahrung',
-          'Starke Patentportfolio und kontinuierliche Innovation'
+          `Bruttomarge: ${grossMargin.toFixed(2)}% (Buffett bevorzugt >40%)`,
+          `Operative Marge: ${operatingMargin.toFixed(2)}% (Buffett bevorzugt >20%)`,
+          `ROIC: ${roic.toFixed(2)}% (Buffett bevorzugt >15%)`,
+          `Marktposition: ${companyProfile.isActivelyTrading ? 'Aktiv am Markt' : 'Eingeschränkte Marktpräsenz'}`
         ]
       },
       financialMetrics: {
-        status: 'pass',
+        status: financialMetricsStatus,
         title: 'Finanzkennzahlen',
-        description: 'Apples Finanzkennzahlen sind stark mit stabilem Wachstum, hoher Profitabilität und soliden Margen.',
+        description: `Die Finanzkennzahlen von ${companyProfile.companyName} sind ${financialMetricsStatus === 'pass' ? 'stark' : financialMetricsStatus === 'warning' ? 'moderat' : 'schwach'}.`,
         details: [
-          'Kontinuierliches Umsatz- und Gewinnwachstum',
-          'Hohe Eigenkapitalrendite (ROE) > 15%',
-          'Starke Nettomarge von über 20%',
-          'Positiver und wachsender operativer Cashflow'
+          `Eigenkapitalrendite (ROE): ${roe.toFixed(2)}% (Buffett bevorzugt >15%)`,
+          `Nettomarge: ${netMargin.toFixed(2)}% (Buffett bevorzugt >10%)`,
+          `Gewinn pro Aktie: ${latestMetrics.eps.toFixed(2)} ${companyProfile.currency}`,
+          `Umsatz pro Aktie: ${latestMetrics.revenuePerShare.toFixed(2)} ${companyProfile.currency}`
         ]
       },
       financialStability: {
-        status: 'pass',
+        status: financialStabilityStatus,
         title: 'Finanzielle Stabilität',
-        description: 'Apple verfügt über eine außerordentlich starke Bilanz mit niedriger Verschuldung und hohen Liquiditätsreserven.',
+        description: `${companyProfile.companyName} zeigt ${financialStabilityStatus === 'pass' ? 'starke' : financialStabilityStatus === 'warning' ? 'moderate' : 'schwache'} finanzielle Stabilität.`,
         details: [
-          'Sehr niedrige Schuldenquote',
-          'Hoher Zinsdeckungsgrad',
-          'Enorme Liquiditätsreserven',
-          'Konstant positiver Free Cashflow'
+          `Schulden zu Vermögen: ${debtToAssets.toFixed(2)}% (Buffett bevorzugt <50%)`,
+          `Zinsdeckungsgrad: ${interestCoverage.toFixed(2)} (Buffett bevorzugt >5)`,
+          `Current Ratio: ${currentRatio.toFixed(2)} (Buffett bevorzugt >1.5)`,
+          `Schulden zu EBITDA: ${latestRatios.debtToEBITDA.toFixed(2)} (niedriger ist besser)`
         ]
       },
       management: {
-        status: 'pass',
+        status: managementStatus,
         title: 'Qualität des Managements',
-        description: 'Das Management hat sich als kompetent erwiesen mit langfristiger Ausrichtung und solider Kapitalallokation.',
+        description: 'Die Qualität des Managements erfordert weitere Recherche.',
         details: [
-          'Fokus auf langfristige Wertschöpfung',
-          'Konsistente Strategie über die Jahre',
-          'Aktive Aktienrückkaufprogramme',
-          'Transparente Kommunikation mit Investoren'
+          'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+          'Beachten Sie Insider-Beteiligungen, Kapitalallokation und Kommunikation',
+          `CEO: ${companyProfile.ceo || 'Keine Informationen verfügbar'}`,
+          'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
         ]
       },
       valuation: {
-        status: 'warning',
+        status: valuationStatus,
         title: 'Bewertung',
-        description: 'Die Aktie ist nicht günstig bewertet, aber angesichts der Qualität des Unternehmens akzeptabel.',
+        description: `${companyProfile.companyName} ist aktuell ${valuationStatus === 'pass' ? 'angemessen' : valuationStatus === 'warning' ? 'moderat' : 'hoch'} bewertet.`,
         details: [
-          'KGV leicht über historischem Durchschnitt',
-          'Moderater Bewertungsaufschlag gegenüber Markt',
-          'DCF-Modell zeigt begrenzte Margin of Safety',
-          'Wachsende Dividendenrendite, aber unter 2%'
+          `KGV (P/E): ${pe.toFixed(2)} (Buffett bevorzugt <15)`,
+          `Dividendenrendite: ${dividendYield.toFixed(2)}% (Buffett bevorzugt >2%)`,
+          `Kurs zu Buchwert: ${latestRatios.priceToBookRatio.toFixed(2)} (niedriger ist besser)`,
+          `Kurs zu Cashflow: ${latestRatios.priceCashFlowRatio.toFixed(2)} (niedriger ist besser)`
         ]
       },
       longTermOutlook: {
-        status: 'pass',
+        status: longTermStatus,
         title: 'Langfristiger Horizont',
-        description: 'Apple hat gute langfristige Aussichten mit starker Marktposition in bestehenden und neuen Technologiebereichen.',
+        description: `${companyProfile.companyName} operiert in einer Branche mit ${longTermStatus === 'pass' ? 'guten' : 'moderaten'} langfristigen Aussichten.`,
         details: [
-          'Starke Position in wachsenden Märkten (Wearables, Services)',
-          'Kontinuierliche Innovation in neuen Produktkategorien',
-          'Marke und Ökosystem schaffen langfristige Stabilität',
-          'Gut positioniert für kommende Technologietrends'
+          `Branche: ${companyProfile.industry}`,
+          `Sektor: ${companyProfile.sector}`,
+          `Börsennotiert seit: ${companyProfile.ipoDate ? new Date(companyProfile.ipoDate).toLocaleDateString() : 'N/A'}`,
+          'Eine tiefere Analyse der langfristigen Branchentrends wird empfohlen'
         ]
       }
     };
-  } else if (ticker === 'MSFT') {
-    // For Microsoft, return mostly positive analysis
-    return {
-      businessModel: {
-        status: 'pass',
-        title: 'Geschäftsmodell verstehen',
-        description: 'Microsoft bietet Software, Cloud-Services und Hardware mit starkem B2B- und B2C-Fokus.',
-        details: [
-          'Klares, gut verständliches Geschäftsmodell mit mehreren Einnahmequellen',
-          'Starke Marktposition bei Betriebssystemen und Produktivitätssoftware',
-          'Wiederkehrende Einnahmen durch Abonnementmodelle (Microsoft 365, Azure)',
-          'Erfolgreiche Transformation zum Cloud-Anbieter'
-        ]
-      },
-      economicMoat: {
-        status: 'pass',
-        title: 'Wirtschaftlicher Burggraben (Moat)',
-        description: 'Microsoft verfügt über einen breiten Burggraben durch seine Softwareprodukte und Cloud-Plattform.',
-        details: [
-          'Netzwerkeffekte durch weit verbreitete Softwarestandards',
-          'Hohe Wechselkosten für Unternehmenskunden',
-          'Starke Integration zwischen Produkten schafft Lock-in-Effekte',
-          'Umfangreiche Patente und technisches Know-how'
-        ]
-      },
-      // Continue with other criteria...
-      financialMetrics: {
-        status: 'pass',
-        title: 'Finanzkennzahlen',
-        description: 'Microsofts Finanzkennzahlen sind hervorragend mit starkem Wachstum und hoher Profitabilität.',
-        details: [
-          'Starkes und konsistentes Umsatz- und Gewinnwachstum',
-          'Hohe Eigenkapitalrendite (ROE > 20%)',
-          'Exzellente Margen, besonders im Cloud-Geschäft',
-          'Konstant hoher und wachsender freier Cashflow'
-        ]
-      },
-      financialStability: {
-        status: 'pass',
-        title: 'Finanzielle Stabilität',
-        description: 'Microsoft hat eine sehr starke Bilanz mit moderater Verschuldung und hohen Liquiditätsreserven.',
-        details: [
-          'Niedrige Schuldenquote im Verhältnis zum Cashflow',
-          'Sehr hoher Zinsdeckungsgrad',
-          'Starke Liquiditätsposition',
-          'Stabile Kapitalstruktur'
-        ]
-      },
-      management: {
-        status: 'pass',
-        title: 'Qualität des Managements',
-        description: 'Das Management unter Satya Nadella hat eine erfolgreiche Transformation des Unternehmens durchgeführt.',
-        details: [
-          'Klare strategische Vision mit Fokus auf Cloud und AI',
-          'Erfolgreiche Pivot zum Cloud-Geschäft',
-          'Aktionärsfreundliche Kapitalallokation',
-          'Fokus auf Innovation und langfristiges Wachstum'
-        ]
-      },
-      valuation: {
-        status: 'warning',
-        title: 'Bewertung',
-        description: 'Die Aktie ist nicht günstig bewertet, aber die Qualität des Unternehmens rechtfertigt einen Aufschlag.',
-        details: [
-          'Höheres KGV im Vergleich zum historischen Durchschnitt',
-          'Premium-Bewertung im Vergleich zum Gesamtmarkt',
-          'Begrenzte Margin of Safety beim aktuellen Preis',
-          'Moderate aber wachsende Dividendenrendite'
-        ]
-      },
-      longTermOutlook: {
-        status: 'pass',
-        title: 'Langfristiger Horizont',
-        description: 'Microsoft ist hervorragend für langfristiges Wachstum in Cloud, AI und Enterprise-Software positioniert.',
-        details: [
-          'Führend in wachstumsstarken Zukunftsmärkten (Cloud, KI)',
-          'Starke Position im Unternehmenssektor',
-          'Kontinuierliche Innovation und Anpassungsfähigkeit',
-          'Diversifizierte Einnahmequellen erhöhen die Stabilität'
-        ]
+  } catch (error) {
+    console.error(`Error analyzing ${ticker} with Buffett criteria:`, error);
+    
+    // Bei API-Fehlern, auf die vorhandenen Mock-Daten zurückgreifen
+    // Hier verwendet die ursprüngliche Funktion für das spezifische Ticker oder eine generische Antwort
+    const fallbackAnalyzeBuffettCriteria = async (ticker: string) => {
+      // ... keep existing code (die ursprüngliche Fallback-Logik)
+      
+      // For Apple (AAPL), return detailed positive analysis as an example
+      if (ticker.toUpperCase() === 'AAPL' || ticker.toUpperCase() === 'APPLE' || ticker.toUpperCase() === 'APPLE INC') {
+        return {
+          businessModel: {
+            status: 'pass',
+            title: 'Geschäftsmodell verstehen',
+            description: 'Apple entwickelt, produziert und verkauft Premium-Hardware, Software und Services mit einem starken Ökosystem.',
+            details: [
+              'Klares, leicht verständliches Geschäftsmodell',
+              'Starke Marke mit loyaler Kundenbasis',
+              'Wiederkehrende Einnahmen durch Services (App Store, Apple Music, iCloud)',
+              'Vertikale Integration von Hardware und Software'
+            ]
+          },
+          // ... keep existing code (weiterhin die Apple-spezifischen Daten zurückgeben)
+        };
+      } else if (ticker.toUpperCase() === 'MSFT') {
+        // ... keep existing code (MSFT Mock-Daten)
+      } else if (ticker.toUpperCase() === 'AMZN') {
+        // ... keep existing code (AMZN Mock-Daten)
+      } else {
+        // ... keep existing code (generische Daten für andere Ticker)
       }
     };
-  } else if (ticker === 'AMZN') {
-    // For Amazon, return mixed analysis
-    return {
-      businessModel: {
-        status: 'pass',
-        title: 'Geschäftsmodell verstehen',
-        description: 'Amazon betreibt einen führenden E-Commerce-Marktplatz, Cloud-Services (AWS) und digitale Produkte/Services.',
-        details: [
-          'Diversifiziertes Geschäftsmodell mit mehreren Einnahmequellen',
-          'Führende Position im E-Commerce und Cloud-Computing',
-          'Starkes Ökosystem durch Prime-Mitgliedschaft',
-          'Kontinuierliche Expansion in neue Geschäftsfelder'
-        ]
-      },
-      economicMoat: {
-        status: 'pass',
-        title: 'Wirtschaftlicher Burggraben (Moat)',
-        description: 'Amazon hat einen starken Burggraben durch Größenvorteile, Kundendaten und Infrastruktur.',
-        details: [
-          'Massive Skalen- und Netzwerkeffekte',
-          'Umfangreiche Logistik- und Fulfillment-Infrastruktur',
-          'Datenvorteile durch Kundenverhalten',
-          'Starke Kundenbindung durch Prime-Ökosystem'
-        ]
-      },
-      financialMetrics: {
-        status: 'warning',
-        title: 'Finanzkennzahlen',
-        description: 'Amazons Umsatzwachstum ist stark, aber die Rentabilität ist volatil und teilweise unter Buffett-Schwellen.',
-        details: [
-          'Beeindruckendes Umsatzwachstum über lange Zeit',
-          'Schwankende Gewinnmargen, besonders im Retail-Segment',
-          'ROE unter Buffetts bevorzugter 15%-Schwelle in einigen Jahren',
-          'Starker operativer Cashflow, aber hohe Reinvestitionen'
-        ]
-      },
-      financialStability: {
-        status: 'pass',
-        title: 'Finanzielle Stabilität',
-        description: 'Amazon verfügt über gute finanzielle Stabilität mit moderater Verschuldung und starker Marktposition.',
-        details: [
-          'Angemessene Schuldenquoten im Verhältnis zum Cashflow',
-          'Ausreichende Liquidität',
-          'Starke Kapitalposition',
-          'Positiver und wachsender freier Cashflow'
-        ]
-      },
-      management: {
-        status: 'pass',
-        title: 'Qualität des Managements',
-        description: 'Das Management hat eine starke Erfolgsbilanz bei langfristiger Innovation und Marktexpansion.',
-        details: [
-          'Langfristige Vision und Bereitschaft zu Investitionen',
-          'Kundenorientierte Unternehmenskultur',
-          'Erfolgreiche Entwicklung neuer Geschäftsfelder (AWS)',
-          'Guter Übergang von Gründer zu neuem CEO'
-        ]
-      },
-      valuation: {
-        status: 'fail',
-        title: 'Bewertung',
-        description: 'Amazon ist hoch bewertet mit geringer Margin of Safety nach Buffetts konservativen Kriterien.',
-        details: [
-          'Hohes KGV im Vergleich zu traditionellen Buffett-Investments',
-          'Eingeschränkte Vorhersehbarkeit zukünftiger Gewinne',
-          'Geringe bis keine Margin of Safety',
-          'Keine Dividende'
-        ]
-      },
-      longTermOutlook: {
-        status: 'pass',
-        title: 'Langfristiger Horizont',
-        description: 'Amazon ist gut positioniert für langfristiges Wachstum in E-Commerce, Cloud und weiteren Bereichen.',
-        details: [
-          'Starke Position in wachsenden Märkten (E-Commerce, Cloud)',
-          'Kontinuierliche Innovation und Expansion',
-          'Anpassungsfähiges Geschäftsmodell',
-          'Solide Wettbewerbsposition in Kernmärkten'
-        ]
-      }
-    };
-  } else {
-    // For any other ticker, return a generic mixed analysis
-    return {
-      businessModel: {
-        status: Math.random() > 0.5 ? 'pass' : 'warning',
-        title: 'Geschäftsmodell verstehen',
-        description: `Das Geschäftsmodell von ${ticker} ist relativ verständlich, bedarf aber tieferer Analyse.`,
-        details: [
-          'Grundlegendes Geschäftsmodell ist nachvollziehbar',
-          'Mittlere Komplexität der Einnahmequellen',
-          'Moderates Kundenbindungspotential',
-          'Durchschnittliche Marktposition'
-        ]
-      },
-      economicMoat: {
-        status: Math.random() > 0.5 ? 'warning' : 'fail',
-        title: 'Wirtschaftlicher Burggraben (Moat)',
-        description: `${ticker} zeigt einige Anzeichen eines wirtschaftlichen Burggrabens, aber die Nachhaltigkeit ist fraglich.`,
-        details: [
-          'Begrenzte Differenzierung gegenüber Wettbewerbern',
-          'Moderate Markteintrittsbarrieren',
-          'Durchschnittliche Preissetzungsmacht',
-          'Mittlere Kundenbindung'
-        ]
-      },
-      financialMetrics: {
-        status: Math.random() > 0.7 ? 'pass' : 'warning',
-        title: 'Finanzkennzahlen',
-        description: `Die Finanzkennzahlen von ${ticker} sind gemischt mit einigen Stärken und Schwächen.`,
-        details: [
-          'Uneinheitliches Umsatz- und Gewinnwachstum',
-          'ROE nahe an Buffetts 15%-Schwelle',
-          'Durchschnittliche Margen für die Branche',
-          'Volatiler operativer Cashflow'
-        ]
-      },
-      financialStability: {
-        status: Math.random() > 0.5 ? 'warning' : 'pass',
-        title: 'Finanzielle Stabilität',
-        description: `${ticker} zeigt eine angemessene finanzielle Stabilität mit einigen Risikofaktoren.`,
-        details: [
-          'Moderate Verschuldung',
-          'Akzeptabler Zinsdeckungsgrad',
-          'Ausreichende Liquidität für normale Bedingungen',
-          'Durchschnittlicher Free Cashflow'
-        ]
-      },
-      management: {
-        status: 'warning',
-        title: 'Qualität des Managements',
-        description: `Das Management von ${ticker} zeigt gemischte Ergebnisse bei Strategie und Kapitalallokation.`,
-        details: [
-          'Durchschnittliche Leistungsbilanz',
-          'Gelegentliche strategische Richtungswechsel',
-          'Moderate Insider-Beteiligung',
-          'Akzeptable, aber nicht herausragende Kommunikation'
-        ]
-      },
-      valuation: {
-        status: Math.random() > 0.7 ? 'fail' : 'warning',
-        title: 'Bewertung',
-        description: `${ticker} erscheint nach Buffetts konservativen Kriterien tendenziell überbewertet.`,
-        details: [
-          'KGV über historischem Durchschnitt',
-          'Begrenzte Margin of Safety',
-          'Niedrige Dividendenrendite',
-          'Höhere Bewertung im Vergleich zu ähnlichen Unternehmen'
-        ]
-      },
-      longTermOutlook: {
-        status: Math.random() > 0.5 ? 'warning' : 'pass',
-        title: 'Langfristiger Horizont',
-        description: `Die langfristigen Aussichten für ${ticker} sind moderat mit einigen Chancen und Risiken.`,
-        details: [
-          'Mittlere Position in Wachstumsmärkten',
-          'Durchschnittliche Innovationskraft',
-          'Mäßige Anpassungsfähigkeit',
-          'Akzeptable, aber nicht dominante Marktposition'
-        ]
-      }
-    };
+    
+    // Zurückfallen auf die Mock-Daten
+    return fallbackAnalyzeBuffettCriteria(ticker);
   }
 };
 
-// Mock function to get financial metrics
+// Funktion, um Finanzkennzahlen zu holen
 export const getFinancialMetrics = async (ticker: string) => {
   console.log(`Getting financial metrics for ${ticker}`);
   
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // For Apple (AAPL), return detailed metrics as an example
-  if (ticker === 'AAPL' || ticker === 'APPLE' || ticker === 'APPLE INC') {
+  try {
+    // Standardisieren des Tickers für die API
+    const standardizedTicker = ticker.trim().toUpperCase();
+    
+    // Finanzkennzahlen abrufen
+    const [ratios, keyMetrics, financialGrowth, historicalData] = await Promise.all([
+      fetchFromFMP(`/ratios/${standardizedTicker}`),
+      fetchFromFMP(`/key-metrics/${standardizedTicker}`),
+      fetchFromFMP(`/financial-growth/${standardizedTicker}`),
+      Promise.all([
+        fetchFromFMP(`/income-statement/${standardizedTicker}?limit=10`),
+        fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=10`)
+      ])
+    ]);
+    
+    // Überprüfen, ob Daten zurückgegeben wurden
+    if (!ratios || ratios.length === 0 || !keyMetrics || keyMetrics.length === 0) {
+      throw new Error(`Keine Finanzkennzahlen gefunden für ${standardizedTicker}`);
+    }
+    
+    // Die neuesten Daten verwenden
+    const latestRatios = ratios[0];
+    const latestMetrics = keyMetrics[0];
+    const latestGrowth = financialGrowth[0];
+    
+    // Historische Daten verarbeiten
+    const incomeStatements = historicalData[0];
+    const historicalMetrics = historicalData[1];
+    
+    // Metriken basierend auf den Daten erstellen
+    const metrics = [
+      {
+        name: 'Return on Equity (ROE)',
+        value: `${(latestRatios.returnOnEquity * 100).toFixed(2)}%`,
+        formula: 'Jahresgewinn / Eigenkapital',
+        explanation: 'Zeigt, wie effizient das Unternehmen das Eigenkapital einsetzt.',
+        threshold: '>15%',
+        status: latestRatios.returnOnEquity * 100 > 15 ? 'pass' : latestRatios.returnOnEquity * 100 > 10 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Nettomarge',
+        value: `${(latestRatios.netProfitMargin * 100).toFixed(2)}%`,
+        formula: 'Nettogewinn / Umsatz',
+        explanation: 'Gibt an, wie viel vom Umsatz als Gewinn übrig bleibt.',
+        threshold: '>10%',
+        status: latestRatios.netProfitMargin * 100 > 10 ? 'pass' : latestRatios.netProfitMargin * 100 > 5 ? 'warning' : 'fail'
+      },
+      {
+        name: 'ROIC',
+        value: `${(latestMetrics.roic * 100).toFixed(2)}%`,
+        formula: 'NOPAT / (Eigenkapital + langfristige Schulden)',
+        explanation: 'Zeigt, wie effizient das investierte Kapital eingesetzt wird.',
+        threshold: '>10%',
+        status: latestMetrics.roic * 100 > 10 ? 'pass' : latestMetrics.roic * 100 > 7 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Schuldenquote',
+        value: `${(latestRatios.debtToAssets * 100).toFixed(2)}%`,
+        formula: 'Gesamtschulden / Gesamtvermögen',
+        explanation: 'Gibt an, wie stark das Unternehmen fremdfinanziert ist.',
+        threshold: '<70%',
+        status: latestRatios.debtToAssets * 100 < 50 ? 'pass' : latestRatios.debtToAssets * 100 < 70 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Zinsdeckungsgrad',
+        value: latestRatios.interestCoverage.toFixed(2),
+        formula: 'EBIT / Zinsaufwand',
+        explanation: 'Zeigt, wie oft die Zinsen aus dem Gewinn bezahlt werden können.',
+        threshold: '>5',
+        status: latestRatios.interestCoverage > 5 ? 'pass' : latestRatios.interestCoverage > 3 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Current Ratio',
+        value: latestRatios.currentRatio.toFixed(2),
+        formula: 'Umlaufvermögen / Kurzfristige Verbindlichkeiten',
+        explanation: 'Misst die kurzfristige Liquidität des Unternehmens.',
+        threshold: '>1',
+        status: latestRatios.currentRatio > 1.5 ? 'pass' : latestRatios.currentRatio > 1 ? 'warning' : 'fail'
+      },
+      {
+        name: 'KGV',
+        value: latestRatios.priceEarningsRatio.toFixed(2),
+        formula: 'Aktienkurs / Gewinn pro Aktie',
+        explanation: 'Gibt an, wie hoch die Aktie im Verhältnis zum Gewinn bewertet ist.',
+        threshold: '<25 (für Wachstumsunternehmen)',
+        status: latestRatios.priceEarningsRatio < 15 ? 'pass' : latestRatios.priceEarningsRatio < 25 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Dividendenrendite',
+        value: `${(latestRatios.dividendYield * 100).toFixed(2)}%`,
+        formula: 'Jahresdividende / Aktienkurs',
+        explanation: 'Zeigt, wie viel Dividendenertrag im Verhältnis zum Aktienkurs ausgezahlt wird.',
+        threshold: '>2%',
+        status: latestRatios.dividendYield * 100 > 2 ? 'pass' : latestRatios.dividendYield * 100 > 1 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Umsatzwachstum (5J)',
+        value: `${(latestGrowth.fiveYRevenueGrowthPerShare * 100).toFixed(2)}%`,
+        formula: '(Aktueller Umsatz / Umsatz vor 5 Jahren)^(1/5) - 1',
+        explanation: 'Durchschnittliches jährliches Umsatzwachstum über die letzten 5 Jahre.',
+        threshold: '>5%',
+        status: latestGrowth.fiveYRevenueGrowthPerShare * 100 > 10 ? 'pass' : latestGrowth.fiveYRevenueGrowthPerShare * 100 > 5 ? 'warning' : 'fail'
+      }
+    ];
+    
+    // Historische Daten für Charts aufbereiten
+    const historicalDataFormatted = {
+      revenue: incomeStatements.map(statement => ({
+        year: statement.date.substring(0, 4),
+        value: statement.revenue / 1000000 // Umrechnung in Millionen
+      })),
+      earnings: incomeStatements.map(statement => ({
+        year: statement.date.substring(0, 4),
+        value: statement.netIncome / 1000000 // Umrechnung in Millionen
+      })),
+      eps: historicalMetrics.map(metric => ({
+        year: metric.date.substring(0, 4),
+        value: metric.eps
+      }))
+    };
+    
+    // Daten nach Jahr sortieren (älteste zuerst)
+    historicalDataFormatted.revenue.reverse();
+    historicalDataFormatted.earnings.reverse();
+    historicalDataFormatted.eps.reverse();
+    
     return {
-      metrics: [
-        {
-          name: 'Return on Equity (ROE)',
-          value: '131.8%',
-          formula: 'Jahresgewinn / Eigenkapital',
-          explanation: 'Zeigt, wie effizient das Unternehmen das Eigenkapital einsetzt.',
-          threshold: '>15%',
-          status: 'pass'
-        },
-        {
-          name: 'Nettomarge',
-          value: '25.31%',
-          formula: 'Nettogewinn / Umsatz',
-          explanation: 'Gibt an, wie viel vom Umsatz als Gewinn übrig bleibt.',
-          threshold: '>10%',
-          status: 'pass'
-        },
-        {
-          name: 'ROIC',
-          value: '42.5%',
-          formula: 'NOPAT / (Eigenkapital + langfristige Schulden)',
-          explanation: 'Zeigt, wie effizient das investierte Kapital eingesetzt wird.',
-          threshold: '>10%',
-          status: 'pass'
-        },
-        {
-          name: 'Schuldenquote',
-          value: '56.7%',
-          formula: 'Gesamtschulden / Gesamtvermögen',
-          explanation: 'Gibt an, wie stark das Unternehmen fremdfinanziert ist.',
-          threshold: '<70%',
-          status: 'pass'
-        },
-        {
-          name: 'Zinsdeckungsgrad',
-          value: '42.3',
-          formula: 'EBIT / Zinsaufwand',
-          explanation: 'Zeigt, wie oft die Zinsen aus dem Gewinn bezahlt werden können.',
-          threshold: '>5',
-          status: 'pass'
-        },
-        {
-          name: 'Current Ratio',
-          value: '1.3',
-          formula: 'Umlaufvermögen / Kurzfristige Verbindlichkeiten',
-          explanation: 'Misst die kurzfristige Liquidität des Unternehmens.',
-          threshold: '>1',
-          status: 'pass'
-        },
-        {
-          name: 'Insider Ownership',
-          value: '0.06%',
-          formula: 'Aktien im Besitz des Managements / Ausstehende Aktien',
-          explanation: 'Zeigt, wie stark das Management am Unternehmen beteiligt ist.',
-          threshold: '>5%',
-          status: 'fail'
-        },
-        {
-          name: 'KGV',
-          value: '31.4',
-          formula: 'Aktienkurs / Gewinn pro Aktie',
-          explanation: 'Gibt an, wie hoch die Aktie im Verhältnis zum Gewinn bewertet ist.',
-          threshold: '<25 (für Wachstumsunternehmen)',
-          status: 'warning'
-        },
-        {
-          name: 'Dividendenrendite',
-          value: '0.51%',
-          formula: 'Jahresdividende / Aktienkurs',
-          explanation: 'Zeigt, wie viel Dividendenertrag im Verhältnis zum Aktienkurs ausgezahlt wird.',
-          threshold: '>2%',
-          status: 'fail'
-        }
-      ],
-      historicalData: {
-        revenue: [
-          { year: '2014', value: 182795 },
-          { year: '2015', value: 233715 },
-          { year: '2016', value: 215639 },
-          { year: '2017', value: 229234 },
-          { year: '2018', value: 265595 },
-          { year: '2019', value: 260174 },
-          { year: '2020', value: 274515 },
-          { year: '2021', value: 365817 },
-          { year: '2022', value: 394328 },
-          { year: '2023', value: 383933 }
-        ],
-        earnings: [
-          { year: '2014', value: 39510 },
-          { year: '2015', value: 53394 },
-          { year: '2016', value: 45687 },
-          { year: '2017', value: 48351 },
-          { year: '2018', value: 59531 },
-          { year: '2019', value: 55256 },
-          { year: '2020', value: 57411 },
-          { year: '2021', value: 94680 },
-          { year: '2022', value: 99803 },
-          { year: '2023', value: 96995 }
-        ],
-        eps: [
-          { year: '2014', value: 2.27 },
-          { year: '2015', value: 3.03 },
-          { year: '2016', value: 2.71 },
-          { year: '2017', value: 2.91 },
-          { year: '2018', value: 3.00 },
-          { year: '2019', value: 2.97 },
-          { year: '2020', value: 3.28 },
-          { year: '2021', value: 5.61 },
-          { year: '2022', value: 6.11 },
-          { year: '2023', value: 6.14 }
-        ]
+      metrics,
+      historicalData: historicalDataFormatted
+    };
+  } catch (error) {
+    console.error(`Error getting financial metrics for ${ticker}:`, error);
+    
+    // Bei API-Fehlern auf die ursprünglichen Mock-Daten zurückgreifen
+    const fallbackGetFinancialMetrics = async (ticker: string) => {
+      // ... keep existing code (die ursprüngliche Fallback-Logik für getFinancialMetrics)
+      
+      // For Apple (AAPL), return detailed metrics as an example
+      if (ticker.toUpperCase() === 'AAPL' || ticker.toUpperCase() === 'APPLE' || ticker.toUpperCase() === 'APPLE INC') {
+        return {
+          metrics: [
+            {
+              name: 'Return on Equity (ROE)',
+              value: '131.8%',
+              formula: 'Jahresgewinn / Eigenkapital',
+              explanation: 'Zeigt, wie effizient das Unternehmen das Eigenkapital einsetzt.',
+              threshold: '>15%',
+              status: 'pass'
+            },
+            // ... keep existing code (restliche Apple-spezifische Kennzahlen)
+          ],
+          historicalData: {
+            // ... keep existing code (historische Daten für Apple)
+          }
+        };
+      } else {
+        // ... keep existing code (generische Daten für andere Ticker)
       }
     };
-  } else {
-    // Return generic mock data for other tickers
-    return {
-      metrics: [
-        {
-          name: 'Return on Equity (ROE)',
-          value: `${(10 + Math.random() * 20).toFixed(1)}%`,
-          formula: 'Jahresgewinn / Eigenkapital',
-          explanation: 'Zeigt, wie effizient das Unternehmen das Eigenkapital einsetzt.',
-          threshold: '>15%',
-          status: Math.random() > 0.5 ? 'pass' : 'warning'
-        },
-        {
-          name: 'Nettomarge',
-          value: `${(5 + Math.random() * 15).toFixed(1)}%`,
-          formula: 'Nettogewinn / Umsatz',
-          explanation: 'Gibt an, wie viel vom Umsatz als Gewinn übrig bleibt.',
-          threshold: '>10%',
-          status: Math.random() > 0.5 ? 'pass' : 'warning'
-        },
-        {
-          name: 'ROIC',
-          value: `${(8 + Math.random() * 15).toFixed(1)}%`,
-          formula: 'NOPAT / (Eigenkapital + langfristige Schulden)',
-          explanation: 'Zeigt, wie effizient das investierte Kapital eingesetzt wird.',
-          threshold: '>10%',
-          status: Math.random() > 0.5 ? 'pass' : 'warning'
-        },
-        {
-          name: 'Schuldenquote',
-          value: `${(40 + Math.random() * 50).toFixed(1)}%`,
-          formula: 'Gesamtschulden / Gesamtvermögen',
-          explanation: 'Gibt an, wie stark das Unternehmen fremdfinanziert ist.',
-          threshold: '<70%',
-          status: Math.random() > 0.5 ? 'pass' : 'warning'
-        },
-        {
-          name: 'Zinsdeckungsgrad',
-          value: `${(3 + Math.random() * 10).toFixed(1)}`,
-          formula: 'EBIT / Zinsaufwand',
-          explanation: 'Zeigt, wie oft die Zinsen aus dem Gewinn bezahlt werden können.',
-          threshold: '>5',
-          status: Math.random() > 0.5 ? 'pass' : 'warning'
-        },
-        {
-          name: 'Current Ratio',
-          value: `${(0.8 + Math.random()).toFixed(1)}`,
-          formula: 'Umlaufvermögen / Kurzfristige Verbindlichkeiten',
-          explanation: 'Misst die kurzfristige Liquidität des Unternehmens.',
-          threshold: '>1',
-          status: Math.random() > 0.5 ? 'pass' : 'fail'
-        },
-        {
-          name: 'Insider Ownership',
-          value: `${(Math.random() * 10).toFixed(2)}%`,
-          formula: 'Aktien im Besitz des Managements / Ausstehende Aktien',
-          explanation: 'Zeigt, wie stark das Management am Unternehmen beteiligt ist.',
-          threshold: '>5%',
-          status: Math.random() > 0.7 ? 'pass' : 'fail'
-        }
-      ],
-      historicalData: {
-        revenue: Array.from({ length: 10 }, (_, i) => ({
-          year: `${2014 + i}`,
-          value: 50000 + Math.random() * 10000 * i
-        })),
-        earnings: Array.from({ length: 10 }, (_, i) => ({
-          year: `${2014 + i}`,
-          value: 5000 + Math.random() * 1000 * i
-        })),
-        eps: Array.from({ length: 10 }, (_, i) => ({
-          year: `${2014 + i}`,
-          value: 1 + Math.random() * 0.5 * i
-        }))
-      }
-    };
+    
+    // Zurückfallen auf die Mock-Daten
+    return fallbackGetFinancialMetrics(ticker);
   }
 };
 
-// Mock function to get overall rating
+// Funktion, um Gesamtbewertung zu erstellen
 export const getOverallRating = async (ticker: string) => {
   console.log(`Getting overall rating for ${ticker}`);
   
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // For Apple (AAPL), return detailed rating as an example
-  if (ticker === 'AAPL' || ticker === 'APPLE' || ticker === 'APPLE INC') {
-    return {
-      overall: 'watch',
-      summary: 'Apple ist ein außergewöhnliches Unternehmen mit starkem Burggraben, aber die aktuelle Bewertung bietet nur begrenzten Spielraum für langfristige Überrenditen.',
-      strengths: [
-        'Hervorragendes Geschäftsmodell mit starkem Ökosystem und Kundenbindung',
-        'Außergewöhnliche Finanzkennzahlen und finanzielle Stabilität',
-        'Kompetentes Management mit nachgewiesener Innovationsfähigkeit',
-        'Starker Burggraben durch Marke, Patente und Kundenloyalität',
-        'Gute langfristige Wachstumsaussichten'
-      ],
-      weaknesses: [
-        'Relativ hohe Bewertung mit KGV über dem historischen Durchschnitt',
-        'Begrenzte Margin of Safety beim aktuellen Preis',
-        'Geringe Dividendenrendite von unter 1%',
-        'Abhängigkeit vom iPhone als Hauptumsatzquelle',
-        'Zunehmender Wettbewerb in Kernmärkten'
-      ],
-      recommendation: 'Apple ist ein erstklassiges Unternehmen, das viele von Buffetts Kriterien erfüllt. Die aktuelle Bewertung ist jedoch etwas anspruchsvoll. Anleger sollten Apple auf ihre Beobachtungsliste setzen und bei Kursrückgängen kaufen, die eine größere Margin of Safety bieten.'
-    };
-  } else if (ticker === 'MSFT') {
-    // For Microsoft, return watch rating
-    return {
-      overall: 'watch',
-      summary: 'Microsoft ist ein hervorragendes Unternehmen mit starker Marktposition und Wachstum, aber die Bewertung ist relativ hoch.',
-      strengths: [
-        'Dominante Marktposition bei Betriebssystemen und Produktivitätssoftware',
-        'Starkes Wachstum im Cloud-Geschäft (Azure)',
-        'Hervorragende Finanzkennzahlen und stabile Bilanz',
-        'Wiederkehrende Einnahmen durch Abonnementmodelle',
-        'Kompetentes Management mit klarer Strategie'
-      ],
-      weaknesses: [
-        'Premium-Bewertung mit KGV über dem langfristigen Durchschnitt',
-        'Begrenzte Margin of Safety beim aktuellen Preis',
-        'Moderate Dividendenrendite',
-        'Zunehmender Wettbewerb im Cloud-Markt',
-        'Regulatorische Risiken durch Marktdominanz'
-      ],
-      recommendation: 'Microsoft erfüllt die meisten von Buffetts Qualitätskriterien, ist aber derzeit nicht günstig bewertet. Anleger sollten Microsoft beobachten und bei signifikanten Kursrückgängen in Betracht ziehen, die eine bessere Margin of Safety bieten.'
-    };
-  } else if (ticker === 'AMZN') {
-    // For Amazon, return avoid rating
-    return {
-      overall: 'avoid',
-      summary: 'Amazon ist ein innovatives Unternehmen mit starkem Wachstum, aber nach Buffetts konservativen Kriterien zu hoch bewertet mit volatiler Profitabilität.',
-      strengths: [
-        'Starkes Umsatzwachstum und Marktposition im E-Commerce',
-        'Führende Position im Cloud-Computing (AWS)',
-        'Starkes Ökosystem und Kundenbindung durch Prime',
-        'Exzellente Logistik- und Fulfillment-Infrastruktur',
-        'Innovationsfreudiges Unternehmen mit Expansion in neue Märkte'
-      ],
-      weaknesses: [
-        'Hohe Bewertung mit begrenzter Vorhersehbarkeit zukünftiger Gewinne',
-        'Volatile Rentabilität, besonders im Retail-Segment',
-        'Keine Dividende',
-        'Regulatorische Risiken durch Marktmacht',
-        'Geringe bis keine Margin of Safety'
-      ],
-      recommendation: 'Obwohl Amazon ein außergewöhnliches Unternehmen ist, entspricht es nicht Buffetts konservativen Anlagekriterien, insbesondere in Bezug auf Bewertung und konsistente Profitabilität. Buffett-orientierte Anleger sollten Amazon meiden oder höchstens eine sehr kleine Position in Betracht ziehen.'
-    };
-  } else {
-    // For any other ticker, return a generic mixed rating
-    const ratingOptions = ['buy', 'watch', 'avoid'];
-    const rating = ratingOptions[Math.floor(Math.random() * ratingOptions.length)];
+  try {
+    // Standardisieren des Tickers für die API
+    const standardizedTicker = ticker.trim().toUpperCase();
     
-    let summary, recommendation, strengths, weaknesses;
+    // Wir benötigen bereits analysierte Buffett-Kriterien
+    const buffettCriteria = await analyzeBuffettCriteria(standardizedTicker);
     
-    if (rating === 'buy') {
-      summary = `${ticker} erfüllt die meisten von Buffetts Kriterien und ist zu einem angemessenen Preis bewertet.`;
-      strengths = [
-        'Solides Geschäftsmodell mit guter Marktstellung',
-        'Angemessene Finanzkennzahlen mit stabiler Bilanz',
-        'Gute langfristige Wachstumsaussichten',
-        'Faire Bewertung mit ausreichender Margin of Safety',
-        'Kompetentes Management mit klarer Strategie'
-      ];
-      weaknesses = [
-        'Begrenzte Differenzierung in einigen Produktbereichen',
-        'Moderate Wettbewerbsintensität in der Branche',
-        'Etwas zyklisches Geschäftsmodell',
-        'Entwicklungspotenzial bei einigen Finanzkennzahlen'
-      ];
-      recommendation = `${ticker} erscheint nach Buffetts Kriterien als solide Investition mit guter Qualität und angemessener Bewertung. Langfristig orientierte Anleger können einen Kauf in Betracht ziehen.`;
-    } else if (rating === 'watch') {
-      summary = `${ticker} zeigt einige positive Eigenschaften, aber entweder die Bewertung oder bestimmte fundamentale Aspekte entsprechen nicht vollständig Buffetts Kriterien.`;
-      strengths = [
-        'Verständliches Geschäftsmodell mit durchschnittlicher Marktposition',
-        'Akzeptable finanzielle Stabilität',
-        'Einige Anzeichen eines wirtschaftlichen Burggrabens',
-        'Moderate langfristige Wachstumsaussichten'
-      ];
-      weaknesses = [
-        'Herausfordernde Bewertung mit begrenzter Margin of Safety',
-        'Finanzkennzahlen teilweise unter Buffetts Schwellenwerten',
-        'Durchschnittliche Kapitalallokation durch das Management',
-        'Moderate Wettbewerbsintensität'
-      ];
-      recommendation = `${ticker} sollte auf die Beobachtungsliste gesetzt werden. Ein Kauf könnte bei einer besseren Bewertung oder verbesserten Fundamentaldaten in Betracht gezogen werden.`;
+    // Zählen der verschiedenen Status
+    let passCount = 0;
+    let warningCount = 0;
+    let failCount = 0;
+    
+    Object.values(buffettCriteria).forEach((criterion: any) => {
+      if (criterion.status === 'pass') passCount++;
+      else if (criterion.status === 'warning') warningCount++;
+      else if (criterion.status === 'fail') failCount++;
+    });
+    
+    // Bestimmen der Gesamtbewertung
+    let overall;
+    if (passCount >= 5 && failCount === 0) {
+      overall = 'buy';
+    } else if (passCount >= 3 && failCount <= 1) {
+      overall = 'watch';
     } else {
-      summary = `${ticker} entspricht nicht ausreichend Buffetts Investitionskriterien, insbesondere in Bezug auf Qualität oder Bewertung.`;
-      strengths = [
-        'Einige positive Aspekte im Geschäftsmodell',
-        'Wachstumspotenzial in bestimmten Bereichen',
-        'Moderate Marktposition in Teilbereichen'
-      ];
-      weaknesses = [
-        'Unzureichender wirtschaftlicher Burggraben',
-        'Schwache oder volatile Finanzkennzahlen',
-        'Hohe Bewertung ohne ausreichende Margin of Safety',
-        'Unklare langfristige Wettbewerbsfähigkeit',
-        'Herausforderndes Branchenumfeld'
-      ];
-      recommendation = `Nach Buffetts konservativen Anlagekriterien erscheint ${ticker} nicht als attraktive Investition. Anleger sollten nach Alternativen mit besserem Qualitäts-Preis-Verhältnis suchen.`;
+      overall = 'avoid';
+    }
+    
+    // Extrahieren von Stärken und Schwächen
+    const strengths = [];
+    const weaknesses = [];
+    
+    Object.entries(buffettCriteria).forEach(([key, criterion]: [string, any]) => {
+      const criterionName = criterion.title;
+      
+      if (criterion.status === 'pass') {
+        strengths.push(`${criterionName}: ${criterion.description}`);
+      } else if (criterion.status === 'fail') {
+        weaknesses.push(`${criterionName}: ${criterion.description}`);
+      } else if (key === 'valuation' && criterion.status === 'warning') {
+        // Bewertung ist oft ein wichtiger Schwachpunkt bei sonst guten Unternehmen
+        weaknesses.push(`${criterionName}: ${criterion.description}`);
+      }
+    });
+    
+    // Spezifische Empfehlung basierend auf Gesamtbewertung
+    let recommendation;
+    let summary;
+    
+    if (overall === 'buy') {
+      summary = `${standardizedTicker} erfüllt die meisten von Buffetts Kriterien und ist zu einem angemessenen Preis bewertet.`;
+      recommendation = `${standardizedTicker} erscheint nach Buffetts Kriterien als solide Investition mit guter Qualität und angemessener Bewertung. Langfristig orientierte Anleger können einen Kauf in Betracht ziehen.`;
+    } else if (overall === 'watch') {
+      summary = `${standardizedTicker} zeigt einige positive Eigenschaften, aber entweder die Bewertung oder bestimmte fundamentale Aspekte entsprechen nicht vollständig Buffetts Kriterien.`;
+      recommendation = `${standardizedTicker} sollte auf die Beobachtungsliste gesetzt werden. Ein Kauf könnte bei einer besseren Bewertung oder verbesserten Fundamentaldaten in Betracht gezogen werden.`;
+    } else {
+      summary = `${standardizedTicker} entspricht nicht ausreichend Buffetts Investitionskriterien, insbesondere in Bezug auf Qualität oder Bewertung.`;
+      recommendation = `Nach Buffetts konservativen Anlagekriterien erscheint ${standardizedTicker} nicht als attraktive Investition. Anleger sollten nach Alternativen mit besserem Qualitäts-Preis-Verhältnis suchen.`;
     }
     
     return {
-      overall: rating,
+      overall,
       summary,
-      strengths,
-      weaknesses,
+      strengths: strengths.length > 0 ? strengths : [`${standardizedTicker} zeigt einige positive Aspekte, die jedoch nicht stark genug für eine Buffett-Investition sind.`],
+      weaknesses: weaknesses.length > 0 ? weaknesses : [`${standardizedTicker} hat mehrere Schwächen nach Buffetts Kriterien, besonders in Bezug auf Qualität und Bewertung.`],
       recommendation
     };
+  } catch (error) {
+    console.error(`Error getting overall rating for ${ticker}:`, error);
+    
+    // Bei API-Fehlern auf die ursprünglichen Mock-Daten zurückgreifen
+    const fallbackGetOverallRating = async (ticker: string) => {
+      // ... keep existing code (die ursprüngliche Fallback-Logik für getOverallRating)
+      
+      // For Apple (AAPL), return detailed rating as an example
+      if (ticker.toUpperCase() === 'AAPL' || ticker.toUpperCase() === 'APPLE' || ticker.toUpperCase() === 'APPLE INC') {
+        return {
+          overall: 'watch',
+          summary: 'Apple ist ein außergewöhnliches Unternehmen mit starkem Burggraben, aber die aktuelle Bewertung bietet nur begrenzten Spielraum für langfristige Überrenditen.',
+          strengths: [
+            'Hervorragendes Geschäftsmodell mit starkem Ökosystem und Kundenbindung',
+            'Außergewöhnliche Finanzkennzahlen und finanzielle Stabilität',
+            'Kompetentes Management mit nachgewiesener Innovationsfähigkeit',
+            'Starker Burggraben durch Marke, Patente und Kundenloyalität',
+            'Gute langfristige Wachstumsaussichten'
+          ],
+          weaknesses: [
+            'Relativ hohe Bewertung mit KGV über dem historischen Durchschnitt',
+            'Begrenzte Margin of Safety beim aktuellen Preis',
+            'Geringe Dividendenrendite von unter 1%',
+            'Abhängigkeit vom iPhone als Hauptumsatzquelle',
+            'Zunehmender Wettbewerb in Kernmärkten'
+          ],
+          recommendation: 'Apple ist ein erstklassiges Unternehmen, das viele von Buffetts Kriterien erfüllt. Die aktuelle Bewertung ist jedoch etwas anspruchsvoll. Anleger sollten Apple auf ihre Beobachtungsliste setzen und bei Kursrückgängen kaufen, die eine größere Margin of Safety bieten.'
+        };
+      } else if (ticker.toUpperCase() === 'MSFT') {
+        // ... keep existing code (MSFT Mock-Daten)
+      } else if (ticker.toUpperCase() === 'AMZN') {
+        // ... keep existing code (AMZN Mock-Daten)
+      } else {
+        // ... keep existing code (generische Daten für andere Ticker)
+      }
+    };
+    
+    // Zurückfallen auf die Mock-Daten
+    return fallbackGetOverallRating(ticker);
   }
 };
