@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -57,6 +58,7 @@ const Index = () => {
       setOverallRating(null);
       
       const info = await fetchStockInfo(ticker);
+      console.log('Stock Info:', JSON.stringify(info, null, 2));
       setStockInfo(info);
       
       toast({
@@ -69,6 +71,10 @@ const Index = () => {
         getFinancialMetrics(ticker),
         getOverallRating(ticker)
       ]);
+      
+      console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
+      console.log('Financial Metrics:', JSON.stringify(metrics, null, 2));
+      console.log('Overall Rating:', JSON.stringify(rating, null, 2));
       
       setBuffettCriteria(criteria);
       setFinancialMetrics(metrics);
