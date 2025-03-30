@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { 
   analyzeBusinessModel, 
@@ -109,6 +110,10 @@ export const fetchStockInfo = async (ticker: string) => {
     changePercent: quote.changesPercentage,
     currency: profile.currency,
     marketCap: profile.mktCap,
+    description: profile.description || '',  // Hinzufügen von description
+    industry: profile.industry || '',        // Hinzufügen von industry
+    sector: profile.sector || '',            // Hinzufügen von sector
+    ceo: profile.ceo || ''                   // Hinzufügen von CEO
   };
 };
 

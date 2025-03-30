@@ -44,12 +44,13 @@ const Index = () => {
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
     setHasApiKey(!!savedKey || USE_MOCK_DATA);
+    setHasGptApiKey(hasOpenAiApiKey());
     
     // Zeige einen Toast, wenn Mock-Daten verwendet werden
     if (USE_MOCK_DATA) {
       toast({
         title: "Mock-Daten aktiviert",
-        description: "Die Anwendung verwendet Beispieldaten. Die API wird nicht aufgerufen.",
+        description: "Die Anwendung verwendet Beispieldaten für Finanzkennzahlen. GPT-Integration ist aktiv.",
       });
     }
   }, [toast]);
@@ -58,6 +59,7 @@ const Index = () => {
     const handleStorageChange = () => {
       const savedKey = localStorage.getItem('fmp_api_key');
       setHasApiKey(!!savedKey || USE_MOCK_DATA);
+      setHasGptApiKey(hasOpenAiApiKey());
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -88,49 +90,69 @@ const Index = () => {
 
       const updatedCriteria = JSON.parse(JSON.stringify(buffettCriteria));
       
-      const [
-        businessModelAnalysis,
-        economicMoatAnalysis,
-        managementAnalysis,
-        longTermAnalysis,
-        cyclicalAnalysis,
-        oneTimeEffectAnalysis,
-        turnaroundAnalysis,
-        rationalBehaviorAnalysis
-      ] = await Promise.all([
-        analyzeBusinessModel(stockInfo.name, stockInfo.industry || 'Unknown', stockInfo.description || ''),
-        analyzeEconomicMoat(
-          stockInfo.name, 
-          stockInfo.industry || 'Unknown', 
-          financialMetrics?.metrics?.grossMargin || 0, 
-          financialMetrics?.metrics?.operatingMargin || 0, 
-          financialMetrics?.metrics?.roic || 0
-        ),
-        analyzeManagementQuality(stockInfo.name, stockInfo.ceo || ''),
-        analyzeLongTermProspects(stockInfo.name, stockInfo.industry || 'Unknown', stockInfo.sector || 'Unknown'),
-        analyzeCyclicalBehavior(stockInfo.name, stockInfo.industry || 'Unknown'),
-        analyzeOneTimeEffects(stockInfo.name, stockInfo.industry || 'Unknown'),
-        analyzeTurnaround(stockInfo.name, stockInfo.industry || 'Unknown'),
-        analyzeRationalBehavior(stockInfo.name, stockInfo.industry || 'Unknown')
-      ]);
-      
-      updatedCriteria.businessModel.gptAnalysis = businessModelAnalysis;
-      updatedCriteria.economicMoat.gptAnalysis = economicMoatAnalysis;
-      updatedCriteria.management.gptAnalysis = managementAnalysis;
-      updatedCriteria.longTermOutlook.gptAnalysis = longTermAnalysis;
-      updatedCriteria.cyclicalBehavior.gptAnalysis = cyclicalAnalysis;
-      updatedCriteria.oneTimeEffects.gptAnalysis = oneTimeEffectAnalysis;
-      updatedCriteria.turnaround.gptAnalysis = turnaroundAnalysis;
-      updatedCriteria.rationalBehavior.gptAnalysis = rationalBehaviorAnalysis;
-      
-      setBuffettCriteria(updatedCriteria);
-      
-      toast({
-        title: "GPT-Analyse abgeschlossen",
-        description: `Die GPT-Analyse für ${stockInfo.name} wurde erfolgreich durchgeführt.`,
-      });
-      
-      setActiveTab('gpt');
+      try {
+        const [
+          businessModelAnalysis,
+          economicMoatAnalysis,
+          managementAnalysis,
+          longTermAnalysis,
+          cyclicalAnalysis,
+          oneTimeEffectAnalysis,
+          turnaroundAnalysis,
+          rationalBehaviorAnalysis
+        ] = await Promise.all([
+          analyzeBusinessModel(
+            stockInfo.name, 
+            stockInfo.industry || 'Unknown', 
+            stockInfo.description || 'Ein Technologieunternehmen.'
+          ),
+          analyzeEconomicMoat(
+            stockInfo.name, 
+            stockInfo.industry || 'Unknown', 
+            financialMetrics?.metrics?.grossMargin || 40, 
+            financialMetrics?.metrics?.operatingMargin || 25, 
+            financialMetrics?.metrics?.roic || 15
+          ),
+          analyzeManagementQuality(stockInfo.name, stockInfo.ceo || 'Unbekannt'),
+          analyzeLongTermProspects(stockInfo.name, stockInfo.industry || 'Unknown', stockInfo.sector || 'Unknown'),
+          analyzeCyclicalBehavior(stockInfo.name, stockInfo.industry || 'Unknown'),
+          analyzeOneTimeEffects(stockInfo.name, stockInfo.industry || 'Unknown'),
+          analyzeTurnaround(stockInfo.name, stockInfo.industry || 'Unknown'),
+          analyzeRationalBehavior(stockInfo.name, stockInfo.industry || 'Unknown')
+        ]);
+        
+        console.log('GPT Analyses results:', {
+          businessModelAnalysis,
+          economicMoatAnalysis,
+          managementAnalysis,
+          longTermAnalysis,
+          cyclicalAnalysis,
+          oneTimeEffectAnalysis,
+          turnaroundAnalysis,
+          rationalBehaviorAnalysis
+        });
+        
+        updatedCriteria.businessModel.gptAnalysis = businessModelAnalysis;
+        updatedCriteria.economicMoat.gptAnalysis = economicMoatAnalysis;
+        updatedCriteria.management.gptAnalysis = managementAnalysis;
+        updatedCriteria.longTermOutlook.gptAnalysis = longTermAnalysis;
+        updatedCriteria.cyclicalBehavior.gptAnalysis = cyclicalAnalysis;
+        updatedCriteria.oneTimeEffects.gptAnalysis = oneTimeEffectAnalysis;
+        updatedCriteria.turnaround.gptAnalysis = turnaroundAnalysis;
+        updatedCriteria.rationalBehavior.gptAnalysis = rationalBehaviorAnalysis;
+        
+        setBuffettCriteria(updatedCriteria);
+        
+        toast({
+          title: "GPT-Analyse abgeschlossen",
+          description: `Die GPT-Analyse für ${stockInfo.name} wurde erfolgreich durchgeführt.`,
+        });
+        
+        setActiveTab('gpt');
+      } catch (gptError) {
+        console.error('Error in GPT analysis:', gptError);
+        throw new Error(`Fehler bei der GPT-Analyse: ${gptError.message || 'Unbekannter Fehler'}`);
+      }
     } catch (error) {
       console.error('Error running GPT analysis:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler bei der GPT-Analyse';
@@ -182,6 +204,7 @@ const Index = () => {
         description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
       });
       
+      // Automatically run GPT analysis if API key is available
       if (hasGptApiKey) {
         await runGptAnalysis();
       }
@@ -227,10 +250,10 @@ const Index = () => {
       {USE_MOCK_DATA && (
         <Alert className="mb-8 bg-blue-50 border-blue-200">
           <InfoIcon className="h-4 w-4 text-blue-500" />
-          <AlertTitle>Mock-Daten-Modus aktiviert</AlertTitle>
+          <AlertTitle>Mock-Daten-Modus für Finanzkennzahlen aktiviert</AlertTitle>
           <AlertDescription>
             Die Anwendung verwendet Beispieldaten für Apple (AAPL) und Microsoft (MSFT).
-            Es werden keine API-Calls an den Financial Modeling Prep Service gesendet.
+            Die GPT-Integration bleibt aktiv und nutzt die vorhandenen Daten für die erweiterte Analyse.
           </AlertDescription>
         </Alert>
       )}
@@ -256,7 +279,7 @@ const Index = () => {
             <InfoIcon className="h-4 w-4 text-indigo-500" />
             <AlertTitle>GPT-Funktionalität aktivieren</AlertTitle>
             <AlertDescription>
-              Für eine erweiterte Analyse mit GPT-4 benötigen Sie einen OpenAI API-Key.
+              Für eine erweiterte Analyse mit GPT benötigen Sie einen OpenAI API-Key.
               Mit GPT erhalten Sie tiefere Einblicke zu allen 11 Buffett-Kriterien.
             </AlertDescription>
           </Alert>
@@ -297,7 +320,7 @@ const Index = () => {
           <div className="text-center">
             <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-buffett-blue border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status"></div>
             <p className="mt-4 text-lg">
-              {isGptLoading ? 'Führe GPT-Analyse durch...' : 'Analysiere Aktie nach Warren Buffett\'s Kriterien...'}
+              {isGptLoading ? 'Führe GPT-Analyse der 11 Buffett-Kriterien durch...' : 'Analysiere Aktie nach Warren Buffett\'s Kriterien...'}
             </p>
             <p className="text-buffett-subtext mt-2">Dies kann einige Momente dauern</p>
           </div>
@@ -358,7 +381,7 @@ const Index = () => {
         </p>
         <p className="mb-2">
           {USE_MOCK_DATA 
-            ? "Diese Demo-Version verwendet vordefinierte Beispieldaten statt echter API-Aufrufe."
+            ? "Diese Version verwendet vordefinierte Beispieldaten für Finanzkennzahlen, aber nutzt GPT für die qualitative Analyse."
             : "Dieses Tool verwendet die Financial Modeling Prep API zur Datenabfrage in Echtzeit."}
         </p>
         <p>

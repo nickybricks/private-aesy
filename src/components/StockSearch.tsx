@@ -134,7 +134,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       </form>
       
       <div className="mt-4 text-sm text-buffett-subtext flex items-start space-x-2">
-        <InfoIcon className="h-5 w-5 text-gray-400 mt-0.5" />
+        <Info className="h-5 w-5 text-gray-400 mt-0.5" />
         <p>{disabled 
           ? "Bitte konfigurieren Sie zuerst einen API-Key oben, um die Analyse zu starten." 
           : "Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung."}
