@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -6,6 +7,7 @@ import BuffettCriteriaGPT from '@/components/BuffettCriteriaGPT';
 import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
+import OpenAiKeyInput from '@/components/OpenAiKeyInput';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { 
   hasOpenAiApiKey, 
@@ -23,6 +25,9 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+// Konfiguration für Mock-Daten-Modus
+const USE_MOCK_DATA = true; // Sollte mit der Konfiguration in stockApi.ts übereinstimmen
+
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -38,13 +43,21 @@ const Index = () => {
 
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
-    setHasApiKey(!!savedKey);
-  }, []);
+    setHasApiKey(!!savedKey || USE_MOCK_DATA);
+    
+    // Zeige einen Toast, wenn Mock-Daten verwendet werden
+    if (USE_MOCK_DATA) {
+      toast({
+        title: "Mock-Daten aktiviert",
+        description: "Die Anwendung verwendet Beispieldaten. Die API wird nicht aufgerufen.",
+      });
+    }
+  }, [toast]);
 
   useEffect(() => {
     const handleStorageChange = () => {
       const savedKey = localStorage.getItem('fmp_api_key');
-      setHasApiKey(!!savedKey);
+      setHasApiKey(!!savedKey || USE_MOCK_DATA);
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -53,7 +66,7 @@ const Index = () => {
     localStorage.setItem = function(key, value) {
       originalSetItem.apply(this, [key, value]);
       if (key === 'fmp_api_key') {
-        setHasApiKey(!!value);
+        setHasApiKey(!!value || USE_MOCK_DATA);
       }
     };
     
@@ -211,7 +224,18 @@ const Index = () => {
         </p>
       </header>
       
-      {!hasApiKey && (
+      {USE_MOCK_DATA && (
+        <Alert className="mb-8 bg-blue-50 border-blue-200">
+          <InfoIcon className="h-4 w-4 text-blue-500" />
+          <AlertTitle>Mock-Daten-Modus aktiviert</AlertTitle>
+          <AlertDescription>
+            Die Anwendung verwendet Beispieldaten für Apple (AAPL) und Microsoft (MSFT).
+            Es werden keine API-Calls an den Financial Modeling Prep Service gesendet.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {!hasApiKey && !USE_MOCK_DATA && (
         <div className="mb-8 animate-fade-in">
           <Alert className="mb-4">
             <InfoIcon className="h-4 w-4" />
@@ -226,7 +250,22 @@ const Index = () => {
         </div>
       )}
       
-      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
+      {!hasGptApiKey && (
+        <div className="mb-8 animate-fade-in">
+          <Alert className="mb-4 bg-indigo-50 border-indigo-200">
+            <InfoIcon className="h-4 w-4 text-indigo-500" />
+            <AlertTitle>GPT-Funktionalität aktivieren</AlertTitle>
+            <AlertDescription>
+              Für eine erweiterte Analyse mit GPT-4 benötigen Sie einen OpenAI API-Key.
+              Mit GPT erhalten Sie tiefere Einblicke zu allen 11 Buffett-Kriterien.
+            </AlertDescription>
+          </Alert>
+          
+          <OpenAiKeyInput />
+        </div>
+      )}
+      
+      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey && !USE_MOCK_DATA} />
       
       {error && (
         <Alert variant="destructive" className="mb-6">
@@ -318,7 +357,9 @@ const Index = () => {
           Buffett Benchmark Tool - Analysieren Sie Aktien nach Warren Buffetts Investmentprinzipien
         </p>
         <p className="mb-2">
-          Dieses Tool verwendet die Financial Modeling Prep API zur Datenabfrage in Echtzeit.
+          {USE_MOCK_DATA 
+            ? "Diese Demo-Version verwendet vordefinierte Beispieldaten statt echter API-Aufrufe."
+            : "Dieses Tool verwendet die Financial Modeling Prep API zur Datenabfrage in Echtzeit."}
         </p>
         <p>
           Dieses Tool bietet keine Anlageberatung. Alle Analysen dienen nur zu Informationszwecken.

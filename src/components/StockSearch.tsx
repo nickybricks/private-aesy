@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/tooltip";
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
+// Konfiguration für Mock-Daten-Modus
+const USE_MOCK_DATA = true; // Sollte mit der Konfiguration in stockApi.ts übereinstimmen
+
 interface StockSearchProps {
   onSearch: (ticker: string) => void;
   isLoading: boolean;
@@ -44,12 +47,48 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const commonTickers = [
     { symbol: 'AAPL', name: 'Apple' },
     { symbol: 'MSFT', name: 'Microsoft' },
-    { symbol: 'AMZN', name: 'Amazon' },
-    { symbol: 'GOOGL', name: 'Alphabet (Google)' },
-    { symbol: 'META', name: 'Meta (Facebook)' },
-    { symbol: 'TSLA', name: 'Tesla' },
   ];
 
+  if (USE_MOCK_DATA) {
+    // Im Mock-Modus beschränken wir die Auswahl auf die verfügbaren Mock-Daten
+    // und zeigen einen Hinweis an
+    return (
+      <div className="buffett-card mb-8 animate-fade-in">
+        <h2 className="text-2xl font-semibold mb-4">Aktienanalyse nach Warren Buffett</h2>
+        <p className="text-buffett-subtext mb-4">
+          Im Demo-Modus stehen vorbereitete Daten für die folgenden Aktien zur Verfügung:
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {commonTickers.map((stock) => (
+            <div 
+              key={stock.symbol}
+              className="border rounded-lg p-4 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+              onClick={() => onSearch(stock.symbol)}
+            >
+              <div className="font-medium text-lg">{stock.name}</div>
+              <div className="text-buffett-subtext">{stock.symbol}</div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm">
+          <div className="flex items-start">
+            <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5" />
+            <div>
+              <p className="font-medium text-blue-700">Demo-Modus aktiv</p>
+              <p className="mt-1 text-blue-600">
+                Es werden vordefinierte Beispieldaten verwendet. Die API wird nicht aufgerufen.
+                Wählen Sie eine der oben angezeigten Aktien aus, um die Analyse zu starten.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Normaler Modus mit API-Aufrufen
   return (
     <div className="buffett-card mb-8 animate-fade-in">
       <h2 className="text-2xl font-semibold mb-4">Aktienanalyse nach Warren Buffett</h2>
@@ -94,23 +133,14 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         </Button>
       </form>
       
-      <div className="mt-4 text-sm text-buffett-subtext flex items-center">
+      <div className="mt-4 text-sm text-buffett-subtext flex items-start space-x-2">
+        <InfoIcon className="h-5 w-5 text-gray-400 mt-0.5" />
         <p>{disabled 
           ? "Bitte konfigurieren Sie zuerst einen API-Key oben, um die Analyse zu starten." 
-          : "Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung."}</p>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Info size={16} className="ml-2 cursor-help" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs p-4">
-            <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
-            <p>Dieses Tool verwendet die Financial Modeling Prep API. Sie benötigen einen gültigen API-Schlüssel, um die Anwendung zu nutzen.</p>
-            <p className="mt-2">Registrieren Sie sich für einen kostenlosen API-Schlüssel unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">financialmodelingprep.com</a>.</p>
-          </TooltipContent>
-        </Tooltip>
+          : "Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung."}
+        </p>
       </div>
       
-      {/* Häufig verwendete Aktiensymbole */}
       <div className="mt-6">
         <p className="text-sm font-medium mb-2">Häufig verwendete Symbole:</p>
         <div className="flex flex-wrap gap-2">
