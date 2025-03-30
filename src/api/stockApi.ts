@@ -81,10 +81,12 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   const standardizedTicker = ticker.trim().toUpperCase();
   
   // Verschiedene Finanzdaten abrufen
-  const [ratios, keyMetrics, profile] = await Promise.all([
+  const [ratios, keyMetrics, profile, incomeStatements, balanceSheets] = await Promise.all([
     fetchFromFMP(`/ratios/${standardizedTicker}`),
     fetchFromFMP(`/key-metrics/${standardizedTicker}`),
-    fetchFromFMP(`/profile/${standardizedTicker}`)
+    fetchFromFMP(`/profile/${standardizedTicker}`),
+    fetchFromFMP(`/income-statement/${standardizedTicker}`),
+    fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}`)
   ]);
   
   // Überprüfen, ob Daten zurückgegeben wurden
@@ -96,18 +98,26 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   const latestRatios = ratios[0];
   const latestMetrics = keyMetrics[0];
   const companyProfile = profile[0];
+  const latestIncomeStatement = incomeStatements && incomeStatements.length > 0 ? incomeStatements[0] : null;
+  const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
   
   // Sicherstellen, dass alle erforderlichen Werte existieren
   // Falls nicht, Standardwerte oder 0 verwenden
-  const safeValue = (value: any) => (value !== undefined && value !== null) ? value : 0;
+  const safeValue = (value: any) => (value !== undefined && value !== null && !isNaN(Number(value))) ? Number(value) : 0;
   
   // Business Model Analyse
   const businessModelStatus = companyProfile.description && companyProfile.description.length > 100 ? 'pass' : 'warning';
   
-  // Economic Moat Analyse - mit Sicherheitsprüfungen
+  // Verbesserte Berechnungen für finanzielle Kennzahlen
+  
+  // Bruttomarge direkt aus Ratios oder berechnen
   const grossMargin = safeValue(latestRatios.grossProfitMargin) * 100;
+  
+  // Operative Marge direkt aus Ratios oder berechnen
   const operatingMargin = safeValue(latestRatios.operatingProfitMargin) * 100;
-  const roic = safeValue(latestMetrics.roic) * 100;
+  
+  // ROIC direkt aus Metriken oder berechnen
+  let roic = safeValue(latestMetrics.roic) * 100;
   
   let economicMoatStatus = 'fail';
   if (grossMargin > 40 && operatingMargin > 20 && roic > 15) {
@@ -116,9 +126,25 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     economicMoatStatus = 'warning';
   }
   
-  // Finanzkennzahlen Analyse - mit Sicherheitsprüfungen
-  const roe = safeValue(latestRatios.returnOnEquity) * 100;
-  const netMargin = safeValue(latestRatios.netProfitMargin) * 100;
+  // Verbesserte ROE Berechnung
+  let roe = safeValue(latestRatios.returnOnEquity) * 100;
+  if (roe === 0 && latestIncomeStatement && latestBalanceSheet) {
+    const netIncome = safeValue(latestIncomeStatement.netIncome);
+    const equity = safeValue(latestBalanceSheet.totalStockholdersEquity);
+    if (equity > 0) {
+      roe = (netIncome / equity) * 100;
+    }
+  }
+  
+  // Verbesserte Nettomarge Berechnung
+  let netMargin = safeValue(latestRatios.netProfitMargin) * 100;
+  if (netMargin === 0 && latestIncomeStatement) {
+    const netIncome = safeValue(latestIncomeStatement.netIncome);
+    const revenue = safeValue(latestIncomeStatement.revenue);
+    if (revenue > 0) {
+      netMargin = (netIncome / revenue) * 100;
+    }
+  }
   
   let financialMetricsStatus = 'fail';
   if (roe > 15 && netMargin > 10) {
@@ -127,10 +153,47 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     financialMetricsStatus = 'warning';
   }
   
-  // Finanzielle Stabilität - mit Sicherheitsprüfungen
-  const debtToAssets = safeValue(latestRatios.debtToAssets) * 100;
-  const interestCoverage = safeValue(latestRatios.interestCoverage);
-  const currentRatio = safeValue(latestRatios.currentRatio);
+  // Verbesserte Verschuldungsquote Berechnung
+  let debtToAssets = safeValue(latestRatios.debtToAssets) * 100;
+  if (debtToAssets === 0 && latestBalanceSheet) {
+    const totalDebt = safeValue(latestBalanceSheet.totalDebt) || 
+                     (safeValue(latestBalanceSheet.shortTermDebt) + safeValue(latestBalanceSheet.longTermDebt));
+    const totalAssets = safeValue(latestBalanceSheet.totalAssets);
+    if (totalAssets > 0) {
+      debtToAssets = (totalDebt / totalAssets) * 100;
+    }
+  }
+  
+  // Verbesserte Zinsdeckungsgrad Berechnung
+  let interestCoverage = safeValue(latestRatios.interestCoverage);
+  if (interestCoverage === 0 && latestIncomeStatement) {
+    const ebit = safeValue(latestIncomeStatement.ebitda) - safeValue(latestIncomeStatement.depreciationAndAmortization);
+    const interestExpense = safeValue(latestIncomeStatement.interestExpense);
+    if (interestExpense !== 0) {
+      interestCoverage = ebit / Math.abs(interestExpense);
+    }
+  }
+  
+  // Verbesserte Current Ratio Berechnung
+  let currentRatio = safeValue(latestRatios.currentRatio);
+  if (currentRatio === 0 && latestBalanceSheet) {
+    const currentAssets = safeValue(latestBalanceSheet.totalCurrentAssets);
+    const currentLiabilities = safeValue(latestBalanceSheet.totalCurrentLiabilities);
+    if (currentLiabilities > 0) {
+      currentRatio = currentAssets / currentLiabilities;
+    }
+  }
+  
+  // Verbesserte Debt to EBITDA Berechnung
+  let debtToEBITDA = safeValue(latestRatios.debtToEBITDA);
+  if (debtToEBITDA === 0 && latestIncomeStatement && latestBalanceSheet) {
+    const totalDebt = safeValue(latestBalanceSheet.totalDebt) || 
+                     (safeValue(latestBalanceSheet.shortTermDebt) + safeValue(latestBalanceSheet.longTermDebt));
+    const ebitda = safeValue(latestIncomeStatement.ebitda);
+    if (ebitda > 0) {
+      debtToEBITDA = totalDebt / ebitda;
+    }
+  }
   
   let financialStabilityStatus = 'fail';
   if (debtToAssets < 50 && interestCoverage > 5 && currentRatio > 1.5) {
@@ -140,12 +203,13 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   }
   
   // Management Qualität (vereinfacht)
-  // Hier benötigen wir mehr Daten, die in der API nicht direkt verfügbar sind
   const managementStatus = 'warning';
   
-  // Bewertung - mit Sicherheitsprüfungen
-  const pe = safeValue(latestRatios.priceEarningsRatio);
-  const dividendYield = safeValue(latestRatios.dividendYield) * 100;
+  // Verbesserte KGV Berechnung
+  let pe = safeValue(latestRatios.priceEarningsRatio);
+  
+  // Verbesserte Dividendenrendite Berechnung
+  let dividendYield = safeValue(latestRatios.dividendYield) * 100;
   
   let valuationStatus = 'fail';
   if (pe < 15 && dividendYield > 2) {
@@ -165,7 +229,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   
   const longTermStatus = stableSectors.includes(sector) ? 'pass' : 'warning';
   
-  // Erstellen des Analyseobjekts
+  // Erstellen des Analyseobjekts mit verbesserten Kennzahlen
   return {
     businessModel: {
       status: businessModelStatus,
@@ -196,7 +260,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       details: [
         `Eigenkapitalrendite (ROE): ${roe.toFixed(2)}% (Buffett bevorzugt >15%)`,
         `Nettomarge: ${netMargin.toFixed(2)}% (Buffett bevorzugt >10%)`,
-        `Gewinn pro Aktie: ${safeValue(latestMetrics.eps).toFixed(2)} ${companyProfile.currency || 'USD'}`,
+        `Gewinn pro Aktie: ${latestIncomeStatement && latestIncomeStatement.eps ? Number(latestIncomeStatement.eps).toFixed(2) + ' ' + companyProfile.currency : 'N/A'} ${companyProfile.currency || 'USD'}`,
         `Umsatz pro Aktie: ${safeValue(latestMetrics.revenuePerShare).toFixed(2)} ${companyProfile.currency || 'USD'}`
       ]
     },
@@ -208,7 +272,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
         `Schulden zu Vermögen: ${debtToAssets.toFixed(2)}% (Buffett bevorzugt <50%)`,
         `Zinsdeckungsgrad: ${interestCoverage.toFixed(2)} (Buffett bevorzugt >5)`,
         `Current Ratio: ${currentRatio.toFixed(2)} (Buffett bevorzugt >1.5)`,
-        `Schulden zu EBITDA: ${safeValue(latestRatios.debtToEBITDA).toFixed(2)} (niedriger ist besser)`
+        `Schulden zu EBITDA: ${debtToEBITDA.toFixed(2)} (niedriger ist besser)`
       ]
     },
     management: {

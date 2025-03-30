@@ -44,10 +44,14 @@ const MetricStatus: React.FC<{ status: string }> = ({ status }) => {
 const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
   const { name, value, formula, explanation, threshold, status } = metric;
   
-  // Prüfen ob der Wert "N/A" ist (String) oder ob es ein numerischer Wert im String-Format ist
-  const displayValue = value === 'N/A' || 
-                       (typeof value === 'string' && value.includes('N/A')) ? 
-                       'Keine Daten' : value;
+  // Verbesserte Prüfung für fehlende Werte
+  const isValueMissing = value === 'N/A' || 
+                         (typeof value === 'string' && value.includes('N/A')) ||
+                         (typeof value === 'number' && value === 0) ||
+                         value === undefined || 
+                         value === null;
+  
+  const displayValue = isValueMissing ? 'Keine Daten' : value;
   
   return (
     <Card className="metric-card p-4">
