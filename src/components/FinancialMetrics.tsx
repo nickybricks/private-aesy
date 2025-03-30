@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { LineChart } from 'recharts';
 
 interface FinancialMetric {
   name: string;
@@ -69,9 +68,6 @@ const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData }) => {
   if (!metrics) return null;
   
-  // In a real implementation, we would use the historicalData to render charts
-  // but for the MVP, we'll just display the metrics in a grid
-  
   return (
     <div className="animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
@@ -82,7 +78,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
         ))}
       </div>
       
-      {historicalData && (
+      {historicalData && historicalData.revenue && historicalData.earnings && historicalData.eps && (
         <Card className="buffett-card">
           <h3 className="text-lg font-semibold mb-4">Finanzielle Entwicklung (10 Jahre)</h3>
           
@@ -100,8 +96,12 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                 <TableRow key={item.year}>
                   <TableCell>{item.year}</TableCell>
                   <TableCell className="text-right">{item.value.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">{historicalData.earnings[i]?.value.toFixed(2) || '-'}</TableCell>
-                  <TableCell className="text-right">{historicalData.eps[i]?.value.toFixed(2) || '-'}</TableCell>
+                  <TableCell className="text-right">
+                    {historicalData.earnings[i] ? historicalData.earnings[i].value.toFixed(2) : '-'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {historicalData.eps[i] ? historicalData.eps[i].value.toFixed(2) : '-'}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
