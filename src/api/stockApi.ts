@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { 
   analyzeBusinessModel, 
@@ -709,4 +710,33 @@ export const getFinancialMetrics = async (ticker: string) => {
     // 2. Eigene Berechnung aus EBIT und Zinsaufwand
     if ((interestCoverage === null || interestCoverage === 0) && latestIncomeStatement) {
       const ebit = latestIncomeStatement.ebitda !== undefined && latestIncomeStatement.depreciationAndAmortization !== undefined ?
-                  latestIncomeStatement.ebitda - latestIncomeStatement.
+                  latestIncomeStatement.ebitda - latestIncomeStatement.depreciationAndAmortization : null;
+      
+      const interestExpense = safeValue(latestIncomeStatement.interestExpense);
+      
+      if (ebit !== null && interestExpense !== null && interestExpense !== 0) {
+        interestCoverage = ebit / Math.abs(interestExpense);
+        console.log('Zinsdeckungsgrad berechnet aus EBIT/Zinsaufwand:', interestCoverage);
+      }
+    }
+
+    // Weitere Finanzkennzahlen könnten hier berechnet werden
+
+    return {
+      // Rendite-Kennzahlen
+      eps,
+      roe,
+      netMargin,
+      roic,
+      
+      // Schulden-Kennzahlen
+      debtToAssets,
+      interestCoverage,
+      
+      // Weitere Kennzahlen können hinzugefügt werden...
+    };
+  } catch (error) {
+    console.error('Error fetching financial metrics:', error);
+    throw error;
+  }
+};
