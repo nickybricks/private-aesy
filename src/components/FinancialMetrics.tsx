@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Check, AlertTriangle, X } from 'lucide-react';
+import { Check, AlertTriangle, X, AlertCircle } from 'lucide-react';
 
 interface FinancialMetric {
   name: string;
@@ -237,18 +237,39 @@ const BuffettCriteriaSection: React.FC = () => {
 };
 
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData }) => {
-  if (!metrics) return null;
+  // Add safety checks for metrics parameter
+  if (!metrics) {
+    return (
+      <div className="animate-fade-in">
+        <h2 className="text-2xl font-semibold mb-6">Buffett-Analyse Framework</h2>
+        <Card className="p-6 mb-8">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-yellow-500" />
+            <h3 className="text-lg font-semibold">Keine Finanzkennzahlen verfügbar</h3>
+          </div>
+          <p className="mt-2">Für dieses Unternehmen konnten keine Finanzkennzahlen geladen werden.</p>
+        </Card>
+        
+        <BuffettCriteriaSection />
+      </div>
+    );
+  }
   
-  // Check if metrics is an array, if not, log an error and return null
+  // Check if metrics is an array, if not, log an error and display a message
   if (!Array.isArray(metrics)) {
     console.error('Expected metrics to be an array but received:', metrics);
     return (
       <div className="animate-fade-in">
         <h2 className="text-2xl font-semibold mb-6">Buffett-Analyse Framework</h2>
         <Card className="p-6 mb-8">
-          <h3 className="text-lg font-semibold mb-4">Fehler bei der Datenverarbeitung</h3>
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            <h3 className="text-lg font-semibold mb-4">Fehler bei der Datenverarbeitung</h3>
+          </div>
           <p>Die Finanzkennzahlen konnten nicht korrekt geladen werden. Bitte versuchen Sie es später erneut.</p>
         </Card>
+        
+        <BuffettCriteriaSection />
         
         {/* Show debug data */}
         <Card className="buffett-card p-6 mb-8">

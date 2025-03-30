@@ -15,12 +15,39 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+// Define interfaces for better type safety
+interface FinancialMetric {
+  name: string;
+  value: number | string;
+  formula: string;
+  explanation: string;
+  threshold: string;
+  status: 'pass' | 'warning' | 'fail';
+}
+
+interface HistoricalData {
+  revenue: { year: string; value: number }[];
+  earnings: { year: string; value: number }[];
+  eps: { year: string; value: number }[];
+}
+
+interface FinancialMetricsData {
+  eps?: any;
+  roe?: any;
+  netMargin?: any;
+  roic?: any;
+  debtToAssets?: any;
+  interestCoverage?: any;
+  metrics?: FinancialMetric[];
+  historicalData?: HistoricalData;
+}
+
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [stockInfo, setStockInfo] = useState(null);
   const [buffettCriteria, setBuffettCriteria] = useState(null);
-  const [financialMetrics, setFinancialMetrics] = useState(null);
+  const [financialMetrics, setFinancialMetrics] = useState<FinancialMetricsData | null>(null);
   const [overallRating, setOverallRating] = useState(null);
   const [error, setError] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
@@ -97,11 +124,21 @@ const Index = () => {
       
       setBuffettCriteria(criteria);
       
-      // Ensure metrics.metrics is an array before passing it to FinancialMetrics
-      if (metrics && metrics.metrics && !Array.isArray(metrics.metrics)) {
-        console.error('metrics.metrics is not an array:', metrics.metrics);
-        // Convert metrics.metrics to an array of FinancialMetric objects
-        const metricsArray = [];
+      // Initialize metrics object with proper structure
+      const processedMetrics: FinancialMetricsData = {
+        ...metrics,
+        metrics: [],
+        historicalData: metrics.historicalData || {
+          revenue: [],
+          earnings: [],
+          eps: []
+        }
+      };
+      
+      // If metrics.metrics is not an array, create one from the financial data
+      if (!metrics.metrics || !Array.isArray(metrics.metrics)) {
+        console.log('Creating metrics array from financial data');
+        const metricsArray: FinancialMetric[] = [];
         
         // Add financial metrics based on properties from metrics object
         if (metrics.eps !== undefined) {
@@ -171,10 +208,13 @@ const Index = () => {
         }
         
         // Update metrics to have an array of metrics objects
-        metrics.metrics = metricsArray;
+        processedMetrics.metrics = metricsArray;
+      } else {
+        // If metrics.metrics is already an array, use it directly
+        processedMetrics.metrics = metrics.metrics;
       }
       
-      setFinancialMetrics(metrics);
+      setFinancialMetrics(processedMetrics);
       setOverallRating(rating);
       
       toast({
