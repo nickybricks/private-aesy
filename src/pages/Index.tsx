@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -38,7 +39,6 @@ interface FinancialMetricsData {
   roic?: any;
   debtToAssets?: any;
   interestCoverage?: any;
-  // These properties are not in the API response, we'll create them
   metrics: FinancialMetric[];
   historicalData: HistoricalData;
 }
@@ -133,7 +133,7 @@ const Index = () => {
         roic: metricsData.roic,
         debtToAssets: metricsData.debtToAssets,
         interestCoverage: metricsData.interestCoverage,
-        // Initialize empty arrays for metrics we'll create
+        // Initialize empty arrays for metrics and historicalData
         metrics: [],
         historicalData: {
           revenue: [],

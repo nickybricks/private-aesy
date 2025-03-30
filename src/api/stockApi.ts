@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { 
   analyzeBusinessModel, 
@@ -524,6 +523,7 @@ export const getFinancialMetrics = async (ticker: string) => {
     const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
     const quoteData = quote && quote.length > 0 ? quote[0] : null;
     
+    // Debug logging
     console.log('Neueste Income Statement Daten:', JSON.stringify(latestIncomeStatement, null, 2));
     console.log('Neueste Balance Sheet Daten:', JSON.stringify(latestBalanceSheet, null, 2));
     console.log('Neueste Key Metrics Daten:', JSON.stringify(latestMetrics, null, 2));
@@ -698,6 +698,44 @@ export const getFinancialMetrics = async (ticker: string) => {
 
     // Weitere Finanzkennzahlen könnten hier berechnet werden
 
+    // Prepare historical data structure
+    const historicalData = {
+      revenue: [],
+      earnings: [],
+      eps: []
+    };
+    
+    // Process historical data if available
+    if (incomeStatements && incomeStatements.length > 0) {
+      incomeStatements.forEach(statement => {
+        if (statement.date && statement.revenue) {
+          const year = new Date(statement.date).getFullYear().toString();
+          
+          // Revenue data
+          historicalData.revenue.push({
+            year,
+            value: statement.revenue
+          });
+          
+          // Earnings data
+          if (statement.netIncome) {
+            historicalData.earnings.push({
+              year,
+              value: statement.netIncome
+            });
+          }
+          
+          // EPS data
+          if (statement.eps) {
+            historicalData.eps.push({
+              year,
+              value: statement.eps
+            });
+          }
+        }
+      });
+    }
+
     return {
       // Rendite-Kennzahlen
       eps,
@@ -709,7 +747,11 @@ export const getFinancialMetrics = async (ticker: string) => {
       debtToAssets,
       interestCoverage,
       
-      // Weitere Kennzahlen können hinzugefügt werden...
+      // Aggregated metrics array (will be populated in Index.tsx)
+      metrics: [],
+      
+      // Historical data
+      historicalData,
     };
   } catch (error) {
     console.error('Error fetching financial metrics:', error);

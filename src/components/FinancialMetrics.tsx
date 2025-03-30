@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -60,7 +59,6 @@ const MetricStatus: React.FC<{ status: string }> = ({ status }) => {
 const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
   const { name, value, formula, explanation, threshold, status } = metric;
   
-  // Verbesserte Prüfung für fehlende Werte
   const isValueMissing = value === 'N/A' || 
                          (typeof value === 'string' && (value.includes('N/A') || value === '0.00' || value === '0.00%')) ||
                          (typeof value === 'number' && (value === 0 || isNaN(value))) ||
@@ -237,7 +235,6 @@ const BuffettCriteriaSection: React.FC = () => {
 };
 
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData }) => {
-  // Add safety checks for metrics parameter
   if (!metrics) {
     return (
       <div className="animate-fade-in">
@@ -255,7 +252,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
     );
   }
   
-  // Check if metrics is an array, if not, log an error and display a message
   if (!Array.isArray(metrics)) {
     console.error('Expected metrics to be an array but received:', metrics);
     return (
@@ -271,7 +267,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
         
         <BuffettCriteriaSection />
         
-        {/* Show debug data */}
         <Card className="buffett-card p-6 mb-8">
           <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
@@ -299,7 +294,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
         ))}
       </div>
       
-      {/* Debug-Ansicht für die API-Daten */}
       <Card className="buffett-card p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
@@ -336,9 +330,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             </TableHeader>
             <TableBody>
               {historicalData.revenue.map((item, i) => {
-                // Entsprechende EPS-Daten finden
                 const epsDataForYear = historicalData.eps && historicalData.eps.find(e => e.year === item.year);
-                // Entsprechende Gewinn-Daten finden
                 const earningsDataForYear = historicalData.earnings && historicalData.earnings.find(e => e.year === item.year);
                 
                 return (
