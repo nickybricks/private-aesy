@@ -341,215 +341,347 @@ export const getFinancialMetrics = async (ticker: string) => {
     const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
     const quoteData = quote && quote.length > 0 ? quote[0] : null;
     
-    // EPS aus verschiedenen Quellen ermitteln, um sicherzustellen, dass wir einen Wert haben
-    let eps = null;
+    console.log('Neueste Income Statement Daten:', JSON.stringify(latestIncomeStatement, null, 2));
+    console.log('Neueste Balance Sheet Daten:', JSON.stringify(latestBalanceSheet, null, 2));
+    console.log('Neueste Key Metrics Daten:', JSON.stringify(latestMetrics, null, 2));
+    console.log('Neueste Ratios Daten:', JSON.stringify(latestRatios, null, 2));
     
-    // Versuch 1: Aus dem neuesten Einkommensbericht (die direkteste Quelle)
-    if (latestIncomeStatement && latestIncomeStatement.eps !== undefined && latestIncomeStatement.eps !== null) {
-      eps = Number(latestIncomeStatement.eps);
-    } 
-    // Versuch 2: Aus den Kennzahlen
-    else if (latestMetrics && latestMetrics.eps !== undefined && latestMetrics.eps !== null) {
-      eps = Number(latestMetrics.eps);
-    }
-    // Versuch 3: Aus dem Quote (aktuelle Marktdaten)
-    else if (quoteData && quoteData.eps !== undefined && quoteData.eps !== null) {
-      eps = Number(quoteData.eps);
-    }
-    // Versuch 4: Berechnen aus Nettogewinn und Aktienanzahl
-    else if (latestIncomeStatement && latestIncomeStatement.netIncome !== undefined && 
-             latestIncomeStatement.netIncome !== null && latestIncomeStatement.weightedAverageShsOut !== undefined && 
-             latestIncomeStatement.weightedAverageShsOut !== null && latestIncomeStatement.weightedAverageShsOut > 0) {
-      eps = latestIncomeStatement.netIncome / latestIncomeStatement.weightedAverageShsOut;
-    }
-    // Versuch 5: Aus den Verhältnissen
-    else if (latestRatios && latestRatios.earningYield !== undefined && latestRatios.earningYield !== null && 
-             quoteData && quoteData.price !== undefined && quoteData.price !== null) {
-      // EPS = Preis * Ertragsrendite
-      eps = quoteData.price * latestRatios.earningYield;
-    }
-    
-    // Wenn immer noch kein EPS gefunden wurde, nach weiteren EPS-Quellen suchen
-    if ((eps === null || eps === 0) && ratios.length > 1) {
-      // Versuchen, EPS aus früheren Berichten zu bekommen
-      for (let i = 1; i < Math.min(ratios.length, 3); i++) {
-        if (ratios[i].earningsPerShare && ratios[i].earningsPerShare !== 0) {
-          eps = Number(ratios[i].earningsPerShare);
-          break;
-        }
-      }
-    }
-    
-    if ((eps === null || eps === 0) && incomeStatements && incomeStatements.length > 1) {
-      // Versuchen, EPS aus früheren Einkommensberichten zu bekommen
-      for (let i = 1; i < Math.min(incomeStatements.length, 5); i++) {
-        if (incomeStatements[i].eps && incomeStatements[i].eps !== 0) {
-          eps = Number(incomeStatements[i].eps);
-          break;
-        }
-      }
-    }
-    
-    // Wenn immer noch kein EPS gefunden wurde, TTM (Trailing Twelve Months) berechnen
-    if (eps === null || eps === 0) {
-      let ttmNetIncome = 0;
-      let hasValidQuarters = false;
-      
-      // Summiere Nettoeinnahmen der letzten 4 verfügbaren Quartale
-      for (let i = 0; i < Math.min(incomeStatements ? incomeStatements.length : 0, 4); i++) {
-        if (incomeStatements[i].netIncome !== undefined && incomeStatements[i].netIncome !== null) {
-          ttmNetIncome += Number(incomeStatements[i].netIncome);
-          hasValidQuarters = true;
-        }
-      }
-      
-      // Wenn gültige Quartale gefunden wurden und Aktienanzahl verfügbar ist
-      if (hasValidQuarters && latestIncomeStatement && 
-          latestIncomeStatement.weightedAverageShsOut !== undefined && 
-          latestIncomeStatement.weightedAverageShsOut !== null && 
-          latestIncomeStatement.weightedAverageShsOut > 0) {
-        eps = ttmNetIncome / latestIncomeStatement.weightedAverageShsOut;
-      }
-    }
-    
-    // Verbesserte ROE-Berechnung
-    const netIncome = latestIncomeStatement ? latestIncomeStatement.netIncome : 0;
-    const shareholderEquity = latestBalanceSheet ? latestBalanceSheet.totalStockholdersEquity : 0;
-    let calculatedROE = 0;
-    
-    if (shareholderEquity && shareholderEquity !== 0 && netIncome) {
-      calculatedROE = netIncome / shareholderEquity;
-    } else if (latestRatios && latestRatios.returnOnEquity) {
-      calculatedROE = latestRatios.returnOnEquity;
-    }
-    
-    // Verbesserte Nettomarge-Berechnung
-    const revenue = latestIncomeStatement ? latestIncomeStatement.revenue : 0;
-    let calculatedNetMargin = 0;
-    
-    if (revenue && revenue !== 0 && netIncome) {
-      calculatedNetMargin = netIncome / revenue;
-    } else if (latestRatios && latestRatios.netProfitMargin) {
-      calculatedNetMargin = latestRatios.netProfitMargin;
-    }
-    
-    // Schuldenquote berechnen
-    let debtToAssets = 0;
-    if (latestRatios && latestRatios.debtToAssets !== undefined && latestRatios.debtToAssets !== null) {
-      debtToAssets = latestRatios.debtToAssets;
-    } else if (latestBalanceSheet) {
-      const totalDebt = (latestBalanceSheet.shortTermDebt || 0) + (latestBalanceSheet.longTermDebt || 0);
-      const totalAssets = latestBalanceSheet.totalAssets || 0;
-      if (totalAssets && totalAssets > 0) {
-        debtToAssets = totalDebt / totalAssets;
-      }
-    }
-    
-    // ROIC berechnen
-    let roic = 0;
-    if (latestMetrics && latestMetrics.roic !== undefined && latestMetrics.roic !== null) {
-      roic = latestMetrics.roic;
-    } else if (latestIncomeStatement && latestBalanceSheet) {
-      const ebit = latestIncomeStatement.ebitda - (latestIncomeStatement.depreciationAndAmortization || 0);
-      const investedCapital = (latestBalanceSheet.totalStockholdersEquity || 0) + (latestBalanceSheet.longTermDebt || 0);
-      if (investedCapital && investedCapital > 0) {
-        roic = (ebit * (1 - 0.25)) / investedCapital; // Annahme: 25% Steuersatz
-      }
-    }
-    
-    // Sicherstellen, dass alle erforderlichen Werte existieren
+    // Sichere Wert-Extraktionshilfsfunktion
     const safeValue = (value: any) => {
-      if (value === undefined || value === null) return 0;
+      if (value === undefined || value === null) return null;
       const numValue = Number(value);
-      return isNaN(numValue) ? 0 : numValue;
+      return isNaN(numValue) ? null : numValue;
     };
     
-    // Metriken basierend auf den Daten erstellen - mit verbesserten Berechnungen
+    // EPS (Earnings Per Share) Extraktion - verbessert
+    let eps = null;
+    
+    // 1. Direkt aus Income Statement (beste Quelle)
+    if (latestIncomeStatement && latestIncomeStatement.eps !== undefined) {
+      eps = safeValue(latestIncomeStatement.eps);
+      console.log('EPS aus Income Statement:', eps);
+    }
+    
+    // 2. Aus Quote Daten (tagesaktuelle Daten)
+    if (eps === null && quoteData && quoteData.eps !== undefined) {
+      eps = safeValue(quoteData.eps);
+      console.log('EPS aus Quote Daten:', eps);
+    }
+    
+    // 3. Aus Key Metrics (aggregierte Daten)
+    if (eps === null && latestMetrics && latestMetrics.eps !== undefined) {
+      eps = safeValue(latestMetrics.eps);
+      console.log('EPS aus Key Metrics:', eps);
+    }
+    
+    // 4. Berechnung aus Nettogewinn und Aktienanzahl
+    if (eps === null && latestIncomeStatement && 
+        latestIncomeStatement.netIncome !== undefined && 
+        latestIncomeStatement.weightedAverageShsOut !== undefined && 
+        latestIncomeStatement.weightedAverageShsOut > 0) {
+      eps = safeValue(latestIncomeStatement.netIncome / latestIncomeStatement.weightedAverageShsOut);
+      console.log('EPS berechnet aus Nettogewinn/Aktien:', eps);
+    }
+    
+    // Suche in früheren Berichten, falls aktueller fehlt
+    if (eps === null && incomeStatements && incomeStatements.length > 1) {
+      for (let i = 1; i < Math.min(incomeStatements.length, 4); i++) {
+        if (incomeStatements[i].eps !== undefined) {
+          eps = safeValue(incomeStatements[i].eps);
+          console.log(`EPS aus älterem Income Statement (${i}):`, eps);
+          if (eps !== null) break;
+        }
+      }
+    }
+    
+    // ROE (Return on Equity) Berechnung - verbessert
+    let roe = null;
+    
+    // 1. Direkt aus Ratios (vorberechneter Wert)
+    if (latestRatios && latestRatios.returnOnEquity !== undefined) {
+      roe = safeValue(latestRatios.returnOnEquity);
+      console.log('ROE aus Ratios:', roe);
+    }
+    
+    // 2. Eigene Berechnung aus Nettogewinn und Eigenkapital
+    if ((roe === null || roe === 0) && latestIncomeStatement && latestBalanceSheet &&
+        latestIncomeStatement.netIncome !== undefined && 
+        latestBalanceSheet.totalStockholdersEquity !== undefined && 
+        latestBalanceSheet.totalStockholdersEquity > 0) {
+      roe = safeValue(latestIncomeStatement.netIncome / latestBalanceSheet.totalStockholdersEquity);
+      console.log('ROE berechnet aus Nettogewinn/Eigenkapital:', roe);
+    }
+    
+    // Nettomarge Berechnung - verbessert
+    let netMargin = null;
+    
+    // 1. Direkt aus Ratios (vorberechneter Wert)
+    if (latestRatios && latestRatios.netProfitMargin !== undefined) {
+      netMargin = safeValue(latestRatios.netProfitMargin);
+      console.log('Nettomarge aus Ratios:', netMargin);
+    }
+    
+    // 2. Eigene Berechnung aus Nettogewinn und Umsatz
+    if ((netMargin === null || netMargin === 0) && latestIncomeStatement &&
+        latestIncomeStatement.netIncome !== undefined && 
+        latestIncomeStatement.revenue !== undefined && 
+        latestIncomeStatement.revenue > 0) {
+      netMargin = safeValue(latestIncomeStatement.netIncome / latestIncomeStatement.revenue);
+      console.log('Nettomarge berechnet aus Nettogewinn/Umsatz:', netMargin);
+    }
+    
+    // ROIC (Return on Invested Capital) Berechnung - verbessert
+    let roic = null;
+    
+    // 1. Direkt aus Metrics (vorberechneter Wert)
+    if (latestMetrics && latestMetrics.roic !== undefined) {
+      roic = safeValue(latestMetrics.roic);
+      console.log('ROIC aus Key Metrics:', roic);
+    }
+    
+    // 2. Eigene Berechnung aus NOPAT und investiertem Kapital
+    if ((roic === null || roic === 0) && latestIncomeStatement && latestBalanceSheet) {
+      const ebit = latestIncomeStatement.ebitda !== undefined && latestIncomeStatement.depreciationAndAmortization !== undefined ?
+                  latestIncomeStatement.ebitda - latestIncomeStatement.depreciationAndAmortization : null;
+      
+      if (ebit !== null) {
+        const taxRate = latestIncomeStatement.incomeTaxExpense !== undefined && latestIncomeStatement.incomeBeforeTax !== undefined && 
+                      latestIncomeStatement.incomeBeforeTax !== 0 ?
+                      latestIncomeStatement.incomeTaxExpense / latestIncomeStatement.incomeBeforeTax : 0.25; // Fallback Steuersatz
+        
+        const nopat = ebit * (1 - taxRate);
+        
+        const investedCapital = (latestBalanceSheet.totalStockholdersEquity || 0) + 
+                               (latestBalanceSheet.longTermDebt || 0) + 
+                               (latestBalanceSheet.shortTermDebt || 0);
+        
+        if (investedCapital > 0) {
+          roic = nopat / investedCapital;
+          console.log('ROIC berechnet aus NOPAT/Investiertes Kapital:', roic);
+        }
+      }
+    }
+    
+    // Schuldenquote Berechnung - verbessert
+    let debtToAssets = null;
+    
+    // 1. Direkt aus Ratios (vorberechneter Wert)
+    if (latestRatios && latestRatios.debtToAssets !== undefined) {
+      debtToAssets = safeValue(latestRatios.debtToAssets);
+      console.log('Schuldenquote aus Ratios:', debtToAssets);
+    }
+    
+    // 2. Eigene Berechnung aus Gesamtschulden und Gesamtvermögen
+    if ((debtToAssets === null || debtToAssets === 0) && latestBalanceSheet) {
+      const totalAssets = latestBalanceSheet.totalAssets;
+      let totalDebt = 0;
+      
+      // Verschiedene Möglichkeiten, Gesamtschulden zu berechnen
+      if (latestBalanceSheet.totalDebt !== undefined) {
+        totalDebt = latestBalanceSheet.totalDebt;
+      } else if (latestBalanceSheet.shortTermDebt !== undefined || latestBalanceSheet.longTermDebt !== undefined) {
+        totalDebt = (latestBalanceSheet.shortTermDebt || 0) + (latestBalanceSheet.longTermDebt || 0);
+      } else if (latestBalanceSheet.totalLiabilities !== undefined) {
+        totalDebt = latestBalanceSheet.totalLiabilities;
+      }
+      
+      if (totalAssets !== undefined && totalAssets > 0 && totalDebt > 0) {
+        debtToAssets = totalDebt / totalAssets;
+        console.log('Schuldenquote berechnet aus Schulden/Vermögen:', debtToAssets);
+      }
+    }
+    
+    // Zinsdeckungsgrad Berechnung - verbessert
+    let interestCoverage = null;
+    
+    // 1. Direkt aus Ratios (vorberechneter Wert)
+    if (latestRatios && latestRatios.interestCoverage !== undefined) {
+      interestCoverage = safeValue(latestRatios.interestCoverage);
+      console.log('Zinsdeckungsgrad aus Ratios:', interestCoverage);
+    }
+    
+    // 2. Eigene Berechnung aus EBIT und Zinsaufwand
+    if ((interestCoverage === null || interestCoverage === 0) && latestIncomeStatement) {
+      const ebit = latestIncomeStatement.ebitda !== undefined && latestIncomeStatement.depreciationAndAmortization !== undefined ?
+                  latestIncomeStatement.ebitda - latestIncomeStatement.depreciationAndAmortization : null;
+      
+      const interestExpense = latestIncomeStatement.interestExpense !== undefined ?
+                            Math.abs(latestIncomeStatement.interestExpense) : null;
+      
+      if (ebit !== null && interestExpense !== null && interestExpense > 0) {
+        interestCoverage = ebit / interestExpense;
+        console.log('Zinsdeckungsgrad berechnet aus EBIT/Zinsaufwand:', interestCoverage);
+      }
+    }
+    
+    // Current Ratio Berechnung - verbessert
+    let currentRatio = null;
+    
+    // 1. Direkt aus Ratios (vorberechneter Wert)
+    if (latestRatios && latestRatios.currentRatio !== undefined) {
+      currentRatio = safeValue(latestRatios.currentRatio);
+      console.log('Current Ratio aus Ratios:', currentRatio);
+    }
+    
+    // 2. Eigene Berechnung aus Umlaufvermögen und kurzfristigen Verbindlichkeiten
+    if ((currentRatio === null || currentRatio === 0) && latestBalanceSheet) {
+      const currentAssets = latestBalanceSheet.totalCurrentAssets;
+      const currentLiabilities = latestBalanceSheet.totalCurrentLiabilities;
+      
+      if (currentAssets !== undefined && currentLiabilities !== undefined && currentLiabilities > 0) {
+        currentRatio = currentAssets / currentLiabilities;
+        console.log('Current Ratio berechnet aus Umlaufvermögen/Kurzfristige Verbindlichkeiten:', currentRatio);
+      }
+    }
+    
+    // P/E Ratio (KGV) Berechnung - verbessert
+    let pe = null;
+    
+    // 1. Direkt aus Ratios (vorberechneter Wert)
+    if (latestRatios && latestRatios.priceEarningsRatio !== undefined) {
+      pe = safeValue(latestRatios.priceEarningsRatio);
+      console.log('KGV aus Ratios:', pe);
+    }
+    
+    // 2. Berechnung aus aktuellem Kurs und EPS
+    if ((pe === null || pe === 0) && quoteData && quoteData.price !== undefined && eps !== null && eps > 0) {
+      pe = quoteData.price / eps;
+      console.log('KGV berechnet aus Preis/EPS:', pe);
+    }
+    
+    // Dividendenrendite Berechnung - verbessert
+    let dividendYield = null;
+    
+    // 1. Direkt aus Ratios (vorberechneter Wert)
+    if (latestRatios && latestRatios.dividendYield !== undefined) {
+      dividendYield = safeValue(latestRatios.dividendYield);
+      console.log('Dividendenrendite aus Ratios:', dividendYield);
+    }
+    
+    // 2. Berechnung aus aktueller Dividende und Kurs
+    if ((dividendYield === null || dividendYield === 0) && quoteData) {
+      if (quoteData.lastAnnualDividend !== undefined && quoteData.price !== undefined && quoteData.price > 0) {
+        dividendYield = quoteData.lastAnnualDividend / quoteData.price;
+        console.log('Dividendenrendite berechnet aus Dividende/Preis:', dividendYield);
+      }
+    }
+    
+    // Umsatzwachstum 5J Berechnung - verbessert
+    let revenueGrowth5Y = null;
+    
+    // 1. Direkt aus Metrics (vorberechneter Wert)
+    if (latestMetrics && latestMetrics.revenueGrowth5Y !== undefined) {
+      revenueGrowth5Y = safeValue(latestMetrics.revenueGrowth5Y);
+      console.log('Umsatzwachstum 5J aus Key Metrics:', revenueGrowth5Y);
+    }
+    
+    // 2. Eigene Berechnung aus historischen Umsatzdaten (wenn genügend Daten vorhanden sind)
+    if ((revenueGrowth5Y === null || revenueGrowth5Y === 0) && incomeStatements && incomeStatements.length >= 5) {
+      const currentRevenue = incomeStatements[0].revenue;
+      const fiveYearsAgoRevenue = incomeStatements[4].revenue;
+      
+      if (currentRevenue !== undefined && fiveYearsAgoRevenue !== undefined && fiveYearsAgoRevenue > 0) {
+        // CAGR Formel: (Endwert/Anfangswert)^(1/Jahre) - 1
+        revenueGrowth5Y = Math.pow(currentRevenue / fiveYearsAgoRevenue, 1/5) - 1;
+        console.log('Umsatzwachstum 5J berechnet aus historischen Daten:', revenueGrowth5Y);
+      }
+    }
+    
+    // Hilfsfunktion zum Formatieren und Bewerten der Metriken
+    const formatMetric = (value: any, isPercentage = false) => {
+      if (value === null) return 'N/A';
+      
+      if (isPercentage) {
+        return `${(value * 100).toFixed(2)}%`;
+      } else {
+        return value.toFixed(2);
+      }
+    };
+    
+    // Metriken basierend auf den verbesserten Berechnungen erstellen
     const metrics = [
       {
         name: 'Return on Equity (ROE)',
-        value: `${(safeValue(calculatedROE) * 100).toFixed(2)}%`,
+        value: formatMetric(roe, true),
         formula: 'Jahresgewinn / Eigenkapital',
         explanation: 'Zeigt, wie effizient das Unternehmen das Eigenkapital einsetzt.',
         threshold: '>15%',
-        status: safeValue(calculatedROE) * 100 > 15 ? 'pass' : safeValue(calculatedROE) * 100 > 10 ? 'warning' : 'fail'
+        status: roe !== null ? (roe > 0.15 ? 'pass' : roe > 0.10 ? 'warning' : 'fail') : 'fail'
       },
       {
         name: 'Nettomarge',
-        value: `${(safeValue(calculatedNetMargin) * 100).toFixed(2)}%`,
+        value: formatMetric(netMargin, true),
         formula: 'Nettogewinn / Umsatz',
         explanation: 'Gibt an, wie viel vom Umsatz als Gewinn übrig bleibt.',
         threshold: '>10%',
-        status: safeValue(calculatedNetMargin) * 100 > 10 ? 'pass' : safeValue(calculatedNetMargin) * 100 > 5 ? 'warning' : 'fail'
+        status: netMargin !== null ? (netMargin > 0.10 ? 'pass' : netMargin > 0.05 ? 'warning' : 'fail') : 'fail'
       },
       {
         name: 'ROIC',
-        value: `${(safeValue(roic) * 100).toFixed(2)}%`,
+        value: formatMetric(roic, true),
         formula: 'NOPAT / (Eigenkapital + langfristige Schulden)',
         explanation: 'Zeigt, wie effizient das investierte Kapital eingesetzt wird.',
         threshold: '>10%',
-        status: safeValue(roic) * 100 > 10 ? 'pass' : safeValue(roic) * 100 > 7 ? 'warning' : 'fail'
+        status: roic !== null ? (roic > 0.10 ? 'pass' : roic > 0.07 ? 'warning' : 'fail') : 'fail'
       },
       {
         name: 'Schuldenquote',
-        value: `${(safeValue(debtToAssets) * 100).toFixed(2)}%`,
+        value: formatMetric(debtToAssets, true),
         formula: 'Gesamtschulden / Gesamtvermögen',
         explanation: 'Gibt an, wie stark das Unternehmen fremdfinanziert ist.',
         threshold: '<70%',
-        status: safeValue(debtToAssets) * 100 < 50 ? 'pass' : safeValue(debtToAssets) * 100 < 70 ? 'warning' : 'fail'
+        status: debtToAssets !== null ? (debtToAssets < 0.50 ? 'pass' : debtToAssets < 0.70 ? 'warning' : 'fail') : 'fail'
       },
       {
         name: 'Zinsdeckungsgrad',
-        value: safeValue(latestRatios.interestCoverage).toFixed(2),
+        value: formatMetric(interestCoverage),
         formula: 'EBIT / Zinsaufwand',
         explanation: 'Zeigt, wie oft die Zinsen aus dem Gewinn bezahlt werden können.',
         threshold: '>5',
-        status: safeValue(latestRatios.interestCoverage) > 5 ? 'pass' : safeValue(latestRatios.interestCoverage) > 3 ? 'warning' : 'fail'
+        status: interestCoverage !== null ? (interestCoverage > 5 ? 'pass' : interestCoverage > 3 ? 'warning' : 'fail') : 'fail'
       },
       {
         name: 'Current Ratio',
-        value: safeValue(latestRatios.currentRatio).toFixed(2),
+        value: formatMetric(currentRatio),
         formula: 'Umlaufvermögen / Kurzfristige Verbindlichkeiten',
         explanation: 'Misst die kurzfristige Liquidität des Unternehmens.',
         threshold: '>1',
-        status: safeValue(latestRatios.currentRatio) > 1.5 ? 'pass' : safeValue(latestRatios.currentRatio) > 1 ? 'warning' : 'fail'
+        status: currentRatio !== null ? (currentRatio > 1.5 ? 'pass' : currentRatio > 1 ? 'warning' : 'fail') : 'fail'
       },
       {
         name: 'KGV',
-        value: safeValue(latestRatios.priceEarningsRatio).toFixed(2),
+        value: formatMetric(pe),
         formula: 'Aktienkurs / Gewinn pro Aktie',
         explanation: 'Gibt an, wie hoch die Aktie im Verhältnis zum Gewinn bewertet ist.',
         threshold: '<25 (für Wachstumsunternehmen)',
-        status: safeValue(latestRatios.priceEarningsRatio) < 15 ? 'pass' : safeValue(latestRatios.priceEarningsRatio) < 25 ? 'warning' : 'fail'
+        status: pe !== null ? (pe < 15 ? 'pass' : pe < 25 ? 'warning' : 'fail') : 'fail'
       },
       {
         name: 'Dividendenrendite',
-        value: `${(safeValue(latestRatios.dividendYield) * 100).toFixed(2)}%`,
+        value: formatMetric(dividendYield, true),
         formula: 'Jahresdividende / Aktienkurs',
         explanation: 'Zeigt, wie viel Dividendenertrag im Verhältnis zum Aktienkurs ausgezahlt wird.',
         threshold: '>2%',
-        status: safeValue(latestRatios.dividendYield) * 100 > 2 ? 'pass' : safeValue(latestRatios.dividendYield) * 100 > 1 ? 'warning' : 'fail'
+        status: dividendYield !== null ? (dividendYield > 0.02 ? 'pass' : dividendYield > 0.01 ? 'warning' : 'fail') : 'fail'
       },
       {
         name: 'Gewinn pro Aktie',
-        value: eps !== null && eps !== 0 ? `${eps.toFixed(2)} USD` : 'N/A',
+        value: eps !== null ? `${eps.toFixed(2)} USD` : 'N/A',
         formula: 'Nettogewinn / Anzahl ausstehender Aktien',
         explanation: 'Zeigt den Gewinn, der pro Aktie erwirtschaftet wurde.',
         threshold: '>0 (steigend)',
-        status: safeValue(eps) > 2 ? 'pass' : safeValue(eps) > 0 ? 'warning' : 'fail'
+        status: eps !== null ? (eps > 2 ? 'pass' : eps > 0 ? 'warning' : 'fail') : 'fail'
       },
       {
         name: 'Umsatzwachstum (5J)',
-        value: latestMetrics && latestMetrics.revenueGrowth5Y ? 
-               `${(safeValue(latestMetrics.revenueGrowth5Y) * 100).toFixed(2)}%` : 'N/A',
+        value: formatMetric(revenueGrowth5Y, true),
         formula: '(Aktueller Umsatz / Umsatz vor 5 Jahren)^(1/5) - 1',
         explanation: 'Durchschnittliches jährliches Umsatzwachstum über die letzten 5 Jahre.',
         threshold: '>5%',
-        status: latestMetrics && safeValue(latestMetrics.revenueGrowth5Y) * 100 > 10 ? 'pass' : 
-                latestMetrics && safeValue(latestMetrics.revenueGrowth5Y) * 100 > 5 ? 'warning' : 'fail'
+        status: revenueGrowth5Y !== null ? (revenueGrowth5Y > 0.10 ? 'pass' : revenueGrowth5Y > 0.05 ? 'warning' : 'fail') : 'fail'
       }
     ];
-
+    
     // Historische Einkommensdaten für Chart abrufen (10 Jahre)
     const historicalIncomeStatements = incomeStatements || [];
     

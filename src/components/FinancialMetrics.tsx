@@ -46,8 +46,8 @@ const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
   
   // Verbesserte Prüfung für fehlende Werte
   const isValueMissing = value === 'N/A' || 
-                         (typeof value === 'string' && value.includes('N/A')) ||
-                         (typeof value === 'number' && value === 0) ||
+                         (typeof value === 'string' && (value.includes('N/A') || value === '0.00' || value === '0.00%')) ||
+                         (typeof value === 'number' && (value === 0 || isNaN(value))) ||
                          value === undefined || 
                          value === null;
   
@@ -68,7 +68,11 @@ const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
         <div>
           <span className="font-medium">Buffett-Schwelle:</span> {threshold}
         </div>
-        <MetricStatus status={status} />
+        {!isValueMissing ? (
+          <MetricStatus status={status} />
+        ) : (
+          <span className="text-gray-500 font-medium">Nicht bewertbar</span>
+        )}
       </div>
     </Card>
   );
