@@ -3,13 +3,17 @@ import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
 import BuffettCriteria from '@/components/BuffettCriteria';
+import BuffettCriteriaGPT from '@/components/BuffettCriteriaGPT';
 import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
+import OpenAiKeyInput from '@/components/OpenAiKeyInput';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
+import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Index = () => {
   const { toast } = useToast();
@@ -20,16 +24,24 @@ const Index = () => {
   const [overallRating, setOverallRating] = useState(null);
   const [error, setError] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
+  const [hasGptApiKey, setHasGptApiKey] = useState(false);
+  const [activeTab, setActiveTab] = useState('standard');
 
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
     setHasApiKey(!!savedKey);
+    
+    const openAiKey = localStorage.getItem('openai_api_key');
+    setHasGptApiKey(!!openAiKey);
   }, []);
 
   useEffect(() => {
     const handleStorageChange = () => {
       const savedKey = localStorage.getItem('fmp_api_key');
       setHasApiKey(!!savedKey);
+      
+      const openAiKey = localStorage.getItem('openai_api_key');
+      setHasGptApiKey(!!openAiKey);
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -39,6 +51,8 @@ const Index = () => {
       originalSetItem.apply(this, [key, value]);
       if (key === 'fmp_api_key') {
         setHasApiKey(!!value);
+      } else if (key === 'openai_api_key') {
+        setHasGptApiKey(!!value);
       }
     };
     
@@ -65,6 +79,11 @@ const Index = () => {
         title: "Analyse läuft",
         description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
       });
+      
+      // Wenn GPT verfügbar ist, entsprechenden Tab aktivieren
+      if (hasGptApiKey) {
+        setActiveTab('gpt');
+      }
       
       const [criteria, metrics, rating] = await Promise.all([
         analyzeBuffettCriteria(ticker),
@@ -122,6 +141,21 @@ const Index = () => {
         </div>
       )}
       
+      {hasApiKey && !hasGptApiKey && (
+        <div className="mb-8 animate-fade-in">
+          <Alert className="mb-4">
+            <InfoIcon className="h-4 w-4" />
+            <AlertTitle>GPT-Integration (optional)</AlertTitle>
+            <AlertDescription>
+              Für eine erweiterte Analyse aller 11 Buffett-Kriterien empfehlen wir die Integration mit OpenAI GPT.
+              Dies ermöglicht tiefere Einblicke zu den qualitativen Aspekten wie Geschäftsmodell, Management und langfristige Perspektiven.
+            </AlertDescription>
+          </Alert>
+          
+          <OpenAiKeyInput />
+        </div>
+      )}
+      
       <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
       
       {error && (
@@ -161,7 +195,30 @@ const Index = () => {
         <>
           {buffettCriteria && (
             <div className="mb-10">
-              <BuffettCriteria criteria={buffettCriteria} />
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="mb-4">
+                  <TabsTrigger value="standard">Standard-Analyse</TabsTrigger>
+                  <TabsTrigger value="gpt" disabled={!hasGptApiKey}>
+                    {hasGptApiKey ? 'GPT-Analyse (11 Kriterien)' : 'GPT-Analyse (Nicht verfügbar)'}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="standard">
+                  <BuffettCriteria criteria={buffettCriteria} />
+                </TabsContent>
+                <TabsContent value="gpt">
+                  {hasGptApiKey ? (
+                    <BuffettCriteriaGPT criteria={buffettCriteria} />
+                  ) : (
+                    <Alert>
+                      <InfoIcon className="h-4 w-4" />
+                      <AlertTitle>GPT-Analyse nicht verfügbar</AlertTitle>
+                      <AlertDescription>
+                        Bitte konfigurieren Sie Ihren OpenAI API-Key, um Zugang zur erweiterten GPT-Analyse zu erhalten.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           )}
           

@@ -1,4 +1,15 @@
 import axios from 'axios';
+import { 
+  analyzeBusinessModel, 
+  analyzeEconomicMoat,
+  analyzeManagementQuality,
+  analyzeLongTermProspects,
+  analyzeCyclicalBehavior,
+  analyzeOneTimeEffects,
+  analyzeTurnaround,
+  analyzeRationalBehavior,
+  hasOpenAiApiKey
+} from './openaiApi';
 
 // Financial Modeling Prep API Key
 // Sie müssen diesen API-Key durch Ihre eigene ersetzen
@@ -108,6 +119,21 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   // Business Model Analyse
   const businessModelStatus = companyProfile.description && companyProfile.description.length > 100 ? 'pass' : 'warning';
   
+  // GPT-basierte Analyse des Geschäftsmodells
+  let businessModelGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      businessModelGptAnalysis = await analyzeBusinessModel(
+        companyProfile.companyName, 
+        companyProfile.industry || 'Unbekannt', 
+        companyProfile.description || 'Keine Beschreibung verfügbar'
+      );
+    } catch (error) {
+      console.error('Error analyzing business model with GPT:', error);
+      businessModelGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
   // Verbesserte Berechnungen für finanzielle Kennzahlen
   
   // Bruttomarge direkt aus Ratios oder berechnen
@@ -124,6 +150,23 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     economicMoatStatus = 'pass';
   } else if (grossMargin > 30 && operatingMargin > 15 && roic > 10) {
     economicMoatStatus = 'warning';
+  }
+  
+  // GPT-basierte Analyse des wirtschaftlichen Burggrabens
+  let economicMoatGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      economicMoatGptAnalysis = await analyzeEconomicMoat(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt',
+        grossMargin,
+        operatingMargin,
+        roic
+      );
+    } catch (error) {
+      console.error('Error analyzing economic moat with GPT:', error);
+      economicMoatGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
   }
   
   // Verbesserte ROE Berechnung
@@ -205,6 +248,117 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   // Management Qualität (vereinfacht)
   const managementStatus = 'warning';
   
+  // GPT-basierte Analyse der Managementqualität
+  let managementGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      managementGptAnalysis = await analyzeManagementQuality(
+        companyProfile.companyName,
+        companyProfile.ceo || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing management quality with GPT:', error);
+      managementGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // Verbesserte KGV Berechnung
+  let pe = safeValue(latestRatios.priceEarningsRatio);
+  
+  // Verbesserte Dividendenrendite Berechnung
+  let dividendYield = safeValue(latestRatios.dividendYield) * 100;
+  
+  let valuationStatus = 'fail';
+  if (pe < 15 && dividendYield > 2) {
+    valuationStatus = 'pass';
+  } else if (pe < 25 && dividendYield > 1) {
+    valuationStatus = 'warning';
+  }
+  
+  // Langfristiger Horizont
+  const sector = companyProfile.sector || 'Unbekannt';
+  
+  // GPT-basierte Analyse der langfristigen Perspektiven
+  let longTermGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      longTermGptAnalysis = await analyzeLongTermProspects(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt',
+        companyProfile.sector || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing long-term prospects with GPT:', error);
+      longTermGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // GPT-basierte Analyse des rationalen Verhaltens
+  let rationalBehaviorGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      rationalBehaviorGptAnalysis = await analyzeRationalBehavior(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing rational behavior with GPT:', error);
+      rationalBehaviorGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // GPT-basierte Analyse des antizyklischen Verhaltens
+  let cyclicalBehaviorGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      cyclicalBehaviorGptAnalysis = await analyzeCyclicalBehavior(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing cyclical behavior with GPT:', error);
+      cyclicalBehaviorGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // GPT-basierte Analyse der Einmaleffekte
+  let oneTimeEffectsGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      oneTimeEffectsGptAnalysis = await analyzeOneTimeEffects(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing one-time effects with GPT:', error);
+      oneTimeEffectsGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // GPT-basierte Analyse, ob es sich um einen Turnaround-Fall handelt
+  let turnaroundGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      turnaroundGptAnalysis = await analyzeTurnaround(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing turnaround with GPT:', error);
+      turnaroundGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  let financialStabilityStatus = 'fail';
+  if (debtToAssets < 50 && interestCoverage > 5 && currentRatio > 1.5) {
+    financialStabilityStatus = 'pass';
+  } else if (debtToAssets < 70 && interestCoverage > 3 && currentRatio > 1) {
+    financialStabilityStatus = 'warning';
+  }
+  
+  // Management Qualität (vereinfacht)
+  const managementStatus = 'warning';
+  
   // Verbesserte KGV Berechnung
   let pe = safeValue(latestRatios.priceEarningsRatio);
   
@@ -233,29 +387,31 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   return {
     businessModel: {
       status: businessModelStatus,
-      title: 'Geschäftsmodell verstehen',
+      title: '1. Verstehbares Geschäftsmodell',
       description: `${companyProfile.companyName} ist tätig im Bereich ${companyProfile.industry || 'Unbekannt'}.`,
       details: [
         `Hauptgeschäftsbereich: ${companyProfile.industry || 'Unbekannt'}`,
-        `Sektor: ${sector}`,
+        `Sektor: ${companyProfile.sector || 'Unbekannt'}`,
         `Gründungsjahr: ${companyProfile.ipoDate ? new Date(companyProfile.ipoDate).getFullYear() : 'N/A'}`,
         `Beschreibung: ${companyProfile.description ? companyProfile.description.substring(0, 200) + '...' : 'Keine Beschreibung verfügbar'}`
-      ]
+      ],
+      gptAnalysis: businessModelGptAnalysis
     },
     economicMoat: {
       status: economicMoatStatus,
-      title: 'Wirtschaftlicher Burggraben (Moat)',
+      title: '2. Wirtschaftlicher Burggraben (Moat)',
       description: `${companyProfile.companyName} zeigt ${economicMoatStatus === 'pass' ? 'starke' : economicMoatStatus === 'warning' ? 'moderate' : 'schwache'} Anzeichen eines wirtschaftlichen Burggrabens.`,
       details: [
         `Bruttomarge: ${grossMargin.toFixed(2)}% (Buffett bevorzugt >40%)`,
         `Operative Marge: ${operatingMargin.toFixed(2)}% (Buffett bevorzugt >20%)`,
         `ROIC: ${roic.toFixed(2)}% (Buffett bevorzugt >15%)`,
         `Marktposition: ${companyProfile.isActivelyTrading ? 'Aktiv am Markt' : 'Eingeschränkte Marktpräsenz'}`
-      ]
+      ],
+      gptAnalysis: economicMoatGptAnalysis
     },
     financialMetrics: {
       status: financialMetricsStatus,
-      title: 'Finanzkennzahlen',
+      title: '3. Finanzkennzahlen (10 Jahre Rückblick)',
       description: `Die Finanzkennzahlen von ${companyProfile.companyName} sind ${financialMetricsStatus === 'pass' ? 'stark' : financialMetricsStatus === 'warning' ? 'moderat' : 'schwach'}.`,
       details: [
         `Eigenkapitalrendite (ROE): ${roe.toFixed(2)}% (Buffett bevorzugt >15%)`,
@@ -266,7 +422,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     },
     financialStability: {
       status: financialStabilityStatus,
-      title: 'Finanzielle Stabilität',
+      title: '4. Finanzielle Stabilität & Verschuldung',
       description: `${companyProfile.companyName} zeigt ${financialStabilityStatus === 'pass' ? 'starke' : financialStabilityStatus === 'warning' ? 'moderate' : 'schwache'} finanzielle Stabilität.`,
       details: [
         `Schulden zu Vermögen: ${debtToAssets.toFixed(2)}% (Buffett bevorzugt <50%)`,
@@ -277,18 +433,19 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     },
     management: {
       status: managementStatus,
-      title: 'Qualität des Managements',
+      title: '5. Qualität des Managements',
       description: 'Die Qualität des Managements erfordert weitere Recherche.',
       details: [
         'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
         'Beachten Sie Insider-Beteiligungen, Kapitalallokation und Kommunikation',
         `CEO: ${companyProfile.ceo || 'Keine Informationen verfügbar'}`,
         'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
-      ]
+      ],
+      gptAnalysis: managementGptAnalysis
     },
     valuation: {
       status: valuationStatus,
-      title: 'Bewertung',
+      title: '6. Bewertung (nicht zu teuer kaufen)',
       description: `${companyProfile.companyName} ist aktuell ${valuationStatus === 'pass' ? 'angemessen' : valuationStatus === 'warning' ? 'moderat' : 'hoch'} bewertet.`,
       details: [
         `KGV (P/E): ${pe.toFixed(2)} (Buffett bevorzugt <15)`,
@@ -299,14 +456,63 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     },
     longTermOutlook: {
       status: longTermStatus,
-      title: 'Langfristiger Horizont',
+      title: '7. Langfristiger Horizont',
       description: `${companyProfile.companyName} operiert in einer Branche mit ${longTermStatus === 'pass' ? 'guten' : 'moderaten'} langfristigen Aussichten.`,
       details: [
         `Branche: ${companyProfile.industry || 'Unbekannt'}`,
-        `Sektor: ${sector}`,
+        `Sektor: ${companyProfile.sector || 'Unbekannt'}`,
         `Börsennotiert seit: ${companyProfile.ipoDate ? new Date(companyProfile.ipoDate).toLocaleDateString() : 'N/A'}`,
         'Eine tiefere Analyse der langfristigen Branchentrends wird empfohlen'
-      ]
+      ],
+      gptAnalysis: longTermGptAnalysis
+    },
+    rationalBehavior: {
+      status: 'warning', // Vereinfachte Standardbewertung
+      title: '8. Rationalität & Disziplin',
+      description: 'Rationalität und Disziplin erfordern tiefere Analyse.',
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie Kapitalallokation, Akquisitionen und Ausgaben',
+        'Analysieren Sie, ob das Management bewusst und diszipliniert handelt',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: rationalBehaviorGptAnalysis
+    },
+    cyclicalBehavior: {
+      status: 'warning', // Vereinfachte Standardbewertung
+      title: '9. Antizyklisches Verhalten',
+      description: 'Antizyklisches Verhalten erfordert tiefere Analyse.',
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie das Verhalten in Marktkrisen',
+        'Analysieren Sie, ob das Unternehmen kauft, wenn andere verkaufen',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: cyclicalBehaviorGptAnalysis
+    },
+    oneTimeEffects: {
+      status: 'warning', // Vereinfachte Standardbewertung
+      title: '10. Vergangenheit ≠ Zukunft',
+      description: 'Die Nachhaltigkeit des Erfolgs erfordert tiefere Analyse.',
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie einmalige Ereignisse, die Ergebnisse beeinflusst haben',
+        'Analysieren Sie, ob das Wachstum organisch oder durch Übernahmen getrieben ist',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: oneTimeEffectsGptAnalysis
+    },
+    turnaround: {
+      status: 'warning', // Vereinfachte Standardbewertung
+      title: '11. Keine Turnarounds',
+      description: 'Turnaround-Status erfordert tiefere Analyse.',
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie Anzeichen für Restrukturierung oder Sanierung',
+        'Analysieren Sie, ob das Unternehmen sich in einer Erholungsphase befindet',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: turnaroundGptAnalysis
     }
   };
 };
@@ -503,329 +709,4 @@ export const getFinancialMetrics = async (ticker: string) => {
     // 2. Eigene Berechnung aus EBIT und Zinsaufwand
     if ((interestCoverage === null || interestCoverage === 0) && latestIncomeStatement) {
       const ebit = latestIncomeStatement.ebitda !== undefined && latestIncomeStatement.depreciationAndAmortization !== undefined ?
-                  latestIncomeStatement.ebitda - latestIncomeStatement.depreciationAndAmortization : null;
-      
-      const interestExpense = latestIncomeStatement.interestExpense !== undefined ?
-                            Math.abs(latestIncomeStatement.interestExpense) : null;
-      
-      if (ebit !== null && interestExpense !== null && interestExpense > 0) {
-        interestCoverage = ebit / interestExpense;
-        console.log('Zinsdeckungsgrad berechnet aus EBIT/Zinsaufwand:', interestCoverage);
-      }
-    }
-    
-    // Current Ratio Berechnung - verbessert
-    let currentRatio = null;
-    
-    // 1. Direkt aus Ratios (vorberechneter Wert)
-    if (latestRatios && latestRatios.currentRatio !== undefined) {
-      currentRatio = safeValue(latestRatios.currentRatio);
-      console.log('Current Ratio aus Ratios:', currentRatio);
-    }
-    
-    // 2. Eigene Berechnung aus Umlaufvermögen und kurzfristigen Verbindlichkeiten
-    if ((currentRatio === null || currentRatio === 0) && latestBalanceSheet) {
-      const currentAssets = latestBalanceSheet.totalCurrentAssets;
-      const currentLiabilities = latestBalanceSheet.totalCurrentLiabilities;
-      
-      if (currentAssets !== undefined && currentLiabilities !== undefined && currentLiabilities > 0) {
-        currentRatio = currentAssets / currentLiabilities;
-        console.log('Current Ratio berechnet aus Umlaufvermögen/Kurzfristige Verbindlichkeiten:', currentRatio);
-      }
-    }
-    
-    // P/E Ratio (KGV) Berechnung - verbessert
-    let pe = null;
-    
-    // 1. Direkt aus Ratios (vorberechneter Wert)
-    if (latestRatios && latestRatios.priceEarningsRatio !== undefined) {
-      pe = safeValue(latestRatios.priceEarningsRatio);
-      console.log('KGV aus Ratios:', pe);
-    }
-    
-    // 2. Berechnung aus aktuellem Kurs und EPS
-    if ((pe === null || pe === 0) && quoteData && quoteData.price !== undefined && eps !== null && eps > 0) {
-      pe = quoteData.price / eps;
-      console.log('KGV berechnet aus Preis/EPS:', pe);
-    }
-    
-    // Dividendenrendite Berechnung - verbessert
-    let dividendYield = null;
-    
-    // 1. Direkt aus Ratios (vorberechneter Wert)
-    if (latestRatios && latestRatios.dividendYield !== undefined) {
-      dividendYield = safeValue(latestRatios.dividendYield);
-      console.log('Dividendenrendite aus Ratios:', dividendYield);
-    }
-    
-    // 2. Berechnung aus aktueller Dividende und Kurs
-    if ((dividendYield === null || dividendYield === 0) && quoteData) {
-      if (quoteData.lastAnnualDividend !== undefined && quoteData.price !== undefined && quoteData.price > 0) {
-        dividendYield = quoteData.lastAnnualDividend / quoteData.price;
-        console.log('Dividendenrendite berechnet aus Dividende/Preis:', dividendYield);
-      }
-    }
-    
-    // Umsatzwachstum 5J Berechnung - verbessert
-    let revenueGrowth5Y = null;
-    
-    // 1. Direkt aus Metrics (vorberechneter Wert)
-    if (latestMetrics && latestMetrics.revenueGrowth5Y !== undefined) {
-      revenueGrowth5Y = safeValue(latestMetrics.revenueGrowth5Y);
-      console.log('Umsatzwachstum 5J aus Key Metrics:', revenueGrowth5Y);
-    }
-    
-    // 2. Eigene Berechnung aus historischen Umsatzdaten (wenn genügend Daten vorhanden sind)
-    if ((revenueGrowth5Y === null || revenueGrowth5Y === 0) && incomeStatements && incomeStatements.length >= 5) {
-      const currentRevenue = incomeStatements[0].revenue;
-      const fiveYearsAgoRevenue = incomeStatements[4].revenue;
-      
-      if (currentRevenue !== undefined && fiveYearsAgoRevenue !== undefined && fiveYearsAgoRevenue > 0) {
-        // CAGR Formel: (Endwert/Anfangswert)^(1/Jahre) - 1
-        revenueGrowth5Y = Math.pow(currentRevenue / fiveYearsAgoRevenue, 1/5) - 1;
-        console.log('Umsatzwachstum 5J berechnet aus historischen Daten:', revenueGrowth5Y);
-      }
-    }
-    
-    // Hilfsfunktion zum Formatieren und Bewerten der Metriken
-    const formatMetric = (value: any, isPercentage = false) => {
-      if (value === null) return 'N/A';
-      
-      if (isPercentage) {
-        return `${(value * 100).toFixed(2)}%`;
-      } else {
-        return value.toFixed(2);
-      }
-    };
-    
-    // Metriken basierend auf den verbesserten Berechnungen erstellen
-    const metrics = [
-      {
-        name: 'Return on Equity (ROE)',
-        value: formatMetric(roe, true),
-        formula: 'Jahresgewinn / Eigenkapital',
-        explanation: 'Zeigt, wie effizient das Unternehmen das Eigenkapital einsetzt.',
-        threshold: '>15%',
-        status: roe !== null ? (roe > 0.15 ? 'pass' : roe > 0.10 ? 'warning' : 'fail') : 'fail'
-      },
-      {
-        name: 'Nettomarge',
-        value: formatMetric(netMargin, true),
-        formula: 'Nettogewinn / Umsatz',
-        explanation: 'Gibt an, wie viel vom Umsatz als Gewinn übrig bleibt.',
-        threshold: '>10%',
-        status: netMargin !== null ? (netMargin > 0.10 ? 'pass' : netMargin > 0.05 ? 'warning' : 'fail') : 'fail'
-      },
-      {
-        name: 'ROIC',
-        value: formatMetric(roic, true),
-        formula: 'NOPAT / (Eigenkapital + langfristige Schulden)',
-        explanation: 'Zeigt, wie effizient das investierte Kapital eingesetzt wird.',
-        threshold: '>10%',
-        status: roic !== null ? (roic > 0.10 ? 'pass' : roic > 0.07 ? 'warning' : 'fail') : 'fail'
-      },
-      {
-        name: 'Schuldenquote',
-        value: formatMetric(debtToAssets, true),
-        formula: 'Gesamtschulden / Gesamtvermögen',
-        explanation: 'Gibt an, wie stark das Unternehmen fremdfinanziert ist.',
-        threshold: '<70%',
-        status: debtToAssets !== null ? (debtToAssets < 0.50 ? 'pass' : debtToAssets < 0.70 ? 'warning' : 'fail') : 'fail'
-      },
-      {
-        name: 'Zinsdeckungsgrad',
-        value: formatMetric(interestCoverage),
-        formula: 'EBIT / Zinsaufwand',
-        explanation: 'Zeigt, wie oft die Zinsen aus dem Gewinn bezahlt werden können.',
-        threshold: '>5',
-        status: interestCoverage !== null ? (interestCoverage > 5 ? 'pass' : interestCoverage > 3 ? 'warning' : 'fail') : 'fail'
-      },
-      {
-        name: 'Current Ratio',
-        value: formatMetric(currentRatio),
-        formula: 'Umlaufvermögen / Kurzfristige Verbindlichkeiten',
-        explanation: 'Misst die kurzfristige Liquidität des Unternehmens.',
-        threshold: '>1',
-        status: currentRatio !== null ? (currentRatio > 1.5 ? 'pass' : currentRatio > 1 ? 'warning' : 'fail') : 'fail'
-      },
-      {
-        name: 'KGV',
-        value: formatMetric(pe),
-        formula: 'Aktienkurs / Gewinn pro Aktie',
-        explanation: 'Gibt an, wie hoch die Aktie im Verhältnis zum Gewinn bewertet ist.',
-        threshold: '<25 (für Wachstumsunternehmen)',
-        status: pe !== null ? (pe < 15 ? 'pass' : pe < 25 ? 'warning' : 'fail') : 'fail'
-      },
-      {
-        name: 'Dividendenrendite',
-        value: formatMetric(dividendYield, true),
-        formula: 'Jahresdividende / Aktienkurs',
-        explanation: 'Zeigt, wie viel Dividendenertrag im Verhältnis zum Aktienkurs ausgezahlt wird.',
-        threshold: '>2%',
-        status: dividendYield !== null ? (dividendYield > 0.02 ? 'pass' : dividendYield > 0.01 ? 'warning' : 'fail') : 'fail'
-      },
-      {
-        name: 'Gewinn pro Aktie',
-        value: eps !== null ? `${eps.toFixed(2)} USD` : 'N/A',
-        formula: 'Nettogewinn / Anzahl ausstehender Aktien',
-        explanation: 'Zeigt den Gewinn, der pro Aktie erwirtschaftet wurde.',
-        threshold: '>0 (steigend)',
-        status: eps !== null ? (eps > 2 ? 'pass' : eps > 0 ? 'warning' : 'fail') : 'fail'
-      },
-      {
-        name: 'Umsatzwachstum (5J)',
-        value: formatMetric(revenueGrowth5Y, true),
-        formula: '(Aktueller Umsatz / Umsatz vor 5 Jahren)^(1/5) - 1',
-        explanation: 'Durchschnittliches jährliches Umsatzwachstum über die letzten 5 Jahre.',
-        threshold: '>5%',
-        status: revenueGrowth5Y !== null ? (revenueGrowth5Y > 0.10 ? 'pass' : revenueGrowth5Y > 0.05 ? 'warning' : 'fail') : 'fail'
-      }
-    ];
-    
-    // Historische Einkommensdaten für Chart abrufen (10 Jahre)
-    const historicalIncomeStatements = incomeStatements || [];
-    
-    // Historische EPS-Daten direkt aus den Einkommensberichten extrahieren
-    const processHistoricalData = () => {
-      // Arrays für die verschiedenen Datenreihen initialisieren
-      const revenue = [];
-      const earnings = [];
-      const epsData = [];
-      
-      // Durch die Einkommensberichte iterieren und Daten extrahieren
-      for (const statement of historicalIncomeStatements) {
-        if (statement) {
-          const year = statement.date ? statement.date.substring(0, 4) : 'N/A';
-          
-          // Umsatzdaten
-          if (statement.revenue !== undefined && statement.revenue !== null) {
-            revenue.push({
-              year,
-              value: Number(statement.revenue) / 1000000 // In Millionen umrechnen
-            });
-          }
-          
-          // Gewinn-Daten
-          if (statement.netIncome !== undefined && statement.netIncome !== null) {
-            earnings.push({
-              year,
-              value: Number(statement.netIncome) / 1000000 // In Millionen umrechnen
-            });
-          }
-          
-          // EPS-Daten - direkt aus dem Income Statement
-          if (statement.eps !== undefined && statement.eps !== null && Number(statement.eps) !== 0) {
-            epsData.push({
-              year,
-              value: Number(statement.eps)
-            });
-          } 
-          // Alternativ EPS berechnen, wenn NetIncome und SharesOutstanding verfügbar sind
-          else if (statement.netIncome !== undefined && statement.netIncome !== null && 
-                  statement.weightedAverageShsOut !== undefined && statement.weightedAverageShsOut !== null && 
-                  statement.weightedAverageShsOut > 0) {
-            epsData.push({
-              year,
-              value: Number(statement.netIncome) / Number(statement.weightedAverageShsOut)
-            });
-          }
-        }
-      }
-      
-      return {
-        revenue,
-        earnings,
-        eps: epsData
-      };
-    };
-    
-    // Historische Daten verarbeiten
-    const historicalDataFormatted = processHistoricalData();
-    
-    // Daten nach Jahr sortieren (neueste zuletzt)
-    const sortByYear = (a, b) => a.year.localeCompare(b.year);
-    historicalDataFormatted.revenue.sort(sortByYear);
-    historicalDataFormatted.earnings.sort(sortByYear);
-    historicalDataFormatted.eps.sort(sortByYear);
-
-    return {
-      metrics,
-      historicalData: historicalDataFormatted
-    };
-  } catch (error) {
-    console.error('Error getting financial metrics:', error);
-    throw error;
-  }
-};
-
-// Funktion, um Gesamtbewertung zu erstellen
-export const getOverallRating = async (ticker: string) => {
-  console.log(`Getting overall rating for ${ticker}`);
-  
-  // Standardisieren des Tickers für die API
-  const standardizedTicker = ticker.trim().toUpperCase();
-  
-  // Wir benötigen bereits analysierte Buffett-Kriterien
-  const buffettCriteria = await analyzeBuffettCriteria(standardizedTicker);
-  
-  // Zählen der verschiedenen Status
-  let passCount = 0;
-  let warningCount = 0;
-  let failCount = 0;
-  
-  Object.values(buffettCriteria).forEach((criterion: any) => {
-    if (criterion.status === 'pass') passCount++;
-    else if (criterion.status === 'warning') warningCount++;
-    else if (criterion.status === 'fail') failCount++;
-  });
-  
-  // Bestimmen der Gesamtbewertung
-  let overall;
-  if (passCount >= 5 && failCount === 0) {
-    overall = 'buy';
-  } else if (passCount >= 3 && failCount <= 1) {
-    overall = 'watch';
-  } else {
-    overall = 'avoid';
-  }
-  
-  // Extrahieren von Stärken und Schwächen
-  const strengths = [];
-  const weaknesses = [];
-  
-  Object.entries(buffettCriteria).forEach(([key, criterion]: [string, any]) => {
-    const criterionName = criterion.title;
-    
-    if (criterion.status === 'pass') {
-      strengths.push(`${criterionName}: ${criterion.description}`);
-    } else if (criterion.status === 'fail') {
-      weaknesses.push(`${criterionName}: ${criterion.description}`);
-    } else if (key === 'valuation' && criterion.status === 'warning') {
-      // Bewertung ist oft ein wichtiger Schwachpunkt bei sonst guten Unternehmen
-      weaknesses.push(`${criterionName}: ${criterion.description}`);
-    }
-  });
-  
-  // Spezifische Empfehlung basierend auf Gesamtbewertung
-  let recommendation;
-  let summary;
-  
-  if (overall === 'buy') {
-    summary = `${standardizedTicker} erfüllt die meisten von Buffetts Kriterien und ist zu einem angemessenen Preis bewertet.`;
-    recommendation = `${standardizedTicker} erscheint nach Buffetts Kriterien als solide Investition mit guter Qualität und angemessener Bewertung. Langfristig orientierte Anleger können einen Kauf in Betracht ziehen.`;
-  } else if (overall === 'watch') {
-    summary = `${standardizedTicker} zeigt einige positive Eigenschaften, aber entweder die Bewertung oder bestimmte fundamentale Aspekte entsprechen nicht vollständig Buffetts Kriterien.`;
-    recommendation = `${standardizedTicker} sollte auf die Beobachtungsliste gesetzt werden. Ein Kauf könnte bei einer besseren Bewertung oder verbesserten Fundamentaldaten in Betracht gezogen werden.`;
-  } else {
-    summary = `${standardizedTicker} entspricht nicht ausreichend Buffetts Investitionskriterien, insbesondere in Bezug auf Qualität oder Bewertung.`;
-    recommendation = `Nach Buffetts konservativen Anlagekriterien erscheint ${standardizedTicker} nicht als attraktive Investition. Anleger sollten nach Alternativen mit besserem Qualitäts-Preis-Verhältnis suchen.`;
-  }
-  
-  return {
-    overall,
-    summary,
-    strengths: strengths.length > 0 ? strengths : [`${standardizedTicker} zeigt einige positive Aspekte, die jedoch nicht stark genug für eine Buffett-Investition sind.`],
-    weaknesses: weaknesses.length > 0 ? weaknesses : [`${standardizedTicker} hat mehrere Schwächen nach Buffetts Kriterien, besonders in Bezug auf Qualität und Bewertung.`],
-    recommendation
-  };
-};
+                  latestIncomeStatement.ebitda - latestIncomeStatement.
