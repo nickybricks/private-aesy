@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Financial Modeling Prep API Key
@@ -255,137 +254,204 @@ export const getFinancialMetrics = async (ticker: string) => {
   // Standardisieren des Tickers für die API
   const standardizedTicker = ticker.trim().toUpperCase();
   
-  // Finanzkennzahlen abrufen
-  const [ratios, keyMetrics, financialGrowth, historicalData] = await Promise.all([
-    fetchFromFMP(`/ratios/${standardizedTicker}`),
-    fetchFromFMP(`/key-metrics/${standardizedTicker}`),
-    fetchFromFMP(`/financial-growth/${standardizedTicker}`),
-    Promise.all([
+  try {
+    // Finanzkennzahlen abrufen - erweiterte Datenquellen für genauere Ergebnisse
+    const [ratios, keyMetrics, incomeStatements, balanceSheets, cashFlows, financialGrowth] = await Promise.all([
+      fetchFromFMP(`/ratios/${standardizedTicker}?limit=1`),
+      fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=1`),
       fetchFromFMP(`/income-statement/${standardizedTicker}?limit=10`),
-      fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=10`)
-    ])
-  ]);
-  
-  // Überprüfen, ob Daten zurückgegeben wurden
-  if (!ratios || ratios.length === 0 || !keyMetrics || keyMetrics.length === 0 || !financialGrowth || financialGrowth.length === 0) {
-    throw new Error(`Keine ausreichenden Finanzkennzahlen gefunden für ${standardizedTicker}`);
-  }
-  
-  // Die neuesten Daten verwenden
-  const latestRatios = ratios[0];
-  const latestMetrics = keyMetrics[0];
-  const latestGrowth = financialGrowth[0];
-  
-  // Sicherstellen, dass alle erforderlichen Werte existieren
-  const safeValue = (value: any) => (value !== undefined && value !== null) ? value : 0;
-  
-  // Historische Daten verarbeiten
-  const incomeStatements = historicalData[0];
-  const historicalMetrics = historicalData[1];
-  
-  if (!incomeStatements || incomeStatements.length === 0 || !historicalMetrics || historicalMetrics.length === 0) {
-    throw new Error(`Keine historischen Daten gefunden für ${standardizedTicker}`);
-  }
-  
-  // Metriken basierend auf den Daten erstellen
-  const metrics = [
-    {
-      name: 'Return on Equity (ROE)',
-      value: `${(safeValue(latestRatios.returnOnEquity) * 100).toFixed(2)}%`,
-      formula: 'Jahresgewinn / Eigenkapital',
-      explanation: 'Zeigt, wie effizient das Unternehmen das Eigenkapital einsetzt.',
-      threshold: '>15%',
-      status: safeValue(latestRatios.returnOnEquity) * 100 > 15 ? 'pass' : safeValue(latestRatios.returnOnEquity) * 100 > 10 ? 'warning' : 'fail'
-    },
-    {
-      name: 'Nettomarge',
-      value: `${(safeValue(latestRatios.netProfitMargin) * 100).toFixed(2)}%`,
-      formula: 'Nettogewinn / Umsatz',
-      explanation: 'Gibt an, wie viel vom Umsatz als Gewinn übrig bleibt.',
-      threshold: '>10%',
-      status: safeValue(latestRatios.netProfitMargin) * 100 > 10 ? 'pass' : safeValue(latestRatios.netProfitMargin) * 100 > 5 ? 'warning' : 'fail'
-    },
-    {
-      name: 'ROIC',
-      value: `${(safeValue(latestMetrics.roic) * 100).toFixed(2)}%`,
-      formula: 'NOPAT / (Eigenkapital + langfristige Schulden)',
-      explanation: 'Zeigt, wie effizient das investierte Kapital eingesetzt wird.',
-      threshold: '>10%',
-      status: safeValue(latestMetrics.roic) * 100 > 10 ? 'pass' : safeValue(latestMetrics.roic) * 100 > 7 ? 'warning' : 'fail'
-    },
-    {
-      name: 'Schuldenquote',
-      value: `${(safeValue(latestRatios.debtToAssets) * 100).toFixed(2)}%`,
-      formula: 'Gesamtschulden / Gesamtvermögen',
-      explanation: 'Gibt an, wie stark das Unternehmen fremdfinanziert ist.',
-      threshold: '<70%',
-      status: safeValue(latestRatios.debtToAssets) * 100 < 50 ? 'pass' : safeValue(latestRatios.debtToAssets) * 100 < 70 ? 'warning' : 'fail'
-    },
-    {
-      name: 'Zinsdeckungsgrad',
-      value: safeValue(latestRatios.interestCoverage).toFixed(2),
-      formula: 'EBIT / Zinsaufwand',
-      explanation: 'Zeigt, wie oft die Zinsen aus dem Gewinn bezahlt werden können.',
-      threshold: '>5',
-      status: safeValue(latestRatios.interestCoverage) > 5 ? 'pass' : safeValue(latestRatios.interestCoverage) > 3 ? 'warning' : 'fail'
-    },
-    {
-      name: 'Current Ratio',
-      value: safeValue(latestRatios.currentRatio).toFixed(2),
-      formula: 'Umlaufvermögen / Kurzfristige Verbindlichkeiten',
-      explanation: 'Misst die kurzfristige Liquidität des Unternehmens.',
-      threshold: '>1',
-      status: safeValue(latestRatios.currentRatio) > 1.5 ? 'pass' : safeValue(latestRatios.currentRatio) > 1 ? 'warning' : 'fail'
-    },
-    {
-      name: 'KGV',
-      value: safeValue(latestRatios.priceEarningsRatio).toFixed(2),
-      formula: 'Aktienkurs / Gewinn pro Aktie',
-      explanation: 'Gibt an, wie hoch die Aktie im Verhältnis zum Gewinn bewertet ist.',
-      threshold: '<25 (für Wachstumsunternehmen)',
-      status: safeValue(latestRatios.priceEarningsRatio) < 15 ? 'pass' : safeValue(latestRatios.priceEarningsRatio) < 25 ? 'warning' : 'fail'
-    },
-    {
-      name: 'Dividendenrendite',
-      value: `${(safeValue(latestRatios.dividendYield) * 100).toFixed(2)}%`,
-      formula: 'Jahresdividende / Aktienkurs',
-      explanation: 'Zeigt, wie viel Dividendenertrag im Verhältnis zum Aktienkurs ausgezahlt wird.',
-      threshold: '>2%',
-      status: safeValue(latestRatios.dividendYield) * 100 > 2 ? 'pass' : safeValue(latestRatios.dividendYield) * 100 > 1 ? 'warning' : 'fail'
-    },
-    {
-      name: 'Umsatzwachstum (5J)',
-      value: `${(safeValue(latestGrowth.fiveYRevenueGrowthPerShare) * 100).toFixed(2)}%`,
-      formula: '(Aktueller Umsatz / Umsatz vor 5 Jahren)^(1/5) - 1',
-      explanation: 'Durchschnittliches jährliches Umsatzwachstum über die letzten 5 Jahre.',
-      threshold: '>5%',
-      status: safeValue(latestGrowth.fiveYRevenueGrowthPerShare) * 100 > 10 ? 'pass' : safeValue(latestGrowth.fiveYRevenueGrowthPerShare) * 100 > 5 ? 'warning' : 'fail'
+      fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?limit=1`),
+      fetchFromFMP(`/cash-flow-statement/${standardizedTicker}?limit=1`),
+      fetchFromFMP(`/financial-growth/${standardizedTicker}?limit=1`)
+    ]);
+    
+    // Daten validieren und überprüfen
+    if (!ratios || ratios.length === 0 || !keyMetrics || keyMetrics.length === 0) {
+      throw new Error(`Keine ausreichenden Finanzkennzahlen gefunden für ${standardizedTicker}`);
     }
-  ];
-  
-  // Historische Daten für Charts aufbereiten
-  const processHistoricalData = (data, valueKey) => {
-    return data.map(item => ({
-      year: item.date ? item.date.substring(0, 4) : 'N/A',
-      value: safeValue(item[valueKey]) / (valueKey === 'eps' ? 1 : 1000000) // Umrechnung in Millionen außer für EPS
-    }));
-  };
-  
-  const historicalDataFormatted = {
-    revenue: processHistoricalData(incomeStatements, 'revenue'),
-    earnings: processHistoricalData(incomeStatements, 'netIncome'),
-    eps: processHistoricalData(historicalMetrics, 'eps')
-  };
-  
-  // Daten nach Jahr sortieren (älteste zuerst)
-  historicalDataFormatted.revenue.reverse();
-  historicalDataFormatted.earnings.reverse();
-  historicalDataFormatted.eps.reverse();
-  
-  return {
-    metrics,
-    historicalData: historicalDataFormatted
-  };
+    
+    // Die neuesten Daten verwenden
+    const latestRatios = ratios[0];
+    const latestMetrics = keyMetrics[0];
+    const latestGrowth = financialGrowth && financialGrowth.length > 0 ? financialGrowth[0] : null;
+    const latestIncomeStatement = incomeStatements && incomeStatements.length > 0 ? incomeStatements[0] : null;
+    const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
+    
+    // Alternative Datenquellen für EPS falls primäre Quelle fehlt
+    const eps = latestMetrics.eps || 
+                (latestIncomeStatement ? latestIncomeStatement.eps : null) ||
+                (latestRatios.earningsPerShare || 0);
+    
+    // Verbesserte ROE-Berechnung
+    const netIncome = latestIncomeStatement ? latestIncomeStatement.netIncome : 0;
+    const shareholderEquity = latestBalanceSheet ? latestBalanceSheet.totalStockholdersEquity : 0;
+    const calculatedROE = shareholderEquity && shareholderEquity !== 0 
+                          ? (netIncome / shareholderEquity) 
+                          : (latestRatios.returnOnEquity || 0);
+    
+    // Verbesserte Nettomarge-Berechnung
+    const revenue = latestIncomeStatement ? latestIncomeStatement.revenue : 0;
+    const calculatedNetMargin = revenue && revenue !== 0 
+                               ? (netIncome / revenue) 
+                               : (latestRatios.netProfitMargin || 0);
+    
+    // Sicherstellen, dass alle erforderlichen Werte existieren
+    const safeValue = (value: any) => {
+      if (value === undefined || value === null) return 0;
+      const numValue = Number(value);
+      return isNaN(numValue) ? 0 : numValue;
+    };
+    
+    // Metriken basierend auf den Daten erstellen - mit verbesserten Berechnungen und alternativen Datenquellen
+    const metrics = [
+      {
+        name: 'Return on Equity (ROE)',
+        value: `${(safeValue(calculatedROE) * 100).toFixed(2)}%`,
+        formula: 'Jahresgewinn / Eigenkapital',
+        explanation: 'Zeigt, wie effizient das Unternehmen das Eigenkapital einsetzt.',
+        threshold: '>15%',
+        status: safeValue(calculatedROE) * 100 > 15 ? 'pass' : safeValue(calculatedROE) * 100 > 10 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Nettomarge',
+        value: `${(safeValue(calculatedNetMargin) * 100).toFixed(2)}%`,
+        formula: 'Nettogewinn / Umsatz',
+        explanation: 'Gibt an, wie viel vom Umsatz als Gewinn übrig bleibt.',
+        threshold: '>10%',
+        status: safeValue(calculatedNetMargin) * 100 > 10 ? 'pass' : safeValue(calculatedNetMargin) * 100 > 5 ? 'warning' : 'fail'
+      },
+      {
+        name: 'ROIC',
+        value: `${(safeValue(latestMetrics.roic) * 100).toFixed(2)}%`,
+        formula: 'NOPAT / (Eigenkapital + langfristige Schulden)',
+        explanation: 'Zeigt, wie effizient das investierte Kapital eingesetzt wird.',
+        threshold: '>10%',
+        status: safeValue(latestMetrics.roic) * 100 > 10 ? 'pass' : safeValue(latestMetrics.roic) * 100 > 7 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Schuldenquote',
+        value: `${(safeValue(latestRatios.debtToAssets) * 100).toFixed(2)}%`,
+        formula: 'Gesamtschulden / Gesamtvermögen',
+        explanation: 'Gibt an, wie stark das Unternehmen fremdfinanziert ist.',
+        threshold: '<70%',
+        status: safeValue(latestRatios.debtToAssets) * 100 < 50 ? 'pass' : safeValue(latestRatios.debtToAssets) * 100 < 70 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Zinsdeckungsgrad',
+        value: safeValue(latestRatios.interestCoverage).toFixed(2),
+        formula: 'EBIT / Zinsaufwand',
+        explanation: 'Zeigt, wie oft die Zinsen aus dem Gewinn bezahlt werden können.',
+        threshold: '>5',
+        status: safeValue(latestRatios.interestCoverage) > 5 ? 'pass' : safeValue(latestRatios.interestCoverage) > 3 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Current Ratio',
+        value: safeValue(latestRatios.currentRatio).toFixed(2),
+        formula: 'Umlaufvermögen / Kurzfristige Verbindlichkeiten',
+        explanation: 'Misst die kurzfristige Liquidität des Unternehmens.',
+        threshold: '>1',
+        status: safeValue(latestRatios.currentRatio) > 1.5 ? 'pass' : safeValue(latestRatios.currentRatio) > 1 ? 'warning' : 'fail'
+      },
+      {
+        name: 'KGV',
+        value: safeValue(latestRatios.priceEarningsRatio).toFixed(2),
+        formula: 'Aktienkurs / Gewinn pro Aktie',
+        explanation: 'Gibt an, wie hoch die Aktie im Verhältnis zum Gewinn bewertet ist.',
+        threshold: '<25 (für Wachstumsunternehmen)',
+        status: safeValue(latestRatios.priceEarningsRatio) < 15 ? 'pass' : safeValue(latestRatios.priceEarningsRatio) < 25 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Dividendenrendite',
+        value: `${(safeValue(latestRatios.dividendYield) * 100).toFixed(2)}%`,
+        formula: 'Jahresdividende / Aktienkurs',
+        explanation: 'Zeigt, wie viel Dividendenertrag im Verhältnis zum Aktienkurs ausgezahlt wird.',
+        threshold: '>2%',
+        status: safeValue(latestRatios.dividendYield) * 100 > 2 ? 'pass' : safeValue(latestRatios.dividendYield) * 100 > 1 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Gewinn pro Aktie',
+        value: `${safeValue(eps).toFixed(2)} USD`,
+        formula: 'Nettogewinn / Anzahl ausstehender Aktien',
+        explanation: 'Zeigt den Gewinn, der pro Aktie erwirtschaftet wurde.',
+        threshold: '>0 (steigend)',
+        status: safeValue(eps) > 2 ? 'pass' : safeValue(eps) > 0 ? 'warning' : 'fail'
+      },
+      {
+        name: 'Umsatzwachstum (5J)',
+        value: latestGrowth ? `${(safeValue(latestGrowth.fiveYRevenueGrowthPerShare) * 100).toFixed(2)}%` : 'N/A',
+        formula: '(Aktueller Umsatz / Umsatz vor 5 Jahren)^(1/5) - 1',
+        explanation: 'Durchschnittliches jährliches Umsatzwachstum über die letzten 5 Jahre.',
+        threshold: '>5%',
+        status: latestGrowth && safeValue(latestGrowth.fiveYRevenueGrowthPerShare) * 100 > 10 ? 'pass' : 
+                latestGrowth && safeValue(latestGrowth.fiveYRevenueGrowthPerShare) * 100 > 5 ? 'warning' : 'fail'
+      }
+    ];
+
+    // Historische Einkommensdaten für Chart abrufen (10 Jahre)
+    const historicalIncomeStatements = incomeStatements || [];
+    
+    // Historische EPS-Daten direkt aus den Einkommensberichten extrahieren
+    const processHistoricalData = () => {
+      // Arrays für die verschiedenen Datenreihen initialisieren
+      const revenue = [];
+      const earnings = [];
+      const epsData = [];
+      
+      // Durch die Einkommensberichte iterieren und Daten extrahieren
+      for (const statement of historicalIncomeStatements) {
+        if (statement) {
+          const year = statement.date ? statement.date.substring(0, 4) : 'N/A';
+          
+          // Umsatzdaten
+          if (statement.revenue !== undefined && statement.revenue !== null) {
+            revenue.push({
+              year,
+              value: Number(statement.revenue) / 1000000 // In Millionen umrechnen
+            });
+          }
+          
+          // Gewinn-Daten
+          if (statement.netIncome !== undefined && statement.netIncome !== null) {
+            earnings.push({
+              year,
+              value: Number(statement.netIncome) / 1000000 // In Millionen umrechnen
+            });
+          }
+          
+          // EPS-Daten - direkt aus dem Income Statement
+          if (statement.eps !== undefined && statement.eps !== null) {
+            epsData.push({
+              year,
+              value: Number(statement.eps)
+            });
+          }
+        }
+      }
+      
+      return {
+        revenue,
+        earnings,
+        eps: epsData
+      };
+    };
+    
+    // Historische Daten verarbeiten
+    const historicalDataFormatted = processHistoricalData();
+    
+    // Daten nach Jahr sortieren (neueste zuletzt)
+    const sortByYear = (a, b) => a.year.localeCompare(b.year);
+    historicalDataFormatted.revenue.sort(sortByYear);
+    historicalDataFormatted.earnings.sort(sortByYear);
+    historicalDataFormatted.eps.sort(sortByYear);
+
+    return {
+      metrics,
+      historicalData: historicalDataFormatted
+    };
+  } catch (error) {
+    console.error('Error getting financial metrics:', error);
+    throw error;
+  }
 };
 
 // Funktion, um Gesamtbewertung zu erstellen
