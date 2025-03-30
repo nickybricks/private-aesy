@@ -1,12 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
 import BuffettCriteria from '@/components/BuffettCriteria';
 import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
+import ApiKeyInput from '@/components/ApiKeyInput';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 
@@ -18,6 +19,37 @@ const Index = () => {
   const [financialMetrics, setFinancialMetrics] = useState(null);
   const [overallRating, setOverallRating] = useState(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasApiKey, setHasApiKey] = useState(false);
+
+  // Überprüfen, ob ein API-Key im localStorage gespeichert ist
+  useEffect(() => {
+    const savedKey = localStorage.getItem('fmp_api_key');
+    setHasApiKey(!!savedKey);
+  }, []);
+
+  // Event-Listener für Änderungen am localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedKey = localStorage.getItem('fmp_api_key');
+      setHasApiKey(!!savedKey);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Diese spezielle Funktion wird aufgerufen, wenn ApiKeyInput den Schlüssel speichert
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+      originalSetItem.apply(this, [key, value]);
+      if (key === 'fmp_api_key') {
+        setHasApiKey(!!value);
+      }
+    };
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      localStorage.setItem = originalSetItem;
+    };
+  }, []);
 
   const handleSearch = async (ticker: string) => {
     setIsLoading(true);
@@ -77,7 +109,22 @@ const Index = () => {
         </p>
       </header>
       
-      <StockSearch onSearch={handleSearch} isLoading={isLoading} />
+      {!hasApiKey && (
+        <div className="mb-8 animate-fade-in">
+          <Alert variant="warning" className="mb-4">
+            <InfoIcon className="h-4 w-4" />
+            <AlertTitle>API-Key erforderlich</AlertTitle>
+            <AlertDescription>
+              Um das Buffett Benchmark Tool nutzen zu können, benötigen Sie einen API-Key von Financial Modeling Prep.
+              Bitte konfigurieren Sie Ihren API-Key unten.
+            </AlertDescription>
+          </Alert>
+          
+          <ApiKeyInput />
+        </div>
+      )}
+      
+      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
       
       {error && (
         <Alert variant="destructive" className="mb-6">
