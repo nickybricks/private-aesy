@@ -7,6 +7,8 @@ import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { useToast } from '@/components/ui/use-toast';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { InfoIcon } from 'lucide-react';
 
 const Index = () => {
   const { toast } = useToast();
@@ -78,14 +80,24 @@ const Index = () => {
       <StockSearch onSearch={handleSearch} isLoading={isLoading} />
       
       {error && (
-        <div className="mb-6 p-4 border border-red-300 bg-red-50 rounded-md text-red-700">
-          <p className="font-semibold">Fehler bei der Datenabfrage:</p>
-          <p>{error}</p>
-          <p className="mt-2 text-sm">
-            Bitte überprüfen Sie das eingegebene Aktiensymbol oder versuchen Sie es später erneut.
-            Der kostenlose API-Schlüssel hat möglicherweise Zugriffsbeschränkungen.
-          </p>
-        </div>
+        <Alert variant="destructive" className="mb-6">
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>Fehler bei der Datenabfrage</AlertTitle>
+          <AlertDescription>
+            <p>{error}</p>
+            <p className="mt-2 text-sm">
+              {error.includes('API-Key') ? (
+                <>
+                  Bitte stellen Sie sicher, dass ein gültiger API-Schlüssel verwendet wird. 
+                  Die Financial Modeling Prep API benötigt einen gültigen API-Schlüssel, den Sie
+                  unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="underline">financialmodelingprep.com</a> kostenlos erhalten können.
+                </>
+              ) : (
+                'Bitte überprüfen Sie das eingegebene Aktiensymbol oder versuchen Sie es später erneut.'
+              )}
+            </p>
+          </AlertDescription>
+        </Alert>
       )}
       
       {stockInfo && (

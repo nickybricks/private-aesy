@@ -4,7 +4,7 @@ import axios from 'axios';
 // Financial Modeling Prep API Key
 // Sie müssen diesen API-Key durch Ihre eigene ersetzen
 // Registrieren Sie sich unter https://financialmodelingprep.com/developer/docs/ für einen kostenlosen API-Key
-const API_KEY = 'demo'; // Ersetzen Sie dies mit Ihrem eigenen API-Key
+const API_KEY = '9fea382e3e215e12fce5681c70bfa1cb'; // Aktualisierter API-Key, bitte durch Ihren eigenen ersetzen falls nötig
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
 // Hilfsfunktion, um API-Anfragen zu machen
