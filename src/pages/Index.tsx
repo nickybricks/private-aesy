@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -21,13 +20,11 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
 
-  // Überprüfen, ob ein API-Key im localStorage gespeichert ist
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
     setHasApiKey(!!savedKey);
   }, []);
 
-  // Event-Listener für Änderungen am localStorage
   useEffect(() => {
     const handleStorageChange = () => {
       const savedKey = localStorage.getItem('fmp_api_key');
@@ -36,7 +33,6 @@ const Index = () => {
 
     window.addEventListener('storage', handleStorageChange);
     
-    // Diese spezielle Funktion wird aufgerufen, wenn ApiKeyInput den Schlüssel speichert
     const originalSetItem = localStorage.setItem;
     localStorage.setItem = function(key, value) {
       originalSetItem.apply(this, [key, value]);
@@ -55,23 +51,19 @@ const Index = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Reset all states
       setStockInfo(null);
       setBuffettCriteria(null);
       setFinancialMetrics(null);
       setOverallRating(null);
       
-      // Fetch stock info
       const info = await fetchStockInfo(ticker);
       setStockInfo(info);
       
-      // Show toast notification
       toast({
         title: "Analyse läuft",
         description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
       });
       
-      // Run all data fetching in parallel for speed
       const [criteria, metrics, rating] = await Promise.all([
         analyzeBuffettCriteria(ticker),
         getFinancialMetrics(ticker),
@@ -111,7 +103,7 @@ const Index = () => {
       
       {!hasApiKey && (
         <div className="mb-8 animate-fade-in">
-          <Alert variant="warning" className="mb-4">
+          <Alert className="mb-4">
             <InfoIcon className="h-4 w-4" />
             <AlertTitle>API-Key erforderlich</AlertTitle>
             <AlertDescription>
