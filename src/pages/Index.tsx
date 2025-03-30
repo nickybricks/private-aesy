@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -31,7 +30,7 @@ interface HistoricalData {
   eps: { year: string; value: number }[];
 }
 
-// Updated interface to include metrics and historicalData properties
+// Updated interface to match what the API returns
 interface FinancialMetricsData {
   eps?: any;
   roe?: any;
@@ -39,6 +38,7 @@ interface FinancialMetricsData {
   roic?: any;
   debtToAssets?: any;
   interestCoverage?: any;
+  // These properties are not in the API response, we'll create them
   metrics: FinancialMetric[];
   historicalData: HistoricalData;
 }
@@ -113,103 +113,112 @@ const Index = () => {
         setActiveTab('gpt');
       }
       
-      const [criteria, metrics, rating] = await Promise.all([
+      const [criteria, metricsData, rating] = await Promise.all([
         analyzeBuffettCriteria(ticker),
         getFinancialMetrics(ticker),
         getOverallRating(ticker)
       ]);
       
       console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
-      console.log('Financial Metrics:', JSON.stringify(metrics, null, 2));
+      console.log('Financial Metrics:', JSON.stringify(metricsData, null, 2));
       console.log('Overall Rating:', JSON.stringify(rating, null, 2));
       
       setBuffettCriteria(criteria);
       
       // Initialize metrics object with proper structure, ensuring all required properties exist
       const processedMetrics: FinancialMetricsData = {
-        eps: metrics.eps,
-        roe: metrics.roe,
-        netMargin: metrics.netMargin,
-        roic: metrics.roic,
-        debtToAssets: metrics.debtToAssets,
-        interestCoverage: metrics.interestCoverage,
-        metrics: metrics.metrics || [],
-        historicalData: metrics.historicalData || {
+        eps: metricsData.eps,
+        roe: metricsData.roe,
+        netMargin: metricsData.netMargin,
+        roic: metricsData.roic,
+        debtToAssets: metricsData.debtToAssets,
+        interestCoverage: metricsData.interestCoverage,
+        // Initialize empty arrays for metrics we'll create
+        metrics: [],
+        historicalData: {
           revenue: [],
           earnings: [],
           eps: []
         }
       };
       
-      // If metrics.metrics is not an array, create one from the financial data
-      if (!processedMetrics.metrics || !Array.isArray(processedMetrics.metrics)) {
+      // If we have historical data in the API response, use it
+      if (metricsData.historicalData) {
+        processedMetrics.historicalData = metricsData.historicalData;
+      }
+      
+      // If we already have metrics in the API response, use them
+      if (metricsData.metrics && Array.isArray(metricsData.metrics)) {
+        processedMetrics.metrics = metricsData.metrics;
+      } else {
+        // Otherwise create metrics array from financial data
         console.log('Creating metrics array from financial data');
         const metricsArray: FinancialMetric[] = [];
         
         // Add financial metrics based on properties from metrics object
-        if (metrics.eps !== undefined) {
+        if (metricsData.eps !== undefined) {
           metricsArray.push({
             name: 'Gewinn pro Aktie (EPS)',
-            value: metrics.eps || 'N/A',
+            value: metricsData.eps || 'N/A',
             formula: 'Nettogewinn / Anzahl der Aktien',
             explanation: 'Zeigt den Gewinn pro ausstehender Aktie',
             threshold: 'Stetig steigend (>5% pro Jahr)',
-            status: metrics.eps > 0 ? 'pass' : 'fail'
+            status: metricsData.eps > 0 ? 'pass' : 'fail'
           });
         }
         
-        if (metrics.roe !== undefined) {
+        if (metricsData.roe !== undefined) {
           metricsArray.push({
             name: 'Eigenkapitalrendite (ROE)',
-            value: metrics.roe ? `${(metrics.roe * 100).toFixed(2)}%` : 'N/A',
+            value: metricsData.roe ? `${(metricsData.roe * 100).toFixed(2)}%` : 'N/A',
             formula: 'Nettogewinn / Eigenkapital',
             explanation: 'Misst die Effizienz der Eigenkapitalnutzung',
             threshold: '>15%',
-            status: metrics.roe > 0.15 ? 'pass' : metrics.roe > 0.10 ? 'warning' : 'fail'
+            status: metricsData.roe > 0.15 ? 'pass' : metricsData.roe > 0.10 ? 'warning' : 'fail'
           });
         }
         
-        if (metrics.netMargin !== undefined) {
+        if (metricsData.netMargin !== undefined) {
           metricsArray.push({
             name: 'Nettomarge',
-            value: metrics.netMargin ? `${(metrics.netMargin * 100).toFixed(2)}%` : 'N/A',
+            value: metricsData.netMargin ? `${(metricsData.netMargin * 100).toFixed(2)}%` : 'N/A',
             formula: 'Nettogewinn / Umsatz',
             explanation: 'Zeigt den Anteil des Umsatzes, der als Gewinn verbleibt',
             threshold: '>10%',
-            status: metrics.netMargin > 0.10 ? 'pass' : metrics.netMargin > 0.05 ? 'warning' : 'fail'
+            status: metricsData.netMargin > 0.10 ? 'pass' : metricsData.netMargin > 0.05 ? 'warning' : 'fail'
           });
         }
         
-        if (metrics.roic !== undefined) {
+        if (metricsData.roic !== undefined) {
           metricsArray.push({
             name: 'ROIC',
-            value: metrics.roic ? `${(metrics.roic * 100).toFixed(2)}%` : 'N/A',
+            value: metricsData.roic ? `${(metricsData.roic * 100).toFixed(2)}%` : 'N/A',
             formula: 'NOPAT / Investiertes Kapital',
             explanation: 'Misst die Rendite auf das investierte Kapital',
             threshold: '>15%',
-            status: metrics.roic > 0.15 ? 'pass' : metrics.roic > 0.10 ? 'warning' : 'fail'
+            status: metricsData.roic > 0.15 ? 'pass' : metricsData.roic > 0.10 ? 'warning' : 'fail'
           });
         }
         
-        if (metrics.debtToAssets !== undefined) {
+        if (metricsData.debtToAssets !== undefined) {
           metricsArray.push({
             name: 'Schulden zu Vermögen',
-            value: metrics.debtToAssets ? `${(metrics.debtToAssets * 100).toFixed(2)}%` : 'N/A',
+            value: metricsData.debtToAssets ? `${(metricsData.debtToAssets * 100).toFixed(2)}%` : 'N/A',
             formula: 'Gesamtschulden / Gesamtvermögen',
             explanation: 'Zeigt den Anteil der Schulden am Gesamtvermögen',
             threshold: '<50%',
-            status: metrics.debtToAssets < 0.5 ? 'pass' : metrics.debtToAssets < 0.7 ? 'warning' : 'fail'
+            status: metricsData.debtToAssets < 0.5 ? 'pass' : metricsData.debtToAssets < 0.7 ? 'warning' : 'fail'
           });
         }
         
-        if (metrics.interestCoverage !== undefined) {
+        if (metricsData.interestCoverage !== undefined) {
           metricsArray.push({
             name: 'Zinsdeckungsgrad',
-            value: metrics.interestCoverage || 'N/A',
+            value: metricsData.interestCoverage || 'N/A',
             formula: 'EBIT / Zinsaufwand',
             explanation: 'Misst die Fähigkeit, Zinszahlungen zu decken',
             threshold: '>5',
-            status: metrics.interestCoverage > 5 ? 'pass' : metrics.interestCoverage > 3 ? 'warning' : 'fail'
+            status: metricsData.interestCoverage > 5 ? 'pass' : metricsData.interestCoverage > 3 ? 'warning' : 'fail'
           });
         }
         
