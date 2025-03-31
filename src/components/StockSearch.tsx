@@ -31,6 +31,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
   const [ticker, setTicker] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
   const [showGermanStockInfo, setShowGermanStockInfo] = useState(false);
+  const [showGermanStockWarning, setShowGermanStockWarning] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +40,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
       if (ticker.trim().toUpperCase() === 'APPL') {
         setShowAppleCorrection(true);
         setShowGermanStockInfo(false);
+        setShowGermanStockWarning(false);
         return;
       }
       
@@ -50,7 +52,15 @@ const StockSearch: React.FC<StockSearchProps> = ({
         // Show info about German stocks if they might have entered a German stock without .DE
         setShowGermanStockInfo(true);
         setShowAppleCorrection(false);
+        setShowGermanStockWarning(false);
         return;
+      }
+      
+      // If it's a German stock with .DE suffix, warn that it might not be supported
+      if (isDEStock) {
+        setShowGermanStockWarning(true);
+      } else {
+        setShowGermanStockWarning(false);
       }
       
       setShowAppleCorrection(false);
@@ -63,6 +73,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
     setTicker(correctTicker);
     setShowAppleCorrection(false);
     setShowGermanStockInfo(false);
+    setShowGermanStockWarning(false);
     onSearch(correctTicker);
   };
   
@@ -71,6 +82,32 @@ const StockSearch: React.FC<StockSearchProps> = ({
     setTicker(tickerWithDE);
     setShowGermanStockInfo(false);
     onSearch(tickerWithDE);
+  };
+
+  // Alternative US stock suggestions for German companies
+  const getUSAlternative = (germanTicker: string) => {
+    const alternatives = {
+      'SAP.DE': 'SAP', // SAP is listed on NYSE as SAP
+      'BMW.DE': 'BMWYY', // BMW ADR
+      'BAS.DE': 'BASFY', // BASF ADR
+      'ALV.DE': 'ALIZY', // Allianz ADR
+      'SIE.DE': 'SIEGY', // Siemens ADR
+      'DAI.DE': 'MBGAF', // Mercedes-Benz ADR
+      'VOW3.DE': 'VWAGY', // Volkswagen ADR
+      'DTE.DE': 'DTEGY', // Deutsche Telekom ADR
+      'BAYN.DE': 'BAYRY', // Bayer ADR
+    };
+    
+    return alternatives[germanTicker.toUpperCase()] || null;
+  };
+
+  const searchUSAlternative = (germanTicker: string) => {
+    const usTicker = getUSAlternative(germanTicker);
+    if (usTicker) {
+      setTicker(usTicker);
+      setShowGermanStockWarning(false);
+      onSearch(usTicker);
+    }
   };
 
   // Hilfsfunktion zur Ermittlung des API-Fehler-Icons
@@ -98,16 +135,12 @@ const StockSearch: React.FC<StockSearchProps> = ({
     { symbol: 'TSLA', name: 'Tesla' },
     { symbol: 'BRK-B', name: 'Berkshire Hathaway' },
     { symbol: 'JNJ', name: 'Johnson & Johnson' },
-    // Deutsche Aktien
-    { symbol: 'SAP.DE', name: 'SAP' },
-    { symbol: 'BMW.DE', name: 'BMW' },
-    { symbol: 'BAS.DE', name: 'BASF' },
-    { symbol: 'ALV.DE', name: 'Allianz' },
-    { symbol: 'SIE.DE', name: 'Siemens' },
-    { symbol: 'DAI.DE', name: 'Mercedes-Benz' },
-    { symbol: 'VOW3.DE', name: 'Volkswagen' },
-    { symbol: 'DTE.DE', name: 'Deutsche Telekom' },
-    { symbol: 'BAYN.DE', name: 'Bayer' },
+    // US-Alternativen für deutsche Aktien
+    { symbol: 'SAP', name: 'SAP (US-Listing)' },
+    { symbol: 'SIEGY', name: 'Siemens (ADR)' },
+    { symbol: 'BASFY', name: 'BASF (ADR)' },
+    { symbol: 'ALIZY', name: 'Allianz (ADR)' },
+    { symbol: 'BAYRY', name: 'Bayer (ADR)' },
   ];
 
   return (
@@ -172,11 +205,42 @@ const StockSearch: React.FC<StockSearchProps> = ({
             <p>Für deutsche Aktien benötigen Sie das Suffix ".DE" am Ende des Symbols.</p>
             <Button 
               variant="link" 
-              className="p-0 h-auto text-buffett-blue font-medium mt-1"
+              className="p-0 h-auto text-buffett-blue font-medium mt-1 mr-3"
               onClick={appendDEAndSearch}
             >
               Mit ".DE" suchen ({ticker.trim().toUpperCase()}.DE) →
             </Button>
+            <p className="mt-2 text-sm text-orange-600">
+              <strong>Hinweis:</strong> Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {showGermanStockWarning && (
+        <Alert className="mb-4 border-amber-200 bg-amber-50">
+          <AlertTitle className="text-amber-800">Hinweis zu deutschen Aktien</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            <p>Deutsche Aktien mit .DE-Suffix werden möglicherweise nicht von der Financial Modeling Prep API unterstützt.</p>
+            
+            {getUSAlternative(ticker) && (
+              <>
+                <p className="mt-2">Für {ticker.split('.')[0]} gibt es eine US-Alternative:</p>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="mt-1 border-amber-300 text-amber-800 hover:bg-amber-100"
+                  onClick={() => searchUSAlternative(ticker)}
+                >
+                  Stattdessen {getUSAlternative(ticker)} verwenden (US-Listing/ADR)
+                </Button>
+              </>
+            )}
+            
+            <p className="mt-2 text-xs">
+              Die meisten deutschen Unternehmen haben auch US-Listings oder ADRs (American Depositary Receipts),
+              die besser unterstützt werden.
+            </p>
           </AlertDescription>
         </Alert>
       )}
@@ -216,6 +280,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
               <p>Dieses Tool verwendet die Financial Modeling Prep API. Sie benötigen einen gültigen API-Schlüssel, um die Anwendung zu nutzen.</p>
               <p className="mt-2">Registrieren Sie sich für einen kostenlosen API-Schlüssel unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">financialmodelingprep.com</a>.</p>
               <p className="mt-2 text-amber-600 font-medium">Hinweis: Nicht alle deutschen Aktien werden von der Financial Modeling Prep API unterstützt.</p>
+              <p className="mt-2">Für deutsche Unternehmen empfehlen wir, nach US-Listings (ADRs) zu suchen.</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -235,6 +300,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
                 setTicker(item.symbol);
                 setShowAppleCorrection(false);
                 setShowGermanStockInfo(false);
+                setShowGermanStockWarning(item.symbol.endsWith('.DE'));
               }}
             >
               {item.symbol} ({item.name})

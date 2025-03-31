@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { 
   analyzeBusinessModel, 
@@ -98,7 +97,12 @@ const handleApiError = (error: any, ticker: string) => {
     } else if (error.response?.status === 404) {
       // Spezielle Behandlung für deutsche Aktien
       if (ticker.endsWith('.DE')) {
-        errorMessage = `Symbol ${ticker} wurde nicht gefunden. Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie ein anderes Symbol oder verwenden Sie die internationale Notierung.`;
+        const usAlternative = getUSAlternative(ticker);
+        if (usAlternative) {
+          errorMessage = `Das Symbol ${ticker} wurde nicht gefunden. Die Financial Modeling Prep API unterstützt nicht alle deutschen Aktien. Versuchen Sie stattdessen das US-Symbol ${usAlternative} (ADR/US-Listing).`;
+        } else {
+          errorMessage = `Symbol ${ticker} wurde nicht gefunden. Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie, nach dem US-Listing (ADR) zu suchen oder ein anderes Symbol zu verwenden.`;
+        }
       } else {
         errorMessage = `Symbol ${ticker} wurde nicht gefunden. Bitte überprüfen Sie das Aktiensymbol und versuchen Sie es erneut.`;
       }
@@ -114,6 +118,23 @@ const handleApiError = (error: any, ticker: string) => {
   }
   
   throw new Error(errorMessage);
+};
+
+// Hilfsfunktion zur Ermittlung von US-Alternativen für deutsche Aktien
+const getUSAlternative = (germanTicker: string) => {
+  const alternatives: {[key: string]: string} = {
+    'SAP.DE': 'SAP', // SAP is listed on NYSE as SAP
+    'BMW.DE': 'BMWYY', // BMW ADR
+    'BAS.DE': 'BASFY', // BASF ADR
+    'ALV.DE': 'ALIZY', // Allianz ADR
+    'SIE.DE': 'SIEGY', // Siemens ADR
+    'DAI.DE': 'MBGAF', // Mercedes-Benz ADR
+    'VOW3.DE': 'VWAGY', // Volkswagen ADR
+    'DTE.DE': 'DTEGY', // Deutsche Telekom ADR
+    'BAYN.DE': 'BAYRY', // Bayer ADR
+  };
+  
+  return alternatives[germanTicker.toUpperCase()] || null;
 };
 
 // Hilfsfunktion, um API-Anfragen zu machen
@@ -190,7 +211,12 @@ export const fetchStockInfo = async (ticker: string) => {
     if (error instanceof Error) {
       // Spezielle Behandlung für deutsche Aktien
       if (standardizedTicker.endsWith('.DE') && error.message.includes("Keine Daten gefunden")) {
-        throw new Error(`Deutsche Aktie ${standardizedTicker} wurde nicht gefunden. Financial Modeling Prep unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie ein anderes Symbol.`);
+        const usAlternative = getUSAlternative(standardizedTicker);
+        if (usAlternative) {
+          throw new Error(`Deutsche Aktie ${standardizedTicker} wurde nicht gefunden. Financial Modeling Prep unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie stattdessen das US-Symbol ${usAlternative} (ADR/US-Listing).`);
+        } else {
+          throw new Error(`Deutsche Aktie ${standardizedTicker} wurde nicht gefunden. Financial Modeling Prep unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie ein anderes Symbol.`);
+        }
       }
     }
     throw error;
@@ -561,7 +587,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     },
     rationalBehavior: {
       status: 'warning', // Vereinfachte Standardbewertung
-      title: '8. Rationalität & Disziplin',
+      title: '8. Rationalit��t & Disziplin',
       description: 'Rationalität und Disziplin erfordern tiefere Analyse.',
       details: [
         'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',

@@ -272,6 +272,7 @@ const Index = () => {
       }
       
       let enhancedErrorMessage = errorMessage;
+      
       if(errorMessage.includes("Keine Daten gefunden für")) {
         const searchedTicker = ticker.toUpperCase();
         
@@ -281,6 +282,8 @@ const Index = () => {
           enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Versuchen Sie es mit GOOGL oder GOOG (Alphabet/Google).`;
         } else if(searchedTicker === "FB") {
           enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Meta (ehemals Facebook) wird jetzt als META gehandelt.`;
+        } else if(searchedTicker.endsWith('.DE')) {
+          enhancedErrorMessage = `${errorMessage} Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien mit .DE-Suffix. Versuchen Sie stattdessen, nach dem US-ADR (American Depositary Receipt) zu suchen.`;
         } else {
           enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Bitte überprüfen Sie das Aktiensymbol.`;
         }
