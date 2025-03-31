@@ -101,7 +101,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                       <Bot size={16} className="mr-2 text-blue-500" />
                       <span className="font-medium text-blue-700">GPT-Analyse:</span>
                     </div>
-                    <div className="text-gray-700 gpt-analysis">
+                    <div className="text-gray-700 gpt-analysis prose prose-sm max-w-none">
                       <ReactMarkdown>
                         {criterion.gptAnalysis}
                       </ReactMarkdown>

@@ -259,11 +259,22 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   // Verbesserte Dividendenrendite Berechnung
   let dividendYield = safeValue(latestRatios.dividendYield) * 100;
   
+  // Kurs zu Buchwert Berechnung
+  let priceToBook = safeValue(latestRatios.priceToBookRatio);
+  
+  // Kurs zu Cashflow Berechnung
+  let priceToCashFlow = safeValue(latestRatios.priceCashFlowRatio);
+  
   // Bewertung basierend auf KGV und Dividendenrendite
   let valuationStatus = 'fail';
-  if (pe < 15 && dividendYield > 2) {
+  
+  // Wenn ein starker wirtschaftlicher Burggraben vorliegt, können höhere Bewertungen akzeptiert werden
+  const hasStrongMoat = economicMoatStatus === 'pass';
+  
+  if (pe < 15 && dividendYield > 2 && priceToBook < 1.5 && priceToCashFlow < 10) {
     valuationStatus = 'pass';
-  } else if (pe < 25 && dividendYield > 1) {
+  } else if ((pe < 25 && dividendYield > 1) || 
+            (hasStrongMoat && pe < 30 && (priceToBook < 3 || priceToCashFlow < 20))) {
     valuationStatus = 'warning';
   }
   
@@ -416,8 +427,8 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       details: [
         `KGV (P/E): ${pe.toFixed(2)} (Buffett bevorzugt <15)`,
         `Dividendenrendite: ${dividendYield.toFixed(2)}% (Buffett bevorzugt >2%)`,
-        `Kurs zu Buchwert: ${safeValue(latestRatios.priceToBookRatio).toFixed(2)} (niedriger ist besser)`,
-        `Kurs zu Cashflow: ${safeValue(latestRatios.priceCashFlowRatio).toFixed(2)} (niedriger ist besser)`
+        `Kurs zu Buchwert (P/B): ${priceToBook.toFixed(2)} (Unter 1,5 gilt als günstig, 1,5-3,0 als akzeptabel bei starkem Moat)`,
+        `Kurs zu Cashflow (P/CF): ${priceToCashFlow.toFixed(2)} (Unter 10 gilt als günstig, 10-20 als fair bewertet)`
       ]
     },
     longTermOutlook: {
