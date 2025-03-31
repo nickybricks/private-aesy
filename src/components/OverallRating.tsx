@@ -77,7 +77,6 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     avoid: 'bg-buffett-red bg-opacity-10 border-buffett-red'
   }[overall];
 
-  // Calculate price difference if both values are available
   const priceDifference = currentPrice && bestBuyPrice 
     ? currentPrice - bestBuyPrice 
     : undefined;
@@ -86,7 +85,6 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     ? ((currentPrice - bestBuyPrice) / bestBuyPrice) * 100
     : undefined;
 
-  // Interpret the rating to show a primary decision factor
   const decisionFactor = overall === 'avoid' && marginOfSafety && marginOfSafety.value < 0 
     ? 'Preis killt das Investment' 
     : overall === 'avoid' && buffettScore && buffettScore < 50
@@ -182,7 +180,6 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         </div>
       </div>
       
-      {/* New Value Analysis Card */}
       {(intrinsicValue || bestBuyPrice) && (
         <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm mb-6">
           <div className="flex items-center gap-2 mb-4">
@@ -218,7 +215,6 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
             )}
           </div>
           
-          {/* Price Difference Analysis */}
           {priceDifference !== undefined && priceDifferencePercent !== undefined && (
             <div className="mt-4 pt-4 border-t border-gray-100">
               <div className="flex items-center gap-2 mb-2">
@@ -228,6 +224,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                 <div className={`text-lg font-bold ${priceDifference > 0 ? 'text-buffett-red' : 'text-buffett-green'}`}>
                   {Math.abs(priceDifference).toFixed(2)} {currency} / {Math.abs(priceDifferencePercent).toFixed(1)}%
                 </div>
+                <div className="text-xs text-gray-500">(bezogen auf Buffett-Kaufpreis)</div>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div className={`h-2 rounded-full ${priceDifference > 0 ? 'bg-buffett-red' : 'bg-buffett-green'}`}

@@ -2,9 +2,12 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Info, AlertCircle } from 'lucide-react';
+import { Bot, Info, AlertCircle, HelpCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Progress } from '@/components/ui/progress';
+import { ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 interface BuffettCriterionProps {
   title: string;
@@ -58,7 +61,7 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-// Function to get score display based on status
+// Updated function to get score display based on status with improved logic
 const getScoreDisplay = (criterion: BuffettCriterionProps) => {
   if (criterion.score === undefined || criterion.maxScore === undefined) {
     return null;
@@ -82,9 +85,9 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
           <p className="text-xs">
             Punktzahl basierend auf der Analyse der Unterkategorien dieses Kriteriums.
             {criterion.title === '1. Verstehbares Geschäftsmodell' && 
-              ' Einfache Geschäftsmodelle erhalten 3/3, moderate 2/3 und komplexe 0/3 Punkte.'}
+              ' Einfaches Geschäftsmodell = 3/3, moderates = 2/3 und komplexes = 0-1/3 Punkte.'}
             {criterion.title === '11. Keine Turnarounds' && 
-              ' Hier gilt: Keine Umstrukturierung = 3/3, leichte Umstrukturierung = 1/3, klarer Turnaround = 0/3 Punkte.'}
+              ' Hier gilt: Kein Turnaround = 3/3, leichte Umstrukturierung = 1/3, klarer Turnaround = 0/3 Punkte.'}
           </p>
         </TooltipContent>
       </Tooltip>
@@ -92,7 +95,7 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
   );
 };
 
-// Helper function to detect inconsistencies between GPT analysis and score
+// Improved function to detect inconsistencies between GPT analysis and score
 const hasInconsistentAnalysis = (criterion: BuffettCriterionProps): boolean => {
   if (!criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
     return false;
@@ -101,15 +104,17 @@ const hasInconsistentAnalysis = (criterion: BuffettCriterionProps): boolean => {
   const gptAnalysis = criterion.gptAnalysis.toLowerCase();
   const scoreRatio = criterion.score / criterion.maxScore;
   
-  // Check specific inconsistencies
+  // Updated check for specific inconsistencies
   if (criterion.title === '1. Verstehbares Geschäftsmodell') {
-    if (gptAnalysis.includes('moderat') && scoreRatio > 0.7) return true;
-    if (gptAnalysis.includes('komplex') && scoreRatio > 0.3) return true;
+    if ((gptAnalysis.includes('moderat') || gptAnalysis.includes('moderate')) && criterion.score > 2) return true;
+    if (gptAnalysis.includes('komplex') && criterion.score > 1) return true;
+    if (gptAnalysis.includes('einfach') && scoreRatio < 0.7) return true;
   }
   
   if (criterion.title === '11. Keine Turnarounds') {
-    if (gptAnalysis.includes('kein turnaround') && scoreRatio < 0.7) return true;
-    if ((gptAnalysis.includes('umstrukturierung') || gptAnalysis.includes('turnaround')) && scoreRatio > 0.3) return true;
+    if (gptAnalysis.includes('kein turnaround') && scoreRatio < 0.9) return true;
+    if (gptAnalysis.includes('leichte umstrukturierung') && (criterion.score < 1 || criterion.score > 1)) return true;
+    if (gptAnalysis.includes('klarer turnaround') && criterion.score > 0) return true;
   }
   
   return false;
@@ -132,6 +137,90 @@ const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
     
   return { summary, points };
 };
+
+// New component for a more visual score presentation
+const BuffettScoreChart = ({ score }: { score: number }) => {
+  const COLORS = ['#10b981', '#f0f0f0'];
+  const data = [
+    { name: 'Score', value: score },
+    { name: 'Remaining', value: 100 - score },
+  ];
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <h3 className="text-lg font-semibold mb-4">Buffett-Kompatibilität Visualisierung</h3>
+      <div className="flex flex-col md:flex-row items-center">
+        <div className="h-48 w-full md:w-1/2">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                paddingAngle={0}
+                dataKey="value"
+                startAngle={90}
+                endAngle={-270}
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={index === 0 ? 2 : 0} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="w-full md:w-1/2 p-4">
+          <div className="text-center md:text-left">
+            <h4 className="text-2xl font-bold">{score}%</h4>
+            <p className="text-gray-500 mb-2">Buffett-Kompatibilität</p>
+            <div className="mt-4">
+              <div className="mb-2 flex items-center">
+                <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                <span>Erfüllte Kriterien</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-3 h-3 rounded-full bg-gray-200 mr-2"></div>
+                <span>Ausbaufähig</span>
+              </div>
+            </div>
+            <p className="mt-4 text-sm text-gray-600">
+              {score >= 70 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
+               score >= 40 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
+               'Geringe Übereinstimmung mit Buffetts Investitionskriterien'}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Added component to help explain DCF calculations
+const DCFExplanationTooltip: React.FC = () => (
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger className="inline-flex items-center ml-2 text-gray-400">
+        <HelpCircle size={16} />
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs bg-white p-3 shadow-lg">
+        <h4 className="font-semibold mb-1">Wie wird der DCF-Wert berechnet?</h4>
+        <p className="text-xs">
+          Der DCF-Wert (Discounted Cash Flow) wird konservativ auf Basis historischer Free Cashflows berechnet. Wir verwenden standardmäßig:
+        </p>
+        <ul className="text-xs list-disc pl-4 mt-1">
+          <li>8% Abzinsung (Discount Rate)</li>
+          <li>3% langfristiges Wachstum (Terminal Growth)</li>
+          <li>5-10 Jahre Prognosezeitraum</li>
+        </ul>
+        <p className="text-xs mt-1">
+          Diese konservative Berechnung kann zu niedrigeren Werten führen als aktuelle Marktpreise, besonders bei wachstumsstarken Unternehmen.
+        </p>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+);
 
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
   const allCriteria = [
@@ -170,6 +259,13 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
   const detailedBuffettScore = hasDetailedScores && maxDetailedScore > 0 ? 
     Math.round((totalDetailedScore / maxDetailedScore) * 100) : buffettScore;
 
+  // Criteria distribution for visualization
+  const criteriaDistribution = {
+    pass: allCriteria.filter(c => c.status === 'pass').length,
+    warning: allCriteria.filter(c => c.status === 'warning').length,
+    fail: allCriteria.filter(c => c.status === 'fail').length
+  };
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Buffett-Kriterien Analyse mit GPT</h2>
@@ -201,6 +297,9 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
         </p>
       </div>
       
+      {/* New Score Visualization */}
+      <BuffettScoreChart score={hasDetailedScores ? detailedBuffettScore : buffettScore} />
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {allCriteria.map((criterion, index) => {
           const { summary, points } = extractKeyInsights(criterion.gptAnalysis);
@@ -221,11 +320,20 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                           </TooltipTrigger>
                           <TooltipContent>
                             <p className="text-xs max-w-xs">
-                              Mögliche Inkonsistenz zwischen GPT-Analyse und Bewertung. Prüfen Sie die Details genauer.
+                              Mögliche Inkonsistenz zwischen GPT-Analyse und Bewertung:
+                              {criterion.title === '1. Verstehbares Geschäftsmodell' && 
+                                ' Bei "moderater Komplexität" sollten 2/3 Punkte vergeben werden.'}
+                              {criterion.title === '11. Keine Turnarounds' && 
+                                ' Bei "leichter Umstrukturierung" sollte 1/3 Punkt vergeben werden.'}
                             </p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                    )}
+                    
+                    {/* DCF explanation for valuation criterion */}
+                    {criterion.title === '6. Akzeptable Bewertung' && (
+                      <DCFExplanationTooltip />
                     )}
                   </div>
                   {getStatusBadge(criterion.status)}
@@ -239,6 +347,18 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                       <li key={i} className="text-gray-700">{detail}</li>
                     ))}
                   </ul>
+                  
+                  {/* Additional risks for long-term outlook */}
+                  {criterion.title === '7. Langfristige Perspektive' && criterion.status === 'pass' && (
+                    <div className="mt-2 pt-2 border-t border-gray-100">
+                      <p className="text-sm text-gray-700 font-medium">Zu beachtende Langzeitrisiken:</p>
+                      <ul className="list-disc pl-5 space-y-1 mt-1 text-sm text-gray-600">
+                        <li>Mögliche ESG-Regulierungen könnten Rüstungsunternehmen beeinflussen</li>
+                        <li>Politische Änderungen könnten Verteidigungsbudgets beeinflussen</li>
+                        <li>Technologischer Wandel könnte bestehende Produkte obsolet machen</li>
+                      </ul>
+                    </div>
+                  )}
                   
                   {criterion.gptAnalysis && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
