@@ -70,12 +70,38 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.turnaround
   ];
 
+  // Zählen der Punkte für die Gesamtbewertung
+  const totalPoints = allCriteria.reduce((acc, criterion) => {
+    if (criterion.status === 'pass') return acc + 3;
+    if (criterion.status === 'warning') return acc + 1;
+    return acc;
+  }, 0);
+  
+  const maxPoints = allCriteria.length * 3;
+  const buffettScore = Math.round((totalPoints / maxPoints) * 100);
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Buffett-Kriterien Analyse mit GPT</h2>
       <p className="text-buffett-subtext mb-6">
         Eine umfassende Analyse nach Warren Buffetts 11 Investmentkriterien, unterstützt durch GPT für die qualitative Bewertung.
       </p>
+      
+      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <h3 className="text-lg font-semibold mb-2">Buffett-Kompatibilität: {buffettScore}%</h3>
+        <div className="w-full bg-gray-200 rounded-full h-2.5">
+          <div className="h-2.5 rounded-full" 
+               style={{
+                 width: `${buffettScore}%`,
+                 backgroundColor: buffettScore >= 70 ? '#10b981' : buffettScore >= 40 ? '#f59e0b' : '#ef4444'
+               }}></div>
+        </div>
+        <p className="text-sm mt-2 text-gray-600">
+          {buffettScore >= 70 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
+          buffettScore >= 40 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
+          'Geringe Übereinstimmung mit Buffetts Investitionskriterien'}
+        </p>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {allCriteria.map((criterion, index) => (

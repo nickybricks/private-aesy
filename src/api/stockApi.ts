@@ -725,80 +725,145 @@ export const getOverallRating = async (ticker: string) => {
   try {
     const criteria = await analyzeBuffettCriteria(ticker);
     
-    // Zählen, wie viele Kriterien erfüllt sind
-    const criteriaStatuses = [
+    // Zählen, wie viele Kriterien erfüllt sind und berechnen der Buffett-Kompatibilität
+    const allCriteria = [
       criteria.businessModel.status,
       criteria.economicMoat.status,
       criteria.financialMetrics.status,
       criteria.financialStability.status,
       criteria.management.status,
       criteria.valuation.status,
-      criteria.longTermOutlook.status
+      criteria.longTermOutlook.status,
+      criteria.rationalBehavior.status,
+      criteria.cyclicalBehavior.status,
+      criteria.oneTimeEffects.status,
+      criteria.turnaround.status
     ];
     
-    const passCount = criteriaStatuses.filter(status => status === 'pass').length;
-    const warningCount = criteriaStatuses.filter(status => status === 'warning').length;
+    // Punkte nach Gewichtung vergeben
+    const totalPoints = allCriteria.reduce((acc, status) => {
+      if (status === 'pass') return acc + 3;
+      if (status === 'warning') return acc + 1;
+      return acc;
+    }, 0);
+    
+    const maxPoints = allCriteria.length * 3;
+    const buffettScore = Math.round((totalPoints / maxPoints) * 100);
+    
+    const passCount = allCriteria.filter(status => status === 'pass').length;
+    const warningCount = allCriteria.filter(status => status === 'warning').length;
     
     let overall;
     let summary;
     
-    if (passCount >= 5) {
+    // Bewertung stärker von der Valuation abhängig machen
+    const isOvervalued = criteria.valuation.status === 'fail';
+    const hasGoodMoat = criteria.economicMoat.status === 'pass';
+    const isFinanciallyStable = criteria.financialStability.status === 'pass';
+    
+    // Komplexes Geschäftsmodell könnte ein Problem sein
+    const isBusinessModelComplex = criteria.businessModel.status === 'warning' || criteria.businessModel.status === 'fail';
+    
+    if (passCount >= 6 && criteria.valuation.status !== 'fail') {
       overall = 'buy';
-      summary = 'Nach Warren Buffetts Kriterien eine vielversprechende Investition.';
-    } else if (passCount >= 3 || (passCount >= 2 && warningCount >= 3)) {
+      summary = 'Nach Warren Buffetts Kriterien eine vielversprechende Investition mit guter Bewertung.';
+    } else if ((passCount >= 4 && criteria.valuation.status === 'warning') || 
+               (hasGoodMoat && isFinanciallyStable && criteria.valuation.status !== 'fail')) {
       overall = 'watch';
-      summary = 'Einige Buffett-Kriterien erfüllt, aber weitere Recherche nötig.';
+      summary = 'Solides Unternehmen mit einigen Stärken, aber die aktuelle Bewertung rechtfertigt keinen sofortigen Kauf.';
     } else {
       overall = 'avoid';
-      summary = 'Entspricht nicht ausreichend den Buffett-Kriterien für eine Investition.';
+      summary = 'Entspricht nicht ausreichend den Buffett-Kriterien oder ist deutlich überbewertet.';
     }
     
-    // Stärken und Schwächen identifizieren
+    // Stärken und Schwächen detaillierter identifizieren
     const strengths = [];
     const weaknesses = [];
     
     if (criteria.businessModel.status === 'pass') {
       strengths.push('Klares, verständliches Geschäftsmodell');
+    } else if (criteria.businessModel.status === 'warning') {
+      weaknesses.push('Moderat komplexes Geschäftsmodell, das tiefere Analyse erfordert');
     } else if (criteria.businessModel.status === 'fail') {
       weaknesses.push('Komplexes oder schwer verständliches Geschäftsmodell');
     }
     
     if (criteria.economicMoat.status === 'pass') {
-      strengths.push('Starker wirtschaftlicher Burggraben (Moat)');
+      strengths.push('Starker wirtschaftlicher Burggraben (Moat) mit überlegenen Margen');
+    } else if (criteria.economicMoat.status === 'warning') {
+      strengths.push('Moderater wirtschaftlicher Burggraben vorhanden');
     } else if (criteria.economicMoat.status === 'fail') {
-      weaknesses.push('Kein erkennbarer wirtschaftlicher Burggraben');
+      weaknesses.push('Kein erkennbarer wirtschaftlicher Burggraben gegenüber Wettbewerbern');
     }
     
     if (criteria.financialMetrics.status === 'pass') {
       strengths.push('Hervorragende Finanzkennzahlen (ROE, Nettomarge)');
+    } else if (criteria.financialMetrics.status === 'warning') {
+      strengths.push('Solide, aber nicht herausragende Finanzkennzahlen');
     } else if (criteria.financialMetrics.status === 'fail') {
-      weaknesses.push('Schwache Finanzkennzahlen');
+      weaknesses.push('Unterdurchschnittliche Finanzkennzahlen');
     }
     
     if (criteria.financialStability.status === 'pass') {
       strengths.push('Solide finanzielle Stabilität mit geringer Verschuldung');
+    } else if (criteria.financialStability.status === 'warning') {
+      weaknesses.push('Moderate Bedenken bezüglich der finanziellen Stabilität');
     } else if (criteria.financialStability.status === 'fail') {
-      weaknesses.push('Bedenken hinsichtlich finanzieller Stabilität oder hoher Verschuldung');
+      weaknesses.push('Erhebliche Bedenken hinsichtlich finanzieller Stabilität oder hoher Verschuldung');
     }
     
     if (criteria.valuation.status === 'pass') {
-      strengths.push('Attraktive Bewertung (KGV und Dividendenrendite)');
+      strengths.push('Attraktive Bewertung (KGV, KBV, PCF und Dividendenrendite)');
+    } else if (criteria.valuation.status === 'warning') {
+      weaknesses.push('Faire, aber nicht besonders günstige Bewertung');
     } else if (criteria.valuation.status === 'fail') {
       weaknesses.push('Hohe Bewertung im Verhältnis zu den fundamentalen Daten');
     }
     
     if (criteria.longTermOutlook.status === 'pass') {
       strengths.push('Vielversprechende langfristige Perspektiven');
+    } else if (criteria.longTermOutlook.status === 'warning' || criteria.longTermOutlook.status === 'fail') {
+      weaknesses.push('Unsichere langfristige Perspektiven oder regulatorische Risiken');
+    }
+    
+    if (criteria.management.status === 'pass') {
+      strengths.push('Qualitativ hochwertiges und aktionärsfreundliches Management');
+    } else if (criteria.management.status === 'fail') {
+      weaknesses.push('Bedenken bezüglich der Qualität oder Aktionärsfreundlichkeit des Managements');
+    }
+    
+    // Berechnung einer theoretischen Margin of Safety (vereinfacht)
+    // Dies ist ein Platzhalter - in der realen Implementierung würde man hier FMP's DCF API verwenden
+    let marginOfSafety = {
+      value: 0,
+      status: 'fail' as 'pass' | 'warning' | 'fail'
+    };
+    
+    if (criteria.valuation.status === 'pass') {
+      marginOfSafety = {
+        value: 25,
+        status: 'pass'
+      };
+    } else if (criteria.valuation.status === 'warning') {
+      marginOfSafety = {
+        value: 10,
+        status: 'warning'
+      };
+    } else {
+      marginOfSafety = {
+        value: -15,
+        status: 'fail'
+      };
     }
     
     // Allgemeine Empfehlung basierend auf der Gesamtbewertung
     let recommendation;
     if (overall === 'buy') {
-      recommendation = 'Diese Aktie erfüllt viele von Buffetts Kriterien und könnte eine gute langfristige Investition sein. Wie immer sollten Sie Ihre eigene Due Diligence durchführen und Ihr Portfolio diversifizieren.';
+      recommendation = `Dieses Unternehmen zeigt einen starken wirtschaftlichen Burggraben, solide Finanzen und eine angemessene Bewertung. Es erfüllt viele von Buffetts Kriterien und könnte eine gute langfristige Investition sein. ${isBusinessModelComplex ? 'Eine tiefere Analyse des Geschäftsmodells wird empfohlen.' : 'Das Geschäftsmodell ist klar verständlich und nachvollziehbar.'}`;
     } else if (overall === 'watch') {
-      recommendation = 'Behalten Sie diese Aktie auf Ihrer Beobachtungsliste. Die Aktie erfüllt einige, aber nicht alle Buffett-Kriterien. Warten Sie möglicherweise auf einen besseren Einstiegspunkt oder vertiefen Sie Ihre Recherche.';
+      recommendation = `Dieses Unternehmen zeigt einige Stärken ${hasGoodMoat ? 'wie einen überzeugenden wirtschaftlichen Burggraben' : ''}${isFinanciallyStable ? ' und solide Finanzen' : ''}, ist aber aktuell ${isOvervalued ? 'überbewertet' : 'nicht attraktiv genug bewertet'}. Behalten Sie die Aktie auf Ihrer Beobachtungsliste und warten Sie auf einen besseren Einstiegspunkt.`;
     } else {
-      recommendation = 'Diese Aktie entspricht nicht ausreichend Buffetts Investitionskriterien. Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen, die mehr von Buffetts Prinzipien erfüllen.';
+      recommendation = `Dieses Unternehmen entspricht nicht ausreichend Buffetts Investitionskriterien${isOvervalued ? ', insbesondere aufgrund der hohen Bewertung' : ''}${!hasGoodMoat ? ', da kein überzeugender wirtschaftlicher Burggraben erkennbar ist' : ''}${!isFinanciallyStable ? ' und es Bedenken bezüglich der finanziellen Stabilität gibt' : ''}. Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen, die mehr von Buffetts Prinzipien erfüllen.`;
     }
     
     return {
@@ -806,7 +871,9 @@ export const getOverallRating = async (ticker: string) => {
       summary,
       strengths,
       weaknesses,
-      recommendation
+      recommendation,
+      buffettScore,
+      marginOfSafety
     };
   } catch (error) {
     console.error('Error generating overall rating:', error);

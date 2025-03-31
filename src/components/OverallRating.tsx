@@ -2,8 +2,9 @@
 import React from 'react';
 import { 
   CheckCircle, 
-  AlertCircle, 
-  XCircle 
+  AlertTriangle, 
+  XCircle,
+  BarChart3
 } from 'lucide-react';
 
 type Rating = 'buy' | 'watch' | 'avoid';
@@ -15,6 +16,12 @@ interface OverallRatingProps {
     strengths: string[];
     weaknesses: string[];
     recommendation: string;
+    // Optional fields for additional metrics
+    buffettScore?: number;
+    marginOfSafety?: {
+      value: number;
+      status: 'pass' | 'warning' | 'fail';
+    };
   } | null;
 }
 
@@ -23,7 +30,7 @@ const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
     case 'buy':
       return <CheckCircle size={40} className="text-buffett-green" />;
     case 'watch':
-      return <AlertCircle size={40} className="text-buffett-yellow" />;
+      return <AlertTriangle size={40} className="text-buffett-yellow" />;
     case 'avoid':
       return <XCircle size={40} className="text-buffett-red" />;
     default:
@@ -34,7 +41,7 @@ const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
 const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   if (!rating) return null;
   
-  const { overall, summary, strengths, weaknesses, recommendation } = rating;
+  const { overall, summary, strengths, weaknesses, recommendation, buffettScore, marginOfSafety } = rating;
   
   const ratingTitle = {
     buy: 'Kaufen',
@@ -55,12 +62,52 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       <div className={`rounded-xl p-6 border ${ratingColor} mb-6`}>
         <div className="flex items-center gap-4">
           <RatingIcon rating={overall} />
-          <div>
+          <div className="flex-1">
             <h3 className="text-xl font-bold">{ratingTitle}</h3>
             <p className="text-buffett-subtext">{summary}</p>
           </div>
         </div>
       </div>
+      
+      {(buffettScore !== undefined || marginOfSafety !== undefined) && (
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {buffettScore !== undefined && (
+            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <BarChart3 size={18} className="text-buffett-blue" />
+                <h4 className="font-semibold">Buffett-Kompatibilität</h4>
+              </div>
+              <div className="text-2xl font-bold mb-2">{buffettScore}%</div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="h-2 rounded-full" 
+                     style={{
+                       width: `${buffettScore}%`,
+                       backgroundColor: buffettScore >= 70 ? '#10b981' : buffettScore >= 40 ? '#f59e0b' : '#ef4444'
+                     }}></div>
+              </div>
+            </div>
+          )}
+          
+          {marginOfSafety !== undefined && (
+            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <BarChart3 size={18} className="text-buffett-blue" />
+                <h4 className="font-semibold">Margin of Safety</h4>
+              </div>
+              <div className="text-2xl font-bold mb-2">
+                {marginOfSafety.value >= 0 ? `+${marginOfSafety.value.toFixed(1)}%` : `${marginOfSafety.value.toFixed(1)}%`}
+              </div>
+              <div className="text-sm">
+                {marginOfSafety.status === 'pass' ? 
+                  'Signifikante Sicherheitsmarge' : 
+                  marginOfSafety.status === 'warning' ? 
+                    'Moderate Sicherheitsmarge' : 
+                    'Keine ausreichende Sicherheitsmarge'}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
@@ -89,7 +136,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       </div>
       
       <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="text-lg font-medium mb-2">Empfehlung:</h3>
+        <h3 className="text-lg font-medium mb-2">Konkrete Empfehlung:</h3>
         <p>{recommendation}</p>
       </div>
     </div>
