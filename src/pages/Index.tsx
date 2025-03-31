@@ -51,6 +51,7 @@ const Index = () => {
   const [hasApiKey, setHasApiKey] = useState(false);
   const [hasGptApiKey, setHasGptApiKey] = useState(false);
   const [hasApiKeyError, setHasApiKeyError] = useState(false);
+  const [isRateLimitError, setIsRateLimitError] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
   const [apiKeyCheckCompleted, setApiKeyCheckCompleted] = useState(false);
 
@@ -66,11 +67,13 @@ const Index = () => {
       checkApiKeys();
       setError(null);
       setHasApiKeyError(false);
+      setIsRateLimitError(false);
     };
     
     const handleApiKeyError = (event: CustomEvent) => {
       if (event.detail && event.detail.error) {
         setHasApiKeyError(true);
+        setIsRateLimitError(!!event.detail.isRateLimit);
         setError(`API-Key Fehler: ${event.detail.error}`);
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -116,6 +119,7 @@ const Index = () => {
   const handleSearch = async (ticker: string) => {
     setError(null);
     setHasApiKeyError(false);
+    setIsRateLimitError(false);
     setIsLoading(true);
     
     try {
@@ -322,12 +326,13 @@ const Index = () => {
         hasApiKey={hasApiKey}
         hasGptApiKey={hasGptApiKey}
         hasApiKeyError={hasApiKeyError}
+        isRateLimitError={isRateLimitError}
       />
       
       <StockSearch 
         onSearch={handleSearch} 
         isLoading={isLoading} 
-        disabled={!hasApiKey}
+        disabled={!hasApiKey || hasApiKeyError}
         hasApiKeyError={hasApiKeyError} 
       />
       

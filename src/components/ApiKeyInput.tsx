@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ExternalLink, AlertTriangle, KeyRound, ShieldCheck, HelpCircle } from 'lucide-react';
+import { ExternalLink, AlertTriangle, KeyRound, ShieldCheck, HelpCircle, AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { validateApiKey } from '@/api/stockApi';
 
@@ -14,6 +13,7 @@ const ApiKeyInput = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [isObfuscated, setIsObfuscated] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
+  const [isRateLimit, setIsRateLimit] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
@@ -24,6 +24,7 @@ const ApiKeyInput = () => {
     const handleApiKeyError = (event: CustomEvent) => {
       if (event.detail && event.detail.error) {
         setKeyError(event.detail.error);
+        setIsRateLimit(!!event.detail.isRateLimit);
         setIsSaved(false);
         
         // Benachrichtigung anzeigen
@@ -90,6 +91,7 @@ const ApiKeyInput = () => {
       // Set validating state
       setIsValidating(true);
       setKeyError(null);
+      setIsRateLimit(false);
       
       // Validate the API key by making a test request
       try {
@@ -107,6 +109,12 @@ const ApiKeyInput = () => {
       } catch (validationError) {
         if (validationError instanceof Error) {
           setKeyError(validationError.message);
+          
+          // Check if this is a rate limit error
+          if (validationError.message.includes('API-Limit überschritten')) {
+            setIsRateLimit(true);
+          }
+          
           toast({
             title: 'Validierungsfehler',
             description: validationError.message,
@@ -129,6 +137,7 @@ const ApiKeyInput = () => {
       setApiKey('••••••••••••••••••••••••');
       setIsObfuscated(true);
       setKeyError(null);
+      setIsRateLimit(false);
       
       // Benutzerdefiniertes Event auslösen, um andere Komponenten zu benachrichtigen
       window.dispatchEvent(new CustomEvent('fmp_api_key_change', {
@@ -200,18 +209,32 @@ const ApiKeyInput = () => {
         <div className="space-y-4">
           {keyError && (
             <Alert variant="destructive" className="mb-4">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>API-Key Fehler</AlertTitle>
+              {isRateLimit ? <AlertCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+              <AlertTitle>API-Key {isRateLimit ? 'Limit überschritten' : 'Fehler'}</AlertTitle>
               <AlertDescription>
                 <p>{keyError}</p>
                 <div className="mt-2 space-y-2">
-                  <p className="font-medium">Mögliche Lösungen:</p>
-                  <ul className="list-disc ml-5 space-y-1">
-                    <li>Überprüfen Sie, ob Sie den Key korrekt kopiert haben (ohne Leerzeichen)</li>
-                    <li>Stellen Sie sicher, dass Ihr API-Key aktiv und nicht abgelaufen ist</li>
-                    <li>Bei kostenloser Version: Das tägliche API-Limit könnte überschritten sein</li>
-                    <li>Registrieren Sie sich für einen neuen API-Key unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="font-medium underline">financialmodelingprep.com</a></li>
-                  </ul>
+                  {isRateLimit ? (
+                    <>
+                      <p className="font-medium">Hinweise:</p>
+                      <ul className="list-disc ml-5 space-y-1">
+                        <li>Mit dem kostenlosen Plan sind täglich nur 250 API-Aufrufe möglich</li>
+                        <li>Das Limit wird um 00:00 Uhr UTC (01:00/02:00 Uhr MEZ/MESZ) zurückgesetzt</li>
+                        <li>Für unbegrenzte Anfragen können Sie zu einem bezahlten Plan upgraden</li>
+                        <li>Besuchen Sie <a href="https://financialmodelingprep.com/developer/docs/pricing" target="_blank" rel="noopener noreferrer" className="font-medium underline">financialmodelingprep.com/pricing</a></li>
+                      </ul>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium">Mögliche Lösungen:</p>
+                      <ul className="list-disc ml-5 space-y-1">
+                        <li>Überprüfen Sie, ob Sie den Key korrekt kopiert haben (ohne Leerzeichen)</li>
+                        <li>Stellen Sie sicher, dass Ihr API-Key aktiv und nicht abgelaufen ist</li>
+                        <li>Bei kostenloser Version: Das tägliche API-Limit könnte überschritten sein</li>
+                        <li>Registrieren Sie sich für einen neuen API-Key unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="font-medium underline">financialmodelingprep.com</a></li>
+                      </ul>
+                    </>
+                  )}
                 </div>
               </AlertDescription>
             </Alert>
@@ -223,6 +246,11 @@ const ApiKeyInput = () => {
               <AlertTitle className="text-green-800">API-Key aktiv</AlertTitle>
               <AlertDescription className="text-green-700">
                 Ihr API-Key ist konfiguriert und bereit für die Verwendung.
+                {isSaved && (
+                  <p className="mt-1 text-xs">
+                    <span className="font-medium">Hinweis:</span> Der kostenlose API-Plan erlaubt maximal 250 Anfragen pro Tag.
+                  </p>
+                )}
               </AlertDescription>
             </Alert>
           )}
@@ -263,7 +291,7 @@ const ApiKeyInput = () => {
             </ol>
             <div className="mt-3 p-2 border border-amber-200 bg-amber-50 rounded text-amber-800">
               <p className="text-xs font-medium">Wichtiger Hinweis:</p>
-              <p className="text-xs mt-1">Mit dem kostenlosen Plan sind nur begrenzte API-Aufrufe pro Tag möglich. Falls Sie häufig die Fehlermeldung "API-Limit überschritten" erhalten, erwägen Sie ein Upgrade auf einen bezahlten Plan.</p>
+              <p className="text-xs mt-1">Mit dem kostenlosen Plan sind nur begrenzte API-Aufrufe pro Tag möglich (maximal 250). Falls Sie häufig die Fehlermeldung "API-Limit überschritten" erhalten, erwägen Sie ein Upgrade auf einen bezahlten Plan.</p>
             </div>
           </div>
         </div>

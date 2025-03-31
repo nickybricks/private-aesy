@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon, AlertTriangle } from 'lucide-react';
+import { InfoIcon, AlertTriangle, AlertCircle } from 'lucide-react';
 import ApiKeyInput from './ApiKeyInput';
 import OpenAiKeyInput from './OpenAiKeyInput';
 
@@ -9,12 +9,14 @@ interface ApiKeyWarningsProps {
   hasApiKey: boolean;
   hasGptApiKey: boolean;
   hasApiKeyError?: boolean;
+  isRateLimitError?: boolean;
 }
 
 const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({ 
   hasApiKey, 
   hasGptApiKey,
-  hasApiKeyError = false
+  hasApiKeyError = false,
+  isRateLimitError = false
 }) => {
   return (
     <>
@@ -22,11 +24,26 @@ const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({
       {hasApiKeyError && (
         <div className="mb-8 animate-fade-in">
           <Alert variant="destructive" className="mb-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>API-Key Problem erkannt</AlertTitle>
+            {isRateLimitError ? (
+              <AlertCircle className="h-4 w-4" />
+            ) : (
+              <AlertTriangle className="h-4 w-4" />
+            )}
+            <AlertTitle>
+              {isRateLimitError ? 'API-Limit überschritten' : 'API-Key Problem erkannt'}
+            </AlertTitle>
             <AlertDescription>
-              Es scheint ein Problem mit Ihrem Financial Modeling Prep API-Key zu geben. 
-              Bitte überprüfen Sie Ihren API-Key unten und stellen Sie sicher, dass er gültig ist.
+              {isRateLimitError ? (
+                <>
+                  Das tägliche Limit für kostenlose API-Anfragen wurde erreicht (maximal 250 pro Tag).
+                  Das Limit wird täglich um 00:00 Uhr UTC (01:00/02:00 Uhr MEZ/MESZ) zurückgesetzt.
+                </>
+              ) : (
+                <>
+                  Es scheint ein Problem mit Ihrem Financial Modeling Prep API-Key zu geben. 
+                  Bitte überprüfen Sie Ihren API-Key unten und stellen Sie sicher, dass er gültig ist.
+                </>
+              )}
             </AlertDescription>
           </Alert>
           

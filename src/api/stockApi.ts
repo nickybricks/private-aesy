@@ -41,7 +41,9 @@ export const validateApiKey = async (apiKey: string): Promise<boolean> => {
       if (error.response?.status === 401 || error.response?.status === 403) {
         throw new Error('Der API-Key ist ungültig oder abgelaufen. Bitte überprüfen Sie Ihren Key oder registrieren Sie sich für einen neuen.');
       } else if (error.response?.status === 429) {
-        throw new Error('API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen möglich. Bitte versuchen Sie es später erneut oder erwägen Sie ein Upgrade auf einen bezahlten Plan.');
+        throw new Error('API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen pro Tag möglich. Bitte versuchen Sie es später erneut oder erwägen Sie ein Upgrade auf einen bezahlten Plan.');
+      } else if (error.response?.status >= 500) {
+        throw new Error('Der Financial Modeling Prep Server ist momentan nicht erreichbar. Bitte versuchen Sie es später erneut.');
       }
     }
     
@@ -84,7 +86,15 @@ const handleApiError = (error: any, ticker: string) => {
         }
       }));
     } else if (error.response?.status === 429) {
-      errorMessage = `API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen möglich. Bitte versuchen Sie es später erneut oder erwägen Sie ein Upgrade auf einen bezahlten Plan.`;
+      errorMessage = `API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen pro Tag möglich (maximal 250). Bitte versuchen Sie es morgen erneut oder erwägen Sie ein Upgrade auf einen bezahlten Plan.`;
+      
+      // Benachrichtige UI-Komponenten über Rate Limit
+      window.dispatchEvent(new CustomEvent('fmp_api_key_error', {
+        detail: { 
+          error: errorMessage,
+          isRateLimit: true
+        }
+      }));
     } else if (error.response?.status === 404) {
       // Spezielle Behandlung für deutsche Aktien
       if (ticker.endsWith('.DE')) {
@@ -92,6 +102,8 @@ const handleApiError = (error: any, ticker: string) => {
       } else {
         errorMessage = `Symbol ${ticker} wurde nicht gefunden. Bitte überprüfen Sie das Aktiensymbol und versuchen Sie es erneut.`;
       }
+    } else if (error.response?.status >= 500) {
+      errorMessage = `Der Financial Modeling Prep Server ist momentan nicht erreichbar. Bitte versuchen Sie es später erneut.`;
     } else {
       errorMessage = `Fehler bei API-Anfrage: ${error.response?.status || 'Unbekannter Status'}. Bitte versuchen Sie es später erneut.`;
     }
