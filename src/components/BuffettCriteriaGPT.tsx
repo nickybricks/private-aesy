@@ -257,17 +257,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                           {criterion.gptAnalysis}
                         </ReactMarkdown>
                       </div>
-                      
-                      {points.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-100">
-                          <div className="font-medium text-sm text-gray-700 mb-1">Wichtigste Erkenntnisse:</div>
-                          <ul className="list-disc pl-5 space-y-0.5">
-                            {points.map((point, i) => (
-                              <li key={i} className="text-sm text-gray-600">{point}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
