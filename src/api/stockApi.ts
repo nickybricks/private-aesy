@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { 
   analyzeBusinessModel, 
@@ -12,16 +13,21 @@ import {
 } from './openaiApi';
 
 // Financial Modeling Prep API Key
-// Sie müssen diesen API-Key durch Ihre eigene ersetzen
-// Registrieren Sie sich unter https://financialmodelingprep.com/developer/docs/ für einen kostenlosen API-Key
 const getApiKey = () => {
-  // Zuerst aus localStorage versuchen zu laden
-  const savedApiKey = localStorage.getItem('fmp_api_key');
-  if (savedApiKey) {
-    return savedApiKey;
+  try {
+    // Zuerst aus localStorage versuchen zu laden
+    const savedApiKey = localStorage.getItem('fmp_api_key');
+    if (savedApiKey && savedApiKey.trim().length > 5) {
+      return savedApiKey.trim();
+    }
+    
+    // Wenn kein gültiger Key gefunden wurde
+    console.error('Kein gültiger API-Key gefunden');
+    throw new Error('API-Key ist nicht konfiguriert. Bitte geben Sie Ihren Financial Modeling Prep API-Key ein.');
+  } catch (error) {
+    console.error('Error retrieving API key:', error);
+    throw new Error('API-Key konnte nicht geladen werden. Bitte überprüfen Sie Ihre Browsereinstellungen (localStorage).');
   }
-  // Fallback auf einen Beispiel-Key (wird wahrscheinlich nicht funktionieren)
-  return 'demo';
 };
 
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
@@ -30,17 +36,28 @@ const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 const handleApiError = (error: any, ticker: string) => {
   console.error('Error fetching data from FMP:', error);
   
-  if (axios.isAxiosError(error) && error.response?.status === 401) {
-    throw new Error(`API-Key ist ungültig. Bitte registrieren Sie sich für einen kostenlosen Schlüssel unter financialmodelingprep.com.`);
-  }
-  
-  if (axios.isAxiosError(error) && error.response?.status === 404) {
-    // Spezielle Behandlung für deutsche Aktien
-    if (ticker.endsWith('.DE')) {
-      throw new Error(`Symbol ${ticker} wurde nicht gefunden. Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie ein anderes Symbol oder verwenden Sie die internationale Notierung.`);
+  if (axios.isAxiosError(error)) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      throw new Error(`API-Key ist ungültig oder abgelaufen. Bitte überprüfen Sie Ihren Key oder registrieren Sie sich für einen neuen unter financialmodelingprep.com.`);
     }
     
-    throw new Error(`Symbol ${ticker} wurde nicht gefunden. Bitte überprüfen Sie das Aktiensymbol und versuchen Sie es erneut.`);
+    if (error.response?.status === 429) {
+      throw new Error(`API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen möglich. Bitte versuchen Sie es später erneut.`);
+    }
+    
+    if (error.response?.status === 404) {
+      // Spezielle Behandlung für deutsche Aktien
+      if (ticker.endsWith('.DE')) {
+        throw new Error(`Symbol ${ticker} wurde nicht gefunden. Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie ein anderes Symbol oder verwenden Sie die internationale Notierung.`);
+      }
+      
+      throw new Error(`Symbol ${ticker} wurde nicht gefunden. Bitte überprüfen Sie das Aktiensymbol und versuchen Sie es erneut.`);
+    }
+  }
+  
+  // Überprüfen, ob es ein Netzwerkfehler ist
+  if (error.message && error.message.includes('Network Error')) {
+    throw new Error(`Netzwerkfehler beim Abrufen der Daten. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.`);
   }
   
   throw new Error(`Fehler beim Abrufen von Daten. Bitte überprüfen Sie Ihren API-Key oder versuchen Sie es später erneut.`);
@@ -51,19 +68,25 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
     const apiKey = getApiKey();
     
-    // Überprüfen, ob ein API-Schlüssel gesetzt ist
-    if (!apiKey || apiKey === 'demo') {
-      throw new Error('API-Key ist nicht konfiguriert. Bitte geben Sie Ihren Financial Modeling Prep API-Key ein.');
-    }
-    
     console.log(`Fetching from ${BASE_URL}${endpoint} with params:`, {...params, apikey: '***'});
     
     const response = await axios.get(`${BASE_URL}${endpoint}`, {
       params: {
         apikey: apiKey,
         ...params
-      }
+      },
+      timeout: 10000 // 10 Sekunden Timeout für bessere Fehlermeldungen
     });
+    
+    // Überprüfen, ob die Antwort leer oder ungültig ist
+    if (!response.data || (Array.isArray(response.data) && response.data.length === 0)) {
+      // Die Ticker-Info aus dem Endpunkt extrahieren für bessere Fehlermeldungen
+      const match = endpoint.match(/\/([^\/]+)$/);
+      const ticker = match ? match[1].split('?')[0] : 'unknown';
+      
+      throw new Error(`Keine Daten gefunden für ${ticker}`);
+    }
+    
     return response.data;
   } catch (error) {
     // Die Ticker-Info aus dem Endpunkt extrahieren für bessere Fehlermeldungen

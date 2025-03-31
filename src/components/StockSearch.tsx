@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,6 +74,9 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     { symbol: 'SAP.DE', name: 'SAP' },
     { symbol: 'BMW.DE', name: 'BMW' },
     { symbol: 'BAS.DE', name: 'BASF' },
+    { symbol: 'ALV.DE', name: 'Allianz' },
+    { symbol: 'SIE.DE', name: 'Siemens' },
+    { symbol: 'DAI.DE', name: 'Daimler' },
   ];
 
   return (
@@ -140,16 +143,18 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         <p>{disabled 
           ? "Bitte konfigurieren Sie zuerst einen API-Key oben, um die Analyse zu starten." 
           : "Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung."}</p>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Info size={16} className="ml-2 cursor-help" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs p-4">
-            <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
-            <p>Dieses Tool verwendet die Financial Modeling Prep API. Sie benötigen einen gültigen API-Schlüssel, um die Anwendung zu nutzen.</p>
-            <p className="mt-2">Registrieren Sie sich für einen kostenlosen API-Schlüssel unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">financialmodelingprep.com</a>.</p>
-          </TooltipContent>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info size={16} className="ml-2 cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs p-4">
+              <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
+              <p>Dieses Tool verwendet die Financial Modeling Prep API. Sie benötigen einen gültigen API-Schlüssel, um die Anwendung zu nutzen.</p>
+              <p className="mt-2">Registrieren Sie sich für einen kostenlosen API-Schlüssel unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">financialmodelingprep.com</a>.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       
       {/* Häufig verwendete Aktiensymbole */}
