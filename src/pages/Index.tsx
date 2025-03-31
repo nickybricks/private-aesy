@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -7,7 +6,6 @@ import BuffettCriteriaGPT from '@/components/BuffettCriteriaGPT';
 import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
-import OpenAiKeyInput from '@/components/OpenAiKeyInput';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
@@ -24,24 +22,25 @@ const Index = () => {
   const [overallRating, setOverallRating] = useState(null);
   const [error, setError] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
-  const [hasGptApiKey, setHasGptApiKey] = useState(false);
+  const [gptAvailable, setGptAvailable] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
 
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
     setHasApiKey(!!savedKey);
     
-    const openAiKey = localStorage.getItem('openai_api_key');
-    setHasGptApiKey(!!openAiKey);
+    setGptAvailable(hasOpenAiApiKey());
+    
+    if (hasOpenAiApiKey()) {
+      setActiveTab('gpt');
+    }
   }, []);
 
   useEffect(() => {
     const handleStorageChange = () => {
       const savedKey = localStorage.getItem('fmp_api_key');
       setHasApiKey(!!savedKey);
-      
-      const openAiKey = localStorage.getItem('openai_api_key');
-      setHasGptApiKey(!!openAiKey);
+      setGptAvailable(hasOpenAiApiKey());
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -51,8 +50,6 @@ const Index = () => {
       originalSetItem.apply(this, [key, value]);
       if (key === 'fmp_api_key') {
         setHasApiKey(!!value);
-      } else if (key === 'openai_api_key') {
-        setHasGptApiKey(!!value);
       }
     };
     
@@ -80,8 +77,7 @@ const Index = () => {
         description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
       });
       
-      // Wenn GPT verfügbar ist, entsprechenden Tab aktivieren
-      if (hasGptApiKey) {
+      if (gptAvailable) {
         setActiveTab('gpt');
       }
       
@@ -107,12 +103,10 @@ const Index = () => {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
       
-      // Verbesserte Fehlermeldung mit Vorschlägen für häufige Fehler
       let enhancedErrorMessage = errorMessage;
       if(errorMessage.includes("Keine Daten gefunden für")) {
         const searchedTicker = ticker.toUpperCase();
         
-        // Häufige Fehler korrigieren
         if(searchedTicker === "APPL") {
           enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Meinten Sie vielleicht AAPL (Apple)?`;
         } else if(searchedTicker === "GOOGL" || searchedTicker === "GOOG") {
@@ -159,18 +153,16 @@ const Index = () => {
         </div>
       )}
       
-      {hasApiKey && !hasGptApiKey && (
+      {!gptAvailable && (
         <div className="mb-8 animate-fade-in">
-          <Alert className="mb-4">
-            <InfoIcon className="h-4 w-4" />
-            <AlertTitle>GPT-Integration (optional)</AlertTitle>
-            <AlertDescription>
-              Für eine erweiterte Analyse aller 11 Buffett-Kriterien empfehlen wir die Integration mit OpenAI GPT.
-              Dies ermöglicht tiefere Einblicke zu den qualitativen Aspekten wie Geschäftsmodell, Management und langfristige Perspektiven.
+          <Alert className="mb-4 bg-yellow-50 border-yellow-200">
+            <InfoIcon className="h-4 w-4 text-yellow-500" />
+            <AlertTitle className="text-yellow-700">OpenAI API-Key konfigurieren</AlertTitle>
+            <AlertDescription className="text-yellow-600">
+              Der OpenAI API-Key in der Datei <code className="bg-yellow-100 px-1 py-0.5 rounded">src/api/openaiApi.ts</code> ist noch nicht konfiguriert.
+              Bitte öffnen Sie die Datei und ersetzen Sie den Platzhalter 'IHR-OPENAI-API-KEY-HIER' mit Ihrem tatsächlichen OpenAI API-Key.
             </AlertDescription>
           </Alert>
-          
-          <OpenAiKeyInput />
         </div>
       )}
       
@@ -216,22 +208,22 @@ const Index = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-4">
                   <TabsTrigger value="standard">Standard-Analyse</TabsTrigger>
-                  <TabsTrigger value="gpt" disabled={!hasGptApiKey}>
-                    {hasGptApiKey ? 'GPT-Analyse (11 Kriterien)' : 'GPT-Analyse (Nicht verfügbar)'}
+                  <TabsTrigger value="gpt" disabled={!gptAvailable}>
+                    {gptAvailable ? 'GPT-Analyse (11 Kriterien)' : 'GPT-Analyse (Nicht verfügbar)'}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="standard">
                   <BuffettCriteria criteria={buffettCriteria} />
                 </TabsContent>
                 <TabsContent value="gpt">
-                  {hasGptApiKey ? (
+                  {gptAvailable ? (
                     <BuffettCriteriaGPT criteria={buffettCriteria} />
                   ) : (
                     <Alert>
                       <InfoIcon className="h-4 w-4" />
                       <AlertTitle>GPT-Analyse nicht verfügbar</AlertTitle>
                       <AlertDescription>
-                        Bitte konfigurieren Sie Ihren OpenAI API-Key, um Zugang zur erweiterten GPT-Analyse zu erhalten.
+                        Bitte konfigurieren Sie Ihren OpenAI API-Key in der Datei src/api/openaiApi.ts, um Zugang zur erweiterten GPT-Analyse zu erhalten.
                       </AlertDescription>
                     </Alert>
                   )}

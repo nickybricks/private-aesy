@@ -1,22 +1,16 @@
-
 import axios from 'axios';
+
+// OpenAI API Key - Fest im Code eingebaut
+// ACHTUNG: Ersetzen Sie 'IHR-OPENAI-API-KEY-HIER' mit Ihrem tatsächlichen OpenAI API-Key
+const OPENAI_API_KEY = 'IHR-OPENAI-API-KEY-HIER';
 
 // OpenAI API Key handling
 const getOpenAiApiKey = () => {
-  const savedApiKey = localStorage.getItem('openai_api_key');
-  if (savedApiKey) {
-    return savedApiKey;
-  }
-  return null;
-};
-
-export const setOpenAiApiKey = (key: string) => {
-  localStorage.setItem('openai_api_key', key);
-  window.dispatchEvent(new Event('storage'));
+  return OPENAI_API_KEY;
 };
 
 export const hasOpenAiApiKey = (): boolean => {
-  return !!localStorage.getItem('openai_api_key');
+  return OPENAI_API_KEY !== 'IHR-OPENAI-API-KEY-HIER';
 };
 
 // OpenAI API Service
@@ -38,8 +32,8 @@ export const queryGPT = async (prompt: string): Promise<string> => {
   try {
     const apiKey = getOpenAiApiKey();
     
-    if (!apiKey) {
-      throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte geben Sie Ihren OpenAI API-Key ein.');
+    if (apiKey === 'IHR-OPENAI-API-KEY-HIER') {
+      throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
     }
     
     const response = await axios.post<OpenAIResponse>(
@@ -71,7 +65,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
   } catch (error) {
     console.error('Error querying OpenAI:', error);
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key.');
+      throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei.');
     }
     throw new Error('Fehler bei der Anfrage an OpenAI. Bitte versuchen Sie es später erneut.');
   }
