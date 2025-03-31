@@ -20,6 +20,7 @@ interface StockSearchProps {
 const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false }) => {
   const [ticker, setTicker] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
+  const [showGermanStockInfo, setShowGermanStockInfo] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,10 +28,23 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       // Check if the user entered "APPL" instead of "AAPL" (common mistake)
       if (ticker.trim().toUpperCase() === 'APPL') {
         setShowAppleCorrection(true);
+        setShowGermanStockInfo(false);
+        return;
+      }
+      
+      // Check if it's a German stock but without .DE suffix
+      const germanStockPattern = /^[A-Z0-9]{3,6}$/;
+      const isDEStock = ticker.trim().toUpperCase().endsWith('.DE');
+      
+      if (!isDEStock && germanStockPattern.test(ticker.trim().toUpperCase()) && !ticker.trim().includes('.')) {
+        // Show info about German stocks if they might have entered a German stock without .DE
+        setShowGermanStockInfo(true);
+        setShowAppleCorrection(false);
         return;
       }
       
       setShowAppleCorrection(false);
+      setShowGermanStockInfo(false);
       onSearch(ticker.trim().toUpperCase());
     }
   };
@@ -38,7 +52,15 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const correctSymbol = (correctTicker: string) => {
     setTicker(correctTicker);
     setShowAppleCorrection(false);
+    setShowGermanStockInfo(false);
     onSearch(correctTicker);
+  };
+  
+  const appendDEAndSearch = () => {
+    const tickerWithDE = `${ticker.trim().toUpperCase()}.DE`;
+    setTicker(tickerWithDE);
+    setShowGermanStockInfo(false);
+    onSearch(tickerWithDE);
   };
 
   const commonTickers = [
@@ -48,6 +70,10 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     { symbol: 'GOOGL', name: 'Alphabet (Google)' },
     { symbol: 'META', name: 'Meta (Facebook)' },
     { symbol: 'TSLA', name: 'Tesla' },
+    // Deutsche Aktien
+    { symbol: 'SAP.DE', name: 'SAP' },
+    { symbol: 'BMW.DE', name: 'BMW' },
+    { symbol: 'BAS.DE', name: 'BASF' },
   ];
 
   return (
@@ -73,13 +99,29 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         </Alert>
       )}
       
+      {showGermanStockInfo && (
+        <Alert className="mb-4 border-buffett-blue bg-buffett-blue bg-opacity-5">
+          <AlertTitle>Deutsche Aktie?</AlertTitle>
+          <AlertDescription>
+            <p>Für deutsche Aktien benötigen Sie das Suffix ".DE" am Ende des Symbols.</p>
+            <Button 
+              variant="link" 
+              className="p-0 h-auto text-buffett-blue font-medium mt-1"
+              onClick={appendDEAndSearch}
+            >
+              Mit ".DE" suchen ({ticker.trim().toUpperCase()}.DE) →
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <form onSubmit={handleSubmit} className="flex gap-2">
         <div className="relative flex-1">
           <Input
             type="text"
             value={ticker}
             onChange={(e) => setTicker(e.target.value)}
-            placeholder="AAPL, MSFT, AMZN, META..."
+            placeholder="AAPL, MSFT, SAP.DE, BMW.DE..."
             className="apple-input pl-10"
             disabled={disabled || isLoading}
           />
@@ -123,6 +165,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               onClick={() => {
                 setTicker(item.symbol);
                 setShowAppleCorrection(false);
+                setShowGermanStockInfo(false);
               }}
             >
               {item.symbol} ({item.name})

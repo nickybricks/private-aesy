@@ -26,6 +26,26 @@ const getApiKey = () => {
 
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
+// Hilfsfunktion für bessere Fehlerbehandlung
+const handleApiError = (error: any, ticker: string) => {
+  console.error('Error fetching data from FMP:', error);
+  
+  if (axios.isAxiosError(error) && error.response?.status === 401) {
+    throw new Error(`API-Key ist ungültig. Bitte registrieren Sie sich für einen kostenlosen Schlüssel unter financialmodelingprep.com.`);
+  }
+  
+  if (axios.isAxiosError(error) && error.response?.status === 404) {
+    // Spezielle Behandlung für deutsche Aktien
+    if (ticker.endsWith('.DE')) {
+      throw new Error(`Symbol ${ticker} wurde nicht gefunden. Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie ein anderes Symbol oder verwenden Sie die internationale Notierung.`);
+    }
+    
+    throw new Error(`Symbol ${ticker} wurde nicht gefunden. Bitte überprüfen Sie das Aktiensymbol und versuchen Sie es erneut.`);
+  }
+  
+  throw new Error(`Fehler beim Abrufen von Daten. Bitte überprüfen Sie Ihren API-Key oder versuchen Sie es später erneut.`);
+};
+
 // Hilfsfunktion, um API-Anfragen zu machen
 const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
@@ -36,6 +56,8 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
       throw new Error('API-Key ist nicht konfiguriert. Bitte geben Sie Ihren Financial Modeling Prep API-Key ein.');
     }
     
+    console.log(`Fetching from ${BASE_URL}${endpoint} with params:`, {...params, apikey: '***'});
+    
     const response = await axios.get(`${BASE_URL}${endpoint}`, {
       params: {
         apikey: apiKey,
@@ -44,11 +66,11 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error fetching data from FMP:', error);
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
-      throw new Error(`API-Key ist ungültig. Bitte registrieren Sie sich für einen kostenlosen Schlüssel unter financialmodelingprep.com.`);
-    }
-    throw new Error(`Fehler beim Abrufen von Daten. Bitte überprüfen Sie Ihren API-Key oder versuchen Sie es später erneut.`);
+    // Die Ticker-Info aus dem Endpunkt extrahieren für bessere Fehlermeldungen
+    const match = endpoint.match(/\/([^\/]+)$/);
+    const ticker = match ? match[1].split('?')[0] : 'unknown';
+    
+    return handleApiError(error, ticker);
   }
 };
 
@@ -59,29 +81,39 @@ export const fetchStockInfo = async (ticker: string) => {
   // Standardisieren des Tickers für die API
   const standardizedTicker = ticker.trim().toUpperCase();
   
-  // Profil- und Kursdaten parallel abrufen
-  const [profileData, quoteData] = await Promise.all([
-    fetchFromFMP(`/profile/${standardizedTicker}`),
-    fetchFromFMP(`/quote/${standardizedTicker}`)
-  ]);
-  
-  // Überprüfen, ob Daten zurückgegeben wurden
-  if (!profileData || profileData.length === 0 || !quoteData || quoteData.length === 0) {
-    throw new Error(`Keine Daten gefunden für ${standardizedTicker}`);
+  try {
+    // Profil- und Kursdaten parallel abrufen
+    const [profileData, quoteData] = await Promise.all([
+      fetchFromFMP(`/profile/${standardizedTicker}`),
+      fetchFromFMP(`/quote/${standardizedTicker}`)
+    ]);
+    
+    // Überprüfen, ob Daten zurückgegeben wurden
+    if (!profileData || profileData.length === 0 || !quoteData || quoteData.length === 0) {
+      throw new Error(`Keine Daten gefunden für ${standardizedTicker}`);
+    }
+    
+    const profile = profileData[0];
+    const quote = quoteData[0];
+    
+    return {
+      name: profile.companyName,
+      ticker: profile.symbol,
+      price: quote.price,
+      change: quote.change,
+      changePercent: quote.changesPercentage,
+      currency: profile.currency,
+      marketCap: profile.mktCap,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      // Spezielle Behandlung für deutsche Aktien
+      if (standardizedTicker.endsWith('.DE') && error.message.includes("Keine Daten gefunden")) {
+        throw new Error(`Deutsche Aktie ${standardizedTicker} wurde nicht gefunden. Financial Modeling Prep unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie ein anderes Symbol.`);
+      }
+    }
+    throw error;
   }
-  
-  const profile = profileData[0];
-  const quote = quoteData[0];
-  
-  return {
-    name: profile.companyName,
-    ticker: profile.symbol,
-    price: quote.price,
-    change: quote.change,
-    changePercent: quote.changesPercentage,
-    currency: profile.currency,
-    marketCap: profile.mktCap,
-  };
 };
 
 // Funktion, um Buffett-Kriterien zu analysieren
