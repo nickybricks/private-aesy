@@ -50,6 +50,7 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [hasGptApiKey, setHasGptApiKey] = useState(false);
+  const [hasApiKeyError, setHasApiKeyError] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
   const [apiKeyCheckCompleted, setApiKeyCheckCompleted] = useState(false);
 
@@ -61,18 +62,29 @@ const Index = () => {
     
     initialCheck();
     
-    window.addEventListener('fmp_api_key_change', handleStorageChange);
-    window.addEventListener('openai_api_key_change', handleStorageChange);
+    const handleApiKeyChange = () => {
+      checkApiKeys();
+      setError(null);
+      setHasApiKeyError(false);
+    };
+    
+    const handleApiKeyError = (event: CustomEvent) => {
+      if (event.detail && event.detail.error) {
+        setHasApiKeyError(true);
+        setError(`API-Key Fehler: ${event.detail.error}`);
+      }
+    };
+    
+    window.addEventListener('fmp_api_key_change', handleApiKeyChange as EventListener);
+    window.addEventListener('openai_api_key_change', handleApiKeyChange as EventListener);
+    window.addEventListener('fmp_api_key_error', handleApiKeyError as EventListener);
     
     return () => {
-      window.removeEventListener('fmp_api_key_change', handleStorageChange);
-      window.removeEventListener('openai_api_key_change', handleStorageChange);
+      window.removeEventListener('fmp_api_key_change', handleApiKeyChange as EventListener);
+      window.removeEventListener('openai_api_key_change', handleApiKeyChange as EventListener);
+      window.removeEventListener('fmp_api_key_error', handleApiKeyError as EventListener);
     };
   }, []);
-  
-  const handleStorageChange = async () => {
-    await checkApiKeys();
-  };
   
   const checkApiKeys = async () => {
     let fmpKeyExists = false;
@@ -102,6 +114,8 @@ const Index = () => {
   const handleSearch = async (ticker: string) => {
     setIsLoading(true);
     setError(null);
+    setHasApiKeyError(false);
+    
     try {
       setStockInfo(null);
       setBuffettCriteria(null);
@@ -240,6 +254,13 @@ const Index = () => {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
       
+      if (errorMessage.toLowerCase().includes('api-key') || 
+          errorMessage.toLowerCase().includes('apikey') || 
+          errorMessage.toLowerCase().includes('401') || 
+          errorMessage.toLowerCase().includes('403')) {
+        setHasApiKeyError(true);
+      }
+      
       let enhancedErrorMessage = errorMessage;
       if(errorMessage.includes("Keine Daten gefunden für")) {
         const searchedTicker = ticker.toUpperCase();
@@ -299,7 +320,12 @@ const Index = () => {
         hasGptApiKey={hasGptApiKey}
       />
       
-      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
+      <StockSearch 
+        onSearch={handleSearch} 
+        isLoading={isLoading} 
+        disabled={!hasApiKey}
+        hasApiKeyError={hasApiKeyError} 
+      />
       
       {error && (
         <Alert variant="destructive" className="mb-6">

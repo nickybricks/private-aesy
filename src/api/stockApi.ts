@@ -12,6 +12,43 @@ import {
   hasOpenAiApiKey
 } from './openaiApi';
 
+const BASE_URL = 'https://financialmodelingprep.com/api/v3';
+
+// API Key validation function
+export const validateApiKey = async (apiKey: string): Promise<boolean> => {
+  try {
+    console.log('Validating API key...');
+    // Try a simple request that should work with any valid API key (company profile for Apple)
+    const response = await axios.get(`${BASE_URL}/profile/AAPL`, {
+      params: {
+        apikey: apiKey
+      },
+      timeout: 8000
+    });
+    
+    // Check if data exists and has the expected format
+    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+      console.log('API key validated successfully');
+      return true;
+    }
+    
+    console.log('API key validation failed: Unexpected response format');
+    return false;
+  } catch (error) {
+    console.error('API key validation error:', error);
+    
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        throw new Error('Der API-Key ist ungültig oder abgelaufen. Bitte überprüfen Sie Ihren Key oder registrieren Sie sich für einen neuen.');
+      } else if (error.response?.status === 429) {
+        throw new Error('API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen möglich. Bitte versuchen Sie es später erneut oder erwägen Sie ein Upgrade auf einen bezahlten Plan.');
+      }
+    }
+    
+    throw new Error('Fehler bei der Validierung des API-Keys. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.');
+  }
+};
+
 // Financial Modeling Prep API Key
 const getApiKey = () => {
   try {
@@ -30,8 +67,6 @@ const getApiKey = () => {
   }
 };
 
-const BASE_URL = 'https://financialmodelingprep.com/api/v3';
-
 // Hilfsfunktion für bessere Fehlerbehandlung
 const handleApiError = (error: any, ticker: string) => {
   console.error('Error fetching data from FMP:', error);
@@ -49,7 +84,7 @@ const handleApiError = (error: any, ticker: string) => {
         }
       }));
     } else if (error.response?.status === 429) {
-      errorMessage = `API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen möglich. Bitte versuchen Sie es später erneut.`;
+      errorMessage = `API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen möglich. Bitte versuchen Sie es später erneut oder erwägen Sie ein Upgrade auf einen bezahlten Plan.`;
     } else if (error.response?.status === 404) {
       // Spezielle Behandlung für deutsche Aktien
       if (ticker.endsWith('.DE')) {

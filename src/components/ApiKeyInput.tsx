@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ExternalLink, AlertTriangle } from 'lucide-react';
+import { ExternalLink, AlertTriangle, KeyRound, ShieldCheck } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { validateApiKey } from '@/api/stockApi';
 
 const ApiKeyInput = () => {
   const { toast } = useToast();
@@ -13,6 +14,7 @@ const ApiKeyInput = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [isObfuscated, setIsObfuscated] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
     // Beim ersten Laden der Komponente nach API-Key suchen
@@ -57,7 +59,7 @@ const ApiKeyInput = () => {
     }
   };
 
-  const handleSaveApiKey = () => {
+  const handleSaveApiKey = async () => {
     if (!apiKey || apiKey.trim() === '' || apiKey === '••••••••••••••••••••••••') {
       toast({
         title: 'Fehler',
@@ -78,6 +80,43 @@ const ApiKeyInput = () => {
         return;
       }
       
+      // Set validating state
+      setIsValidating(true);
+      setKeyError(null);
+      
+      // Validate the API key by making a test request
+      try {
+        const isValid = await validateApiKey(apiKey.trim());
+        if (!isValid) {
+          setKeyError('Der API-Key scheint ungültig zu sein oder hat keine ausreichenden Berechtigungen.');
+          toast({
+            title: 'Ungültiger API-Key',
+            description: 'Der API-Key konnte nicht validiert werden. Bitte überprüfen Sie, ob der Key korrekt ist und über ausreichende Berechtigungen verfügt.',
+            variant: 'destructive',
+          });
+          setIsValidating(false);
+          return;
+        }
+      } catch (validationError) {
+        if (validationError instanceof Error) {
+          setKeyError(validationError.message);
+          toast({
+            title: 'Validierungsfehler',
+            description: validationError.message,
+            variant: 'destructive',
+          });
+        } else {
+          setKeyError('Unbekannter Fehler bei der API-Key-Validierung');
+          toast({
+            title: 'Validierungsfehler',
+            description: 'Es ist ein unbekannter Fehler bei der Validierung des API-Keys aufgetreten.',
+            variant: 'destructive',
+          });
+        }
+        setIsValidating(false);
+        return;
+      }
+      
       localStorage.setItem('fmp_api_key', apiKey.trim());
       setIsSaved(true);
       setApiKey('••••••••••••••••••••••••');
@@ -91,7 +130,7 @@ const ApiKeyInput = () => {
       
       toast({
         title: 'API-Key gespeichert',
-        description: 'Ihr API-Key wurde erfolgreich gespeichert und wird für alle zukünftigen Anfragen verwendet.',
+        description: 'Ihr API-Key wurde erfolgreich validiert und gespeichert. Er wird für alle zukünftigen Anfragen verwendet.',
       });
     } catch (error) {
       console.error('Error saving to localStorage:', error);
@@ -100,6 +139,8 @@ const ApiKeyInput = () => {
         description: 'Der API-Key konnte nicht gespeichert werden. Möglicherweise blockiert Ihr Browser das Speichern von Daten.',
         variant: 'destructive',
       });
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -140,7 +181,10 @@ const ApiKeyInput = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>API-Key konfigurieren</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <KeyRound className="h-5 w-5" />
+          API-Key konfigurieren
+        </CardTitle>
         <CardDescription>
           Das Buffett Benchmark Tool benötigt einen gültigen API-Key, um Finanzdaten abzurufen.
         </CardDescription>
@@ -153,14 +197,24 @@ const ApiKeyInput = () => {
               <AlertTitle>API-Key Fehler</AlertTitle>
               <AlertDescription>
                 <p>{keyError}</p>
-                <p className="mt-2">Bitte aktualisieren Sie Ihren API-Key oder registrieren Sie sich für einen neuen.</p>
+                <p className="mt-2">Bitte aktualisieren Sie Ihren API-Key oder registrieren Sie sich für einen neuen unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="font-medium underline">financialmodelingprep.com</a>.</p>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {isSaved && !keyError && (
+            <Alert variant="default" className="mb-4 border-green-200 bg-green-50">
+              <ShieldCheck className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800">API-Key aktiv</AlertTitle>
+              <AlertDescription className="text-green-700">
+                Ihr API-Key ist konfiguriert und bereit für die Verwendung.
               </AlertDescription>
             </Alert>
           )}
 
           <div>
             <label htmlFor="api-key" className="text-sm font-medium mb-2 block">
-              Financial Modeling Prep API-Key
+              Financial Modeling Prep API-Key {isValidating && <span className="text-xs text-muted-foreground ml-1">(Validierung läuft...)</span>}
             </label>
             <Input
               id="api-key"
@@ -175,6 +229,7 @@ const ApiKeyInput = () => {
               onFocus={handleInputFocus}
               placeholder="Ihren API-Key hier eingeben"
               className="w-full"
+              disabled={isValidating}
             />
           </div>
           <div className="text-sm text-buffett-subtext border p-4 rounded-md bg-gray-50">
@@ -185,18 +240,25 @@ const ApiKeyInput = () => {
               <li>Nach der Anmeldung finden Sie Ihren API-Key im Dashboard</li>
               <li>Kopieren Sie den Schlüssel und fügen Sie ihn hier ein</li>
             </ol>
-            <p className="mt-2">Der kostenlose Plan ermöglicht bereits einige API-Aufrufe pro Tag.</p>
+            <div className="mt-3 p-2 border border-amber-200 bg-amber-50 rounded text-amber-800">
+              <p className="text-xs font-medium">Wichtiger Hinweis:</p>
+              <p className="text-xs mt-1">Mit dem kostenlosen Plan sind nur begrenzte API-Aufrufe pro Tag möglich. Falls Sie häufig die Fehlermeldung "API-Limit überschritten" erhalten, erwägen Sie ein Upgrade auf einen bezahlten Plan.</p>
+            </div>
           </div>
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
         {isSaved && (
-          <Button variant="outline" onClick={handleRemoveApiKey}>
+          <Button variant="outline" onClick={handleRemoveApiKey} disabled={isValidating}>
             API-Key entfernen
           </Button>
         )}
-        <Button onClick={handleSaveApiKey} className={isSaved ? "" : "w-full"}>
-          {isSaved ? "API-Key aktualisieren" : "API-Key speichern"}
+        <Button 
+          onClick={handleSaveApiKey} 
+          className={isSaved ? "" : "w-full"} 
+          disabled={isValidating}
+        >
+          {isValidating ? "Validiere..." : isSaved ? "API-Key aktualisieren" : "API-Key speichern"}
         </Button>
       </CardFooter>
     </Card>

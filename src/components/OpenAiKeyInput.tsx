@@ -3,15 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { setOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, KeyRound, ShieldCheck } from 'lucide-react';
 
 const OpenAiKeyInput: React.FC = () => {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState('');
   const [isSaved, setIsSaved] = useState(false);
   const [isObfuscated, setIsObfuscated] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
     // Beim ersten Laden der Komponente nach API-Key suchen
@@ -51,6 +51,8 @@ const OpenAiKeyInput: React.FC = () => {
       return;
     }
 
+    setIsValidating(true);
+
     // Einfache Validierung für OpenAI API-Keys
     if (!apiKey.startsWith('sk-')) {
       toast({
@@ -58,6 +60,7 @@ const OpenAiKeyInput: React.FC = () => {
         description: "Der API-Key scheint ungültig zu sein. OpenAI API-Keys beginnen mit 'sk-'.",
         variant: "destructive",
       });
+      setIsValidating(false);
       return;
     }
 
@@ -83,6 +86,8 @@ const OpenAiKeyInput: React.FC = () => {
         description: "Der API-Key konnte nicht gespeichert werden.",
         variant: "destructive",
       });
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -122,13 +127,26 @@ const OpenAiKeyInput: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>OpenAI API-Key konfigurieren</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <KeyRound className="h-5 w-5" />
+          OpenAI API-Key konfigurieren
+        </CardTitle>
         <CardDescription>
           GPT-Integration für erweiterte Buffett-Kriterien-Analyse
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
+        <div className="space-y-3">
+          {isSaved && (
+            <Alert variant="default" className="mb-2 border-green-200 bg-green-50">
+              <ShieldCheck className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800">OpenAI API-Key aktiv</AlertTitle>
+              <AlertDescription className="text-green-700">
+                Ihr OpenAI API-Key ist konfiguriert und bereit für die erweiterte Analyse.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="flex items-start space-x-2">
             <InfoIcon className="h-5 w-5 text-blue-500 mt-0.5" />
             <p className="text-sm text-muted-foreground">
@@ -148,17 +166,34 @@ const OpenAiKeyInput: React.FC = () => {
             }}
             onFocus={handleInputFocus}
             className="mt-2"
+            disabled={isValidating}
           />
+          
+          <div className="text-xs text-buffett-subtext border p-3 rounded-md bg-gray-50 mt-3">
+            <p className="font-medium mb-1">OpenAI API-Keys erhalten:</p>
+            <ol className="list-decimal ml-4 space-y-0.5">
+              <li>Besuchen Sie <a href="https://platform.openai.com/signup" target="_blank" rel="noopener noreferrer" className="text-buffett-blue hover:underline">platform.openai.com</a></li>
+              <li>Erstellen Sie ein Konto oder melden Sie sich an</li>
+              <li>Gehen Sie zu "API Keys" und erstellen Sie einen neuen Schlüssel</li>
+            </ol>
+            <p className="mt-2 text-amber-700">
+              <span className="font-medium">Hinweis:</span> Die OpenAI API ist kostenpflichtig, aber neue Konten erhalten in der Regel ein Startguthaben.
+            </p>
+          </div>
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
         {isSaved && (
-          <Button variant="outline" onClick={handleRemoveKey}>
+          <Button variant="outline" onClick={handleRemoveKey} disabled={isValidating}>
             API-Key entfernen
           </Button>
         )}
-        <Button onClick={handleSaveKey} className={isSaved ? "ml-auto" : "w-full"}>
-          {isSaved ? "API-Key aktualisieren" : "API-Key speichern"}
+        <Button 
+          onClick={handleSaveKey} 
+          className={isSaved ? "ml-auto" : "w-full"}
+          disabled={isValidating}
+        >
+          {isValidating ? "Validiere..." : (isSaved ? "API-Key aktualisieren" : "API-Key speichern")}
         </Button>
       </CardFooter>
     </Card>

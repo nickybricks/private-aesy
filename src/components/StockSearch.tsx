@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Info } from 'lucide-react';
+import { Search, Info, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -15,9 +15,15 @@ interface StockSearchProps {
   onSearch: (ticker: string) => void;
   isLoading: boolean;
   disabled?: boolean;
+  hasApiKeyError?: boolean;
 }
 
-const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false }) => {
+const StockSearch: React.FC<StockSearchProps> = ({ 
+  onSearch, 
+  isLoading, 
+  disabled = false,
+  hasApiKeyError = false
+}) => {
   const [ticker, setTicker] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
   const [showGermanStockInfo, setShowGermanStockInfo] = useState(false);
@@ -70,13 +76,15 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     { symbol: 'GOOGL', name: 'Alphabet (Google)' },
     { symbol: 'META', name: 'Meta (Facebook)' },
     { symbol: 'TSLA', name: 'Tesla' },
+    { symbol: 'BRK-B', name: 'Berkshire Hathaway' },
+    { symbol: 'JNJ', name: 'Johnson & Johnson' },
     // Deutsche Aktien
     { symbol: 'SAP.DE', name: 'SAP' },
     { symbol: 'BMW.DE', name: 'BMW' },
     { symbol: 'BAS.DE', name: 'BASF' },
     { symbol: 'ALV.DE', name: 'Allianz' },
     { symbol: 'SIE.DE', name: 'Siemens' },
-    { symbol: 'DAI.DE', name: 'Daimler' },
+    { symbol: 'DAI.DE', name: 'Mercedes-Benz' },
     { symbol: 'VOW3.DE', name: 'Volkswagen' },
     { symbol: 'DTE.DE', name: 'Deutsche Telekom' },
     { symbol: 'BAYN.DE', name: 'Bayer' },
@@ -88,6 +96,17 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       <p className="text-buffett-subtext mb-4">
         Geben Sie ein Aktiensymbol ein (z.B. AAPL für Apple) oder einen Firmennamen, um die Buffett-Analyse zu starten.
       </p>
+      
+      {hasApiKeyError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>API-Key Problem erkannt</AlertTitle>
+          <AlertDescription>
+            <p>Es scheint ein Problem mit Ihrem API-Key zu geben. Bitte überprüfen Sie Ihren Financial Modeling Prep API-Key oben und stellen Sie sicher, dass er gültig ist.</p>
+            <p className="mt-1">Falls Sie keinen API-Key haben, können Sie einen kostenlosen Key unter <a href="https://financialmodelingprep.com/developer/docs/" className="underline font-medium" target="_blank" rel="noopener noreferrer">financialmodelingprep.com</a> erhalten.</p>
+          </AlertDescription>
+        </Alert>
+      )}
       
       {showAppleCorrection && (
         <Alert className="mb-4 border-buffett-blue bg-buffett-blue bg-opacity-5">
