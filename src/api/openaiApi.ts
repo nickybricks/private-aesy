@@ -12,7 +12,11 @@ const getOpenAiApiKey = () => {
 
 export const setOpenAiApiKey = (key: string) => {
   localStorage.setItem('openai_api_key', key);
-  window.dispatchEvent(new Event('storage'));
+  // Wir lösen ein Storage-Event aus, damit andere Komponenten darauf reagieren können
+  window.dispatchEvent(new StorageEvent('storage', {
+    key: 'openai_api_key',
+    newValue: key
+  }));
 };
 
 export const hasOpenAiApiKey = (): boolean => {

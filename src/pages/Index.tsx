@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -15,7 +14,6 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-// Define interfaces for better type safety
 interface FinancialMetric {
   name: string;
   value: number | string;
@@ -31,7 +29,6 @@ interface HistoricalData {
   eps: { year: string; value: number }[];
 }
 
-// Updated interface to match what the API returns
 interface FinancialMetricsData {
   eps?: any;
   roe?: any;
@@ -56,39 +53,31 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('standard');
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('fmp_api_key');
-    setHasApiKey(!!savedKey);
+    checkApiKeys();
     
-    const openAiKey = localStorage.getItem('openai_api_key');
-    setHasGptApiKey(!!openAiKey);
-  }, []);
-
-  useEffect(() => {
     const handleStorageChange = () => {
-      const savedKey = localStorage.getItem('fmp_api_key');
-      setHasApiKey(!!savedKey);
-      
-      const openAiKey = localStorage.getItem('openai_api_key');
-      setHasGptApiKey(!!openAiKey);
+      checkApiKeys();
     };
-
-    window.addEventListener('storage', handleStorageChange);
     
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function(key, value) {
-      originalSetItem.apply(this, [key, value]);
-      if (key === 'fmp_api_key') {
-        setHasApiKey(!!value);
-      } else if (key === 'openai_api_key') {
-        setHasGptApiKey(!!value);
-      }
-    };
+    window.addEventListener('storage', handleStorageChange);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      localStorage.setItem = originalSetItem;
     };
   }, []);
+  
+  const checkApiKeys = () => {
+    const fmpApiKey = localStorage.getItem('fmp_api_key');
+    const openAiKey = localStorage.getItem('openai_api_key');
+    
+    setHasApiKey(!!fmpApiKey);
+    setHasGptApiKey(!!openAiKey);
+    
+    console.log('API-Keys geprüft:', { 
+      fmp: !!fmpApiKey, 
+      openai: !!openAiKey 
+    });
+  };
 
   const handleSearch = async (ticker: string) => {
     setIsLoading(true);
@@ -108,7 +97,6 @@ const Index = () => {
         description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
       });
       
-      // Wenn GPT verfügbar ist, entsprechenden Tab aktivieren
       if (hasGptApiKey) {
         setActiveTab('gpt');
       }
@@ -125,7 +113,6 @@ const Index = () => {
       
       setBuffettCriteria(criteria);
       
-      // Initialize metrics object with proper structure, ensuring all required properties exist
       const processedMetrics: FinancialMetricsData = {
         eps: metricsData.eps,
         roe: metricsData.roe,
@@ -133,7 +120,6 @@ const Index = () => {
         roic: metricsData.roic,
         debtToAssets: metricsData.debtToAssets,
         interestCoverage: metricsData.interestCoverage,
-        // Initialize empty arrays for metrics and historicalData
         metrics: [],
         historicalData: {
           revenue: [],
@@ -142,20 +128,15 @@ const Index = () => {
         }
       };
       
-      // If we have historical data in the API response, use it
       if (metricsData.historicalData) {
         processedMetrics.historicalData = metricsData.historicalData;
       }
       
-      // If we already have metrics in the API response, use them
       if (metricsData.metrics && Array.isArray(metricsData.metrics)) {
         processedMetrics.metrics = metricsData.metrics;
       } else {
-        // Otherwise create metrics array from financial data
-        console.log('Creating metrics array from financial data');
         const metricsArray: FinancialMetric[] = [];
         
-        // Add financial metrics based on properties from metrics object
         if (metricsData.eps !== undefined) {
           metricsArray.push({
             name: 'Gewinn pro Aktie (EPS)',
@@ -222,7 +203,6 @@ const Index = () => {
           });
         }
         
-        // Update metrics to have an array of metrics objects
         processedMetrics.metrics = metricsArray;
       }
       
@@ -237,12 +217,10 @@ const Index = () => {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
       
-      // Verbesserte Fehlermeldung mit Vorschlägen für häufige Fehler
       let enhancedErrorMessage = errorMessage;
       if(errorMessage.includes("Keine Daten gefunden für")) {
         const searchedTicker = ticker.toUpperCase();
         
-        // Häufige Fehler korrigieren
         if(searchedTicker === "APPL") {
           enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Meinten Sie vielleicht AAPL (Apple)?`;
         } else if(searchedTicker === "GOOGL" || searchedTicker === "GOOG") {

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,33 @@ import { InfoIcon } from 'lucide-react';
 const OpenAiKeyInput: React.FC = () => {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState('');
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    // Prüfen, ob bereits ein Key im LocalStorage existiert
+    const savedKey = localStorage.getItem('openai_api_key');
+    if (savedKey) {
+      setApiKey('••••••••••••••••••••••••');
+      setIsSaved(true);
+    }
+    
+    // Event-Listener für Storage-Änderungen hinzufügen
+    const handleStorageChange = (e) => {
+      if (e.key === 'openai_api_key') {
+        const newValue = e.newValue;
+        if (newValue) {
+          setApiKey('••••••••••••••••••••••••');
+          setIsSaved(true);
+        } else {
+          setApiKey('');
+          setIsSaved(false);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const handleSaveKey = () => {
     if (!apiKey || apiKey.trim() === '') {
@@ -37,7 +64,14 @@ const OpenAiKeyInput: React.FC = () => {
         title: "API-Key gespeichert",
         description: "Ihr OpenAI API-Key wurde erfolgreich gespeichert.",
       });
-      setApiKey('');
+      setApiKey('••••••••••••••••••••••••');
+      setIsSaved(true);
+      
+      // Storage-Event manuell auslösen
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'openai_api_key',
+        newValue: 'set'
+      }));
     } catch (error) {
       toast({
         title: "Fehler",
@@ -45,6 +79,23 @@ const OpenAiKeyInput: React.FC = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleRemoveKey = () => {
+    localStorage.removeItem('openai_api_key');
+    setApiKey('');
+    setIsSaved(false);
+    
+    // Storage-Event manuell auslösen
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'openai_api_key',
+      newValue: null
+    }));
+    
+    toast({
+      title: 'API-Key entfernt',
+      description: 'Ihr OpenAI API-Key wurde entfernt.',
+    });
   };
 
   return (
@@ -66,15 +117,22 @@ const OpenAiKeyInput: React.FC = () => {
           </div>
           <Input
             type="password"
-            placeholder="sk-..."
+            placeholder={isSaved ? "API-Key gespeichert" : "sk-..."}
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             className="mt-2"
           />
         </div>
       </CardContent>
-      <CardFooter>
-        <Button onClick={handleSaveKey} className="w-full">API-Key speichern</Button>
+      <CardFooter className="flex justify-between">
+        {isSaved && (
+          <Button variant="outline" onClick={handleRemoveKey}>
+            API-Key entfernen
+          </Button>
+        )}
+        <Button onClick={handleSaveKey} className={isSaved ? "ml-auto" : "w-full"}>
+          {isSaved ? "API-Key aktualisieren" : "API-Key speichern"}
+        </Button>
       </CardFooter>
     </Card>
   );

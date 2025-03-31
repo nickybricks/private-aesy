@@ -12,17 +12,40 @@ const ApiKeyInput = () => {
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
+    // Prüfen, ob bereits ein Key im LocalStorage existiert
     const savedKey = localStorage.getItem('fmp_api_key');
     if (savedKey) {
       setApiKey(savedKey);
       setIsSaved(true);
     }
+    
+    // Event-Listener für Storage-Änderungen hinzufügen
+    const handleStorageChange = (e) => {
+      if (e.key === 'fmp_api_key') {
+        const newValue = e.newValue;
+        if (newValue) {
+          setApiKey(newValue);
+          setIsSaved(true);
+        } else {
+          setApiKey('');
+          setIsSaved(false);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const handleSaveApiKey = () => {
     if (apiKey.trim()) {
       localStorage.setItem('fmp_api_key', apiKey.trim());
       setIsSaved(true);
+      // Storage-Event manuell auslösen, da lokalStorage-Änderungen im selben Fenster kein Event auslösen
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'fmp_api_key',
+        newValue: apiKey.trim()
+      }));
       toast({
         title: 'API-Key gespeichert',
         description: 'Ihr API-Key wurde erfolgreich gespeichert und wird für alle zukünftigen Anfragen verwendet.',
@@ -40,6 +63,11 @@ const ApiKeyInput = () => {
     localStorage.removeItem('fmp_api_key');
     setApiKey('');
     setIsSaved(false);
+    // Storage-Event manuell auslösen
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'fmp_api_key',
+      newValue: null
+    }));
     toast({
       title: 'API-Key entfernt',
       description: 'Ihr API-Key wurde entfernt.',
