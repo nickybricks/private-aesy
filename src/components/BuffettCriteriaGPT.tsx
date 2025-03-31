@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bot } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface BuffettCriterionProps {
   title: string;
@@ -100,7 +101,11 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                       <Bot size={16} className="mr-2 text-blue-500" />
                       <span className="font-medium text-blue-700">GPT-Analyse:</span>
                     </div>
-                    <p className="text-gray-700">{criterion.gptAnalysis}</p>
+                    <div className="text-gray-700 gpt-analysis">
+                      <ReactMarkdown>
+                        {criterion.gptAnalysis}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 )}
               </div>
