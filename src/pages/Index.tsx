@@ -51,35 +51,49 @@ const Index = () => {
   const [hasApiKey, setHasApiKey] = useState(false);
   const [hasGptApiKey, setHasGptApiKey] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
+  const [apiKeyCheckCompleted, setApiKeyCheckCompleted] = useState(false);
 
   useEffect(() => {
-    checkApiKeys();
-    
-    const handleStorageChange = () => {
-      checkApiKeys();
+    const initialCheck = async () => {
+      await checkApiKeys();
+      setApiKeyCheckCompleted(true);
     };
     
-    window.addEventListener('storage', handleStorageChange);
+    initialCheck();
+    
+    window.addEventListener('fmp_api_key_change', handleStorageChange);
+    window.addEventListener('openai_api_key_change', handleStorageChange);
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('fmp_api_key_change', handleStorageChange);
+      window.removeEventListener('openai_api_key_change', handleStorageChange);
     };
   }, []);
   
-  const checkApiKeys = () => {
+  const handleStorageChange = async () => {
+    await checkApiKeys();
+  };
+  
+  const checkApiKeys = async () => {
+    let fmpKeyExists = false;
+    let openAiKeyExists = false;
+    
     try {
       const fmpApiKey = localStorage.getItem('fmp_api_key');
-      const openAiKey = localStorage.getItem('openai_api_key');
+      fmpKeyExists = !!fmpApiKey;
       
-      setHasApiKey(!!fmpApiKey);
-      setHasGptApiKey(!!openAiKey);
+      const openAiKey = localStorage.getItem('openai_api_key');
+      openAiKeyExists = !!openAiKey;
+      
+      setHasApiKey(fmpKeyExists);
+      setHasGptApiKey(openAiKeyExists);
       
       console.log('API-Keys geprüft:', { 
-        fmp: !!fmpApiKey, 
-        openai: !!openAiKey 
+        fmp: fmpKeyExists, 
+        openai: openAiKeyExists 
       });
     } catch (error) {
-      console.error('Error checking API keys:', error);
+      console.error('Error in checkApiKeys:', error);
       setHasApiKey(false);
       setHasGptApiKey(false);
     }
@@ -248,6 +262,25 @@ const Index = () => {
       setIsLoading(false);
     }
   };
+
+  if (!apiKeyCheckCompleted) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-screen-xl">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Buffett Benchmark Tool</h1>
+          <p className="text-buffett-subtext">
+            Analysieren Sie Aktien nach Warren Buffetts Investmentprinzipien
+          </p>
+        </header>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-buffett-blue border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status"></div>
+            <p className="mt-4 text-lg">Initialisiere API-Key-Überprüfung...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-screen-xl">

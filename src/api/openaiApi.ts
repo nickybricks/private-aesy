@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // OpenAI API Key handling
-const getOpenAiApiKey = () => {
+export const getOpenAiApiKey = () => {
   try {
     const savedApiKey = localStorage.getItem('openai_api_key');
     if (savedApiKey) {
@@ -17,10 +17,9 @@ const getOpenAiApiKey = () => {
 export const setOpenAiApiKey = (key: string) => {
   try {
     localStorage.setItem('openai_api_key', key);
-    // Trigger a storage event so other components can react
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'openai_api_key',
-      newValue: key
+    // Benutzerdefiniertes Event auslösen
+    window.dispatchEvent(new CustomEvent('openai_api_key_change', {
+      detail: { action: 'save' }
     }));
   } catch (error) {
     console.error('Error setting OpenAI API key in localStorage:', error);

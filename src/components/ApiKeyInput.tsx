@@ -10,68 +10,67 @@ const ApiKeyInput = () => {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [isObfuscated, setIsObfuscated] = useState(false);
 
   useEffect(() => {
-    // Check if an API key exists in localStorage
+    // Beim ersten Laden der Komponente nach API-Key suchen
     checkForApiKey();
-    
-    // Add event listener for storage changes
-    const handleStorageChange = (e) => {
-      if (e.key === 'fmp_api_key') {
-        checkForApiKey();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Function to check for API key in localStorage
+  // Funktion zum Überprüfen des API-Keys im localStorage
   const checkForApiKey = () => {
     try {
       const savedKey = localStorage.getItem('fmp_api_key');
       if (savedKey) {
-        setApiKey(savedKey);
+        // Wenn ein Key existiert, zeige ihn in obfuskierter Form an
+        setApiKey(isObfuscated ? '••••••••••••••••••••••••' : savedKey);
         setIsSaved(true);
+        if (!isObfuscated) {
+          setIsObfuscated(true);
+        }
       } else {
         setApiKey('');
         setIsSaved(false);
+        setIsObfuscated(false);
       }
     } catch (error) {
       console.error('Error accessing localStorage:', error);
       setApiKey('');
       setIsSaved(false);
+      setIsObfuscated(false);
     }
   };
 
   const handleSaveApiKey = () => {
-    if (apiKey.trim()) {
-      try {
-        localStorage.setItem('fmp_api_key', apiKey.trim());
-        setIsSaved(true);
-        
-        // Manually trigger storage event for same-window updates
-        window.dispatchEvent(new StorageEvent('storage', {
-          key: 'fmp_api_key',
-          newValue: apiKey.trim()
-        }));
-        
-        toast({
-          title: 'API-Key gespeichert',
-          description: 'Ihr API-Key wurde erfolgreich gespeichert und wird für alle zukünftigen Anfragen verwendet.',
-        });
-      } catch (error) {
-        console.error('Error saving to localStorage:', error);
-        toast({
-          title: 'Fehler',
-          description: 'Der API-Key konnte nicht gespeichert werden. Möglicherweise blockiert Ihr Browser das Speichern von Daten.',
-          variant: 'destructive',
-        });
-      }
-    } else {
+    if (!apiKey || apiKey.trim() === '' || apiKey === '••••••••••••••••••••••••') {
       toast({
         title: 'Fehler',
         description: 'Bitte geben Sie einen gültigen API-Key ein.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      localStorage.setItem('fmp_api_key', apiKey.trim());
+      setIsSaved(true);
+      setApiKey('••••••••••••••••••••••••');
+      setIsObfuscated(true);
+      
+      // Benutzerdefiniertes Event auslösen, um andere Komponenten zu benachrichtigen
+      window.dispatchEvent(new CustomEvent('fmp_api_key_change', {
+        detail: { action: 'save' }
+      }));
+      
+      toast({
+        title: 'API-Key gespeichert',
+        description: 'Ihr API-Key wurde erfolgreich gespeichert und wird für alle zukünftigen Anfragen verwendet.',
+      });
+    } catch (error) {
+      console.error('Error saving to localStorage:', error);
+      toast({
+        title: 'Fehler',
+        description: 'Der API-Key konnte nicht gespeichert werden. Möglicherweise blockiert Ihr Browser das Speichern von Daten.',
         variant: 'destructive',
       });
     }
@@ -82,11 +81,11 @@ const ApiKeyInput = () => {
       localStorage.removeItem('fmp_api_key');
       setApiKey('');
       setIsSaved(false);
+      setIsObfuscated(false);
       
-      // Manually trigger storage event
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'fmp_api_key',
-        newValue: null
+      // Benutzerdefiniertes Event auslösen
+      window.dispatchEvent(new CustomEvent('fmp_api_key_change', {
+        detail: { action: 'remove' }
       }));
       
       toast({
@@ -100,6 +99,13 @@ const ApiKeyInput = () => {
         description: 'Der API-Key konnte nicht entfernt werden.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleInputFocus = () => {
+    if (isSaved && isObfuscated) {
+      setApiKey('');
+      setIsObfuscated(false);
     }
   };
 
@@ -121,7 +127,13 @@ const ApiKeyInput = () => {
               id="api-key"
               type="text"
               value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(e) => {
+                setApiKey(e.target.value);
+                if (isObfuscated) {
+                  setIsObfuscated(false);
+                }
+              }}
+              onFocus={handleInputFocus}
               placeholder="Ihren API-Key hier eingeben"
               className="w-full"
             />
@@ -145,7 +157,7 @@ const ApiKeyInput = () => {
           </Button>
         )}
         <Button onClick={handleSaveApiKey}>
-          API-Key speichern
+          {isSaved ? "API-Key aktualisieren" : "API-Key speichern"}
         </Button>
       </CardFooter>
     </Card>

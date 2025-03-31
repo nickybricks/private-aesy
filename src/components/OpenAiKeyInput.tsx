@@ -14,21 +14,11 @@ const OpenAiKeyInput: React.FC = () => {
   const [isObfuscated, setIsObfuscated] = useState(false);
 
   useEffect(() => {
-    // Check if an API key exists in localStorage
+    // Beim ersten Laden der Komponente nach API-Key suchen
     checkForApiKey();
-    
-    // Add event listener for storage changes
-    const handleStorageChange = (e) => {
-      if (e.key === 'openai_api_key') {
-        checkForApiKey();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Function to check for API key in localStorage
+  // Funktion zum Überprüfen des API-Keys im localStorage
   const checkForApiKey = () => {
     try {
       const savedKey = localStorage.getItem('openai_api_key');
@@ -61,7 +51,7 @@ const OpenAiKeyInput: React.FC = () => {
       return;
     }
 
-    // Simple validation for OpenAI API keys
+    // Einfache Validierung für OpenAI API-Keys
     if (!apiKey.startsWith('sk-')) {
       toast({
         title: "Fehler",
@@ -72,20 +62,20 @@ const OpenAiKeyInput: React.FC = () => {
     }
 
     try {
-      setOpenAiApiKey(apiKey.trim());
-      toast({
-        title: "API-Key gespeichert",
-        description: "Ihr OpenAI API-Key wurde erfolgreich gespeichert.",
-      });
+      localStorage.setItem('openai_api_key', apiKey.trim());
       setApiKey('••••••••••••••••••••••••');
       setIsSaved(true);
       setIsObfuscated(true);
       
-      // Manually trigger storage event
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'openai_api_key',
-        newValue: 'set'
+      // Benutzerdefiniertes Event auslösen
+      window.dispatchEvent(new CustomEvent('openai_api_key_change', {
+        detail: { action: 'save' }
       }));
+      
+      toast({
+        title: "API-Key gespeichert",
+        description: "Ihr OpenAI API-Key wurde erfolgreich gespeichert.",
+      });
     } catch (error) {
       console.error('Error saving to localStorage:', error);
       toast({
@@ -103,10 +93,9 @@ const OpenAiKeyInput: React.FC = () => {
       setIsSaved(false);
       setIsObfuscated(false);
       
-      // Manually trigger storage event
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'openai_api_key',
-        newValue: null
+      // Benutzerdefiniertes Event auslösen
+      window.dispatchEvent(new CustomEvent('openai_api_key_change', {
+        detail: { action: 'remove' }
       }));
       
       toast({
@@ -148,7 +137,7 @@ const OpenAiKeyInput: React.FC = () => {
             </p>
           </div>
           <Input
-            type="password"
+            type={isObfuscated ? "password" : "text"}
             placeholder={isSaved ? "API-Key gespeichert" : "sk-..."}
             value={apiKey}
             onChange={(e) => {
