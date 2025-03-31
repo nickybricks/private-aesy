@@ -19,10 +19,10 @@ export const useApiKeyCheck = (): ApiKeyCheckResult => {
     
     try {
       const fmpApiKey = localStorage.getItem('fmp_api_key');
-      fmpKeyExists = !!fmpApiKey;
+      fmpKeyExists = !!fmpApiKey && fmpApiKey.trim().length > 0;
       
       const openAiKey = localStorage.getItem('openai_api_key');
-      openAiKeyExists = !!openAiKey;
+      openAiKeyExists = !!openAiKey && openAiKey.trim().length > 0;
       
       setHasApiKey(fmpKeyExists);
       setHasGptApiKey(openAiKeyExists);
@@ -47,6 +47,7 @@ export const useApiKeyCheck = (): ApiKeyCheckResult => {
     
     initialCheck();
     
+    // Listen for API key changes
     window.addEventListener('fmp_api_key_change', checkApiKeys);
     window.addEventListener('openai_api_key_change', checkApiKeys);
     

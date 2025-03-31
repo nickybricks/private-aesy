@@ -11,6 +11,7 @@ const ApiKeyInput = () => {
   const [apiKey, setApiKey] = useState('');
   const [isSaved, setIsSaved] = useState(false);
   const [isObfuscated, setIsObfuscated] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
     // Beim ersten Laden der Komponente nach API-Key suchen
@@ -21,7 +22,7 @@ const ApiKeyInput = () => {
   const checkForApiKey = () => {
     try {
       const savedKey = localStorage.getItem('fmp_api_key');
-      if (savedKey) {
+      if (savedKey && savedKey.trim().length > 0) {
         // Wenn ein Key existiert, zeige ihn in obfuskierter Form an
         setApiKey(isObfuscated ? '••••••••••••••••••••••••' : savedKey);
         setIsSaved(true);
@@ -41,7 +42,30 @@ const ApiKeyInput = () => {
     }
   };
 
-  const handleSaveApiKey = () => {
+  const validateApiKey = async (key: string) => {
+    try {
+      setIsValidating(true);
+      // Einfacher Validierungsversuch durch Aufrufen einer FMP API-Endpunkt
+      const response = await fetch(`https://financialmodelingprep.com/api/v3/stock/list?apikey=${key}`);
+      const data = await response.json();
+      
+      if (response.status === 200 && Array.isArray(data) && data.length > 0) {
+        return true;
+      } else if (response.status === 403 || (data && data.error)) {
+        return false;
+      }
+      
+      return true; // Bei Unklarheit nehmen wir an, dass der API-Key gültig ist
+    } catch (error) {
+      console.error('API key validation error:', error);
+      // Bei Netzwerkfehlern nehmen wir an, dass der Schlüssel möglicherweise gültig ist
+      return true;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleSaveApiKey = async () => {
     if (!apiKey || apiKey.trim() === '' || apiKey === '••••••••••••••••••••••••') {
       toast({
         title: 'Fehler',
@@ -51,8 +75,22 @@ const ApiKeyInput = () => {
       return;
     }
 
+    const trimmedKey = apiKey.trim();
+    
     try {
-      localStorage.setItem('fmp_api_key', apiKey.trim());
+      // Optional: API-Key validieren
+      const isValid = await validateApiKey(trimmedKey);
+      
+      if (!isValid) {
+        toast({
+          title: 'Ungültiger API-Key',
+          description: 'Der eingegebene API-Key scheint ungültig zu sein. Bitte überprüfen Sie ihn und versuchen Sie es erneut.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      localStorage.setItem('fmp_api_key', trimmedKey);
       setIsSaved(true);
       setApiKey('••••••••••••••••••••••••');
       setIsObfuscated(true);
@@ -136,6 +174,7 @@ const ApiKeyInput = () => {
               onFocus={handleInputFocus}
               placeholder="Ihren API-Key hier eingeben"
               className="w-full"
+              disabled={isValidating}
             />
           </div>
           <div className="text-sm text-buffett-subtext border p-4 rounded-md bg-gray-50">
@@ -152,12 +191,12 @@ const ApiKeyInput = () => {
       </CardContent>
       <CardFooter className="flex justify-between">
         {isSaved && (
-          <Button variant="outline" onClick={handleRemoveApiKey}>
+          <Button variant="outline" onClick={handleRemoveApiKey} disabled={isValidating}>
             API-Key entfernen
           </Button>
         )}
-        <Button onClick={handleSaveApiKey}>
-          {isSaved ? "API-Key aktualisieren" : "API-Key speichern"}
+        <Button onClick={handleSaveApiKey} disabled={isValidating}>
+          {isValidating ? 'Validiere...' : isSaved ? "API-Key aktualisieren" : "API-Key speichern"}
         </Button>
       </CardFooter>
     </Card>
