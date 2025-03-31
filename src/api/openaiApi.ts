@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // OpenAI API Key - Fest im Code eingebaut
@@ -10,7 +9,6 @@ const getOpenAiApiKey = () => {
 };
 
 export const hasOpenAiApiKey = (): boolean => {
-  // Change comparison to check if API key is not empty instead of comparing to a specific value
   return OPENAI_API_KEY !== '';
 };
 
@@ -44,7 +42,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
         messages: [
           {
             role: 'system',
-            content: 'Du bist ein Assistent, der Aktienunternehmen nach Warren Buffetts Investmentprinzipien analysiert. Deine Antworten sollen präzise, faktenbasiert und neutral sein.'
+            content: 'Du bist ein Assistent, der Aktienunternehmen nach Warren Buffetts Investmentprinzipien analysiert. Gib nur kurze, prägnante Stichpunkte. Verwende Markdown für die Formatierung und setze wichtige Fragen in Fettdruck mit ** **.'
           },
           {
             role: 'user',
@@ -80,8 +78,8 @@ export const analyzeBusinessModel = async (companyName: string, industry: string
     Hier ist eine kurze Beschreibung des Unternehmens:
     ${description}
     
-    Beschreibe das Geschäftsmodell in zwei einfachen Sätzen und bewerte, ob es leicht verständlich ist.
-    Bewerte auf einer Skala: Einfach verständlich (Pass), Moderat komplex (Warning), Zu komplex (Fail).
+    Gib nur 3-4 prägnante Stichpunkte. Verwende für die Hauptfrage **Ist das Geschäftsmodell leicht verständlich?** Fettdruck.
+    Bewerte zum Schluss auf einer Skala: Einfach verständlich (Pass), Moderat komplex (Warning), Zu komplex (Fail).
   `;
   
   return await queryGPT(prompt);
@@ -97,8 +95,8 @@ export const analyzeEconomicMoat = async (companyName: string, industry: string,
     - Betriebsmarge: ${operatingMargin.toFixed(2)}%
     - ROIC: ${roic.toFixed(2)}%
     
-    Hat das Unternehmen einen starken wirtschaftlichen Burggraben? Begründe deine Einschätzung kurz und bewerte:
-    Starker Moat (Pass), Moderater Moat (Warning), Schwacher/Kein Moat (Fail).
+    Gib nur 3-4 prägnante Stichpunkte mit deiner Einschätzung. Verwende für die Hauptfrage **Hat das Unternehmen einen starken wirtschaftlichen Burggraben?** Fettdruck.
+    Bewerte zum Schluss: Starker Moat (Pass), Moderater Moat (Warning), Schwacher/Kein Moat (Fail).
   `;
   
   return await queryGPT(prompt);
@@ -109,13 +107,12 @@ export const analyzeManagementQuality = async (companyName: string, ceo: string)
   const prompt = `
     Analysiere die Qualität des Managements von ${companyName} unter CEO ${ceo || 'dem aktuellen Management'} nach Warren Buffetts Kriterien.
     
-    Bewerte nach folgenden Aspekten:
-    - Ist das Management ehrlich und transparent?
-    - Handelt es zum Wohle der Aktionäre?
-    - Hat es eine gute Kapitalallokation gezeigt?
+    Gib nur 3-4 prägnante Stichpunkte und verwende für diese Hauptfragen Fettdruck:
+    **Ist das Management ehrlich und transparent?**
+    **Handelt es zum Wohle der Aktionäre?**
+    **Zeigt es gute Kapitalallokation?**
     
-    Gib eine kurze Einschätzung und bewerte:
-    Gutes Management (Pass), Durchschnittliches Management (Warning), Problematisches Management (Fail).
+    Bewerte zum Schluss: Gutes Management (Pass), Durchschnittliches Management (Warning), Problematisches Management (Fail).
   `;
   
   return await queryGPT(prompt);
@@ -126,13 +123,12 @@ export const analyzeLongTermProspects = async (companyName: string, industry: st
   const prompt = `
     Analysiere die langfristigen Perspektiven von ${companyName} (Branche: ${industry}, Sektor: ${sector}) nach Warren Buffetts Kriterium "Langfristiger Horizont".
     
-    Ist das Unternehmen auch in 20 Jahren noch relevant? Beantworte folgende Fragen:
-    - Ist die Branche Teil langfristiger Megatrends?
-    - Ist das Geschäftsmodell zukunftssicher?
-    - Hat das Unternehmen langfristige Wettbewerbsvorteile?
+    Gib nur 3-4 prägnante Stichpunkte und verwende für diese Hauptfragen Fettdruck:
+    **Ist das Unternehmen auch in 20 Jahren noch relevant?**
+    **Ist die Branche Teil langfristiger Megatrends?**
+    **Hat das Unternehmen langfristige Wettbewerbsvorteile?**
     
-    Gib eine kurze Einschätzung und bewerte:
-    Starke Langzeitperspektive (Pass), Moderate Langzeitperspektive (Warning), Schwache Langzeitperspektive (Fail).
+    Bewerte zum Schluss: Starke Langzeitperspektive (Pass), Moderate Langzeitperspektive (Warning), Schwache Langzeitperspektive (Fail).
   `;
   
   return await queryGPT(prompt);
@@ -143,13 +139,12 @@ export const analyzeCyclicalBehavior = async (companyName: string, industry: str
   const prompt = `
     Analysiere ${companyName} (Branche: ${industry}) in Bezug auf Warren Buffetts Kriterium "Antizyklisches Verhalten".
     
-    Beantworte folgende Fragen:
-    - Ist das Unternehmen zyklisch oder antizyklisch?
-    - Wie verhält sich das Unternehmen in Krisen oder Marktabschwüngen?
-    - Kauft das Management Aktien zurück, wenn andere verkaufen?
+    Gib nur 3-4 prägnante Stichpunkte und verwende für diese Hauptfragen Fettdruck:
+    **Ist das Unternehmen zyklisch oder antizyklisch?**
+    **Wie verhält es sich in Krisen oder Marktabschwüngen?**
+    **Kauft das Management Aktien zurück, wenn der Markt schwach ist?**
     
-    Gib eine kurze Einschätzung und bewerte:
-    Antizyklisches Verhalten (Pass), Neutrales Verhalten (Warning), Stark zyklisches Verhalten (Fail).
+    Bewerte zum Schluss: Antizyklisches Verhalten (Pass), Neutrales Verhalten (Warning), Stark zyklisches Verhalten (Fail).
   `;
   
   return await queryGPT(prompt);
@@ -160,13 +155,12 @@ export const analyzeOneTimeEffects = async (companyName: string, industry: strin
   const prompt = `
     Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Vergangenheit ≠ Zukunft".
     
-    Beantworte folgende Fragen:
-    - Beruht der Erfolg des Unternehmens auf Einmaleffekten?
-    - Gibt es Anzeichen für nicht nachhaltige Wachstumstreiber?
-    - Ist das Wachstum organisch oder durch Übernahmen/externe Faktoren getrieben?
+    Gib nur 3-4 prägnante Stichpunkte und verwende für diese Hauptfragen Fettdruck:
+    **Beruht der Erfolg auf Einmaleffekten?**
+    **Gibt es Anzeichen für nicht nachhaltige Wachstumstreiber?**
+    **Ist das Wachstum organisch oder durch Übernahmen/externe Faktoren getrieben?**
     
-    Gib eine kurze Einschätzung und bewerte:
-    Nachhaltige Geschäftsentwicklung (Pass), Teilweise nachhaltig (Warning), Stark von Einmaleffekten abhängig (Fail).
+    Bewerte zum Schluss: Nachhaltige Geschäftsentwicklung (Pass), Teilweise nachhaltig (Warning), Stark von Einmaleffekten abhängig (Fail).
   `;
   
   return await queryGPT(prompt);
@@ -177,13 +171,12 @@ export const analyzeTurnaround = async (companyName: string, industry: string): 
   const prompt = `
     Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Keine Turnarounds".
     
-    Beantworte folgende Fragen:
-    - Handelt es sich um ein Unternehmen in einer Umbruchsphase?
-    - Gab es kürzlich eine Restrukturierung oder einen Managementwechsel?
-    - Muss sich das Unternehmen "wieder fangen" oder ist es bereits stabil?
+    Gib nur 3-4 prägnante Stichpunkte und verwende für diese Hauptfragen Fettdruck:
+    **Handelt es sich um ein Unternehmen in einer Umbruchsphase?**
+    **Gab es kürzlich eine Restrukturierung oder einen Managementwechsel?**
+    **Ist das Unternehmen stabil oder muss es "wieder auf die Beine kommen"?**
     
-    Gib eine kurze Einschätzung und bewerte:
-    Stabiles Unternehmen (Pass), Leichte Umstrukturierung (Warning), Klarer Turnaround-Fall (Fail).
+    Bewerte zum Schluss: Stabiles Unternehmen (Pass), Leichte Umstrukturierung (Warning), Klarer Turnaround-Fall (Fail).
   `;
   
   return await queryGPT(prompt);
@@ -194,13 +187,12 @@ export const analyzeRationalBehavior = async (companyName: string, industry: str
   const prompt = `
     Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Rationalität & Disziplin".
     
-    Beantworte folgende Fragen:
-    - Handelt das Management rational und diszipliniert?
-    - Gab es in der Vergangenheit irrationale Entscheidungen oder übertriebene Ausgaben?
-    - Werden Ressourcen effizient eingesetzt?
+    Gib nur 3-4 prägnante Stichpunkte und verwende für diese Hauptfragen Fettdruck:
+    **Handelt das Management rational und diszipliniert?**
+    **Gab es in der Vergangenheit irrationale Entscheidungen?**
+    **Werden Ressourcen effizient eingesetzt?**
     
-    Gib eine kurze Einschätzung und bewerte:
-    Rationales Verhalten (Pass), Gemischtes Bild (Warning), Irrationales Verhalten (Fail).
+    Bewerte zum Schluss: Rationales Verhalten (Pass), Gemischtes Bild (Warning), Irrationales Verhalten (Fail).
   `;
   
   return await queryGPT(prompt);
