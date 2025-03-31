@@ -42,41 +42,13 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
         ...params
       }
     });
-    
-    // Überprüfen, ob die Antwort leer oder ein Fehlerobjekt ist
-    if (!response.data || (Array.isArray(response.data) && response.data.length === 0)) {
-      throw new Error(`Keine Daten gefunden für den angegebenen Endpunkt. Bitte überprüfen Sie das Aktiensymbol.`);
-    }
-    
-    if (response.data.error) {
-      throw new Error(`API-Fehler: ${response.data.error}`);
-    }
-    
     return response.data;
   } catch (error) {
     console.error('Error fetching data from FMP:', error);
-    
-    if (axios.isAxiosError(error)) {
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new Error(`API-Key ist ungültig oder abgelaufen. Bitte registrieren Sie sich für einen kostenlosen Schlüssel unter financialmodelingprep.com.`);
-      }
-      
-      if (error.response?.status === 429) {
-        throw new Error(`Rate limit erreicht. Der kostenlose API-Plan hat eine begrenzte Anzahl von Anfragen pro Tag. Bitte versuchen Sie es später erneut.`);
-      }
-      
-      if (error.response?.data?.error) {
-        throw new Error(`API-Fehler: ${error.response.data.error}`);
-      }
-      
-      if (!navigator.onLine) {
-        throw new Error(`Keine Internetverbindung. Bitte überprüfen Sie Ihre Netzwerkverbindung und versuchen Sie es erneut.`);
-      }
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      throw new Error(`API-Key ist ungültig. Bitte registrieren Sie sich für einen kostenlosen Schlüssel unter financialmodelingprep.com.`);
     }
-    
-    // Fallback-Fehlermeldung
-    const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
-    throw new Error(`Fehler beim Abrufen von Daten: ${errorMessage}. Bitte überprüfen Sie Ihren API-Key oder versuchen Sie es später erneut.`);
+    throw new Error(`Fehler beim Abrufen von Daten. Bitte überprüfen Sie Ihren API-Key oder versuchen Sie es später erneut.`);
   }
 };
 
