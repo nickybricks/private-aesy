@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { 
   analyzeBusinessModel, 
@@ -12,17 +11,12 @@ import {
   hasOpenAiApiKey
 } from './openaiApi';
 
-// Financial Modeling Prep API Key
-// Sie müssen diesen API-Key durch Ihre eigene ersetzen
-// Registrieren Sie sich unter https://financialmodelingprep.com/developer/docs/ für einen kostenlosen API-Key
+// Financial Modeling Prep API Key - Fest im Code eingebaut
+const FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
+
+// Funktion, um den API-Key zu erhalten
 const getApiKey = () => {
-  // Zuerst aus localStorage versuchen zu laden
-  const savedApiKey = localStorage.getItem('fmp_api_key');
-  if (savedApiKey) {
-    return savedApiKey;
-  }
-  // Fallback auf einen Beispiel-Key (wird wahrscheinlich nicht funktionieren)
-  return 'demo';
+  return FMP_API_KEY;
 };
 
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
@@ -31,11 +25,6 @@ const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
     const apiKey = getApiKey();
-    
-    // Überprüfen, ob ein API-Schlüssel gesetzt ist
-    if (!apiKey || apiKey === 'demo') {
-      throw new Error('API-Key ist nicht konfiguriert. Bitte geben Sie Ihren Financial Modeling Prep API-Key ein.');
-    }
     
     const response = await axios.get(`${BASE_URL}${endpoint}`, {
       params: {
@@ -47,9 +36,9 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
   } catch (error) {
     console.error('Error fetching data from FMP:', error);
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      throw new Error(`API-Key ist ungültig. Bitte registrieren Sie sich für einen kostenlosen Schlüssel unter financialmodelingprep.com.`);
+      throw new Error(`API-Key ist ungültig. Bitte kontaktieren Sie den Administrator.`);
     }
-    throw new Error(`Fehler beim Abrufen von Daten. Bitte überprüfen Sie Ihren API-Key oder versuchen Sie es später erneut.`);
+    throw new Error(`Fehler beim Abrufen von Daten. Bitte versuchen Sie es später erneut.`);
   }
 };
 

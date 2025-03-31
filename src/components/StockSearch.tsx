@@ -95,17 +95,14 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       </form>
       
       <div className="mt-4 text-sm text-buffett-subtext flex items-center">
-        <p>{disabled 
-          ? "Bitte konfigurieren Sie zuerst einen API-Key oben, um die Analyse zu starten." 
-          : "Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung."}</p>
+        <p>Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung.</p>
         <Tooltip>
           <TooltipTrigger asChild>
             <Info size={16} className="ml-2 cursor-help" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs p-4">
             <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
-            <p>Dieses Tool verwendet die Financial Modeling Prep API. Sie benötigen einen gültigen API-Schlüssel, um die Anwendung zu nutzen.</p>
-            <p className="mt-2">Registrieren Sie sich für einen kostenlosen API-Schlüssel unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">financialmodelingprep.com</a>.</p>
+            <p>Dieses Tool verwendet die Financial Modeling Prep API und OpenAI GPT für detaillierte Analysen.</p>
           </TooltipContent>
         </Tooltip>
       </div>

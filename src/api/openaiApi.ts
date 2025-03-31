@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // OpenAI API Key - Fest im Code eingebaut
@@ -10,7 +9,7 @@ const getOpenAiApiKey = () => {
 };
 
 export const hasOpenAiApiKey = (): boolean => {
-  return OPENAI_API_KEY !== 'IHR-OPENAI-API-KEY-HIER';
+  return OPENAI_API_KEY !== '';
 };
 
 // OpenAI API Service
@@ -32,7 +31,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
   try {
     const apiKey = getOpenAiApiKey();
     
-    if (apiKey === 'IHR-OPENAI-API-KEY-HIER') {
+    if (apiKey === '') {
       throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
     }
     
