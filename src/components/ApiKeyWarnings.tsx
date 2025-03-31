@@ -13,6 +13,7 @@ interface ApiKeyWarningsProps {
 const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({ hasApiKey, hasGptApiKey }) => {
   return (
     <>
+      {/* Immer den FMP API-Key-Bereich anzeigen, wenn kein Key vorhanden ist */}
       {!hasApiKey && (
         <div className="mb-8 animate-fade-in">
           <Alert className="mb-4">
@@ -28,6 +29,7 @@ const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({ hasApiKey, hasGptApiKey
         </div>
       )}
       
+      {/* OpenAI API-Key nur anzeigen, wenn FMP-Key vorhanden, aber kein GPT-Key */}
       {hasApiKey && !hasGptApiKey && (
         <div className="mb-8 animate-fade-in">
           <Alert className="mb-4">

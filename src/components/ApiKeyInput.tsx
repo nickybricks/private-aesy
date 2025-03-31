@@ -166,7 +166,7 @@ const ApiKeyInput = () => {
             API-Key entfernen
           </Button>
         )}
-        <Button onClick={handleSaveApiKey}>
+        <Button onClick={handleSaveApiKey} className={isSaved ? "" : "w-full"}>
           {isSaved ? "API-Key aktualisieren" : "API-Key speichern"}
         </Button>
       </CardFooter>

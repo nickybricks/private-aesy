@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -9,11 +8,11 @@ import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import OpenAiKeyInput from '@/components/OpenAiKeyInput';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
-import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ApiKeyWarnings from '@/components/ApiKeyWarnings';
 
 interface FinancialMetric {
   name: string;
@@ -295,36 +294,10 @@ const Index = () => {
         </p>
       </header>
       
-      {/* Always show API key input if not available */}
-      {!hasApiKey && (
-        <div className="mb-8 animate-fade-in">
-          <Alert className="mb-4">
-            <InfoIcon className="h-4 w-4" />
-            <AlertTitle>API-Key erforderlich</AlertTitle>
-            <AlertDescription>
-              Um das Buffett Benchmark Tool nutzen zu können, benötigen Sie einen API-Key von Financial Modeling Prep.
-              Bitte konfigurieren Sie Ihren API-Key unten.
-            </AlertDescription>
-          </Alert>
-          
-          <ApiKeyInput />
-        </div>
-      )}
-      
-      {hasApiKey && !hasGptApiKey && (
-        <div className="mb-8 animate-fade-in">
-          <Alert className="mb-4">
-            <InfoIcon className="h-4 w-4" />
-            <AlertTitle>GPT-Integration (optional)</AlertTitle>
-            <AlertDescription>
-              Für eine erweiterte Analyse aller 11 Buffett-Kriterien empfehlen wir die Integration mit OpenAI GPT.
-              Dies ermöglicht tiefere Einblicke zu den qualitativen Aspekten wie Geschäftsmodell, Management und langfristige Perspektiven.
-            </AlertDescription>
-          </Alert>
-          
-          <OpenAiKeyInput />
-        </div>
-      )}
+      <ApiKeyWarnings 
+        hasApiKey={hasApiKey}
+        hasGptApiKey={hasGptApiKey}
+      />
       
       <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
       
