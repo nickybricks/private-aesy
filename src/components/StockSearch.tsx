@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Info, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -102,8 +101,14 @@ const StockSearch: React.FC<StockSearchProps> = ({
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>API-Key Problem erkannt</AlertTitle>
           <AlertDescription>
-            <p>Es scheint ein Problem mit Ihrem API-Key zu geben. Bitte überprüfen Sie Ihren Financial Modeling Prep API-Key oben und stellen Sie sicher, dass er gültig ist.</p>
-            <p className="mt-1">Falls Sie keinen API-Key haben, können Sie einen kostenlosen Key unter <a href="https://financialmodelingprep.com/developer/docs/" className="underline font-medium" target="_blank" rel="noopener noreferrer">financialmodelingprep.com</a> erhalten.</p>
+            <p>Es scheint ein Problem mit der API-Verbindung zu geben. Bitte versuchen Sie folgende Lösungen:</p>
+            <ol className="list-decimal ml-5 mt-2 space-y-1 text-sm">
+              <li>Überprüfen Sie, ob Ihr API-Key korrekt eingegeben wurde (keine Leerzeichen)</li>
+              <li>Stellen Sie sicher, dass Sie eine stabile Internetverbindung haben</li>
+              <li>Bei kostenlosem API-Plan: Überprüfen Sie, ob Ihr tägliches Limit erreicht wurde</li>
+              <li>Versuchen Sie, einen neuen API-Key zu erstellen und diesen zu verwenden</li>
+              <li>Probieren Sie es später noch einmal</li>
+            </ol>
           </AlertDescription>
         </Alert>
       )}

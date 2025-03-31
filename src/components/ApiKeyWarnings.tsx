@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon, AlertTriangle, AlertCircle } from 'lucide-react';
+import { InfoIcon, AlertTriangle, AlertCircle, Network, WifiOff } from 'lucide-react';
 import ApiKeyInput from './ApiKeyInput';
 import OpenAiKeyInput from './OpenAiKeyInput';
 
@@ -10,39 +10,86 @@ interface ApiKeyWarningsProps {
   hasGptApiKey: boolean;
   hasApiKeyError?: boolean;
   isRateLimitError?: boolean;
+  errorMessage?: string;
 }
 
 const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({ 
   hasApiKey, 
   hasGptApiKey,
   hasApiKeyError = false,
-  isRateLimitError = false
+  isRateLimitError = false,
+  errorMessage = ''
 }) => {
+  // Funktion zur Ermittlung des wahrscheinlichen Fehlergrunds
+  const determineErrorType = () => {
+    const errorLower = errorMessage.toLowerCase();
+    
+    if (isRateLimitError || errorLower.includes('limit') || errorLower.includes('rate limit')) {
+      return 'rate_limit';
+    } else if (errorLower.includes('network') || errorLower.includes('verbindung') || errorLower.includes('timeout')) {
+      return 'network';
+    } else if (errorLower.includes('ungültig') || errorLower.includes('invalid') || 
+               errorLower.includes('falsch') || errorLower.includes('wrong')) {
+      return 'invalid_key';
+    } else {
+      return 'unknown';
+    }
+  };
+  
+  const errorType = determineErrorType();
+
   return (
     <>
       {/* API-Key-Fehlermeldung anzeigen, wenn ein Fehler erkannt wurde */}
       {hasApiKeyError && (
         <div className="mb-8 animate-fade-in">
           <Alert variant="destructive" className="mb-4">
-            {isRateLimitError ? (
-              <AlertCircle className="h-4 w-4" />
-            ) : (
-              <AlertTriangle className="h-4 w-4" />
-            )}
+            {errorType === 'rate_limit' && <AlertCircle className="h-4 w-4" />}
+            {errorType === 'network' && <WifiOff className="h-4 w-4" />}
+            {(errorType === 'invalid_key' || errorType === 'unknown') && <AlertTriangle className="h-4 w-4" />}
+            
             <AlertTitle>
-              {isRateLimitError ? 'API-Limit überschritten' : 'API-Key Problem erkannt'}
+              {errorType === 'rate_limit' && 'API-Limit überschritten'}
+              {errorType === 'network' && 'Netzwerkfehler'}
+              {errorType === 'invalid_key' && 'API-Key ungültig'}
+              {errorType === 'unknown' && 'API-Verbindungsproblem'}
             </AlertTitle>
+            
             <AlertDescription>
-              {isRateLimitError ? (
+              {errorType === 'rate_limit' && (
                 <>
                   Das tägliche Limit für kostenlose API-Anfragen wurde erreicht (maximal 250 pro Tag).
                   Das Limit wird täglich um 00:00 Uhr UTC (01:00/02:00 Uhr MEZ/MESZ) zurückgesetzt.
                 </>
-              ) : (
+              )}
+              
+              {errorType === 'network' && (
                 <>
-                  Es scheint ein Problem mit Ihrem Financial Modeling Prep API-Key zu geben. 
-                  Bitte überprüfen Sie Ihren API-Key unten und stellen Sie sicher, dass er gültig ist.
+                  Es scheint ein Netzwerkproblem bei der Verbindung zur Financial Modeling Prep API zu geben.
+                  Bitte überprüfen Sie Ihre Internetverbindung oder versuchen Sie es später erneut.
                 </>
+              )}
+              
+              {errorType === 'invalid_key' && (
+                <>
+                  Der eingegebene API-Key scheint ungültig zu sein oder wurde vom Dienst abgelehnt.
+                  Bitte überprüfen Sie Ihren Financial Modeling Prep API-Key und stellen Sie sicher, dass er korrekt ist.
+                </>
+              )}
+              
+              {errorType === 'unknown' && (
+                <>
+                  Es ist ein Problem mit der API-Verbindung aufgetreten. Dies könnte verschiedene Ursachen haben:
+                  <ul className="list-disc ml-5 mt-2">
+                    <li>Der API-Key ist falsch oder abgelaufen</li>
+                    <li>Ein temporäres Problem mit dem Financial Modeling Prep Server</li>
+                    <li>Ihr Konto hat möglicherweise Einschränkungen</li>
+                  </ul>
+                </>
+              )}
+              
+              {errorMessage && errorType === 'unknown' && (
+                <p className="mt-2 text-sm italic">Fehlermeldung: {errorMessage}</p>
               )}
             </AlertDescription>
           </Alert>

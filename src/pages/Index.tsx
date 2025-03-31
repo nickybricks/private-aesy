@@ -54,6 +54,7 @@ const Index = () => {
   const [isRateLimitError, setIsRateLimitError] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
   const [apiKeyCheckCompleted, setApiKeyCheckCompleted] = useState(false);
+  const [apiErrorMessage, setApiErrorMessage] = useState('');
 
   useEffect(() => {
     const initialCheck = async () => {
@@ -68,6 +69,7 @@ const Index = () => {
       setError(null);
       setHasApiKeyError(false);
       setIsRateLimitError(false);
+      setApiErrorMessage('');
     };
     
     const handleApiKeyError = (event: CustomEvent) => {
@@ -75,6 +77,7 @@ const Index = () => {
         setHasApiKeyError(true);
         setIsRateLimitError(!!event.detail.isRateLimit);
         setError(`API-Key Fehler: ${event.detail.error}`);
+        setApiErrorMessage(event.detail.error);
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -327,6 +330,7 @@ const Index = () => {
         hasGptApiKey={hasGptApiKey}
         hasApiKeyError={hasApiKeyError}
         isRateLimitError={isRateLimitError}
+        errorMessage={apiErrorMessage}
       />
       
       <StockSearch 

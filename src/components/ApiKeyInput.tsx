@@ -17,17 +17,14 @@ const ApiKeyInput = () => {
   const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
-    // Beim ersten Laden der Komponente nach API-Key suchen
     checkForApiKey();
     
-    // Event-Listener für API-Key-Fehler
     const handleApiKeyError = (event: CustomEvent) => {
       if (event.detail && event.detail.error) {
         setKeyError(event.detail.error);
         setIsRateLimit(!!event.detail.isRateLimit);
         setIsSaved(false);
         
-        // Benachrichtigung anzeigen
         toast({
           title: "API-Key Fehler",
           description: event.detail.error,
@@ -43,12 +40,10 @@ const ApiKeyInput = () => {
     };
   }, [toast]);
 
-  // Funktion zum Überprüfen des API-Keys im localStorage
   const checkForApiKey = () => {
     try {
       const savedKey = localStorage.getItem('fmp_api_key');
       if (savedKey) {
-        // Wenn ein Key existiert, zeige ihn in obfuskierter Form an
         setApiKey(isObfuscated ? '••••••••••••••••••••••••' : savedKey);
         setIsSaved(true);
         if (!isObfuscated) {
@@ -78,22 +73,19 @@ const ApiKeyInput = () => {
     }
 
     try {
-      // Validate API key format (basic check)
       if (apiKey.trim().length < 8) {
         toast({
           title: 'Fehler',
-          description: 'Der API-Key scheint ungültig zu sein. Bitte überprüfen Sie Ihren Key.',
+          description: 'Der API-Key scheint ungültig zu sein. API-Keys sollten mindestens 8 Zeichen lang sein.',
           variant: 'destructive',
         });
         return;
       }
       
-      // Set validating state
       setIsValidating(true);
       setKeyError(null);
       setIsRateLimit(false);
       
-      // Validate the API key by making a test request
       try {
         const isValid = await validateApiKey(apiKey.trim());
         if (!isValid) {
@@ -110,14 +102,27 @@ const ApiKeyInput = () => {
         if (validationError instanceof Error) {
           setKeyError(validationError.message);
           
-          // Check if this is a rate limit error
-          if (validationError.message.includes('API-Limit überschritten')) {
+          const errorMessage = validationError.message.toLowerCase();
+          if (errorMessage.includes('api-limit') || 
+              errorMessage.includes('rate limit') || 
+              errorMessage.includes('limit überschritten')) {
             setIsRateLimit(true);
           }
           
+          let errorTitle = 'Validierungsfehler';
+          let errorDesc = validationError.message;
+          
+          if (errorMessage.includes('netzwerk') || 
+              errorMessage.includes('network') || 
+              errorMessage.includes('timeout') || 
+              errorMessage.includes('verbindung')) {
+            errorTitle = 'Netzwerkfehler';
+            errorDesc = 'Es konnte keine Verbindung zur Financial Modeling Prep API hergestellt werden. Bitte überprüfen Sie Ihre Internetverbindung.';
+          }
+          
           toast({
-            title: 'Validierungsfehler',
-            description: validationError.message,
+            title: errorTitle,
+            description: errorDesc,
             variant: 'destructive',
           });
         } else {
@@ -139,7 +144,6 @@ const ApiKeyInput = () => {
       setKeyError(null);
       setIsRateLimit(false);
       
-      // Benutzerdefiniertes Event auslösen, um andere Komponenten zu benachrichtigen
       window.dispatchEvent(new CustomEvent('fmp_api_key_change', {
         detail: { action: 'save' }
       }));
@@ -168,7 +172,6 @@ const ApiKeyInput = () => {
       setIsObfuscated(false);
       setKeyError(null);
       
-      // Benutzerdefiniertes Event auslösen
       window.dispatchEvent(new CustomEvent('fmp_api_key_change', {
         detail: { action: 'remove' }
       }));
