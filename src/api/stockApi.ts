@@ -599,7 +599,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       turnaroundGptAnalysis.toLowerCase().includes(keyword)
     );
     
-    // FIXED: Reversed logic - no turnaround should be positive in Buffett's view
+    // FIX: Corrected logic - no turnaround should be positive in Buffett's view
     if (hasTurnaroundIndication) {
       // This is negative in Buffett's view
       turnaroundScore = 0;
@@ -1000,6 +1000,13 @@ export const getOverallRating = async (ticker: string) => {
   try {
     const criteria = await analyzeBuffettCriteria(ticker);
     
+    // Get stock quote information including the current price
+    const standardizedTicker = ticker.trim().toUpperCase();
+    const quoteData = await fetchFromFMP(`/quote/${standardizedTicker}`);
+    const stockQuote = quoteData && quoteData.length > 0 ? quoteData[0] : null;
+    const currentPrice = stockQuote ? stockQuote.price : null;
+    const currency = stockQuote && stockQuote.currency ? stockQuote.currency : '€';
+    
     // Calculate detailed Buffett score if available
     let detailedTotalScore = 0;
     let detailedMaxScore = 0;
@@ -1128,36 +1135,54 @@ export const getOverallRating = async (ticker: string) => {
       weaknesses.push('Bedenken bezüglich der Qualität oder Aktionärsfreundlichkeit des Managements');
     }
     
-    // Enhanced Margin of Safety calculation with "Best Buy Price"
+    // Calculate intrinsic value based on financial metrics
+    // This is a simplified approach - a full DCF would be more accurate
+    let intrinsicValue;
+    let targetMarginOfSafety = 20; // Default target Margin of Safety (%)
+    
+    // Get earnings per share from criteria if available
+    const eps = criteria.financialMetrics && 
+                criteria.financialMetrics.details && 
+                criteria.financialMetrics.details.length > 3 ? 
+                parseFloat(criteria.financialMetrics.details[3].split(":")[1]) : null;
+    
+    if (eps && currentPrice) {
+      // Simple intrinsic value calculation using a justified P/E ratio
+      // For demonstration purposes - can be improved with a proper DCF model
+      const justifiedPE = hasGoodMoat ? 18 : 15; // Higher P/E for companies with moat
+      intrinsicValue = eps * justifiedPE;
+    } else if (currentPrice) {
+      // Fallback if no EPS data - estimate using current price and valuation status
+      if (criteria.valuation.status === 'pass') {
+        intrinsicValue = currentPrice * 1.1; // 10% higher than current if undervalued
+      } else if (criteria.valuation.status === 'warning') {
+        intrinsicValue = currentPrice; // Fair value
+      } else {
+        intrinsicValue = currentPrice * 0.8; // 20% lower if overvalued
+      }
+    }
+    
+    // Calculate best buy price with target margin of safety
+    const bestBuyPrice = intrinsicValue ? 
+      intrinsicValue * (1 - targetMarginOfSafety / 100) : 
+      undefined;
+    
+    // Calculate current margin of safety
     let marginOfSafety = {
       value: 0,
       status: 'fail' as 'pass' | 'warning' | 'fail'
     };
     
-    let bestBuyPrice = 0;
-    const currentPrice = criteria.valuation && criteria.valuation.details && criteria.valuation.details.length > 0 ? 
-      parseFloat(criteria.valuation.details[0].split(":")[1]) : 0;
-    
-    if (criteria.valuation.status === 'pass') {
-      marginOfSafety = {
-        value: 25,
-        status: 'pass'
-      };
-      bestBuyPrice = currentPrice * 1.1; // Can pay 10% more
-    } else if (criteria.valuation.status === 'warning') {
-      marginOfSafety = {
-        value: 10,
-        status: 'warning'
-      };
-      // Current price is acceptable
-      bestBuyPrice = currentPrice;
-    } else {
-      // If clearly overvalued (fail), recommend a 20% discount
-      marginOfSafety = {
-        value: -15,
-        status: 'fail'
-      };
-      bestBuyPrice = currentPrice * 0.8; // Need 20% discount
+    if (intrinsicValue && currentPrice && intrinsicValue > 0) {
+      marginOfSafety.value = ((intrinsicValue - currentPrice) / intrinsicValue) * 100;
+      
+      if (marginOfSafety.value >= 20) {
+        marginOfSafety.status = 'pass';
+      } else if (marginOfSafety.value >= 10) {
+        marginOfSafety.status = 'warning';
+      } else {
+        marginOfSafety.status = 'fail';
+      }
     }
     
     // Make a more concrete recommendation
@@ -1178,9 +1203,11 @@ ${hasGoodMoat ? '✓ Überzeugender wirtschaftlicher Burggraben vorhanden' : '×
 ${isFinanciallyStable ? '✓ Solide finanzielle Situation' : '× Bedenken bezüglich der finanziellen Stabilität'}
 ${isOvervalued ? '× Aktuell überbewertet' : '× Nicht attraktiv genug bewertet'}
 
-Empfohlener Kaufpreis: ${bestBuyPrice.toFixed(2)} € (aktuell: Margin of Safety ${marginOfSafety.value.toFixed(1)}%)
+Buffett-Kaufpreis: ${bestBuyPrice?.toFixed(2) || 'N/A'} ${currency}
+Aktueller Preis: ${currentPrice?.toFixed(2) || 'N/A'} ${currency}
+Margin of Safety: ${marginOfSafety.value.toFixed(1)}%
 
-Fazit: Behalten Sie die Aktie auf Ihrer Beobachtungsliste und erwägen Sie einen Einstieg bei günstigeren Kursen.`;
+Fazit: Behalten Sie die Aktie auf Ihrer Beobachtungsliste und erwägen Sie einen Einstieg, wenn der Preis näher am Buffett-Kaufpreis liegt.`;
     } else {
       recommendation = `${criteria.businessModel.description.split(' ist tätig')[0]} erfüllt nicht ausreichend Buffetts Investitionskriterien (${finalBuffettScore}% Buffett-Score).
       
@@ -1190,7 +1217,11 @@ ${!hasGoodMoat ? '- Kein überzeugender wirtschaftlicher Burggraben erkennbar' :
 ${!isFinanciallyStable ? '- Bedenken bezüglich der finanziellen Stabilität' : ''}
 ${isBusinessModelComplex ? '- Das Geschäftsmodell ist komplex und schwer verständlich' : ''}
 
-Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen, die mehr von Buffetts Prinzipien erfüllen. Wenn Sie dennoch investieren möchten, wäre ein Einstiegspreis von ${bestBuyPrice.toFixed(2)} € angemessener (aktuell: ${currentPrice} €).`;
+Buffett-Kaufpreis: ${bestBuyPrice?.toFixed(2) || 'N/A'} ${currency}
+Aktueller Preis: ${currentPrice?.toFixed(2) || 'N/A'} ${currency}
+Überbewertung: ${Math.abs(marginOfSafety.value).toFixed(1)}%
+
+Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen, die mehr von Buffetts Prinzipien erfüllen. Wenn Sie dennoch investieren möchten, wäre ein Einstieg beim Buffett-Kaufpreis angemessener.`;
     }
     
     return {
@@ -1201,7 +1232,11 @@ Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen
       recommendation,
       buffettScore: finalBuffettScore,
       marginOfSafety,
-      bestBuyPrice: overall !== 'buy' ? bestBuyPrice : undefined
+      bestBuyPrice,
+      currentPrice,
+      currency,
+      intrinsicValue,
+      targetMarginOfSafety
     };
   } catch (error) {
     console.error('Error generating overall rating:', error);

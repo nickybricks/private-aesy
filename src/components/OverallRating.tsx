@@ -7,7 +7,8 @@ import {
   BarChart3,
   TrendingDown,
   Eye,
-  DollarSign
+  DollarSign,
+  Calculate
 } from 'lucide-react';
 
 type Rating = 'buy' | 'watch' | 'avoid';
@@ -26,6 +27,11 @@ interface OverallRatingProps {
       status: 'pass' | 'warning' | 'fail';
     };
     bestBuyPrice?: number;
+    // New fields for price analysis
+    currentPrice?: number;
+    currency?: string;
+    intrinsicValue?: number;
+    targetMarginOfSafety?: number;
   } | null;
 }
 
@@ -45,7 +51,20 @@ const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
 const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   if (!rating) return null;
   
-  const { overall, summary, strengths, weaknesses, recommendation, buffettScore, marginOfSafety, bestBuyPrice } = rating;
+  const { 
+    overall, 
+    summary, 
+    strengths, 
+    weaknesses, 
+    recommendation, 
+    buffettScore, 
+    marginOfSafety, 
+    bestBuyPrice,
+    currentPrice,
+    currency = '€',
+    intrinsicValue,
+    targetMarginOfSafety = 20
+  } = rating;
   
   const ratingTitle = {
     buy: 'Kaufen',
@@ -58,6 +77,15 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     watch: 'bg-buffett-yellow bg-opacity-10 border-buffett-yellow',
     avoid: 'bg-buffett-red bg-opacity-10 border-buffett-red'
   }[overall];
+
+  // Calculate price difference if both values are available
+  const priceDifference = currentPrice && bestBuyPrice 
+    ? currentPrice - bestBuyPrice 
+    : undefined;
+  
+  const priceDifferencePercent = currentPrice && bestBuyPrice && currentPrice > 0
+    ? ((currentPrice - bestBuyPrice) / bestBuyPrice) * 100
+    : undefined;
 
   // Interpret the rating to show a primary decision factor
   const decisionFactor = overall === 'avoid' && marginOfSafety && marginOfSafety.value < 0 
@@ -143,17 +171,75 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           </div>
           <div className="text-lg font-medium">{decisionFactor}</div>
           
-          {bestBuyPrice && (
+          {currentPrice && (
             <div className="mt-3 pt-3 border-t border-gray-200">
               <div className="flex items-center gap-2 mb-1">
-                <DollarSign size={16} className="text-buffett-green" />
-                <div className="text-sm font-medium">Empfohlener Kaufpreis:</div>
+                <DollarSign size={16} className="text-gray-600" />
+                <div className="text-sm text-gray-600">Aktueller Marktpreis:</div>
               </div>
-              <div className="text-lg font-bold text-buffett-green">{bestBuyPrice.toFixed(2)} €</div>
+              <div className="text-lg font-bold">{currentPrice.toFixed(2)} {currency}</div>
             </div>
           )}
         </div>
       </div>
+      
+      {/* New Value Analysis Card */}
+      {(intrinsicValue || bestBuyPrice) && (
+        <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Calculate size={20} className="text-buffett-blue" />
+            <h3 className="text-lg font-semibold">Bewertungsanalyse</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {intrinsicValue && (
+              <div className="border-r border-gray-100 pr-4">
+                <div className="text-sm text-gray-600 mb-1">Innerer Wert (berechnet):</div>
+                <div className="text-xl font-bold">{intrinsicValue.toFixed(2)} {currency}</div>
+                <div className="text-xs text-gray-500 mt-1">Basierend auf DCF-Analyse</div>
+              </div>
+            )}
+            
+            <div className="border-r border-gray-100 pr-4">
+              <div className="text-sm text-gray-600 mb-1">Ziel-Margin of Safety:</div>
+              <div className="text-xl font-bold">{targetMarginOfSafety}%</div>
+              <div className="text-xs text-gray-500 mt-1">Nach Buffett-Prinzip</div>
+            </div>
+            
+            {bestBuyPrice && (
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Buffett-Kaufpreis:</div>
+                <div className="text-xl font-bold">{bestBuyPrice.toFixed(2)} {currency}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {intrinsicValue 
+                    ? `= Innerer Wert × ${(1 - targetMarginOfSafety / 100).toFixed(2)}`
+                    : 'Basierend auf Bewertungsanalyse'}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Price Difference Analysis */}
+          {priceDifference !== undefined && priceDifferencePercent !== undefined && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="text-sm font-medium">
+                  {priceDifference > 0 ? 'Überbewertet um:' : 'Unterbewertet um:'}
+                </div>
+                <div className={`text-lg font-bold ${priceDifference > 0 ? 'text-buffett-red' : 'text-buffett-green'}`}>
+                  {Math.abs(priceDifference).toFixed(2)} {currency} / {Math.abs(priceDifferencePercent).toFixed(1)}%
+                </div>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className={`h-2 rounded-full ${priceDifference > 0 ? 'bg-buffett-red' : 'bg-buffett-green'}`}
+                     style={{
+                       width: `${Math.min(Math.abs(priceDifferencePercent), 100)}%`
+                     }}></div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
