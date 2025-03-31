@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   CheckCircle, 
@@ -8,7 +7,7 @@ import {
   TrendingDown,
   Eye,
   DollarSign,
-  Calculate
+  Calculator
 } from 'lucide-react';
 
 type Rating = 'buy' | 'watch' | 'avoid';
@@ -187,7 +186,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       {(intrinsicValue || bestBuyPrice) && (
         <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <Calculate size={20} className="text-buffett-blue" />
+            <Calculator size={20} className="text-buffett-blue" />
             <h3 className="text-lg font-semibold">Bewertungsanalyse</h3>
           </div>
           
