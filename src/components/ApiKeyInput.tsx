@@ -1,13 +1,22 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ExternalLink, AlertTriangle, KeyRound, ShieldCheck, HelpCircle, AlertCircle } from 'lucide-react';
+import { ExternalLink, AlertTriangle, KeyRound, ShieldCheck, HelpCircle, AlertCircle, RefreshCw, WifiOff } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { validateApiKey } from '@/api/stockApi';
 
-const ApiKeyInput = () => {
+interface ApiKeyInputProps {
+  showErrorState?: boolean;
+  errorType?: string;
+}
+
+const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ 
+  showErrorState = false,
+  errorType = 'unknown'
+}) => {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState('');
   const [isSaved, setIsSaved] = useState(false);
@@ -15,6 +24,7 @@ const ApiKeyInput = () => {
   const [keyError, setKeyError] = useState<string | null>(null);
   const [isRateLimit, setIsRateLimit] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number>(Date.now());
 
   useEffect(() => {
     checkForApiKey();
@@ -38,7 +48,7 @@ const ApiKeyInput = () => {
     return () => {
       window.removeEventListener('fmp_api_key_error', handleApiKeyError as EventListener);
     };
-  }, [toast]);
+  }, [toast, lastUpdated]);
 
   const checkForApiKey = () => {
     try {
@@ -152,6 +162,9 @@ const ApiKeyInput = () => {
         title: 'API-Key gespeichert',
         description: 'Ihr API-Key wurde erfolgreich validiert und gespeichert. Er wird für alle zukünftigen Anfragen verwendet.',
       });
+
+      // Update timestamp for re-fetch
+      setLastUpdated(Date.now());
     } catch (error) {
       console.error('Error saving to localStorage:', error);
       toast({
@@ -180,6 +193,9 @@ const ApiKeyInput = () => {
         title: 'API-Key entfernt',
         description: 'Ihr API-Key wurde entfernt.',
       });
+
+      // Update timestamp for re-fetch
+      setLastUpdated(Date.now());
     } catch (error) {
       console.error('Error removing from localStorage:', error);
       toast({
@@ -197,8 +213,62 @@ const ApiKeyInput = () => {
     }
   };
 
+  // Bestimme die Fehlerhilfe basierend auf dem Fehlertyp
+  const getErrorHelp = () => {
+    if (errorType === 'rate_limit') {
+      return (
+        <>
+          <p className="font-medium">Hinweise:</p>
+          <ul className="list-disc ml-5 space-y-1">
+            <li>Mit dem kostenlosen Plan sind täglich nur 250 API-Aufrufe möglich</li>
+            <li>Das Limit wird um 00:00 Uhr UTC (01:00/02:00 Uhr MEZ/MESZ) zurückgesetzt</li>
+            <li>Für unbegrenzte Anfragen können Sie zu einem bezahlten Plan upgraden</li>
+            <li>Besuchen Sie <a href="https://financialmodelingprep.com/developer/docs/pricing" target="_blank" rel="noopener noreferrer" className="font-medium underline">financialmodelingprep.com/pricing</a></li>
+          </ul>
+        </>
+      );
+    } else if (errorType === 'network') {
+      return (
+        <>
+          <p className="font-medium">Mögliche Lösungen:</p>
+          <ul className="list-disc ml-5 space-y-1">
+            <li>Überprüfen Sie Ihre Internetverbindung</li>
+            <li>Es könnte ein temporäres Problem mit dem Financial Modeling Prep Server sein</li>
+            <li>Versuchen Sie es in 5-10 Minuten erneut</li>
+            <li>Falls das Problem weiterhin besteht, versuchen Sie einen anderen API-Key</li>
+          </ul>
+        </>
+      );
+    } else if (errorType === 'invalid_key') {
+      return (
+        <>
+          <p className="font-medium">Mögliche Lösungen:</p>
+          <ul className="list-disc ml-5 space-y-1">
+            <li>Überprüfen Sie, ob Sie den Key korrekt kopiert haben (ohne Leerzeichen am Anfang oder Ende)</li>
+            <li>Stellen Sie sicher, dass Ihr API-Key aktiv und nicht abgelaufen ist</li>
+            <li>Bei kostenloser Version: Das tägliche API-Limit könnte überschritten sein</li>
+            <li>Registrieren Sie sich für einen neuen API-Key unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="font-medium underline">financialmodelingprep.com</a></li>
+          </ul>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <p className="font-medium">Mögliche Lösungen:</p>
+          <ul className="list-disc ml-5 space-y-1">
+            <li>Überprüfen Sie, ob Sie den Key korrekt kopiert haben (ohne Leerzeichen)</li>
+            <li>Stellen Sie sicher, dass Ihre Internetverbindung stabil ist</li>
+            <li>Bei kostenloser Version: Das tägliche API-Limit könnte überschritten sein</li>
+            <li>Versuchen Sie es in ein paar Minuten erneut</li>
+            <li>Registrieren Sie sich für einen neuen API-Key unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="font-medium underline">financialmodelingprep.com</a></li>
+          </ul>
+        </>
+      );
+    }
+  };
+
   return (
-    <Card className={keyError ? "border-red-300 shadow-sm" : ""}>
+    <Card className={keyError || showErrorState ? "border-red-300 shadow-sm" : ""}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <KeyRound className="h-5 w-5" />
@@ -210,7 +280,29 @@ const ApiKeyInput = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {keyError && (
+          {/* Zeige spezifischen Fehlertext basierend auf showErrorState und errorType */}
+          {showErrorState && (
+            <Alert variant="destructive" className="mb-4">
+              {errorType === 'rate_limit' && <AlertCircle className="h-4 w-4" />}
+              {errorType === 'network' && <WifiOff className="h-4 w-4" />}
+              {(errorType === 'invalid_key' || errorType === 'unknown') && <AlertTriangle className="h-4 w-4" />}
+              
+              <AlertTitle>
+                {errorType === 'rate_limit' && 'API-Limit überschritten'}
+                {errorType === 'network' && 'Netzwerkfehler'}
+                {errorType === 'invalid_key' && 'API-Key scheint ungültig zu sein'}
+                {errorType === 'unknown' && 'API-Verbindungsproblem'}
+              </AlertTitle>
+              <AlertDescription>
+                <div className="mt-2 space-y-2">
+                  {getErrorHelp()}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Zeige normale Fehler von der Komponente selbst */}
+          {keyError && !showErrorState && (
             <Alert variant="destructive" className="mb-4">
               {isRateLimit ? <AlertCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
               <AlertTitle>API-Key {isRateLimit ? 'Limit überschritten' : 'Fehler'}</AlertTitle>
@@ -243,7 +335,7 @@ const ApiKeyInput = () => {
             </Alert>
           )}
 
-          {isSaved && !keyError && (
+          {isSaved && !keyError && !showErrorState && (
             <Alert variant="default" className="mb-4 border-green-200 bg-green-50">
               <ShieldCheck className="h-4 w-4 text-green-600" />
               <AlertTitle className="text-green-800">API-Key aktiv</AlertTitle>
@@ -277,7 +369,7 @@ const ApiKeyInput = () => {
               }}
               onFocus={handleInputFocus}
               placeholder="Ihren API-Key hier eingeben"
-              className={`w-full ${keyError ? "border-red-300" : ""}`}
+              className={`w-full ${keyError || showErrorState ? "border-red-300" : ""}`}
               disabled={isValidating}
             />
           </div>
@@ -305,13 +397,25 @@ const ApiKeyInput = () => {
             API-Key entfernen
           </Button>
         )}
-        <Button 
-          onClick={handleSaveApiKey} 
-          className={isSaved ? "" : "w-full"} 
-          disabled={isValidating}
-        >
-          {isValidating ? "Validiere..." : isSaved ? "API-Key aktualisieren" : "API-Key speichern"}
-        </Button>
+        <div className="flex gap-2">
+          {showErrorState && (
+            <Button 
+              variant="outline" 
+              onClick={() => setLastUpdated(Date.now())}
+              className="flex items-center gap-1"
+            >
+              <RefreshCw size={16} />
+              Status aktualisieren
+            </Button>
+          )}
+          <Button 
+            onClick={handleSaveApiKey} 
+            className={isSaved ? "" : (showErrorState ? "" : "w-full")} 
+            disabled={isValidating}
+          >
+            {isValidating ? "Validiere..." : isSaved ? "API-Key aktualisieren" : "API-Key speichern"}
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

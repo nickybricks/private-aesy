@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon, AlertTriangle, AlertCircle, Network, WifiOff } from 'lucide-react';
+import { InfoIcon, AlertTriangle, AlertCircle, WifiOff, CheckCircle2 } from 'lucide-react';
 import ApiKeyInput from './ApiKeyInput';
 import OpenAiKeyInput from './OpenAiKeyInput';
 
@@ -22,14 +22,17 @@ const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({
 }) => {
   // Funktion zur Ermittlung des wahrscheinlichen Fehlergrunds
   const determineErrorType = () => {
+    if (!errorMessage) return 'unknown';
+    
     const errorLower = errorMessage.toLowerCase();
     
     if (isRateLimitError || errorLower.includes('limit') || errorLower.includes('rate limit')) {
       return 'rate_limit';
-    } else if (errorLower.includes('network') || errorLower.includes('verbindung') || errorLower.includes('timeout')) {
+    } else if (errorLower.includes('network') || errorLower.includes('verbindung') || errorLower.includes('timeout') || errorLower.includes('error fetching')) {
       return 'network';
     } else if (errorLower.includes('ungültig') || errorLower.includes('invalid') || 
-               errorLower.includes('falsch') || errorLower.includes('wrong')) {
+               errorLower.includes('falsch') || errorLower.includes('wrong') ||
+               errorLower.includes('abgelehnt') || errorLower.includes('denied')) {
       return 'invalid_key';
     } else {
       return 'unknown';
@@ -37,6 +40,9 @@ const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({
   };
   
   const errorType = determineErrorType();
+
+  // API-Key Erfolgs-Status anzeigen, wenn ein Key vorhanden und kein Fehler existiert
+  const showApiKeySuccess = hasApiKey && !hasApiKeyError;
 
   return (
     <>
@@ -66,14 +72,14 @@ const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({
               {errorType === 'network' && (
                 <>
                   Es scheint ein Netzwerkproblem bei der Verbindung zur Financial Modeling Prep API zu geben.
-                  Bitte überprüfen Sie Ihre Internetverbindung oder versuchen Sie es später erneut.
+                  Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es in einigen Minuten erneut.
                 </>
               )}
               
               {errorType === 'invalid_key' && (
                 <>
                   Der eingegebene API-Key scheint ungültig zu sein oder wurde vom Dienst abgelehnt.
-                  Bitte überprüfen Sie Ihren Financial Modeling Prep API-Key und stellen Sie sicher, dass er korrekt ist.
+                  Bitte überprüfen Sie, ob Ihr Financial Modeling Prep API-Key korrekt eingegeben wurde (keine Leerzeichen am Anfang oder Ende).
                 </>
               )}
               
@@ -81,7 +87,7 @@ const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({
                 <>
                   Es ist ein Problem mit der API-Verbindung aufgetreten. Dies könnte verschiedene Ursachen haben:
                   <ul className="list-disc ml-5 mt-2">
-                    <li>Der API-Key ist falsch oder abgelaufen</li>
+                    <li>Der API-Key ist möglicherweise falsch oder abgelaufen</li>
                     <li>Ein temporäres Problem mit dem Financial Modeling Prep Server</li>
                     <li>Ihr Konto hat möglicherweise Einschränkungen</li>
                   </ul>
@@ -94,7 +100,23 @@ const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({
             </AlertDescription>
           </Alert>
           
-          <ApiKeyInput />
+          <ApiKeyInput showErrorState={true} errorType={errorType} />
+        </div>
+      )}
+      
+      {/* API-Key Erfolgs-Status anzeigen */}
+      {showApiKeySuccess && (
+        <div className="mb-6 animate-fade-in">
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertTitle className="text-green-800">API-Key aktiv</AlertTitle>
+            <AlertDescription className="text-green-700">
+              Ihr Financial Modeling Prep API-Key ist konfiguriert und bereit für die Verwendung.
+              <p className="mt-1 text-xs">
+                <span className="font-medium">Hinweis:</span> Der kostenlose API-Plan erlaubt maximal 250 Anfragen pro Tag.
+              </p>
+            </AlertDescription>
+          </Alert>
         </div>
       )}
       

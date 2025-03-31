@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Search, Info, AlertCircle } from 'lucide-react';
+import { Search, Info, AlertCircle, AlertTriangle, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -15,13 +16,17 @@ interface StockSearchProps {
   isLoading: boolean;
   disabled?: boolean;
   hasApiKeyError?: boolean;
+  errorType?: string;
+  errorMessage?: string;
 }
 
 const StockSearch: React.FC<StockSearchProps> = ({ 
   onSearch, 
   isLoading, 
   disabled = false,
-  hasApiKeyError = false
+  hasApiKeyError = false,
+  errorType = 'unknown',
+  errorMessage = ''
 }) => {
   const [ticker, setTicker] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
@@ -68,6 +73,22 @@ const StockSearch: React.FC<StockSearchProps> = ({
     onSearch(tickerWithDE);
   };
 
+  // Hilfsfunktion zur Ermittlung des API-Fehler-Icons
+  const getErrorIcon = () => {
+    if (errorType === 'rate_limit') return <AlertCircle className="h-4 w-4" />;
+    if (errorType === 'network') return <WifiOff className="h-4 w-4" />;
+    return <AlertTriangle className="h-4 w-4" />;
+  };
+
+  // Hilfsfunktion zur Ermittlung des API-Fehler-Titels
+  const getErrorTitle = () => {
+    if (errorType === 'rate_limit') return 'API-Limit überschritten';
+    if (errorType === 'network') return 'Netzwerkfehler';
+    if (errorType === 'invalid_key') return 'API-Key ungültig';
+    return 'API-Verbindungsproblem';
+  };
+
+  // Liste der häufig verwendeten Aktiensymbole
   const commonTickers = [
     { symbol: 'AAPL', name: 'Apple' },
     { symbol: 'MSFT', name: 'Microsoft' },
@@ -98,17 +119,32 @@ const StockSearch: React.FC<StockSearchProps> = ({
       
       {hasApiKeyError && (
         <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>API-Key Problem erkannt</AlertTitle>
+          {getErrorIcon()}
+          <AlertTitle>{getErrorTitle()}</AlertTitle>
           <AlertDescription>
-            <p>Es scheint ein Problem mit der API-Verbindung zu geben. Bitte versuchen Sie folgende Lösungen:</p>
-            <ol className="list-decimal ml-5 mt-2 space-y-1 text-sm">
-              <li>Überprüfen Sie, ob Ihr API-Key korrekt eingegeben wurde (keine Leerzeichen)</li>
-              <li>Stellen Sie sicher, dass Sie eine stabile Internetverbindung haben</li>
-              <li>Bei kostenlosem API-Plan: Überprüfen Sie, ob Ihr tägliches Limit erreicht wurde</li>
-              <li>Versuchen Sie, einen neuen API-Key zu erstellen und diesen zu verwenden</li>
-              <li>Probieren Sie es später noch einmal</li>
-            </ol>
+            {errorType === 'rate_limit' ? (
+              <p>Das tägliche Limit für kostenlose API-Anfragen wurde erreicht. Das Limit wird täglich um 00:00 Uhr UTC zurückgesetzt.</p>
+            ) : errorType === 'network' ? (
+              <p>Es scheint ein Netzwerkproblem bei der Verbindung zur Financial Modeling Prep API zu geben. Bitte überprüfen Sie Ihre Internetverbindung.</p>
+            ) : errorType === 'invalid_key' ? (
+              <p>Der eingegebene API-Key scheint ungültig zu sein. Bitte überprüfen Sie Ihren Financial Modeling Prep API-Key oben.</p>
+            ) : (
+              <p>Es scheint ein Problem mit der API-Verbindung zu geben. Bitte versuchen Sie folgende Lösungen:</p>
+            )}
+            
+            {errorType !== 'rate_limit' && errorType !== 'network' && errorType !== 'invalid_key' && (
+              <ol className="list-decimal ml-5 mt-2 space-y-1 text-sm">
+                <li>Überprüfen Sie, ob Ihr API-Key korrekt eingegeben wurde (keine Leerzeichen)</li>
+                <li>Stellen Sie sicher, dass Sie eine stabile Internetverbindung haben</li>
+                <li>Bei kostenlosem API-Plan: Überprüfen Sie, ob Ihr tägliches Limit erreicht wurde</li>
+                <li>Versuchen Sie, einen neuen API-Key zu erstellen und diesen zu verwenden</li>
+                <li>Probieren Sie es später noch einmal</li>
+              </ol>
+            )}
+            
+            {errorMessage && errorType === 'unknown' && (
+              <p className="mt-2 text-sm italic">Fehlermeldung: {errorMessage}</p>
+            )}
           </AlertDescription>
         </Alert>
       )}
