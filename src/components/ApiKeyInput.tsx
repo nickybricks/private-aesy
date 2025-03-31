@@ -52,6 +52,16 @@ const ApiKeyInput = () => {
     }
 
     try {
+      // Validate API key format (basic check)
+      if (apiKey.trim().length < 8) {
+        toast({
+          title: 'Fehler',
+          description: 'Der API-Key scheint ungültig zu sein. Bitte überprüfen Sie Ihren Key.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
       localStorage.setItem('fmp_api_key', apiKey.trim());
       setIsSaved(true);
       setApiKey('••••••••••••••••••••••••');

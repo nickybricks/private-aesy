@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -294,6 +295,7 @@ const Index = () => {
         </p>
       </header>
       
+      {/* Always show API key input if not available */}
       {!hasApiKey && (
         <div className="mb-8 animate-fade-in">
           <Alert className="mb-4">
