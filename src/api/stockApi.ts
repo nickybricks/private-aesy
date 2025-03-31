@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { 
   analyzeBusinessModel, 
@@ -11,168 +12,44 @@ import {
   hasOpenAiApiKey
 } from './openaiApi';
 
-const BASE_URL = 'https://financialmodelingprep.com/api/v3';
-
-// API Key validation function
-export const validateApiKey = async (apiKey: string): Promise<boolean> => {
-  try {
-    console.log('Validating API key...');
-    // Try a simple request that should work with any valid API key (company profile for Apple)
-    const response = await axios.get(`${BASE_URL}/profile/AAPL`, {
-      params: {
-        apikey: apiKey
-      },
-      timeout: 8000
-    });
-    
-    // Check if data exists and has the expected format
-    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-      console.log('API key validated successfully');
-      return true;
-    }
-    
-    console.log('API key validation failed: Unexpected response format');
-    return false;
-  } catch (error) {
-    console.error('API key validation error:', error);
-    
-    if (axios.isAxiosError(error)) {
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new Error('Der API-Key ist ungültig oder abgelaufen. Bitte überprüfen Sie Ihren Key oder registrieren Sie sich für einen neuen.');
-      } else if (error.response?.status === 429) {
-        throw new Error('API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen pro Tag möglich. Bitte versuchen Sie es später erneut oder erwägen Sie ein Upgrade auf einen bezahlten Plan.');
-      } else if (error.response?.status >= 500) {
-        throw new Error('Der Financial Modeling Prep Server ist momentan nicht erreichbar. Bitte versuchen Sie es später erneut.');
-      }
-    }
-    
-    throw new Error('Fehler bei der Validierung des API-Keys. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.');
-  }
-};
-
 // Financial Modeling Prep API Key
+// Sie müssen diesen API-Key durch Ihre eigene ersetzen
+// Registrieren Sie sich unter https://financialmodelingprep.com/developer/docs/ für einen kostenlosen API-Key
 const getApiKey = () => {
-  try {
-    // Zuerst aus localStorage versuchen zu laden
-    const savedApiKey = localStorage.getItem('fmp_api_key');
-    if (savedApiKey && savedApiKey.trim().length > 5) {
-      return savedApiKey.trim();
-    }
-    
-    // Wenn kein gültiger Key gefunden wurde
-    console.error('Kein gültiger API-Key gefunden');
-    throw new Error('API-Key ist nicht konfiguriert. Bitte geben Sie Ihren Financial Modeling Prep API-Key ein.');
-  } catch (error) {
-    console.error('Error retrieving API key:', error);
-    throw new Error('API-Key konnte nicht geladen werden. Bitte überprüfen Sie Ihre Browsereinstellungen (localStorage).');
+  // Zuerst aus localStorage versuchen zu laden
+  const savedApiKey = localStorage.getItem('fmp_api_key');
+  if (savedApiKey) {
+    return savedApiKey;
   }
+  // Fallback auf einen Beispiel-Key (wird wahrscheinlich nicht funktionieren)
+  return 'demo';
 };
 
-// Hilfsfunktion für bessere Fehlerbehandlung
-const handleApiError = (error: any, ticker: string) => {
-  console.error('Error fetching data from FMP:', error);
-  
-  let errorMessage = '';
-  
-  if (axios.isAxiosError(error)) {
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      errorMessage = `API-Key ist ungültig oder abgelaufen. Bitte überprüfen Sie Ihren Key oder registrieren Sie sich für einen neuen unter financialmodelingprep.com.`;
-      
-      // Benachrichtige UI-Komponenten über ungültigen API-Key
-      window.dispatchEvent(new CustomEvent('fmp_api_key_error', {
-        detail: { 
-          error: errorMessage 
-        }
-      }));
-    } else if (error.response?.status === 429) {
-      errorMessage = `API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen pro Tag möglich (maximal 250). Bitte versuchen Sie es morgen erneut oder erwägen Sie ein Upgrade auf einen bezahlten Plan.`;
-      
-      // Benachrichtige UI-Komponenten über Rate Limit
-      window.dispatchEvent(new CustomEvent('fmp_api_key_error', {
-        detail: { 
-          error: errorMessage,
-          isRateLimit: true
-        }
-      }));
-    } else if (error.response?.status === 404) {
-      // Spezielle Behandlung für deutsche Aktien
-      if (ticker.endsWith('.DE')) {
-        const usAlternative = getUSAlternative(ticker);
-        if (usAlternative) {
-          errorMessage = `Das Symbol ${ticker} wurde nicht gefunden. Die Financial Modeling Prep API unterstützt nicht alle deutschen Aktien. Versuchen Sie stattdessen das US-Symbol ${usAlternative} (ADR/US-Listing).`;
-        } else {
-          errorMessage = `Symbol ${ticker} wurde nicht gefunden. Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie, nach dem US-Listing (ADR) zu suchen oder ein anderes Symbol zu verwenden.`;
-        }
-      } else {
-        errorMessage = `Symbol ${ticker} wurde nicht gefunden. Bitte überprüfen Sie das Aktiensymbol und versuchen Sie es erneut.`;
-      }
-    } else if (error.response?.status >= 500) {
-      errorMessage = `Der Financial Modeling Prep Server ist momentan nicht erreichbar. Bitte versuchen Sie es später erneut.`;
-    } else {
-      errorMessage = `Fehler bei API-Anfrage: ${error.response?.status || 'Unbekannter Status'}. Bitte versuchen Sie es später erneut.`;
-    }
-  } else if (error.message && error.message.includes('Network Error')) {
-    errorMessage = `Netzwerkfehler beim Abrufen der Daten. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.`;
-  } else {
-    errorMessage = `Fehler beim Abrufen von Daten. Bitte überprüfen Sie Ihren API-Key oder versuchen Sie es später erneut.`;
-  }
-  
-  throw new Error(errorMessage);
-};
-
-// Hilfsfunktion zur Ermittlung von US-Alternativen für deutsche Aktien
-const getUSAlternative = (germanTicker: string) => {
-  const alternatives: {[key: string]: string} = {
-    'SAP.DE': 'SAP', // SAP is listed on NYSE as SAP
-    'BMW.DE': 'BMWYY', // BMW ADR
-    'BAS.DE': 'BASFY', // BASF ADR
-    'ALV.DE': 'ALIZY', // Allianz ADR
-    'SIE.DE': 'SIEGY', // Siemens ADR
-    'DAI.DE': 'MBGAF', // Mercedes-Benz ADR
-    'VOW3.DE': 'VWAGY', // Volkswagen ADR
-    'DTE.DE': 'DTEGY', // Deutsche Telekom ADR
-    'BAYN.DE': 'BAYRY', // Bayer ADR
-  };
-  
-  return alternatives[germanTicker.toUpperCase()] || null;
-};
+const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
 // Hilfsfunktion, um API-Anfragen zu machen
 const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
     const apiKey = getApiKey();
     
-    console.log(`Fetching from ${BASE_URL}${endpoint} with params:`, {...params, apikey: '***'});
+    // Überprüfen, ob ein API-Schlüssel gesetzt ist
+    if (!apiKey || apiKey === 'demo') {
+      throw new Error('API-Key ist nicht konfiguriert. Bitte geben Sie Ihren Financial Modeling Prep API-Key ein.');
+    }
     
     const response = await axios.get(`${BASE_URL}${endpoint}`, {
       params: {
         apikey: apiKey,
         ...params
-      },
-      timeout: 10000 // 10 Sekunden Timeout für bessere Fehlermeldungen
+      }
     });
-    
-    // API-Fehler mit Status 200 prüfen (bei einigen APIs üblich)
-    if (response.data && response.data.error) {
-      throw new Error(response.data.error);
-    }
-    
-    // Überprüfen, ob die Antwort leer oder ungültig ist
-    if (!response.data || (Array.isArray(response.data) && response.data.length === 0)) {
-      // Die Ticker-Info aus dem Endpunkt extrahieren für bessere Fehlermeldungen
-      const match = endpoint.match(/\/([^\/]+)$/);
-      const ticker = match ? match[1].split('?')[0] : 'unknown';
-      
-      throw new Error(`Keine Daten gefunden für ${ticker}`);
-    }
-    
     return response.data;
   } catch (error) {
-    // Die Ticker-Info aus dem Endpunkt extrahieren für bessere Fehlermeldungen
-    const match = endpoint.match(/\/([^\/]+)$/);
-    const ticker = match ? match[1].split('?')[0] : 'unknown';
-    
-    return handleApiError(error, ticker);
+    console.error('Error fetching data from FMP:', error);
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      throw new Error(`API-Key ist ungültig. Bitte registrieren Sie sich für einen kostenlosen Schlüssel unter financialmodelingprep.com.`);
+    }
+    throw new Error(`Fehler beim Abrufen von Daten. Bitte überprüfen Sie Ihren API-Key oder versuchen Sie es später erneut.`);
   }
 };
 
@@ -183,44 +60,29 @@ export const fetchStockInfo = async (ticker: string) => {
   // Standardisieren des Tickers für die API
   const standardizedTicker = ticker.trim().toUpperCase();
   
-  try {
-    // Profil- und Kursdaten parallel abrufen
-    const [profileData, quoteData] = await Promise.all([
-      fetchFromFMP(`/profile/${standardizedTicker}`),
-      fetchFromFMP(`/quote/${standardizedTicker}`)
-    ]);
-    
-    // Überprüfen, ob Daten zurückgegeben wurden
-    if (!profileData || profileData.length === 0 || !quoteData || quoteData.length === 0) {
-      throw new Error(`Keine Daten gefunden für ${standardizedTicker}`);
-    }
-    
-    const profile = profileData[0];
-    const quote = quoteData[0];
-    
-    return {
-      name: profile.companyName,
-      ticker: profile.symbol,
-      price: quote.price,
-      change: quote.change,
-      changePercent: quote.changesPercentage,
-      currency: profile.currency,
-      marketCap: profile.mktCap,
-    };
-  } catch (error) {
-    if (error instanceof Error) {
-      // Spezielle Behandlung für deutsche Aktien
-      if (standardizedTicker.endsWith('.DE') && error.message.includes("Keine Daten gefunden")) {
-        const usAlternative = getUSAlternative(standardizedTicker);
-        if (usAlternative) {
-          throw new Error(`Deutsche Aktie ${standardizedTicker} wurde nicht gefunden. Financial Modeling Prep unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie stattdessen das US-Symbol ${usAlternative} (ADR/US-Listing).`);
-        } else {
-          throw new Error(`Deutsche Aktie ${standardizedTicker} wurde nicht gefunden. Financial Modeling Prep unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie ein anderes Symbol.`);
-        }
-      }
-    }
-    throw error;
+  // Profil- und Kursdaten parallel abrufen
+  const [profileData, quoteData] = await Promise.all([
+    fetchFromFMP(`/profile/${standardizedTicker}`),
+    fetchFromFMP(`/quote/${standardizedTicker}`)
+  ]);
+  
+  // Überprüfen, ob Daten zurückgegeben wurden
+  if (!profileData || profileData.length === 0 || !quoteData || quoteData.length === 0) {
+    throw new Error(`Keine Daten gefunden für ${standardizedTicker}`);
   }
+  
+  const profile = profileData[0];
+  const quote = quoteData[0];
+  
+  return {
+    name: profile.companyName,
+    ticker: profile.symbol,
+    price: quote.price,
+    change: quote.change,
+    changePercent: quote.changesPercentage,
+    currency: profile.currency,
+    marketCap: profile.mktCap,
+  };
 };
 
 // Funktion, um Buffett-Kriterien zu analysieren
@@ -381,12 +243,8 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   let financialStabilityStatus = 'fail';
   if (debtToAssets < 50 && interestCoverage > 5 && currentRatio > 1.5) {
     financialStabilityStatus = 'pass';
-  } else if (debtToAssets < 50 && (interestCoverage > 3 || interestCoverage === 0) && currentRatio > 0.8) {
+  } else if (debtToAssets < 70 && interestCoverage > 3 && currentRatio > 1) {
     financialStabilityStatus = 'warning';
-  }
-  
-  if (debtToAssets < 30 && debtToEBITDA < 1.0) {
-    financialStabilityStatus = financialStabilityStatus === 'pass' ? 'pass' : 'warning';
   }
   
   // Management Qualität (vereinfacht)
@@ -587,7 +445,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     },
     rationalBehavior: {
       status: 'warning', // Vereinfachte Standardbewertung
-      title: '8. Rationalit��t & Disziplin',
+      title: '8. Rationalität & Disziplin',
       description: 'Rationalität und Disziplin erfordern tiefere Analyse.',
       details: [
         'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
@@ -666,7 +524,6 @@ export const getFinancialMetrics = async (ticker: string) => {
     const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
     const quoteData = quote && quote.length > 0 ? quote[0] : null;
     
-    // Debug logging
     console.log('Neueste Income Statement Daten:', JSON.stringify(latestIncomeStatement, null, 2));
     console.log('Neueste Balance Sheet Daten:', JSON.stringify(latestBalanceSheet, null, 2));
     console.log('Neueste Key Metrics Daten:', JSON.stringify(latestMetrics, null, 2));
@@ -841,44 +698,6 @@ export const getFinancialMetrics = async (ticker: string) => {
 
     // Weitere Finanzkennzahlen könnten hier berechnet werden
 
-    // Prepare historical data structure
-    const historicalData = {
-      revenue: [],
-      earnings: [],
-      eps: []
-    };
-    
-    // Process historical data if available
-    if (incomeStatements && incomeStatements.length > 0) {
-      incomeStatements.forEach(statement => {
-        if (statement.date && statement.revenue) {
-          const year = new Date(statement.date).getFullYear().toString();
-          
-          // Revenue data
-          historicalData.revenue.push({
-            year,
-            value: statement.revenue
-          });
-          
-          // Earnings data
-          if (statement.netIncome) {
-            historicalData.earnings.push({
-              year,
-              value: statement.netIncome
-            });
-          }
-          
-          // EPS data
-          if (statement.eps) {
-            historicalData.eps.push({
-              year,
-              value: statement.eps
-            });
-          }
-        }
-      });
-    }
-
     return {
       // Rendite-Kennzahlen
       eps,
@@ -890,11 +709,7 @@ export const getFinancialMetrics = async (ticker: string) => {
       debtToAssets,
       interestCoverage,
       
-      // Aggregated metrics array (will be populated in Index.tsx)
-      metrics: [],
-      
-      // Historical data
-      historicalData,
+      // Weitere Kennzahlen können hinzugefügt werden...
     };
   } catch (error) {
     console.error('Error fetching financial metrics:', error);

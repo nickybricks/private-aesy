@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Search, Info, AlertCircle, AlertTriangle, WifiOff } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -15,23 +15,11 @@ interface StockSearchProps {
   onSearch: (ticker: string) => void;
   isLoading: boolean;
   disabled?: boolean;
-  hasApiKeyError?: boolean;
-  errorType?: string;
-  errorMessage?: string;
 }
 
-const StockSearch: React.FC<StockSearchProps> = ({ 
-  onSearch, 
-  isLoading, 
-  disabled = false,
-  hasApiKeyError = false,
-  errorType = 'unknown',
-  errorMessage = ''
-}) => {
+const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false }) => {
   const [ticker, setTicker] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
-  const [showGermanStockInfo, setShowGermanStockInfo] = useState(false);
-  const [showGermanStockWarning, setShowGermanStockWarning] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,32 +27,10 @@ const StockSearch: React.FC<StockSearchProps> = ({
       // Check if the user entered "APPL" instead of "AAPL" (common mistake)
       if (ticker.trim().toUpperCase() === 'APPL') {
         setShowAppleCorrection(true);
-        setShowGermanStockInfo(false);
-        setShowGermanStockWarning(false);
         return;
-      }
-      
-      // Check if it's a German stock but without .DE suffix
-      const germanStockPattern = /^[A-Z0-9]{3,6}$/;
-      const isDEStock = ticker.trim().toUpperCase().endsWith('.DE');
-      
-      if (!isDEStock && germanStockPattern.test(ticker.trim().toUpperCase()) && !ticker.trim().includes('.')) {
-        // Show info about German stocks if they might have entered a German stock without .DE
-        setShowGermanStockInfo(true);
-        setShowAppleCorrection(false);
-        setShowGermanStockWarning(false);
-        return;
-      }
-      
-      // If it's a German stock with .DE suffix, warn that it might not be supported
-      if (isDEStock) {
-        setShowGermanStockWarning(true);
-      } else {
-        setShowGermanStockWarning(false);
       }
       
       setShowAppleCorrection(false);
-      setShowGermanStockInfo(false);
       onSearch(ticker.trim().toUpperCase());
     }
   };
@@ -72,60 +38,9 @@ const StockSearch: React.FC<StockSearchProps> = ({
   const correctSymbol = (correctTicker: string) => {
     setTicker(correctTicker);
     setShowAppleCorrection(false);
-    setShowGermanStockInfo(false);
-    setShowGermanStockWarning(false);
     onSearch(correctTicker);
   };
-  
-  const appendDEAndSearch = () => {
-    const tickerWithDE = `${ticker.trim().toUpperCase()}.DE`;
-    setTicker(tickerWithDE);
-    setShowGermanStockInfo(false);
-    onSearch(tickerWithDE);
-  };
 
-  // Alternative US stock suggestions for German companies
-  const getUSAlternative = (germanTicker: string) => {
-    const alternatives = {
-      'SAP.DE': 'SAP', // SAP is listed on NYSE as SAP
-      'BMW.DE': 'BMWYY', // BMW ADR
-      'BAS.DE': 'BASFY', // BASF ADR
-      'ALV.DE': 'ALIZY', // Allianz ADR
-      'SIE.DE': 'SIEGY', // Siemens ADR
-      'DAI.DE': 'MBGAF', // Mercedes-Benz ADR
-      'VOW3.DE': 'VWAGY', // Volkswagen ADR
-      'DTE.DE': 'DTEGY', // Deutsche Telekom ADR
-      'BAYN.DE': 'BAYRY', // Bayer ADR
-    };
-    
-    return alternatives[germanTicker.toUpperCase()] || null;
-  };
-
-  const searchUSAlternative = (germanTicker: string) => {
-    const usTicker = getUSAlternative(germanTicker);
-    if (usTicker) {
-      setTicker(usTicker);
-      setShowGermanStockWarning(false);
-      onSearch(usTicker);
-    }
-  };
-
-  // Hilfsfunktion zur Ermittlung des API-Fehler-Icons
-  const getErrorIcon = () => {
-    if (errorType === 'rate_limit') return <AlertCircle className="h-4 w-4" />;
-    if (errorType === 'network') return <WifiOff className="h-4 w-4" />;
-    return <AlertTriangle className="h-4 w-4" />;
-  };
-
-  // Hilfsfunktion zur Ermittlung des API-Fehler-Titels
-  const getErrorTitle = () => {
-    if (errorType === 'rate_limit') return 'API-Limit überschritten';
-    if (errorType === 'network') return 'Netzwerkfehler';
-    if (errorType === 'invalid_key') return 'API-Key ungültig';
-    return 'API-Verbindungsproblem';
-  };
-
-  // Liste der häufig verwendeten Aktiensymbole
   const commonTickers = [
     { symbol: 'AAPL', name: 'Apple' },
     { symbol: 'MSFT', name: 'Microsoft' },
@@ -133,14 +48,6 @@ const StockSearch: React.FC<StockSearchProps> = ({
     { symbol: 'GOOGL', name: 'Alphabet (Google)' },
     { symbol: 'META', name: 'Meta (Facebook)' },
     { symbol: 'TSLA', name: 'Tesla' },
-    { symbol: 'BRK-B', name: 'Berkshire Hathaway' },
-    { symbol: 'JNJ', name: 'Johnson & Johnson' },
-    // US-Alternativen für deutsche Aktien
-    { symbol: 'SAP', name: 'SAP (US-Listing)' },
-    { symbol: 'SIEGY', name: 'Siemens (ADR)' },
-    { symbol: 'BASFY', name: 'BASF (ADR)' },
-    { symbol: 'ALIZY', name: 'Allianz (ADR)' },
-    { symbol: 'BAYRY', name: 'Bayer (ADR)' },
   ];
 
   return (
@@ -149,38 +56,6 @@ const StockSearch: React.FC<StockSearchProps> = ({
       <p className="text-buffett-subtext mb-4">
         Geben Sie ein Aktiensymbol ein (z.B. AAPL für Apple) oder einen Firmennamen, um die Buffett-Analyse zu starten.
       </p>
-      
-      {hasApiKeyError && (
-        <Alert variant="destructive" className="mb-4">
-          {getErrorIcon()}
-          <AlertTitle>{getErrorTitle()}</AlertTitle>
-          <AlertDescription>
-            {errorType === 'rate_limit' ? (
-              <p>Das tägliche Limit für kostenlose API-Anfragen wurde erreicht. Das Limit wird täglich um 00:00 Uhr UTC zurückgesetzt.</p>
-            ) : errorType === 'network' ? (
-              <p>Es scheint ein Netzwerkproblem bei der Verbindung zur Financial Modeling Prep API zu geben. Bitte überprüfen Sie Ihre Internetverbindung.</p>
-            ) : errorType === 'invalid_key' ? (
-              <p>Der eingegebene API-Key scheint ungültig zu sein. Bitte überprüfen Sie Ihren Financial Modeling Prep API-Key oben.</p>
-            ) : (
-              <p>Es scheint ein Problem mit der API-Verbindung zu geben. Bitte versuchen Sie folgende Lösungen:</p>
-            )}
-            
-            {errorType !== 'rate_limit' && errorType !== 'network' && errorType !== 'invalid_key' && (
-              <ol className="list-decimal ml-5 mt-2 space-y-1 text-sm">
-                <li>Überprüfen Sie, ob Ihr API-Key korrekt eingegeben wurde (keine Leerzeichen)</li>
-                <li>Stellen Sie sicher, dass Sie eine stabile Internetverbindung haben</li>
-                <li>Bei kostenlosem API-Plan: Überprüfen Sie, ob Ihr tägliches Limit erreicht wurde</li>
-                <li>Versuchen Sie, einen neuen API-Key zu erstellen und diesen zu verwenden</li>
-                <li>Probieren Sie es später noch einmal</li>
-              </ol>
-            )}
-            
-            {errorMessage && errorType === 'unknown' && (
-              <p className="mt-2 text-sm italic">Fehlermeldung: {errorMessage}</p>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
       
       {showAppleCorrection && (
         <Alert className="mb-4 border-buffett-blue bg-buffett-blue bg-opacity-5">
@@ -198,60 +73,13 @@ const StockSearch: React.FC<StockSearchProps> = ({
         </Alert>
       )}
       
-      {showGermanStockInfo && (
-        <Alert className="mb-4 border-buffett-blue bg-buffett-blue bg-opacity-5">
-          <AlertTitle>Deutsche Aktie?</AlertTitle>
-          <AlertDescription>
-            <p>Für deutsche Aktien benötigen Sie das Suffix ".DE" am Ende des Symbols.</p>
-            <Button 
-              variant="link" 
-              className="p-0 h-auto text-buffett-blue font-medium mt-1 mr-3"
-              onClick={appendDEAndSearch}
-            >
-              Mit ".DE" suchen ({ticker.trim().toUpperCase()}.DE) →
-            </Button>
-            <p className="mt-2 text-sm text-orange-600">
-              <strong>Hinweis:</strong> Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien.
-            </p>
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {showGermanStockWarning && (
-        <Alert className="mb-4 border-amber-200 bg-amber-50">
-          <AlertTitle className="text-amber-800">Hinweis zu deutschen Aktien</AlertTitle>
-          <AlertDescription className="text-amber-700">
-            <p>Deutsche Aktien mit .DE-Suffix werden möglicherweise nicht von der Financial Modeling Prep API unterstützt.</p>
-            
-            {getUSAlternative(ticker) && (
-              <>
-                <p className="mt-2">Für {ticker.split('.')[0]} gibt es eine US-Alternative:</p>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="mt-1 border-amber-300 text-amber-800 hover:bg-amber-100"
-                  onClick={() => searchUSAlternative(ticker)}
-                >
-                  Stattdessen {getUSAlternative(ticker)} verwenden (US-Listing/ADR)
-                </Button>
-              </>
-            )}
-            
-            <p className="mt-2 text-xs">
-              Die meisten deutschen Unternehmen haben auch US-Listings oder ADRs (American Depositary Receipts),
-              die besser unterstützt werden.
-            </p>
-          </AlertDescription>
-        </Alert>
-      )}
-      
       <form onSubmit={handleSubmit} className="flex gap-2">
         <div className="relative flex-1">
           <Input
             type="text"
             value={ticker}
             onChange={(e) => setTicker(e.target.value)}
-            placeholder="AAPL, MSFT, SAP.DE, BMW.DE..."
+            placeholder="AAPL, MSFT, AMZN, META..."
             className="apple-input pl-10"
             disabled={disabled || isLoading}
           />
@@ -270,20 +98,16 @@ const StockSearch: React.FC<StockSearchProps> = ({
         <p>{disabled 
           ? "Bitte konfigurieren Sie zuerst einen API-Key oben, um die Analyse zu starten." 
           : "Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung."}</p>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info size={16} className="ml-2 cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs p-4">
-              <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
-              <p>Dieses Tool verwendet die Financial Modeling Prep API. Sie benötigen einen gültigen API-Schlüssel, um die Anwendung zu nutzen.</p>
-              <p className="mt-2">Registrieren Sie sich für einen kostenlosen API-Schlüssel unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">financialmodelingprep.com</a>.</p>
-              <p className="mt-2 text-amber-600 font-medium">Hinweis: Nicht alle deutschen Aktien werden von der Financial Modeling Prep API unterstützt.</p>
-              <p className="mt-2">Für deutsche Unternehmen empfehlen wir, nach US-Listings (ADRs) zu suchen.</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info size={16} className="ml-2 cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs p-4">
+            <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
+            <p>Dieses Tool verwendet die Financial Modeling Prep API. Sie benötigen einen gültigen API-Schlüssel, um die Anwendung zu nutzen.</p>
+            <p className="mt-2">Registrieren Sie sich für einen kostenlosen API-Schlüssel unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">financialmodelingprep.com</a>.</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
       
       {/* Häufig verwendete Aktiensymbole */}
@@ -299,8 +123,6 @@ const StockSearch: React.FC<StockSearchProps> = ({
               onClick={() => {
                 setTicker(item.symbol);
                 setShowAppleCorrection(false);
-                setShowGermanStockInfo(false);
-                setShowGermanStockWarning(item.symbol.endsWith('.DE'));
               }}
             >
               {item.symbol} ({item.name})

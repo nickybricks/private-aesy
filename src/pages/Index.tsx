@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -8,123 +9,62 @@ import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import OpenAiKeyInput from '@/components/OpenAiKeyInput';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
+import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ApiKeyWarnings from '@/components/ApiKeyWarnings';
-
-interface FinancialMetric {
-  name: string;
-  value: number | string;
-  formula: string;
-  explanation: string;
-  threshold: string;
-  status: 'pass' | 'warning' | 'fail';
-}
-
-interface HistoricalData {
-  revenue: { year: string; value: number }[];
-  earnings: { year: string; value: number }[];
-  eps: { year: string; value: number }[];
-}
-
-interface FinancialMetricsData {
-  eps?: any;
-  roe?: any;
-  netMargin?: any;
-  roic?: any;
-  debtToAssets?: any;
-  interestCoverage?: any;
-  metrics: FinancialMetric[];
-  historicalData: HistoricalData;
-}
 
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [stockInfo, setStockInfo] = useState(null);
   const [buffettCriteria, setBuffettCriteria] = useState(null);
-  const [financialMetrics, setFinancialMetrics] = useState<FinancialMetricsData | null>(null);
+  const [financialMetrics, setFinancialMetrics] = useState(null);
   const [overallRating, setOverallRating] = useState(null);
   const [error, setError] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [hasGptApiKey, setHasGptApiKey] = useState(false);
-  const [hasApiKeyError, setHasApiKeyError] = useState(false);
-  const [isRateLimitError, setIsRateLimitError] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
-  const [apiKeyCheckCompleted, setApiKeyCheckCompleted] = useState(false);
-  const [apiErrorMessage, setApiErrorMessage] = useState('');
 
   useEffect(() => {
-    const initialCheck = async () => {
-      await checkApiKeys();
-      setApiKeyCheckCompleted(true);
+    const savedKey = localStorage.getItem('fmp_api_key');
+    setHasApiKey(!!savedKey);
+    
+    const openAiKey = localStorage.getItem('openai_api_key');
+    setHasGptApiKey(!!openAiKey);
+  }, []);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedKey = localStorage.getItem('fmp_api_key');
+      setHasApiKey(!!savedKey);
+      
+      const openAiKey = localStorage.getItem('openai_api_key');
+      setHasGptApiKey(!!openAiKey);
     };
+
+    window.addEventListener('storage', handleStorageChange);
     
-    initialCheck();
-    
-    const handleApiKeyChange = () => {
-      checkApiKeys();
-      setError(null);
-      setHasApiKeyError(false);
-      setIsRateLimitError(false);
-      setApiErrorMessage('');
-    };
-    
-    const handleApiKeyError = (event: CustomEvent) => {
-      if (event.detail && event.detail.error) {
-        setHasApiKeyError(true);
-        setIsRateLimitError(!!event.detail.isRateLimit);
-        setError(`API-Key Fehler: ${event.detail.error}`);
-        setApiErrorMessage(event.detail.error);
-        
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+      originalSetItem.apply(this, [key, value]);
+      if (key === 'fmp_api_key') {
+        setHasApiKey(!!value);
+      } else if (key === 'openai_api_key') {
+        setHasGptApiKey(!!value);
       }
     };
     
-    window.addEventListener('fmp_api_key_change', handleApiKeyChange as EventListener);
-    window.addEventListener('openai_api_key_change', handleApiKeyChange as EventListener);
-    window.addEventListener('fmp_api_key_error', handleApiKeyError as EventListener);
-    
     return () => {
-      window.removeEventListener('fmp_api_key_change', handleApiKeyChange as EventListener);
-      window.removeEventListener('openai_api_key_change', handleApiKeyChange as EventListener);
-      window.removeEventListener('fmp_api_key_error', handleApiKeyError as EventListener);
+      window.removeEventListener('storage', handleStorageChange);
+      localStorage.setItem = originalSetItem;
     };
   }, []);
-  
-  const checkApiKeys = async () => {
-    let fmpKeyExists = false;
-    let openAiKeyExists = false;
-    
-    try {
-      const fmpApiKey = localStorage.getItem('fmp_api_key');
-      fmpKeyExists = !!fmpApiKey;
-      
-      const openAiKey = localStorage.getItem('openai_api_key');
-      openAiKeyExists = !!openAiKey;
-      
-      setHasApiKey(fmpKeyExists);
-      setHasGptApiKey(openAiKeyExists);
-      
-      console.log('API-Keys geprüft:', { 
-        fmp: fmpKeyExists, 
-        openai: openAiKeyExists 
-      });
-    } catch (error) {
-      console.error('Error in checkApiKeys:', error);
-      setHasApiKey(false);
-      setHasGptApiKey(false);
-    }
-  };
 
   const handleSearch = async (ticker: string) => {
-    setError(null);
-    setHasApiKeyError(false);
-    setIsRateLimitError(false);
     setIsLoading(true);
-    
+    setError(null);
     try {
       setStockInfo(null);
       setBuffettCriteria(null);
@@ -140,119 +80,23 @@ const Index = () => {
         description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
       });
       
+      // Wenn GPT verfügbar ist, entsprechenden Tab aktivieren
       if (hasGptApiKey) {
         setActiveTab('gpt');
       }
       
-      const [criteria, metricsData, rating] = await Promise.all([
+      const [criteria, metrics, rating] = await Promise.all([
         analyzeBuffettCriteria(ticker),
         getFinancialMetrics(ticker),
         getOverallRating(ticker)
       ]);
       
       console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
-      console.log('Financial Metrics:', JSON.stringify(metricsData, null, 2));
+      console.log('Financial Metrics:', JSON.stringify(metrics, null, 2));
       console.log('Overall Rating:', JSON.stringify(rating, null, 2));
       
       setBuffettCriteria(criteria);
-      
-      const processedMetrics: FinancialMetricsData = {
-        eps: metricsData.eps,
-        roe: metricsData.roe,
-        netMargin: metricsData.netMargin,
-        roic: metricsData.roic,
-        debtToAssets: metricsData.debtToAssets,
-        interestCoverage: metricsData.interestCoverage,
-        metrics: [],
-        historicalData: {
-          revenue: [],
-          earnings: [],
-          eps: []
-        }
-      };
-      
-      if (metricsData.historicalData) {
-        processedMetrics.historicalData = metricsData.historicalData;
-      }
-      
-      if (metricsData.metrics && Array.isArray(metricsData.metrics)) {
-        processedMetrics.metrics = metricsData.metrics;
-      } else {
-        const metricsArray: FinancialMetric[] = [];
-        
-        if (metricsData.eps !== undefined) {
-          metricsArray.push({
-            name: 'Gewinn pro Aktie (EPS)',
-            value: metricsData.eps || 'N/A',
-            formula: 'Nettogewinn / Anzahl der Aktien',
-            explanation: 'Zeigt den Gewinn pro ausstehender Aktie',
-            threshold: 'Stetig steigend (>5% pro Jahr)',
-            status: metricsData.eps > 0 ? 'pass' : 'fail'
-          });
-        }
-        
-        if (metricsData.roe !== undefined) {
-          metricsArray.push({
-            name: 'Eigenkapitalrendite (ROE)',
-            value: metricsData.roe ? `${(metricsData.roe * 100).toFixed(2)}%` : 'N/A',
-            formula: 'Nettogewinn / Eigenkapital',
-            explanation: 'Misst die Effizienz der Eigenkapitalnutzung',
-            threshold: '>15%',
-            status: metricsData.roe > 0.15 ? 'pass' : metricsData.roe > 0.10 ? 'warning' : 'fail'
-          });
-        }
-        
-        if (metricsData.netMargin !== undefined) {
-          metricsArray.push({
-            name: 'Nettomarge',
-            value: metricsData.netMargin ? `${(metricsData.netMargin * 100).toFixed(2)}%` : 'N/A',
-            formula: 'Nettogewinn / Umsatz',
-            explanation: 'Zeigt den Anteil des Umsatzes, der als Gewinn verbleibt',
-            threshold: '>10%',
-            status: metricsData.netMargin > 0.10 ? 'pass' : metricsData.netMargin > 0.05 ? 'warning' : 'fail'
-          });
-        }
-        
-        if (metricsData.roic !== undefined) {
-          metricsArray.push({
-            name: 'ROIC',
-            value: metricsData.roic ? `${(metricsData.roic * 100).toFixed(2)}%` : 'N/A',
-            formula: 'NOPAT / Investiertes Kapital',
-            explanation: 'Misst die Rendite auf das investierte Kapital',
-            threshold: '>15%',
-            status: metricsData.roic > 0.15 ? 'pass' : metricsData.roic > 0.10 ? 'warning' : 'fail'
-          });
-        }
-        
-        if (metricsData.debtToAssets !== undefined) {
-          metricsArray.push({
-            name: 'Schulden zu Vermögen',
-            value: metricsData.debtToAssets ? `${(metricsData.debtToAssets * 100).toFixed(2)}%` : 'N/A',
-            formula: 'Gesamtschulden / Gesamtvermögen',
-            explanation: 'Zeigt den Anteil der Schulden am Gesamtvermögen',
-            threshold: '<50%',
-            status: metricsData.debtToAssets < 0.3 ? 'pass' : metricsData.debtToAssets < 0.5 ? 'warning' : 'fail'
-          });
-        }
-        
-        if (metricsData.interestCoverage !== undefined) {
-          metricsArray.push({
-            name: 'Zinsdeckungsgrad',
-            value: metricsData.interestCoverage || 'N/A',
-            formula: 'EBIT / Zinsaufwand',
-            explanation: 'Misst die Fähigkeit, Zinszahlungen zu decken',
-            threshold: '>5',
-            status: metricsData.interestCoverage > 5 ? 'pass' : 
-                  (metricsData.interestCoverage > 3 || 
-                  (metricsData.interestCoverage === 0 && metricsData.debtToAssets && metricsData.debtToAssets < 0.3)) ? 
-                  'warning' : 'fail'
-          });
-        }
-        
-        processedMetrics.metrics = metricsArray;
-      }
-      
-      setFinancialMetrics(processedMetrics);
+      setFinancialMetrics(metrics);
       setOverallRating(rating);
       
       toast({
@@ -263,27 +107,18 @@ const Index = () => {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
       
-      if (errorMessage.toLowerCase().includes('api-key') || 
-          errorMessage.toLowerCase().includes('apikey') || 
-          errorMessage.toLowerCase().includes('401') || 
-          errorMessage.toLowerCase().includes('403')) {
-        setHasApiKeyError(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-      
+      // Verbesserte Fehlermeldung mit Vorschlägen für häufige Fehler
       let enhancedErrorMessage = errorMessage;
-      
       if(errorMessage.includes("Keine Daten gefunden für")) {
         const searchedTicker = ticker.toUpperCase();
         
+        // Häufige Fehler korrigieren
         if(searchedTicker === "APPL") {
           enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Meinten Sie vielleicht AAPL (Apple)?`;
         } else if(searchedTicker === "GOOGL" || searchedTicker === "GOOG") {
           enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Versuchen Sie es mit GOOGL oder GOOG (Alphabet/Google).`;
         } else if(searchedTicker === "FB") {
           enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Meta (ehemals Facebook) wird jetzt als META gehandelt.`;
-        } else if(searchedTicker.endsWith('.DE')) {
-          enhancedErrorMessage = `${errorMessage} Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien mit .DE-Suffix. Versuchen Sie stattdessen, nach dem US-ADR (American Depositary Receipt) zu suchen.`;
         } else {
           enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Bitte überprüfen Sie das Aktiensymbol.`;
         }
@@ -300,25 +135,6 @@ const Index = () => {
     }
   };
 
-  if (!apiKeyCheckCompleted) {
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-screen-xl">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Buffett Benchmark Tool</h1>
-          <p className="text-buffett-subtext">
-            Analysieren Sie Aktien nach Warren Buffetts Investmentprinzipien
-          </p>
-        </header>
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-buffett-blue border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status"></div>
-            <p className="mt-4 text-lg">Initialisiere API-Key-Überprüfung...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-screen-xl">
       <header className="mb-8">
@@ -328,22 +144,39 @@ const Index = () => {
         </p>
       </header>
       
-      <ApiKeyWarnings 
-        hasApiKey={hasApiKey}
-        hasGptApiKey={hasGptApiKey}
-        hasApiKeyError={hasApiKeyError}
-        isRateLimitError={isRateLimitError}
-        errorMessage={apiErrorMessage}
-      />
+      {!hasApiKey && (
+        <div className="mb-8 animate-fade-in">
+          <Alert className="mb-4">
+            <InfoIcon className="h-4 w-4" />
+            <AlertTitle>API-Key erforderlich</AlertTitle>
+            <AlertDescription>
+              Um das Buffett Benchmark Tool nutzen zu können, benötigen Sie einen API-Key von Financial Modeling Prep.
+              Bitte konfigurieren Sie Ihren API-Key unten.
+            </AlertDescription>
+          </Alert>
+          
+          <ApiKeyInput />
+        </div>
+      )}
       
-      <StockSearch 
-        onSearch={handleSearch} 
-        isLoading={isLoading} 
-        disabled={!hasApiKey || hasApiKeyError}
-        hasApiKeyError={hasApiKeyError} 
-      />
+      {hasApiKey && !hasGptApiKey && (
+        <div className="mb-8 animate-fade-in">
+          <Alert className="mb-4">
+            <InfoIcon className="h-4 w-4" />
+            <AlertTitle>GPT-Integration (optional)</AlertTitle>
+            <AlertDescription>
+              Für eine erweiterte Analyse aller 11 Buffett-Kriterien empfehlen wir die Integration mit OpenAI GPT.
+              Dies ermöglicht tiefere Einblicke zu den qualitativen Aspekten wie Geschäftsmodell, Management und langfristige Perspektiven.
+            </AlertDescription>
+          </Alert>
+          
+          <OpenAiKeyInput />
+        </div>
+      )}
       
-      {error && !hasApiKeyError && (
+      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
+      
+      {error && (
         <Alert variant="destructive" className="mb-6">
           <InfoIcon className="h-4 w-4" />
           <AlertTitle>Fehler bei der Datenabfrage</AlertTitle>

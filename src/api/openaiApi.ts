@@ -1,39 +1,22 @@
+
 import axios from 'axios';
 
 // OpenAI API Key handling
-export const getOpenAiApiKey = () => {
-  try {
-    const savedApiKey = localStorage.getItem('openai_api_key');
-    if (savedApiKey) {
-      return savedApiKey;
-    }
-    return null;
-  } catch (error) {
-    console.error('Error accessing localStorage for OpenAI API key:', error);
-    return null;
+const getOpenAiApiKey = () => {
+  const savedApiKey = localStorage.getItem('openai_api_key');
+  if (savedApiKey) {
+    return savedApiKey;
   }
+  return null;
 };
 
 export const setOpenAiApiKey = (key: string) => {
-  try {
-    localStorage.setItem('openai_api_key', key);
-    // Benutzerdefiniertes Event auslösen
-    window.dispatchEvent(new CustomEvent('openai_api_key_change', {
-      detail: { action: 'save' }
-    }));
-  } catch (error) {
-    console.error('Error setting OpenAI API key in localStorage:', error);
-    throw new Error('Failed to save API key. Your browser may be blocking localStorage access.');
-  }
+  localStorage.setItem('openai_api_key', key);
+  window.dispatchEvent(new Event('storage'));
 };
 
 export const hasOpenAiApiKey = (): boolean => {
-  try {
-    return !!localStorage.getItem('openai_api_key');
-  } catch (error) {
-    console.error('Error checking for OpenAI API key in localStorage:', error);
-    return false;
-  }
+  return !!localStorage.getItem('openai_api_key');
 };
 
 // OpenAI API Service
@@ -59,12 +42,6 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte geben Sie Ihren OpenAI API-Key ein.');
     }
     
-    // Add instruction for bullet point format
-    const systemPrompt = 'Du bist ein Assistent, der Aktienunternehmen nach Warren Buffetts Investmentprinzipien analysiert. ' +
-      'Deine Antworten sollen präzise, faktenbasiert und neutral sein. ' + 
-      'Formuliere deine Antworten in kurzen, prägnanten Stichpunkten. ' +
-      'Verwende für Hervorhebungen <strong>fettgedruckten Text</strong> anstelle von Markdown-Syntax.';
-    
     const response = await axios.post<OpenAIResponse>(
       OPENAI_API_URL,
       {
@@ -72,11 +49,11 @@ export const queryGPT = async (prompt: string): Promise<string> => {
         messages: [
           {
             role: 'system',
-            content: systemPrompt
+            content: 'Du bist ein Assistent, der Aktienunternehmen nach Warren Buffetts Investmentprinzipien analysiert. Deine Antworten sollen präzise, faktenbasiert und neutral sein.'
           },
           {
             role: 'user',
-            content: prompt + '\n\nAntworte in prägnanten Stichpunkten, nicht in langen Absätzen.'
+            content: prompt
           }
         ],
         max_tokens: 500,

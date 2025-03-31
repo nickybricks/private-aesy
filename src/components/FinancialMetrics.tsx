@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -8,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Check, AlertTriangle, X, AlertCircle } from 'lucide-react';
+import { Check, AlertTriangle, X } from 'lucide-react';
 
 interface FinancialMetric {
   name: string;
@@ -59,6 +60,7 @@ const MetricStatus: React.FC<{ status: string }> = ({ status }) => {
 const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
   const { name, value, formula, explanation, threshold, status } = metric;
   
+  // Verbesserte Prüfung für fehlende Werte
   const isValueMissing = value === 'N/A' || 
                          (typeof value === 'string' && (value.includes('N/A') || value === '0.00' || value === '0.00%')) ||
                          (typeof value === 'number' && (value === 0 || isNaN(value))) ||
@@ -235,60 +237,7 @@ const BuffettCriteriaSection: React.FC = () => {
 };
 
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData }) => {
-  if (!metrics) {
-    return (
-      <div className="animate-fade-in">
-        <h2 className="text-2xl font-semibold mb-6">Buffett-Analyse Framework</h2>
-        <Card className="p-6 mb-8">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="h-5 w-5 text-yellow-500" />
-            <h3 className="text-lg font-semibold">Keine Finanzkennzahlen verfügbar</h3>
-          </div>
-          <p className="mt-2">Für dieses Unternehmen konnten keine Finanzkennzahlen geladen werden.</p>
-        </Card>
-        
-        <BuffettCriteriaSection />
-      </div>
-    );
-  }
-  
-  if (!Array.isArray(metrics)) {
-    console.error('Expected metrics to be an array but received:', metrics);
-    return (
-      <div className="animate-fade-in">
-        <h2 className="text-2xl font-semibold mb-6">Buffett-Analyse Framework</h2>
-        <Card className="p-6 mb-8">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="h-5 w-5 text-red-500" />
-            <h3 className="text-lg font-semibold mb-4">Fehler bei der Datenverarbeitung</h3>
-          </div>
-          <p>Die Finanzkennzahlen konnten nicht korrekt geladen werden. Bitte versuchen Sie es später erneut.</p>
-        </Card>
-        
-        <BuffettCriteriaSection />
-        
-        <Card className="buffett-card p-6 mb-8">
-          <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
-            <pre className="text-xs whitespace-pre-wrap break-words">
-              <strong>Metrics-Daten:</strong>
-              {JSON.stringify(metrics, null, 2)}
-            </pre>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-  
-  const getStatusTooltip = (metricName: string, value: string | number) => {
-    if (metricName.includes('Schulden zu Vermögen') && typeof value === 'number' && value < 30) {
-      return 'Sehr niedrige Verschuldung - ausgezeichnet!';
-    }
-    if (metricName.includes('Zinsdeckungsgrad') && (value === 0 || value === '0.00')) {
-      return 'Wert 0 kann bedeuten: keine Zinsausgaben oder fehlende Daten';
-    }
-    return null;
-  };
+  if (!metrics) return null;
   
   return (
     <div className="animate-fade-in">
@@ -304,6 +253,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
         ))}
       </div>
       
+      {/* Debug-Ansicht für die API-Daten */}
       <Card className="buffett-card p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
@@ -340,7 +290,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             </TableHeader>
             <TableBody>
               {historicalData.revenue.map((item, i) => {
+                // Entsprechende EPS-Daten finden
                 const epsDataForYear = historicalData.eps && historicalData.eps.find(e => e.year === item.year);
+                // Entsprechende Gewinn-Daten finden
                 const earningsDataForYear = historicalData.earnings && historicalData.earnings.find(e => e.year === item.year);
                 
                 return (
