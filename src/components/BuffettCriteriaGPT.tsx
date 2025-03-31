@@ -21,10 +21,10 @@ interface BuffettCriteriaGPTProps {
     management: BuffettCriterionProps;
     valuation: BuffettCriterionProps;
     longTermOutlook: BuffettCriterionProps;
-    rationalBehavior?: BuffettCriterionProps;
-    cyclicalBehavior?: BuffettCriterionProps;
-    oneTimeEffects?: BuffettCriterionProps;
-    turnaround?: BuffettCriterionProps;
+    rationalBehavior: BuffettCriterionProps;
+    cyclicalBehavior: BuffettCriterionProps;
+    oneTimeEffects: BuffettCriterionProps;
+    turnaround: BuffettCriterionProps;
   };
 }
 
@@ -55,7 +55,6 @@ const getStatusBadge = (status: string) => {
 };
 
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
-  // Get all criteria in an array, filtering out any undefined values
   const allCriteria = [
     criteria.businessModel,
     criteria.economicMoat,
@@ -68,7 +67,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.cyclicalBehavior,
     criteria.oneTimeEffects,
     criteria.turnaround
-  ].filter(Boolean);
+  ];
 
   return (
     <div>
