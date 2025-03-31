@@ -242,8 +242,12 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   let financialStabilityStatus = 'fail';
   if (debtToAssets < 50 && interestCoverage > 5 && currentRatio > 1.5) {
     financialStabilityStatus = 'pass';
-  } else if (debtToAssets < 70 && interestCoverage > 3 && currentRatio > 1) {
+  } else if (debtToAssets < 50 && (interestCoverage > 3 || interestCoverage === 0) && currentRatio > 0.8) {
     financialStabilityStatus = 'warning';
+  }
+  
+  if (debtToAssets < 30 && debtToEBITDA < 1.0) {
+    financialStabilityStatus = financialStabilityStatus === 'pass' ? 'pass' : 'warning';
   }
   
   // Management Qualität (vereinfacht)

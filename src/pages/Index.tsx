@@ -208,7 +208,7 @@ const Index = () => {
             formula: 'Gesamtschulden / Gesamtvermögen',
             explanation: 'Zeigt den Anteil der Schulden am Gesamtvermögen',
             threshold: '<50%',
-            status: metricsData.debtToAssets < 0.5 ? 'pass' : metricsData.debtToAssets < 0.7 ? 'warning' : 'fail'
+            status: metricsData.debtToAssets < 0.3 ? 'pass' : metricsData.debtToAssets < 0.5 ? 'warning' : 'fail'
           });
         }
         
@@ -219,7 +219,10 @@ const Index = () => {
             formula: 'EBIT / Zinsaufwand',
             explanation: 'Misst die Fähigkeit, Zinszahlungen zu decken',
             threshold: '>5',
-            status: metricsData.interestCoverage > 5 ? 'pass' : metricsData.interestCoverage > 3 ? 'warning' : 'fail'
+            status: metricsData.interestCoverage > 5 ? 'pass' : 
+                  (metricsData.interestCoverage > 3 || 
+                  (metricsData.interestCoverage === 0 && metricsData.debtToAssets && metricsData.debtToAssets < 0.3)) ? 
+                  'warning' : 'fail'
           });
         }
         

@@ -280,6 +280,16 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
     );
   }
   
+  const getStatusTooltip = (metricName: string, value: string | number) => {
+    if (metricName.includes('Schulden zu Vermögen') && typeof value === 'number' && value < 30) {
+      return 'Sehr niedrige Verschuldung - ausgezeichnet!';
+    }
+    if (metricName.includes('Zinsdeckungsgrad') && (value === 0 || value === '0.00')) {
+      return 'Wert 0 kann bedeuten: keine Zinsausgaben oder fehlende Daten';
+    }
+    return null;
+  };
+  
   return (
     <div className="animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Buffett-Analyse Framework</h2>
