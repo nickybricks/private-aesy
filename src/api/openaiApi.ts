@@ -59,6 +59,12 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte geben Sie Ihren OpenAI API-Key ein.');
     }
     
+    // Add instruction for bullet point format
+    const systemPrompt = 'Du bist ein Assistent, der Aktienunternehmen nach Warren Buffetts Investmentprinzipien analysiert. ' +
+      'Deine Antworten sollen präzise, faktenbasiert und neutral sein. ' + 
+      'Formuliere deine Antworten in kurzen, prägnanten Stichpunkten. ' +
+      'Verwende für Hervorhebungen <strong>fettgedruckten Text</strong> anstelle von Markdown-Syntax.';
+    
     const response = await axios.post<OpenAIResponse>(
       OPENAI_API_URL,
       {
@@ -66,11 +72,11 @@ export const queryGPT = async (prompt: string): Promise<string> => {
         messages: [
           {
             role: 'system',
-            content: 'Du bist ein Assistent, der Aktienunternehmen nach Warren Buffetts Investmentprinzipien analysiert. Deine Antworten sollen präzise, faktenbasiert und neutral sein.'
+            content: systemPrompt
           },
           {
             role: 'user',
-            content: prompt
+            content: prompt + '\n\nAntworte in prägnanten Stichpunkten, nicht in langen Absätzen.'
           }
         ],
         max_tokens: 500,

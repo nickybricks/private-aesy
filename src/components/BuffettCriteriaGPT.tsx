@@ -54,6 +54,38 @@ const getStatusBadge = (status: string) => {
   }
 };
 
+// Function to format GPT analysis text by converting it to bullet points
+const formatGPTAnalysis = (text: string | null): React.ReactNode => {
+  if (!text) return null;
+  
+  // Replace markdown bold syntax with HTML strong tags
+  let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  // Split into sentences or by bullet points if they already exist
+  const sentences = formattedText.split(/[.!?•]/).filter(s => s.trim().length > 0);
+  
+  // If the text is very short, just return it as is with HTML rendering
+  if (sentences.length <= 2) {
+    return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
+  }
+  
+  // Convert to bullet points
+  return (
+    <ul className="list-disc pl-5 space-y-1 text-sm">
+      {sentences.map((sentence, i) => {
+        // Skip if it's just whitespace or very short
+        if (sentence.trim().length < 3) return null;
+        
+        return (
+          <li key={i} dangerouslySetInnerHTML={{ 
+            __html: sentence.trim() + (sentence.trim().endsWith(':') ? '' : '.') 
+          }} />
+        );
+      })}
+    </ul>
+  );
+};
+
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
   const allCriteria = [
     criteria.businessModel,
@@ -100,7 +132,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                       <Bot size={16} className="mr-2 text-blue-500" />
                       <span className="font-medium text-blue-700">GPT-Analyse:</span>
                     </div>
-                    <p className="text-gray-700">{criterion.gptAnalysis}</p>
+                    {formatGPTAnalysis(criterion.gptAnalysis)}
                   </div>
                 )}
               </div>
