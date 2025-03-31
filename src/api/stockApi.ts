@@ -996,7 +996,9 @@ export const getOverallRating = async (ticker: string) => {
     ];
     
     for (const criterion of allCriteria) {
-      if (criterion.score !== undefined && criterion.maxScore !== undefined) {
+      // Fix the type error by checking if score and maxScore exist
+      if ('score' in criterion && 'maxScore' in criterion && 
+          criterion.score !== undefined && criterion.maxScore !== undefined) {
         detailedTotalScore += criterion.score;
         detailedMaxScore += criterion.maxScore;
         hasDetailedScores = true;
