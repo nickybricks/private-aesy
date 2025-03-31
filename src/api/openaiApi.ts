@@ -10,8 +10,8 @@ const getOpenAiApiKey = () => {
 };
 
 export const hasOpenAiApiKey = (): boolean => {
-  // Fix TypeScript error by checking length instead of direct comparison
-  return OPENAI_API_KEY.length > 0;
+  // Change comparison to check if API key is not empty instead of comparing to a specific value
+  return OPENAI_API_KEY !== '';
 };
 
 // OpenAI API Service
