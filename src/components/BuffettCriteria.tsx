@@ -10,8 +10,15 @@ import {
   Landmark, 
   Users, 
   DollarSign, 
-  Clock
+  Clock,
+  HelpCircle
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CriteriaResult {
   status: 'pass' | 'warning' | 'fail';
@@ -66,6 +73,26 @@ const CriterionIcon: React.FC<{ name: string }> = ({ name }) => {
   }
 };
 
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const statusStyles = {
+    pass: "bg-green-100 text-green-800 border-green-300",
+    warning: "bg-yellow-100 text-yellow-800 border-yellow-300",
+    fail: "bg-red-100 text-red-800 border-red-300"
+  };
+  
+  const statusLabels = {
+    pass: "Erfüllt",
+    warning: "Teilweise erfüllt",
+    fail: "Nicht erfüllt"
+  };
+  
+  return (
+    <span className={`text-xs font-medium px-2 py-0.5 rounded border ${statusStyles[status as keyof typeof statusStyles]}`}>
+      {statusLabels[status as keyof typeof statusLabels]}
+    </span>
+  );
+};
+
 const CriterionCard: React.FC<{ 
   name: string, 
   criterion: CriteriaResult,
@@ -73,8 +100,15 @@ const CriterionCard: React.FC<{
 }> = ({ name, criterion, index }) => {
   const { status, title, description, details } = criterion;
   
+  // Status-basierte Farben für die Karte
+  const cardBorderColor = {
+    pass: "border-green-300",
+    warning: "border-yellow-300",
+    fail: "border-red-300"
+  }[status];
+  
   return (
-    <div className="buffett-card mb-4 animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
+    <div className={`buffett-card mb-4 animate-slide-up ${cardBorderColor}`} style={{ animationDelay: `${index * 0.1}s` }}>
       <div className="flex items-start gap-4">
         <div className="mt-1">
           <CriterionIcon name={name} />
@@ -84,6 +118,7 @@ const CriterionCard: React.FC<{
           <div className="flex items-center gap-2 mb-2">
             <h3 className="text-xl font-semibold">{title}</h3>
             <StatusIcon status={status} />
+            <StatusBadge status={status} />
           </div>
           
           <p className="text-buffett-subtext mb-4">{description}</p>

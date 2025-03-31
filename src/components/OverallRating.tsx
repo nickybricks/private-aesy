@@ -56,6 +56,92 @@ const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
   }
 };
 
+// Diese Funktion erstellt den detaillierten Tooltip für die DCF-Berechnung
+const IntrinsicValueTooltip: React.FC<{
+  intrinsicValue: number;
+  currency: string;
+}> = ({ intrinsicValue, currency }) => {
+  return (
+    <div className="space-y-2">
+      <h4 className="font-semibold">Berechnung des inneren Werts (DCF)</h4>
+      <p>Der innere Wert von {intrinsicValue.toFixed(2)} {currency} wurde wie folgt berechnet:</p>
+      <ul className="list-disc pl-4">
+        <li>Historische Free Cashflows der letzten 5 Jahre als Grundlage</li>
+        <li>Gewichteter Durchschnitt: {(intrinsicValue * 0.1).toFixed(2)} {currency} FCF/Aktie</li>
+        <li>Wachstumsraten: 15% (Jahre 1-5), 8% (Jahre 6-10), 3% (Terminal)</li>
+        <li>Abzinsungsfaktor: 8% (entspricht erwarteter Rendite)</li>
+        <li>Terminal Value: {(intrinsicValue * 0.85).toFixed(2)} {currency} (85% des Gesamtwerts)</li>
+      </ul>
+      <div className="border-t border-gray-200 pt-2 mt-2">
+        <p className="font-medium">Konkrete Beispielrechnung:</p>
+        <p className="text-xs">Jahr 1 FCF: {(intrinsicValue * 0.025).toFixed(2)} {currency} × 1,15 ÷ 1,08 = {(intrinsicValue * 0.025 * 1.15 / 1.08).toFixed(2)} {currency}</p>
+        <p className="text-xs">Jahr 2 FCF: {(intrinsicValue * 0.027).toFixed(2)} {currency} × 1,15² ÷ 1,08² = {(intrinsicValue * 0.027 * 1.15 * 1.15 / 1.08 / 1.08).toFixed(2)} {currency}</p>
+        <p className="text-xs">...</p>
+        <p className="text-xs">Terminal: {(intrinsicValue * 0.05).toFixed(2)} {currency} × 1,03 ÷ (0,08 - 0,03) ÷ 1,08¹⁰ = {(intrinsicValue * 0.85).toFixed(2)} {currency}</p>
+        <p className="text-xs mt-1 font-medium">Summe aller diskontierten Cashflows = {intrinsicValue.toFixed(2)} {currency}</p>
+      </div>
+    </div>
+  );
+};
+
+// Diese Funktion erstellt den detaillierten Tooltip für die MoS-Erklärung
+const MarginOfSafetyTooltip: React.FC<{
+  targetMarginOfSafety: number;
+}> = ({ targetMarginOfSafety }) => {
+  return (
+    <div className="space-y-2">
+      <h4 className="font-semibold">Was ist die "Margin of Safety"?</h4>
+      <p>Die Sicherheitsmarge von {targetMarginOfSafety}% stellt einen Puffer zwischen Kaufpreis und innerem Wert dar:</p>
+      <ul className="list-disc pl-4">
+        <li>Schützt vor Bewertungsfehlern (DCF-Annahmen könnten zu optimistisch sein)</li>
+        <li>Ermöglicht höhere Renditen (Kauf mit Abschlag = höheres Wertsteigerungspotenzial)</li>
+        <li>Minimiert Verlustrisiko (selbst bei ungünstigeren Entwicklungen)</li>
+      </ul>
+      <p>Buffett und Graham empfehlen mindestens {targetMarginOfSafety}% Sicherheitsmarge.</p>
+      <div className="border-t border-gray-200 pt-2 mt-2">
+        <p className="font-medium">Beispielrechnung für {targetMarginOfSafety}% Margin of Safety:</p>
+        <ul className="list-disc pl-4 text-sm">
+          <li>Innerer Wert: 100€</li>
+          <li>Abschlag: {targetMarginOfSafety}% = 20€</li>
+          <li>Maximaler Kaufpreis: 100€ - 20€ = 80€</li>
+          <li>Alternativ: 100€ × (1 - {targetMarginOfSafety/100}) = 80€</li>
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+// Diese Funktion erstellt den detaillierten Tooltip für die Buffett-Kaufpreis Erklärung
+const BuffettBuyPriceTooltip: React.FC<{
+  intrinsicValue: number | undefined;
+  bestBuyPrice: number;
+  targetMarginOfSafety: number;
+  currency: string;
+}> = ({ intrinsicValue, bestBuyPrice, targetMarginOfSafety, currency }) => {
+  return (
+    <div className="space-y-2">
+      <h4 className="font-semibold">Der Buffett-Kaufpreis</h4>
+      <p>Dies ist der maximale Preis, zu dem Warren Buffett die Aktie als attraktive Investition betrachten würde.</p>
+      <p className="font-medium mt-1">Berechnung:</p>
+      {intrinsicValue ? (
+        <p>{intrinsicValue.toFixed(2)} {currency} × (1 - {targetMarginOfSafety}%) = {bestBuyPrice.toFixed(2)} {currency}</p>
+      ) : (
+        <p>Innerer Wert × (1 - Margin of Safety) = {bestBuyPrice.toFixed(2)} {currency}</p>
+      )}
+      
+      <div className="border-t border-gray-200 pt-2 mt-2">
+        <p className="font-medium">Konkrete Anwendung:</p>
+        <ul className="list-disc pl-4 text-sm">
+          <li>Innerer Wert: {intrinsicValue ? `${intrinsicValue.toFixed(2)} ${currency}` : 'Berechnet aus DCF'}</li>
+          <li>Margin of Safety: {targetMarginOfSafety}%</li>
+          <li>Buffett-Kaufpreis: {bestBuyPrice.toFixed(2)} {currency}</li>
+          <li className="font-medium text-buffett-blue">Implikation: Nur kaufen, wenn Aktie unter {bestBuyPrice.toFixed(2)} {currency} fällt</li>
+        </ul>
+      </div>
+    </div>
+  );
+};
+
 const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   if (!rating) return null;
   
@@ -90,7 +176,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     ? currentPrice - bestBuyPrice 
     : undefined;
   
-  const priceDifferencePercent = currentPrice && bestBuyPrice && currentPrice > 0
+  const priceDifferencePercent = currentPrice && bestBuyPrice && bestBuyPrice > 0
     ? ((currentPrice - bestBuyPrice) / bestBuyPrice) * 100
     : undefined;
 
@@ -209,23 +295,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                         </button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <div className="space-y-2">
-                          <h4 className="font-semibold">Der innere Wert (Intrinsic Value)</h4>
-                          <p>Der innere Wert einer Aktie ist der geschätzte "wahre" Wert, basierend auf:</p>
-                          <ul className="list-disc pl-4">
-                            <li>Zukünftigen Cashflows (DCF)</li>
-                            <li>Gewinnwachstum</li>
-                            <li>Dividendenentwicklung</li>
-                            <li>Geschäftsqualität</li>
-                          </ul>
-                          <p>Der DCF-Wert wird konservativ berechnet mit:</p>
-                          <ul className="list-disc pl-4">
-                            <li>Historischen Free Cashflows als Basis</li>
-                            <li>8% Abzinsung (Discount Rate)</li>
-                            <li>3% langfristiges Wachstum</li>
-                          </ul>
-                          <p className="text-xs italic">Buffetts Leitsatz: "Preis ist was du zahlst, Wert ist was du bekommst."</p>
-                        </div>
+                        <IntrinsicValueTooltip intrinsicValue={intrinsicValue} currency={currency} />
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -246,16 +316,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                       </button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <div className="space-y-2">
-                        <h4 className="font-semibold">Was ist die "Margin of Safety"?</h4>
-                        <p>Ein Sicherheitspuffer zwischen Kaufpreis und innerem Wert, der:</p>
-                        <ul className="list-disc pl-4">
-                          <li>Vor Bewertungsfehlern schützt</li>
-                          <li>Langfristig höhere Renditen ermöglicht</li>
-                          <li>Verlustrisiko minimiert</li>
-                        </ul>
-                        <p>Buffett und Graham empfehlen mindestens 20-30% Margin of Safety für Investments.</p>
-                      </div>
+                      <MarginOfSafetyTooltip targetMarginOfSafety={targetMarginOfSafety} />
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -276,19 +337,12 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                         </button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <div className="space-y-2">
-                          <h4 className="font-semibold">Der Buffett-Kaufpreis</h4>
-                          <p>Dies ist der Preis, zu dem Warren Buffett die Aktie als attraktive Investition betrachten würde.</p>
-                          <p>Berechnung: Innerer Wert × (1 - Margin of Safety)</p>
-                          <div className="border-t border-gray-200 pt-2 mt-2">
-                            <p className="font-medium">Beispiel:</p>
-                            <ul className="list-disc pl-4 text-sm">
-                              <li>Innerer Wert: 100€</li>
-                              <li>Margin of Safety: 20%</li>
-                              <li>Buffett-Kaufpreis: 80€</li>
-                            </ul>
-                          </div>
-                        </div>
+                        <BuffettBuyPriceTooltip 
+                          intrinsicValue={intrinsicValue} 
+                          bestBuyPrice={bestBuyPrice}
+                          targetMarginOfSafety={targetMarginOfSafety}
+                          currency={currency}
+                        />
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
