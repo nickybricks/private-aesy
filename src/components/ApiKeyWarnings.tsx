@@ -1,20 +1,41 @@
 
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, AlertTriangle } from 'lucide-react';
 import ApiKeyInput from './ApiKeyInput';
 import OpenAiKeyInput from './OpenAiKeyInput';
 
 interface ApiKeyWarningsProps {
   hasApiKey: boolean;
   hasGptApiKey: boolean;
+  hasApiKeyError?: boolean;
 }
 
-const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({ hasApiKey, hasGptApiKey }) => {
+const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({ 
+  hasApiKey, 
+  hasGptApiKey,
+  hasApiKeyError = false
+}) => {
   return (
     <>
+      {/* API-Key-Fehlermeldung anzeigen, wenn ein Fehler erkannt wurde */}
+      {hasApiKeyError && (
+        <div className="mb-8 animate-fade-in">
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>API-Key Problem erkannt</AlertTitle>
+            <AlertDescription>
+              Es scheint ein Problem mit Ihrem Financial Modeling Prep API-Key zu geben. 
+              Bitte überprüfen Sie Ihren API-Key unten und stellen Sie sicher, dass er gültig ist.
+            </AlertDescription>
+          </Alert>
+          
+          <ApiKeyInput />
+        </div>
+      )}
+      
       {/* Immer den FMP API-Key-Bereich anzeigen, wenn kein Key vorhanden ist */}
-      {!hasApiKey && (
+      {!hasApiKey && !hasApiKeyError && (
         <div className="mb-8 animate-fade-in">
           <Alert className="mb-4">
             <InfoIcon className="h-4 w-4" />
@@ -30,7 +51,7 @@ const ApiKeyWarnings: React.FC<ApiKeyWarningsProps> = ({ hasApiKey, hasGptApiKey
       )}
       
       {/* OpenAI API-Key nur anzeigen, wenn FMP-Key vorhanden, aber kein GPT-Key */}
-      {hasApiKey && !hasGptApiKey && (
+      {hasApiKey && !hasGptApiKey && !hasApiKeyError && (
         <div className="mb-8 animate-fade-in">
           <Alert className="mb-4">
             <InfoIcon className="h-4 w-4" />

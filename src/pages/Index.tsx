@@ -72,6 +72,8 @@ const Index = () => {
       if (event.detail && event.detail.error) {
         setHasApiKeyError(true);
         setError(`API-Key Fehler: ${event.detail.error}`);
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     };
     
@@ -112,9 +114,9 @@ const Index = () => {
   };
 
   const handleSearch = async (ticker: string) => {
-    setIsLoading(true);
     setError(null);
     setHasApiKeyError(false);
+    setIsLoading(true);
     
     try {
       setStockInfo(null);
@@ -259,6 +261,7 @@ const Index = () => {
           errorMessage.toLowerCase().includes('401') || 
           errorMessage.toLowerCase().includes('403')) {
         setHasApiKeyError(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       
       let enhancedErrorMessage = errorMessage;
@@ -318,6 +321,7 @@ const Index = () => {
       <ApiKeyWarnings 
         hasApiKey={hasApiKey}
         hasGptApiKey={hasGptApiKey}
+        hasApiKeyError={hasApiKeyError}
       />
       
       <StockSearch 
@@ -327,7 +331,7 @@ const Index = () => {
         hasApiKeyError={hasApiKeyError} 
       />
       
-      {error && (
+      {error && !hasApiKeyError && (
         <Alert variant="destructive" className="mb-6">
           <InfoIcon className="h-4 w-4" />
           <AlertTitle>Fehler bei der Datenabfrage</AlertTitle>

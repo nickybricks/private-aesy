@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ExternalLink, AlertTriangle, KeyRound, ShieldCheck } from 'lucide-react';
+import { ExternalLink, AlertTriangle, KeyRound, ShieldCheck, HelpCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { validateApiKey } from '@/api/stockApi';
 
@@ -25,6 +25,13 @@ const ApiKeyInput = () => {
       if (event.detail && event.detail.error) {
         setKeyError(event.detail.error);
         setIsSaved(false);
+        
+        // Benachrichtigung anzeigen
+        toast({
+          title: "API-Key Fehler",
+          description: event.detail.error,
+          variant: "destructive",
+        });
       }
     };
     
@@ -33,7 +40,7 @@ const ApiKeyInput = () => {
     return () => {
       window.removeEventListener('fmp_api_key_error', handleApiKeyError as EventListener);
     };
-  }, []);
+  }, [toast]);
 
   // Funktion zum Überprüfen des API-Keys im localStorage
   const checkForApiKey = () => {
@@ -179,7 +186,7 @@ const ApiKeyInput = () => {
   };
 
   return (
-    <Card>
+    <Card className={keyError ? "border-red-300 shadow-sm" : ""}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <KeyRound className="h-5 w-5" />
@@ -197,7 +204,15 @@ const ApiKeyInput = () => {
               <AlertTitle>API-Key Fehler</AlertTitle>
               <AlertDescription>
                 <p>{keyError}</p>
-                <p className="mt-2">Bitte aktualisieren Sie Ihren API-Key oder registrieren Sie sich für einen neuen unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="font-medium underline">financialmodelingprep.com</a>.</p>
+                <div className="mt-2 space-y-2">
+                  <p className="font-medium">Mögliche Lösungen:</p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>Überprüfen Sie, ob Sie den Key korrekt kopiert haben (ohne Leerzeichen)</li>
+                    <li>Stellen Sie sicher, dass Ihr API-Key aktiv und nicht abgelaufen ist</li>
+                    <li>Bei kostenloser Version: Das tägliche API-Limit könnte überschritten sein</li>
+                    <li>Registrieren Sie sich für einen neuen API-Key unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="font-medium underline">financialmodelingprep.com</a></li>
+                  </ul>
+                </div>
               </AlertDescription>
             </Alert>
           )}
@@ -225,15 +240,21 @@ const ApiKeyInput = () => {
                 if (isObfuscated) {
                   setIsObfuscated(false);
                 }
+                if (keyError) {
+                  setKeyError(null);
+                }
               }}
               onFocus={handleInputFocus}
               placeholder="Ihren API-Key hier eingeben"
-              className="w-full"
+              className={`w-full ${keyError ? "border-red-300" : ""}`}
               disabled={isValidating}
             />
           </div>
           <div className="text-sm text-buffett-subtext border p-4 rounded-md bg-gray-50">
-            <h4 className="font-medium mb-2">So erhalten Sie einen API-Key:</h4>
+            <h4 className="font-medium mb-2 flex items-center">
+              <HelpCircle className="h-4 w-4 mr-1" />
+              So erhalten Sie einen API-Key:
+            </h4>
             <ol className="list-decimal ml-5 space-y-1">
               <li>Besuchen Sie <a href="https://financialmodelingprep.com/register" target="_blank" rel="noopener noreferrer" className="text-buffett-blue hover:underline">financialmodelingprep.com/register</a></li>
               <li>Erstellen Sie ein kostenloses Konto</li>
