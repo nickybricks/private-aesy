@@ -6,7 +6,8 @@ import {
   XCircle,
   BarChart3,
   TrendingDown,
-  Eye
+  Eye,
+  DollarSign
 } from 'lucide-react';
 
 type Rating = 'buy' | 'watch' | 'avoid';
@@ -81,7 +82,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         </div>
       </div>
       
-      <div className="mb-6 grid grid-cols-1 gap-4">
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         {buffettScore !== undefined && (
           <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
@@ -142,9 +143,12 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           </div>
           <div className="text-lg font-medium">{decisionFactor}</div>
           
-          {bestBuyPrice && overall !== 'buy' && (
+          {bestBuyPrice && (
             <div className="mt-3 pt-3 border-t border-gray-200">
-              <div className="text-sm font-medium">Empfohlener Kaufpreis:</div>
+              <div className="flex items-center gap-2 mb-1">
+                <DollarSign size={16} className="text-buffett-green" />
+                <div className="text-sm font-medium">Empfohlener Kaufpreis:</div>
+              </div>
               <div className="text-lg font-bold text-buffett-green">{bestBuyPrice.toFixed(2)} €</div>
             </div>
           )}

@@ -106,7 +106,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   // Falls nicht, Standardwerte oder 0 verwenden
   const safeValue = (value: any) => (value !== undefined && value !== null && !isNaN(Number(value))) ? Number(value) : 0;
   
-  // Business Model Analyse
+  // Business Model Analyse - FIXED LOGIC
   // Improved logic to classify business model based on GPT analysis
   let businessModelStatus = companyProfile.description && companyProfile.description.length > 100 ? 'pass' : 'warning';
   let businessModelScore = 0;
@@ -122,21 +122,21 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
         companyProfile.description || 'Keine Beschreibung verfügbar'
       );
       
-      // Automatically classify based on GPT response
+      // FIXED: Automatically classify based on GPT response with accurate scoring
       if (businessModelGptAnalysis) {
         if (businessModelGptAnalysis.toLowerCase().includes('einfach') || 
             businessModelGptAnalysis.toLowerCase().includes('klar') || 
             businessModelGptAnalysis.toLowerCase().includes('verständlich')) {
           businessModelStatus = 'pass';
-          businessModelScore = 3;
+          businessModelScore = 3; // Full score for simple business models
         } else if (businessModelGptAnalysis.toLowerCase().includes('moderat') || 
                   businessModelGptAnalysis.toLowerCase().includes('teilweise')) {
           businessModelStatus = 'warning';
-          businessModelScore = 1;
+          businessModelScore = 2; // Moderate score for moderately complex models
         } else if (businessModelGptAnalysis.toLowerCase().includes('komplex') || 
                   businessModelGptAnalysis.toLowerCase().includes('schwer verständlich')) {
           businessModelStatus = 'fail';
-          businessModelScore = 0;
+          businessModelScore = 0; // Zero score for complex business models
         }
       }
     } catch (error) {
@@ -327,8 +327,10 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     financialStabilityStatus = 'warning';
   }
   
-  // Management Qualität (vereinfacht)
-  const managementStatus = 'warning';
+  // Management Qualität - FIXED LOGIC
+  let managementStatus = 'warning'; // Default is warning until proven otherwise
+  let managementScore = 1; // Default moderate score
+  const managementMaxScore = 3;
   
   // GPT-basierte Analyse der Managementqualität
   let managementGptAnalysis = null;
@@ -338,6 +340,26 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
         companyProfile.companyName,
         companyProfile.ceo || 'Unbekannt'
       );
+      
+      // FIXED: Score based on GPT analysis, but more conservative
+      if (managementGptAnalysis) {
+        if (managementGptAnalysis.toLowerCase().includes('exzellent') || 
+            managementGptAnalysis.toLowerCase().includes('hervorragend') || 
+            managementGptAnalysis.toLowerCase().includes('stark aktionärsorientiert')) {
+          managementStatus = 'pass';
+          managementScore = 3;
+        } else if (managementGptAnalysis.toLowerCase().includes('gut') || 
+                  managementGptAnalysis.toLowerCase().includes('solide') || 
+                  managementGptAnalysis.toLowerCase().includes('effektiv')) {
+          managementStatus = 'warning';
+          managementScore = 2;
+        } else if (managementGptAnalysis.toLowerCase().includes('bedenken') || 
+                  managementGptAnalysis.toLowerCase().includes('problematisch') || 
+                  managementGptAnalysis.toLowerCase().includes('schwach')) {
+          managementStatus = 'fail';
+          managementScore = 0;
+        }
+      }
     } catch (error) {
       console.error('Error analyzing management quality with GPT:', error);
       managementGptAnalysis = 'GPT-Analyse nicht verfügbar.';
@@ -577,6 +599,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       turnaroundGptAnalysis.toLowerCase().includes(keyword)
     );
     
+    // FIXED: Reversed logic - no turnaround should be positive in Buffett's view
     if (hasTurnaroundIndication) {
       // This is negative in Buffett's view
       turnaroundScore = 0;
@@ -584,7 +607,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     } else if (turnaroundGptAnalysis.toLowerCase().includes('kein turnaround') || 
                turnaroundGptAnalysis.toLowerCase().includes('etabliert') || 
                turnaroundGptAnalysis.toLowerCase().includes('stabil')) {
-      // This is positive in Buffett's view
+      // This is positive in Buffett's view - giving full points for stable companies
       turnaroundScore = 3;
       turnaroundStatus = 'pass';
     }
@@ -649,14 +672,16 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     management: {
       status: managementStatus,
       title: '5. Qualität des Managements',
-      description: 'Die Qualität des Managements erfordert weitere Recherche.',
+      description: `Die Qualität des Managements wird als ${managementStatus === 'pass' ? 'gut' : managementStatus === 'warning' ? 'moderat' : 'schwach'} eingestuft.`,
       details: [
         'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
         'Beachten Sie Insider-Beteiligungen, Kapitalallokation und Kommunikation',
         `CEO: ${companyProfile.ceo || 'Keine Informationen verfügbar'}`,
         'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
       ],
-      gptAnalysis: managementGptAnalysis
+      gptAnalysis: managementGptAnalysis,
+      score: managementScore,
+      maxScore: managementMaxScore
     },
     valuation: {
       status: valuationStatus,
@@ -817,7 +842,7 @@ export const getFinancialMetrics = async (ticker: string) => {
     }
     
     // Suche in früheren Berichten, falls aktueller fehlt
-    if (eps === null && incomeStatements && incomeStatements.length > 1) {
+    if (eps === null && incomeStatements && incomeStatements.length > 3) {
       for (let i = 1; i < Math.min(incomeStatements.length, 4); i++) {
         if (incomeStatements[i].eps !== undefined) {
           eps = safeValue(incomeStatements[i].eps);

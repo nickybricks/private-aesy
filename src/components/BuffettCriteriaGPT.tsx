@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Info } from 'lucide-react';
+import { Bot, Info, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -64,11 +64,16 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
     return null;
   }
   
+  // Added tooltip with detailed explanation
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger className="inline-flex items-center ml-2">
-          <span className="text-xs font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+          <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+            criterion.score / criterion.maxScore >= 0.7 ? 'bg-green-100 text-green-700' :
+            criterion.score / criterion.maxScore >= 0.4 ? 'bg-yellow-100 text-yellow-700' :
+            'bg-red-100 text-red-700'
+          }`}>
             {criterion.score}/{criterion.maxScore}
           </span>
           <Info className="h-3 w-3 ml-1 text-gray-400" />
@@ -76,11 +81,38 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
         <TooltipContent className="max-w-xs">
           <p className="text-xs">
             Punktzahl basierend auf der Analyse der Unterkategorien dieses Kriteriums.
+            {criterion.title === '1. Verstehbares Geschäftsmodell' && 
+              ' Einfache Geschäftsmodelle erhalten 3/3, moderate 2/3 und komplexe 0/3 Punkte.'}
+            {criterion.title === '11. Keine Turnarounds' && 
+              ' Hier gilt: Keine Umstrukturierung = 3/3, leichte Umstrukturierung = 1/3, klarer Turnaround = 0/3 Punkte.'}
           </p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
+};
+
+// Helper function to detect inconsistencies between GPT analysis and score
+const hasInconsistentAnalysis = (criterion: BuffettCriterionProps): boolean => {
+  if (!criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
+    return false;
+  }
+  
+  const gptAnalysis = criterion.gptAnalysis.toLowerCase();
+  const scoreRatio = criterion.score / criterion.maxScore;
+  
+  // Check specific inconsistencies
+  if (criterion.title === '1. Verstehbares Geschäftsmodell') {
+    if (gptAnalysis.includes('moderat') && scoreRatio > 0.7) return true;
+    if (gptAnalysis.includes('komplex') && scoreRatio > 0.3) return true;
+  }
+  
+  if (criterion.title === '11. Keine Turnarounds') {
+    if (gptAnalysis.includes('kein turnaround') && scoreRatio < 0.7) return true;
+    if ((gptAnalysis.includes('umstrukturierung') || gptAnalysis.includes('turnaround')) && scoreRatio > 0.3) return true;
+  }
+  
+  return false;
 };
 
 // Helper function to extract key insights from GPT analysis
@@ -172,6 +204,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {allCriteria.map((criterion, index) => {
           const { summary, points } = extractKeyInsights(criterion.gptAnalysis);
+          const hasInconsistency = hasInconsistentAnalysis(criterion);
           
           return (
             <Card key={index} className={`border-l-4 ${getStatusColor(criterion.status)}`}>
@@ -180,6 +213,20 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                   <div className="flex items-center">
                     <CardTitle className="text-lg">{criterion.title}</CardTitle>
                     {getScoreDisplay(criterion)}
+                    {hasInconsistency && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger className="ml-2">
+                            <AlertCircle size={16} className="text-amber-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs max-w-xs">
+                              Mögliche Inkonsistenz zwischen GPT-Analyse und Bewertung. Prüfen Sie die Details genauer.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </div>
                   {getStatusBadge(criterion.status)}
                 </div>
