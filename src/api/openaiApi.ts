@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 
 // OpenAI API Key - Fest im Code eingebaut
@@ -9,6 +10,7 @@ const getOpenAiApiKey = () => {
 };
 
 export const hasOpenAiApiKey = (): boolean => {
+  // Change comparison to check if API key is not empty instead of comparing to a specific value
   return OPENAI_API_KEY !== '';
 };
 
