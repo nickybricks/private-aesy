@@ -4,17 +4,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, AlertTriangle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const ApiKeyInput = () => {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState('');
   const [isSaved, setIsSaved] = useState(false);
   const [isObfuscated, setIsObfuscated] = useState(false);
+  const [keyError, setKeyError] = useState<string | null>(null);
 
   useEffect(() => {
     // Beim ersten Laden der Komponente nach API-Key suchen
     checkForApiKey();
+    
+    // Event-Listener für API-Key-Fehler
+    const handleApiKeyError = (event: CustomEvent) => {
+      if (event.detail && event.detail.error) {
+        setKeyError(event.detail.error);
+        setIsSaved(false);
+      }
+    };
+    
+    window.addEventListener('fmp_api_key_error', handleApiKeyError as EventListener);
+    
+    return () => {
+      window.removeEventListener('fmp_api_key_error', handleApiKeyError as EventListener);
+    };
   }, []);
 
   // Funktion zum Überprüfen des API-Keys im localStorage
@@ -66,6 +82,7 @@ const ApiKeyInput = () => {
       setIsSaved(true);
       setApiKey('••••••••••••••••••••••••');
       setIsObfuscated(true);
+      setKeyError(null);
       
       // Benutzerdefiniertes Event auslösen, um andere Komponenten zu benachrichtigen
       window.dispatchEvent(new CustomEvent('fmp_api_key_change', {
@@ -92,6 +109,7 @@ const ApiKeyInput = () => {
       setApiKey('');
       setIsSaved(false);
       setIsObfuscated(false);
+      setKeyError(null);
       
       // Benutzerdefiniertes Event auslösen
       window.dispatchEvent(new CustomEvent('fmp_api_key_change', {
@@ -129,6 +147,17 @@ const ApiKeyInput = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {keyError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>API-Key Fehler</AlertTitle>
+              <AlertDescription>
+                <p>{keyError}</p>
+                <p className="mt-2">Bitte aktualisieren Sie Ihren API-Key oder registrieren Sie sich für einen neuen.</p>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div>
             <label htmlFor="api-key" className="text-sm font-medium mb-2 block">
               Financial Modeling Prep API-Key

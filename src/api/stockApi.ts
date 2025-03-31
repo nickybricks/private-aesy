@@ -36,31 +36,37 @@ const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 const handleApiError = (error: any, ticker: string) => {
   console.error('Error fetching data from FMP:', error);
   
+  let errorMessage = '';
+  
   if (axios.isAxiosError(error)) {
     if (error.response?.status === 401 || error.response?.status === 403) {
-      throw new Error(`API-Key ist ungültig oder abgelaufen. Bitte überprüfen Sie Ihren Key oder registrieren Sie sich für einen neuen unter financialmodelingprep.com.`);
-    }
-    
-    if (error.response?.status === 429) {
-      throw new Error(`API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen möglich. Bitte versuchen Sie es später erneut.`);
-    }
-    
-    if (error.response?.status === 404) {
+      errorMessage = `API-Key ist ungültig oder abgelaufen. Bitte überprüfen Sie Ihren Key oder registrieren Sie sich für einen neuen unter financialmodelingprep.com.`;
+      
+      // Benachrichtige UI-Komponenten über ungültigen API-Key
+      window.dispatchEvent(new CustomEvent('fmp_api_key_error', {
+        detail: { 
+          error: errorMessage 
+        }
+      }));
+    } else if (error.response?.status === 429) {
+      errorMessage = `API-Limit überschritten. Bei kostenlosem API-Key sind nur begrenzte Anfragen möglich. Bitte versuchen Sie es später erneut.`;
+    } else if (error.response?.status === 404) {
       // Spezielle Behandlung für deutsche Aktien
       if (ticker.endsWith('.DE')) {
-        throw new Error(`Symbol ${ticker} wurde nicht gefunden. Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie ein anderes Symbol oder verwenden Sie die internationale Notierung.`);
+        errorMessage = `Symbol ${ticker} wurde nicht gefunden. Die Financial Modeling Prep API unterstützt möglicherweise nicht alle deutschen Aktien. Versuchen Sie ein anderes Symbol oder verwenden Sie die internationale Notierung.`;
+      } else {
+        errorMessage = `Symbol ${ticker} wurde nicht gefunden. Bitte überprüfen Sie das Aktiensymbol und versuchen Sie es erneut.`;
       }
-      
-      throw new Error(`Symbol ${ticker} wurde nicht gefunden. Bitte überprüfen Sie das Aktiensymbol und versuchen Sie es erneut.`);
+    } else {
+      errorMessage = `Fehler bei API-Anfrage: ${error.response?.status || 'Unbekannter Status'}. Bitte versuchen Sie es später erneut.`;
     }
+  } else if (error.message && error.message.includes('Network Error')) {
+    errorMessage = `Netzwerkfehler beim Abrufen der Daten. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.`;
+  } else {
+    errorMessage = `Fehler beim Abrufen von Daten. Bitte überprüfen Sie Ihren API-Key oder versuchen Sie es später erneut.`;
   }
   
-  // Überprüfen, ob es ein Netzwerkfehler ist
-  if (error.message && error.message.includes('Network Error')) {
-    throw new Error(`Netzwerkfehler beim Abrufen der Daten. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.`);
-  }
-  
-  throw new Error(`Fehler beim Abrufen von Daten. Bitte überprüfen Sie Ihren API-Key oder versuchen Sie es später erneut.`);
+  throw new Error(errorMessage);
 };
 
 // Hilfsfunktion, um API-Anfragen zu machen
@@ -77,6 +83,11 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
       },
       timeout: 10000 // 10 Sekunden Timeout für bessere Fehlermeldungen
     });
+    
+    // API-Fehler mit Status 200 prüfen (bei einigen APIs üblich)
+    if (response.data && response.data.error) {
+      throw new Error(response.data.error);
+    }
     
     // Überprüfen, ob die Antwort leer oder ungültig ist
     if (!response.data || (Array.isArray(response.data) && response.data.length === 0)) {

@@ -77,6 +77,9 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     { symbol: 'ALV.DE', name: 'Allianz' },
     { symbol: 'SIE.DE', name: 'Siemens' },
     { symbol: 'DAI.DE', name: 'Daimler' },
+    { symbol: 'VOW3.DE', name: 'Volkswagen' },
+    { symbol: 'DTE.DE', name: 'Deutsche Telekom' },
+    { symbol: 'BAYN.DE', name: 'Bayer' },
   ];
 
   return (
@@ -152,6 +155,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
               <p>Dieses Tool verwendet die Financial Modeling Prep API. Sie benötigen einen gültigen API-Schlüssel, um die Anwendung zu nutzen.</p>
               <p className="mt-2">Registrieren Sie sich für einen kostenlosen API-Schlüssel unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">financialmodelingprep.com</a>.</p>
+              <p className="mt-2 text-amber-600 font-medium">Hinweis: Nicht alle deutschen Aktien werden von der Financial Modeling Prep API unterstützt.</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
