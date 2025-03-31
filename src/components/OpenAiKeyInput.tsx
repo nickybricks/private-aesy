@@ -11,26 +11,16 @@ const OpenAiKeyInput: React.FC = () => {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [isObfuscated, setIsObfuscated] = useState(false);
 
   useEffect(() => {
-    // Prüfen, ob bereits ein Key im LocalStorage existiert
-    const savedKey = localStorage.getItem('openai_api_key');
-    if (savedKey) {
-      setApiKey('••••••••••••••••••••••••');
-      setIsSaved(true);
-    }
+    // Check if an API key exists in localStorage
+    checkForApiKey();
     
-    // Event-Listener für Storage-Änderungen hinzufügen
+    // Add event listener for storage changes
     const handleStorageChange = (e) => {
       if (e.key === 'openai_api_key') {
-        const newValue = e.newValue;
-        if (newValue) {
-          setApiKey('••••••••••••••••••••••••');
-          setIsSaved(true);
-        } else {
-          setApiKey('');
-          setIsSaved(false);
-        }
+        checkForApiKey();
       }
     };
     
@@ -38,8 +28,31 @@ const OpenAiKeyInput: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // Function to check for API key in localStorage
+  const checkForApiKey = () => {
+    try {
+      const savedKey = localStorage.getItem('openai_api_key');
+      if (savedKey) {
+        setApiKey(isObfuscated ? '••••••••••••••••••••••••' : savedKey);
+        setIsSaved(true);
+        if (!isObfuscated) {
+          setIsObfuscated(true);
+        }
+      } else {
+        setApiKey('');
+        setIsSaved(false);
+        setIsObfuscated(false);
+      }
+    } catch (error) {
+      console.error('Error accessing localStorage:', error);
+      setApiKey('');
+      setIsSaved(false);
+      setIsObfuscated(false);
+    }
+  };
+
   const handleSaveKey = () => {
-    if (!apiKey || apiKey.trim() === '') {
+    if (!apiKey || apiKey.trim() === '' || apiKey === '••••••••••••••••••••••••') {
       toast({
         title: "Fehler",
         description: "Bitte geben Sie einen API-Key ein.",
@@ -48,7 +61,7 @@ const OpenAiKeyInput: React.FC = () => {
       return;
     }
 
-    // Einfache Validierung für OpenAI API-Keys
+    // Simple validation for OpenAI API keys
     if (!apiKey.startsWith('sk-')) {
       toast({
         title: "Fehler",
@@ -66,13 +79,15 @@ const OpenAiKeyInput: React.FC = () => {
       });
       setApiKey('••••••••••••••••••••••••');
       setIsSaved(true);
+      setIsObfuscated(true);
       
-      // Storage-Event manuell auslösen
+      // Manually trigger storage event
       window.dispatchEvent(new StorageEvent('storage', {
         key: 'openai_api_key',
         newValue: 'set'
       }));
     } catch (error) {
+      console.error('Error saving to localStorage:', error);
       toast({
         title: "Fehler",
         description: "Der API-Key konnte nicht gespeichert werden.",
@@ -82,20 +97,37 @@ const OpenAiKeyInput: React.FC = () => {
   };
 
   const handleRemoveKey = () => {
-    localStorage.removeItem('openai_api_key');
-    setApiKey('');
-    setIsSaved(false);
-    
-    // Storage-Event manuell auslösen
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'openai_api_key',
-      newValue: null
-    }));
-    
-    toast({
-      title: 'API-Key entfernt',
-      description: 'Ihr OpenAI API-Key wurde entfernt.',
-    });
+    try {
+      localStorage.removeItem('openai_api_key');
+      setApiKey('');
+      setIsSaved(false);
+      setIsObfuscated(false);
+      
+      // Manually trigger storage event
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'openai_api_key',
+        newValue: null
+      }));
+      
+      toast({
+        title: 'API-Key entfernt',
+        description: 'Ihr OpenAI API-Key wurde entfernt.',
+      });
+    } catch (error) {
+      console.error('Error removing from localStorage:', error);
+      toast({
+        title: "Fehler",
+        description: "Der API-Key konnte nicht entfernt werden.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleInputFocus = () => {
+    if (isSaved && isObfuscated) {
+      setApiKey('');
+      setIsObfuscated(false);
+    }
   };
 
   return (
@@ -119,7 +151,13 @@ const OpenAiKeyInput: React.FC = () => {
             type="password"
             placeholder={isSaved ? "API-Key gespeichert" : "sk-..."}
             value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
+            onChange={(e) => {
+              setApiKey(e.target.value);
+              if (isObfuscated) {
+                setIsObfuscated(false);
+              }
+            }}
+            onFocus={handleInputFocus}
             className="mt-2"
           />
         </div>

@@ -67,16 +67,22 @@ const Index = () => {
   }, []);
   
   const checkApiKeys = () => {
-    const fmpApiKey = localStorage.getItem('fmp_api_key');
-    const openAiKey = localStorage.getItem('openai_api_key');
-    
-    setHasApiKey(!!fmpApiKey);
-    setHasGptApiKey(!!openAiKey);
-    
-    console.log('API-Keys geprüft:', { 
-      fmp: !!fmpApiKey, 
-      openai: !!openAiKey 
-    });
+    try {
+      const fmpApiKey = localStorage.getItem('fmp_api_key');
+      const openAiKey = localStorage.getItem('openai_api_key');
+      
+      setHasApiKey(!!fmpApiKey);
+      setHasGptApiKey(!!openAiKey);
+      
+      console.log('API-Keys geprüft:', { 
+        fmp: !!fmpApiKey, 
+        openai: !!openAiKey 
+      });
+    } catch (error) {
+      console.error('Error checking API keys:', error);
+      setHasApiKey(false);
+      setHasGptApiKey(false);
+    }
   };
 
   const handleSearch = async (ticker: string) => {

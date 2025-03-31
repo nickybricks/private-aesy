@@ -1,26 +1,40 @@
-
 import axios from 'axios';
 
 // OpenAI API Key handling
 const getOpenAiApiKey = () => {
-  const savedApiKey = localStorage.getItem('openai_api_key');
-  if (savedApiKey) {
-    return savedApiKey;
+  try {
+    const savedApiKey = localStorage.getItem('openai_api_key');
+    if (savedApiKey) {
+      return savedApiKey;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error accessing localStorage for OpenAI API key:', error);
+    return null;
   }
-  return null;
 };
 
 export const setOpenAiApiKey = (key: string) => {
-  localStorage.setItem('openai_api_key', key);
-  // Wir lösen ein Storage-Event aus, damit andere Komponenten darauf reagieren können
-  window.dispatchEvent(new StorageEvent('storage', {
-    key: 'openai_api_key',
-    newValue: key
-  }));
+  try {
+    localStorage.setItem('openai_api_key', key);
+    // Trigger a storage event so other components can react
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'openai_api_key',
+      newValue: key
+    }));
+  } catch (error) {
+    console.error('Error setting OpenAI API key in localStorage:', error);
+    throw new Error('Failed to save API key. Your browser may be blocking localStorage access.');
+  }
 };
 
 export const hasOpenAiApiKey = (): boolean => {
-  return !!localStorage.getItem('openai_api_key');
+  try {
+    return !!localStorage.getItem('openai_api_key');
+  } catch (error) {
+    console.error('Error checking for OpenAI API key in localStorage:', error);
+    return false;
+  }
 };
 
 // OpenAI API Service
