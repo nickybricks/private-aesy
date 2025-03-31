@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   CheckCircle, 
@@ -7,8 +8,16 @@ import {
   TrendingDown,
   Eye,
   DollarSign,
-  Calculator
+  Calculator,
+  HelpCircle,
+  Info
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Rating = 'buy' | 'watch' | 'avoid';
 
@@ -190,21 +199,100 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {intrinsicValue && (
               <div className="border-r border-gray-100 pr-4">
-                <div className="text-sm text-gray-600 mb-1">Innerer Wert (berechnet):</div>
+                <div className="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                  Innerer Wert (berechnet):
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+                          <HelpCircle size={14} className="text-gray-500" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <div className="space-y-2">
+                          <h4 className="font-semibold">Der innere Wert (Intrinsic Value)</h4>
+                          <p>Der innere Wert einer Aktie ist der geschätzte "wahre" Wert, basierend auf:</p>
+                          <ul className="list-disc pl-4">
+                            <li>Zukünftigen Cashflows (DCF)</li>
+                            <li>Gewinnwachstum</li>
+                            <li>Dividendenentwicklung</li>
+                            <li>Geschäftsqualität</li>
+                          </ul>
+                          <p>Der DCF-Wert wird konservativ berechnet mit:</p>
+                          <ul className="list-disc pl-4">
+                            <li>Historischen Free Cashflows als Basis</li>
+                            <li>8% Abzinsung (Discount Rate)</li>
+                            <li>3% langfristiges Wachstum</li>
+                          </ul>
+                          <p className="text-xs italic">Buffetts Leitsatz: "Preis ist was du zahlst, Wert ist was du bekommst."</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <div className="text-xl font-bold">{intrinsicValue.toFixed(2)} {currency}</div>
                 <div className="text-xs text-gray-500 mt-1">Basierend auf DCF-Analyse</div>
               </div>
             )}
             
             <div className="border-r border-gray-100 pr-4">
-              <div className="text-sm text-gray-600 mb-1">Ziel-Margin of Safety:</div>
+              <div className="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                Ziel-Margin of Safety:
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+                        <Info size={14} className="text-gray-500" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <div className="space-y-2">
+                        <h4 className="font-semibold">Was ist die "Margin of Safety"?</h4>
+                        <p>Ein Sicherheitspuffer zwischen Kaufpreis und innerem Wert, der:</p>
+                        <ul className="list-disc pl-4">
+                          <li>Vor Bewertungsfehlern schützt</li>
+                          <li>Langfristig höhere Renditen ermöglicht</li>
+                          <li>Verlustrisiko minimiert</li>
+                        </ul>
+                        <p>Buffett und Graham empfehlen mindestens 20-30% Margin of Safety für Investments.</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="text-xl font-bold">{targetMarginOfSafety}%</div>
               <div className="text-xs text-gray-500 mt-1">Nach Buffett-Prinzip</div>
             </div>
             
             {bestBuyPrice && (
               <div>
-                <div className="text-sm text-gray-600 mb-1">Buffett-Kaufpreis:</div>
+                <div className="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                  Buffett-Kaufpreis:
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+                          <Info size={14} className="text-gray-500" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <div className="space-y-2">
+                          <h4 className="font-semibold">Der Buffett-Kaufpreis</h4>
+                          <p>Dies ist der Preis, zu dem Warren Buffett die Aktie als attraktive Investition betrachten würde.</p>
+                          <p>Berechnung: Innerer Wert × (1 - Margin of Safety)</p>
+                          <div className="border-t border-gray-200 pt-2 mt-2">
+                            <p className="font-medium">Beispiel:</p>
+                            <ul className="list-disc pl-4 text-sm">
+                              <li>Innerer Wert: 100€</li>
+                              <li>Margin of Safety: 20%</li>
+                              <li>Buffett-Kaufpreis: 80€</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <div className="text-xl font-bold">{bestBuyPrice.toFixed(2)} {currency}</div>
                 <div className="text-xs text-gray-500 mt-1">
                   {intrinsicValue 
