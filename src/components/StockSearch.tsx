@@ -30,7 +30,6 @@ interface StockSuggestion {
   isin?: string;
 }
 
-// Fallback suggested stocks if API fails
 const fallbackStocks = [
   { name: 'Apple', symbol: 'AAPL' },
   { name: 'Microsoft', symbol: 'MSFT' },
@@ -46,7 +45,6 @@ const fallbackStocks = [
   { name: 'Siemens', symbol: 'SIE.DE' },
 ];
 
-// Popular stocks for quick access buttons
 const quickAccessStocks = [
   { name: 'Apple', symbol: 'AAPL' },
   { name: 'Microsoft', symbol: 'MSFT' },
@@ -56,50 +54,43 @@ const quickAccessStocks = [
   { name: 'Adidas', symbol: 'ADS.DE' },
 ];
 
-// ISIN patterns for major markets
 const isinPattern = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
 
-// Common German ISINs for quick detection
 const commonGermanIsins: Record<string, string> = {
-  "DE000A1EWWW0": "ADS.DE", // Adidas
-  "DE000BASF111": "BAS.DE", // BASF
-  "DE0005190003": "BMW.DE", // BMW
-  "DE0007100000": "DAI.DE", // Mercedes-Benz
-  "DE0007664039": "VOW3.DE", // Volkswagen
-  "DE0008404005": "ALV.DE", // Allianz
-  "DE0007164600": "SAP.DE", // SAP
-  "DE0007236101": "SIE.DE", // Siemens
-  "DE000ENAG999": "EOAN.DE", // E.ON
-  "DE0005557508": "DTE.DE", // Deutsche Telekom
-  "DE000ENER6Y0": "ENR.DE", // Siemens Energy
+  "DE000A1EWWW0": "ADS.DE",
+  "DE000BASF111": "BAS.DE",
+  "DE0005190003": "BMW.DE",
+  "DE0007100000": "DAI.DE",
+  "DE0007664039": "VOW3.DE",
+  "DE0008404005": "ALV.DE",
+  "DE0007164600": "SAP.DE",
+  "DE0007236101": "SIE.DE",
+  "DE000ENAG999": "EOAN.DE",
+  "DE0005557508": "DTE.DE",
+  "DE000ENER6Y0": "ENR.DE",
 };
 
-// List of excluded asset types
 const excludedAssetTypes = ['etf', 'crypto', 'mutual fund', 'trust', 'forex', 'commodity', 'index', 'bond', 'fund', 'reit', 'warrant', 'etn'];
 
-// Cryptocurrency keywords and patterns for more thorough filtering
 const cryptoKeywords = ['bitcoin', 'ethereum', 'crypto', 'token', 'coin', 'blockchain', 'defi', 'nft'];
 const cryptoSymbolPatterns = [
-  /^[A-Z0-9]{3,4}-[A-Z]{3}$/, // Format like BTC-USD
-  /^[A-Z0-9]{1,5}USDT$/,     // Format like BTCUSDT
-  /^[A-Z0-9]{1,5}USD$/,      // Format like BTCUSD
-  /COIN$/,                   // Ends with COIN
-  /TOKEN$/                   // Ends with TOKEN
+  /^[A-Z0-9]{3,4}-[A-Z]{3}$/,
+  /^[A-Z0-9]{1,5}USDT$/,
+  /^[A-Z0-9]{1,5}USD$/,
+  /COIN$/,
+  /TOKEN$/
 ];
 
-// Function to check if an asset is likely a crypto
 const isCryptoAsset = (stock: StockSuggestion): boolean => {
   if (!stock.name || !stock.symbol) return false;
   
   const nameLower = stock.name.toLowerCase();
   const symbolLower = stock.symbol.toLowerCase();
   
-  // Check against crypto keywords in name
   if (cryptoKeywords.some(keyword => nameLower.includes(keyword))) {
     return true;
   }
   
-  // Check symbol patterns common for crypto
   if (symbolLower.includes('btc') || 
       symbolLower.includes('eth') || 
       symbolLower.includes('usdt') ||
@@ -110,7 +101,6 @@ const isCryptoAsset = (stock: StockSuggestion): boolean => {
     return true;
   }
   
-  // Check for cryptocurrency exchanges
   if (stock.stockExchange && 
       (stock.stockExchange.toLowerCase().includes('crypto') || 
        stock.stockExchange.toLowerCase().includes('binance') || 
@@ -118,7 +108,6 @@ const isCryptoAsset = (stock: StockSuggestion): boolean => {
     return true;
   }
   
-  // Check type field if available
   if (stock.type && 
       (stock.type.toLowerCase().includes('crypto') || 
        stock.type.toLowerCase().includes('token') || 
@@ -139,26 +128,21 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const [isSearching, setIsSearching] = useState(false);
   const [isinResults, setIsinResults] = useState<StockSuggestion | null>(null);
   const { toast } = useToast();
-  
-  // Detect if input looks like an ISIN and search for it
+
   useEffect(() => {
     if (isinPattern.test(searchQuery)) {
       handleIsinSearch(searchQuery);
     }
   }, [searchQuery]);
 
-  // Handle ISIN search - modified to add suggestions instead of directly setting ticker
   const handleIsinSearch = async (possibleIsin: string) => {
-    // Check if it's a common German ISIN we know
     if (commonGermanIsins[possibleIsin]) {
       const symbol = commonGermanIsins[possibleIsin];
-      // Add this as a suggestion instead of setting directly
       const isinStock: StockSuggestion = {
         symbol: symbol,
-        name: `ISIN: ${possibleIsin}`, // We'll update this with real name if we can find it
+        name: `ISIN: ${possibleIsin}`,
       };
       
-      // Try to find a better name for this stock
       const matchingFallback = fallbackStocks.find(stock => stock.symbol === symbol);
       if (matchingFallback) {
         isinStock.name = matchingFallback.name;
@@ -166,18 +150,15 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       setIsinResults(isinStock);
       
-      // Add a toast to inform the user
       toast({
         title: "ISIN erkannt",
         description: `ISIN ${possibleIsin} wurde gefunden. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
       });
       
-      // Force the dropdown to be open
       setOpen(true);
       return;
     }
     
-    // Otherwise try to look it up via API if we have a key
     try {
       const apiKey = localStorage.getItem('fmp_api_key');
       if (!apiKey) return;
@@ -208,33 +189,27 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       setIsSearching(false);
     }
   };
-  
-  // Function to prioritize and sort search results
+
   const prioritizeResults = (results: StockSuggestion[]): StockSuggestion[] => {
     if (!results.length) return [];
     
-    // First, filter out non-stock assets
     const filteredResults = results.filter(stock => {
-      // Filter out crypto assets with the comprehensive function
       if (isCryptoAsset(stock)) {
         return false;
       }
       
-      // Filter out assets based on their explicit type
       if (stock.type && excludedAssetTypes.some(excludedType => 
         stock.type?.toLowerCase().includes(excludedType))) {
         return false;
       }
       
-      // Filter out assets based on their symbol patterns
-      // Common patterns for ETFs, funds, etc.
-      if (stock.symbol.includes('-USD') ||  // Crypto pair
+      if (stock.symbol.includes('-USD') || 
           stock.symbol.includes('USD-') || 
           stock.symbol.endsWith('.ETF') ||
           stock.symbol.endsWith('.FUND') ||
           stock.symbol.includes('_ETF') ||
-          /^[A-Z0-9]{1,5}\d{1,2}$/.test(stock.symbol) || // Common pattern for futures
-          stock.symbol.includes('BTC') ||   // Common crypto symbols
+          /^[A-Z0-9]{1,5}\d{1,2}$/.test(stock.symbol) ||
+          stock.symbol.includes('BTC') || 
           stock.symbol.includes('ETH') ||
           stock.symbol.includes('USDT')) {
         return false;  
@@ -245,38 +220,30 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     
     const searchLower = searchQuery.toLowerCase();
     
-    // Assign a score to each result
     const scoredResults = filteredResults.map(stock => {
       let score = 0;
       
-      // Prioritize exact name matches
       if (stock.name.toLowerCase() === searchLower) {
         score += 100;
       } 
-      // Prioritize name starts with search query
       else if (stock.name.toLowerCase().startsWith(searchLower)) {
         score += 80;
       }
-      // Name contains search query
       else if (stock.name.toLowerCase().includes(searchLower)) {
         score += 60;
       }
       
-      // Symbol exact match
       if (stock.symbol.toLowerCase() === searchLower) {
         score += 50;
       }
-      // Symbol starts with search query
       else if (stock.symbol.toLowerCase().startsWith(searchLower)) {
         score += 40;
       }
       
-      // Prioritize German stocks (.DE)
       if (stock.symbol.endsWith('.DE')) {
         score += 30;
       }
       
-      // Prioritize main exchanges over OTC
       if (stock.exchangeShortName === 'XETRA' || 
           stock.exchangeShortName === 'NYSE' || 
           stock.exchangeShortName === 'NASDAQ') {
@@ -286,21 +253,17 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       return { ...stock, score };
     });
     
-    // Sort by score
     return scoredResults.sort((a: any, b: any) => b.score - a.score);
   };
 
-  // Simple fuzzy match to suggest corrections
   const getFuzzyMatches = (query: string, stocks: StockSuggestion[]) => {
     if (query.length < 4) return null;
     
     const queryLower = query.toLowerCase();
     
-    // Look for popular stocks with similar names (levenshtein distance would be better but this is simpler)
     for (const stock of stocks) {
       const nameLower = stock.name.toLowerCase();
       
-      // Check if stock name contains most of the query chars in sequence
       let matchCount = 0;
       let lastIndex = -1;
       
@@ -312,7 +275,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         }
       }
       
-      // If we match at least 70% of the characters and it's a somewhat known stock
       if (matchCount >= queryLower.length * 0.7 && 
           (stock.symbol.endsWith('.DE') || ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'].includes(stock.symbol))) {
         return {
@@ -325,12 +287,11 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     
     return null;
   };
-  
-  // Fetch suggestions when user types
+
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (!searchQuery || searchQuery.length < 2) {
-        setSuggestions([]);
+        setSuggestions(fallbackStocks.slice(0, 6));
         setSuggestedCorrection(null);
         setIsinResults(null);
         return;
@@ -339,7 +300,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       setIsSearching(true);
       
       try {
-        // Get API key from localStorage
         const apiKey = localStorage.getItem('fmp_api_key');
         if (!apiKey) {
           const filteredResults = fallbackStocks.filter(stock => 
@@ -348,7 +308,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           );
           setSuggestions(filteredResults);
           
-          // Check for fuzzy matches in fallback stocks
           const correction = getFuzzyMatches(searchQuery, filteredResults);
           setSuggestedCorrection(correction);
           return;
@@ -357,29 +316,25 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=25&apikey=${apiKey}`);
         
         if (response.data && Array.isArray(response.data)) {
-          // Filter out non-stock results first
           const stocksOnly = response.data.filter((item: any) => {
             if (!item.name || !item.symbol) return false;
             
-            // First check with comprehensive crypto detection
             if (isCryptoAsset(item)) {
               return false;
             }
             
-            // Filter out by type if available
             if (item.type && excludedAssetTypes.some(excludedType => 
               item.type.toLowerCase().includes(excludedType))) {
               return false;
             }
             
-            // Filter out non-stocks based on symbol patterns
-            if (item.symbol.includes('-USD') ||  // Crypto pair
+            if (item.symbol.includes('-USD') || 
                 item.symbol.includes('USD-') || 
                 item.symbol.endsWith('.ETF') ||
                 item.symbol.endsWith('.FUND') ||
                 item.symbol.includes('_ETF') ||
-                /^[A-Z0-9]{1,5}\d{1,2}$/.test(item.symbol) || // Common pattern for futures
-                item.symbol.includes('BTC') ||   // Common crypto symbols
+                /^[A-Z0-9]{1,5}\d{1,2}$/.test(item.symbol) ||
+                item.symbol.includes('BTC') || 
                 item.symbol.includes('ETH') ||
                 item.symbol.includes('USDT')) {
               return false;  
@@ -388,11 +343,9 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
             return true;
           });
           
-          // Prioritize and sort results
           const prioritizedResults = prioritizeResults(stocksOnly);
           setSuggestions(prioritizedResults);
           
-          // Check for fuzzy matches
           const correction = getFuzzyMatches(searchQuery, prioritizedResults);
           setSuggestedCorrection(correction);
         }
@@ -404,14 +357,12 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           variant: "destructive",
         });
         
-        // Fallback to static list filtered by search query
         const filteredResults = fallbackStocks.filter(stock => 
           stock.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
           stock.symbol.toLowerCase().includes(searchQuery.toLowerCase())
         );
         setSuggestions(filteredResults);
         
-        // Check for fuzzy matches in fallback stocks
         const correction = getFuzzyMatches(searchQuery, filteredResults);
         setSuggestedCorrection(correction);
       } finally {
@@ -422,11 +373,10 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     const debounceTimer = setTimeout(fetchSuggestions, 300);
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, toast]);
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (ticker.trim()) {
-      // Check if the user entered "APPL" instead of "AAPL" (common mistake)
       if (ticker.trim().toUpperCase() === 'APPL') {
         setShowAppleCorrection(true);
         return;
@@ -449,7 +399,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     setOpen(false);
   };
 
-  // This function is now separate - it updates the ticker but doesn't start analysis
   const selectQuickAccessStock = (symbol: string) => {
     setTicker(symbol);
     setShowAppleCorrection(false);
@@ -461,7 +410,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     if (stock.exchangeShortName) {
       exchange = stock.exchangeShortName;
     } else if (stock.stockExchange) {
-      // Extract a short name from the exchange if possible
       const exchangeParts = stock.stockExchange.split(' ');
       exchange = exchangeParts.length > 1 ? exchangeParts[0] : stock.stockExchange;
     }
@@ -563,15 +511,22 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                   ) : (
                     <>
                       <CommandEmpty>
-                        <div className="py-6 text-center">
-                          <p>Keine passenden Aktien gefunden</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Versuchen Sie einen anderen Suchbegriff oder geben Sie das Symbol direkt ein
-                          </p>
-                        </div>
+                        {searchQuery && searchQuery.length >= 2 ? (
+                          <div className="py-6 text-center">
+                            <p>Keine passenden Aktien gefunden</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Versuchen Sie einen anderen Suchbegriff oder geben Sie das Symbol direkt ein
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="py-6 text-center">
+                            <p className="text-xs text-muted-foreground">
+                              Beliebte Aktien werden angezeigt
+                            </p>
+                          </div>
+                        )}
                       </CommandEmpty>
                       
-                      {/* Display ISIN results at the top if available */}
                       {isinResults && (
                         <CommandGroup heading="ISIN Ergebnis">
                           <CommandItem
@@ -593,7 +548,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                         </CommandGroup>
                       )}
                       
-                      <CommandGroup heading="Vorschläge">
+                      <CommandGroup heading={searchQuery && searchQuery.length >= 2 ? "Vorschläge" : "Beliebte Aktien"}>
                         {suggestions.map((stock) => {
                           const display = formatStockDisplay(stock);
                           return (
@@ -647,7 +602,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         </TooltipProvider>
       </div>
       
-      {/* Häufig verwendete Aktiensymbole */}
       <div className="mt-6">
         <p className="text-sm font-medium mb-2">Häufig verwendete Symbole:</p>
         <div className="flex flex-wrap gap-2">
