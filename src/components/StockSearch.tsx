@@ -130,10 +130,8 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isinPattern.test(searchQuery)) {
-      handleIsinSearch(searchQuery);
-    } else {
-      setIsinResults(null);
+    if (searchQuery.length >= 1) {
+      setOpen(true);
     }
   }, [searchQuery]);
 
@@ -575,16 +573,24 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                     if (!isinPattern.test(e.target.value)) {
                       setIsinResults(null);
                     }
+                    
+                    if (e.target.value.length >= 1) {
+                      setOpen(true);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (ticker.length >= 1) {
+                      setOpen(true);
+                    }
                   }}
                   placeholder="Aktienname, Symbol oder ISIN eingeben..."
                   className="apple-input pl-10"
                   disabled={disabled || isLoading}
-                  onClick={() => setOpen(true)}
                 />
                 <Search className="absolute left-3 top-3 text-gray-400" size={20} />
               </div>
             </PopoverTrigger>
-            <PopoverContent className="p-0 w-[300px] md:w-[400px]" align="start">
+            <PopoverContent className="p-0 w-[300px] md:w-[400px]" align="start" sideOffset={5}>
               <Command>
                 <CommandInput 
                   placeholder="Suche nach Aktien..." 
@@ -593,6 +599,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                     setSearchQuery(value);
                     setTicker(value);
                   }}
+                  autoFocus
                 />
                 <CommandList>
                   {isSearching ? (
@@ -725,7 +732,10 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               variant="outline"
               size="sm"
               className="text-xs py-1 h-auto"
-              onClick={() => selectQuickAccessStock(item.symbol)}
+              onClick={() => {
+                selectQuickAccessStock(item.symbol);
+                setOpen(true);
+              }}
             >
               {item.symbol} ({item.name})
             </Button>
