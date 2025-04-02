@@ -76,7 +76,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     <div className="buffett-card mb-8 animate-fade-in">
       <h2 className="text-2xl font-semibold mb-4">Aktienanalyse nach Warren Buffett</h2>
       <p className="text-buffett-subtext mb-4">
-        Geben Sie einen Firmennamen oder ein Aktiensymbol ein (z.B. "Apple" oder "AAPL"), um die Buffett-Analyse zu starten.
+        Geben Sie einen Firmennamen oder ein Aktiensymbol ein, um die Buffett-Analyse zu starten.
       </p>
       
       <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-4 text-sm">
@@ -117,7 +117,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                 <Search className="absolute left-3 top-3 text-gray-400" size={20} />
               </div>
             </PopoverTrigger>
-            <PopoverContent className="p-0 w-full" align="start">
+            <PopoverContent className="p-0 w-[300px] md:w-[400px]" align="start">
               <Command>
                 <CommandInput 
                   placeholder="Suche nach Aktien..." 
@@ -132,9 +132,10 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                         key={stock.symbol} 
                         value={stock.symbol}
                         onSelect={() => selectStock(stock.symbol)}
+                        className="flex justify-between"
                       >
                         <span className="font-medium">{stock.name}</span>
-                        <span className="ml-2 text-gray-500">({stock.symbol})</span>
+                        <span className="ml-2 text-gray-500">{stock.symbol}</span>
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -154,15 +155,17 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       <div className="mt-4 text-sm text-buffett-subtext flex items-center">
         <p>Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung.</p>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Info size={16} className="ml-2 cursor-help" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs p-4">
-            <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
-            <p>Dieses Tool verwendet die Financial Modeling Prep API und OpenAI GPT für detaillierte Analysen.</p>
-          </TooltipContent>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info size={16} className="ml-2 cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs p-4">
+              <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
+              <p>Dieses Tool verwendet die Financial Modeling Prep API und OpenAI GPT für detaillierte Analysen.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       
       {/* Häufig verwendete Aktiensymbole */}
@@ -177,6 +180,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               className="text-xs py-1 h-auto"
               onClick={() => {
                 setTicker(item.symbol);
+                onSearch(item.symbol);
                 setShowAppleCorrection(false);
               }}
             >
