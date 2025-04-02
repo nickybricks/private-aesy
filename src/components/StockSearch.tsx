@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -138,24 +137,43 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<StockSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isinResults, setIsinResults] = useState<StockSuggestion | null>(null);
   const { toast } = useToast();
   
-  // Detect if input looks like an ISIN
+  // Detect if input looks like an ISIN and search for it
   useEffect(() => {
     if (isinPattern.test(searchQuery)) {
       handleIsinSearch(searchQuery);
     }
   }, [searchQuery]);
 
-  // Handle ISIN search
+  // Handle ISIN search - modified to add suggestions instead of directly setting ticker
   const handleIsinSearch = async (possibleIsin: string) => {
     // Check if it's a common German ISIN we know
     if (commonGermanIsins[possibleIsin]) {
-      setTicker(commonGermanIsins[possibleIsin]);
+      const symbol = commonGermanIsins[possibleIsin];
+      // Add this as a suggestion instead of setting directly
+      const isinStock: StockSuggestion = {
+        symbol: symbol,
+        name: `ISIN: ${possibleIsin}`, // We'll update this with real name if we can find it
+      };
+      
+      // Try to find a better name for this stock
+      const matchingFallback = fallbackStocks.find(stock => stock.symbol === symbol);
+      if (matchingFallback) {
+        isinStock.name = matchingFallback.name;
+      }
+      
+      setIsinResults(isinStock);
+      
+      // Add a toast to inform the user
       toast({
         title: "ISIN erkannt",
-        description: `ISIN ${possibleIsin} wurde als ${commonGermanIsins[possibleIsin]} identifiziert.`,
+        description: `ISIN ${possibleIsin} wurde gefunden. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
       });
+      
+      // Force the dropdown to be open
+      setOpen(true);
       return;
     }
     
@@ -168,10 +186,20 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       const response = await axios.get(`https://financialmodelingprep.com/api/v3/isin/${possibleIsin}?apikey=${apiKey}`);
       
       if (response.data && response.data[0]?.symbol) {
-        setTicker(response.data[0].symbol);
+        const result = response.data[0];
+        const isinStock: StockSuggestion = {
+          symbol: result.symbol,
+          name: result.name || `ISIN: ${possibleIsin}`,
+          stockExchange: result.stockExchange,
+          currency: result.currency,
+        };
+        
+        setIsinResults(isinStock);
+        setOpen(true);
+        
         toast({
           title: "ISIN erkannt",
-          description: `ISIN ${possibleIsin} wurde als ${response.data[0].symbol} identifiziert.`,
+          description: `ISIN ${possibleIsin} wurde gefunden. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
         });
       }
     } catch (error) {
@@ -304,6 +332,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       if (!searchQuery || searchQuery.length < 2) {
         setSuggestions([]);
         setSuggestedCorrection(null);
+        setIsinResults(null);
         return;
       }
 
@@ -541,6 +570,29 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                           </p>
                         </div>
                       </CommandEmpty>
+                      
+                      {/* Display ISIN results at the top if available */}
+                      {isinResults && (
+                        <CommandGroup heading="ISIN Ergebnis">
+                          <CommandItem
+                            key={`isin-${isinResults.symbol}`}
+                            value={`${isinResults.name} ${isinResults.symbol}`}
+                            onSelect={() => selectStock(isinResults)}
+                            className="flex justify-between bg-blue-50"
+                          >
+                            <div className="flex-1 truncate">
+                              <span className="font-medium">{isinResults.name}</span>
+                              <span className="ml-2 text-sm text-muted-foreground">
+                                ({isinResults.symbol})
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
+                              {isinResults.exchangeShortName && <span>{isinResults.exchangeShortName}</span>}
+                            </div>
+                          </CommandItem>
+                        </CommandGroup>
+                      )}
+                      
                       <CommandGroup heading="Vorschläge">
                         {suggestions.map((stock) => {
                           const display = formatStockDisplay(stock);
