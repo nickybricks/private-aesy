@@ -10,7 +10,8 @@ import {
   DollarSign,
   Calculator,
   HelpCircle,
-  Info
+  Info,
+  PieChart
 } from 'lucide-react';
 import {
   Tooltip,
@@ -61,24 +62,52 @@ const IntrinsicValueTooltip: React.FC<{
   intrinsicValue: number;
   currency: string;
 }> = ({ intrinsicValue, currency }) => {
+  // Beispielwerte für die DCF-Berechnung basierend auf dem intrinsischen Wert
+  const yearlyFCF = intrinsicValue * 0.025; // Geschätzt als 2,5% des intrinsischen Wertes
+  const growthRate1 = 15; // 15% Wachstum in Jahren 1-5
+  const growthRate2 = 8; // 8% in Jahren 6-10
+  const terminalGrowth = 3; // 3% ewiges Wachstum
+  const discountRate = 8; // 8% Abzinsungsrate
+  const terminalValue = intrinsicValue * 0.85; // 85% des Gesamtwerts
+  
+  // Beispiel für Jahr 1 und 2 berechnen
+  const fcfYear1 = yearlyFCF * (1 + growthRate1/100) / (1 + discountRate/100);
+  const fcfYear2 = yearlyFCF * (1 + growthRate1/100) * (1 + growthRate1/100) / ((1 + discountRate/100) * (1 + discountRate/100));
+  
   return (
     <div className="space-y-2">
       <h4 className="font-semibold">Berechnung des inneren Werts (DCF)</h4>
-      <p>Der innere Wert von {intrinsicValue.toFixed(2)} {currency} wurde wie folgt berechnet:</p>
-      <ul className="list-disc pl-4">
-        <li>Historische Free Cashflows der letzten 5 Jahre als Grundlage</li>
-        <li>Gewichteter Durchschnitt: {(intrinsicValue * 0.1).toFixed(2)} {currency} FCF/Aktie</li>
-        <li>Wachstumsraten: 15% (Jahre 1-5), 8% (Jahre 6-10), 3% (Terminal)</li>
-        <li>Abzinsungsfaktor: 8% (entspricht erwarteter Rendite)</li>
-        <li>Terminal Value: {(intrinsicValue * 0.85).toFixed(2)} {currency} (85% des Gesamtwerts)</li>
-      </ul>
+      <p>Der innere Wert von {intrinsicValue.toFixed(2)} {currency} wurde mittels Discounted Cash Flow (DCF) wie folgt berechnet:</p>
+      
+      <div className="border border-gray-200 rounded-md p-2 bg-gray-50 mt-2">
+        <h5 className="font-medium mb-1 text-sm">DCF-Parameter:</h5>
+        <ul className="text-sm space-y-1">
+          <li><span className="font-medium">Ausgangsbasis:</span> Free Cashflow/Aktie: {yearlyFCF.toFixed(2)} {currency}</li>
+          <li><span className="font-medium">Wachstumsannahmen:</span> {growthRate1}% (Jahre 1-5), {growthRate2}% (Jahre 6-10), {terminalGrowth}% (Terminal)</li>
+          <li><span className="font-medium">Abzinsungsrate:</span> {discountRate}% (entspricht der erwarteten Rendite)</li>
+          <li><span className="font-medium">Terminal Value:</span> {terminalValue.toFixed(2)} {currency} ({(terminalValue/intrinsicValue*100).toFixed(0)}% des Gesamtwerts)</li>
+        </ul>
+      </div>
+      
       <div className="border-t border-gray-200 pt-2 mt-2">
-        <p className="font-medium">Konkrete Beispielrechnung:</p>
-        <p className="text-xs">Jahr 1 FCF: {(intrinsicValue * 0.025).toFixed(2)} {currency} × 1,15 ÷ 1,08 = {(intrinsicValue * 0.025 * 1.15 / 1.08).toFixed(2)} {currency}</p>
-        <p className="text-xs">Jahr 2 FCF: {(intrinsicValue * 0.027).toFixed(2)} {currency} × 1,15² ÷ 1,08² = {(intrinsicValue * 0.027 * 1.15 * 1.15 / 1.08 / 1.08).toFixed(2)} {currency}</p>
-        <p className="text-xs">...</p>
-        <p className="text-xs">Terminal: {(intrinsicValue * 0.05).toFixed(2)} {currency} × 1,03 ÷ (0,08 - 0,03) ÷ 1,08¹⁰ = {(intrinsicValue * 0.85).toFixed(2)} {currency}</p>
-        <p className="text-xs mt-1 font-medium">Summe aller diskontierten Cashflows = {intrinsicValue.toFixed(2)} {currency}</p>
+        <h5 className="font-medium mb-1 text-sm">Schritte der DCF-Berechnung:</h5>
+        <ol className="text-sm space-y-1 list-decimal pl-4">
+          <li>Prognose der Free Cashflows für 10 Jahre in die Zukunft</li>
+          <li>Diskontierung jedes Jahres-Cashflows auf heute mit {discountRate}% pro Jahr</li>
+          <li>Berechnung des Terminal Values (ewiger Wert nach Jahr 10)</li>
+          <li>Summe aller diskontierten Werte = Innerer Wert pro Aktie</li>
+        </ol>
+      </div>
+      
+      <div className="border-t border-gray-200 pt-2 mt-2">
+        <h5 className="font-medium mb-1 text-sm">Vereinfachtes Rechenbeispiel:</h5>
+        <div className="text-xs space-y-1">
+          <div><span className="font-medium">Jahr 1 FCF:</span> {yearlyFCF.toFixed(2)} {currency} × (1+{growthRate1}%) ÷ (1+{discountRate}%) = {fcfYear1.toFixed(2)} {currency}</div>
+          <div><span className="font-medium">Jahr 2 FCF:</span> {yearlyFCF.toFixed(2)} {currency} × (1+{growthRate1}%)² ÷ (1+{discountRate}%)² = {fcfYear2.toFixed(2)} {currency}</div>
+          <div><span className="font-medium">Jahre 3-10:</span> Gleiche Berechnung mit entsprechenden Wachstumsraten</div>
+          <div className="mt-1"><span className="font-medium">Terminal Value:</span> FCF Jahr 10 × (1+{terminalGrowth}%) ÷ ({discountRate}%-{terminalGrowth}%) ÷ (1+{discountRate}%)¹⁰ = {terminalValue.toFixed(2)} {currency}</div>
+          <div className="mt-1 font-medium">Summe aller diskontierten Cashflows = {intrinsicValue.toFixed(2)} {currency}</div>
+        </div>
       </div>
     </div>
   );
@@ -87,7 +116,16 @@ const IntrinsicValueTooltip: React.FC<{
 // Diese Funktion erstellt den detaillierten Tooltip für die MoS-Erklärung
 const MarginOfSafetyTooltip: React.FC<{
   targetMarginOfSafety: number;
-}> = ({ targetMarginOfSafety }) => {
+  intrinsicValue?: number;
+  currentPrice?: number;
+  currency?: string;
+}> = ({ targetMarginOfSafety, intrinsicValue, currentPrice, currency }) => {
+  // Berechnen wir ein konkretes Beispiel mit realen Zahlen, falls verfügbar
+  const hasRealData = intrinsicValue && currentPrice && currency;
+  const actualMarginValue = hasRealData ? intrinsicValue * (targetMarginOfSafety / 100) : 20;
+  const safePrice = hasRealData ? intrinsicValue - actualMarginValue : 80;
+  const actualMargin = hasRealData ? ((intrinsicValue - currentPrice) / intrinsicValue) * 100 : -25;
+  
   return (
     <div className="space-y-2">
       <h4 className="font-semibold">Was ist die "Margin of Safety"?</h4>
@@ -97,15 +135,30 @@ const MarginOfSafetyTooltip: React.FC<{
         <li>Ermöglicht höhere Renditen (Kauf mit Abschlag = höheres Wertsteigerungspotenzial)</li>
         <li>Minimiert Verlustrisiko (selbst bei ungünstigeren Entwicklungen)</li>
       </ul>
-      <p>Buffett und Graham empfehlen mindestens {targetMarginOfSafety}% Sicherheitsmarge.</p>
+      <p className="font-medium">Buffett und Graham empfehlen mindestens {targetMarginOfSafety}% Sicherheitsmarge.</p>
+      
       <div className="border-t border-gray-200 pt-2 mt-2">
-        <p className="font-medium">Beispielrechnung für {targetMarginOfSafety}% Margin of Safety:</p>
-        <ul className="list-disc pl-4 text-sm">
-          <li>Innerer Wert: 100€</li>
-          <li>Abschlag: {targetMarginOfSafety}% = 20€</li>
-          <li>Maximaler Kaufpreis: 100€ - 20€ = 80€</li>
-          <li>Alternativ: 100€ × (1 - {targetMarginOfSafety/100}) = 80€</li>
-        </ul>
+        <h5 className="font-medium mb-1">Berechnung der Margin of Safety:</h5>
+        
+        {hasRealData ? (
+          <div className="space-y-1">
+            <p><span className="font-medium">Innerer Wert:</span> {intrinsicValue.toFixed(2)} {currency}</p>
+            <p><span className="font-medium">Sicherheitsmarge ({targetMarginOfSafety}%):</span> {actualMarginValue.toFixed(2)} {currency}</p>
+            <p><span className="font-medium">Idealer Kaufpreis:</span> {safePrice.toFixed(2)} {currency}</p>
+            <p><span className="font-medium">Aktueller Preis:</span> {currentPrice.toFixed(2)} {currency}</p>
+            <p className={`font-medium ${actualMargin > 0 ? 'text-buffett-green' : 'text-buffett-red'}`}>
+              Aktuelle Margin of Safety: {actualMargin.toFixed(1)}%
+              {actualMargin > 0 ? ' (Unterbewertet)' : ' (Überbewertet)'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <p><span className="font-medium">Beispiel:</span></p>
+            <p><span className="font-medium">Innerer Wert:</span> 100 {currency}</p>
+            <p><span className="font-medium">Sicherheitsmarge ({targetMarginOfSafety}%):</span> {targetMarginOfSafety} {currency}</p>
+            <p><span className="font-medium">Idealer Kaufpreis:</span> {100 - targetMarginOfSafety} {currency}</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -121,23 +174,126 @@ const BuffettBuyPriceTooltip: React.FC<{
   return (
     <div className="space-y-2">
       <h4 className="font-semibold">Der Buffett-Kaufpreis</h4>
-      <p>Dies ist der maximale Preis, zu dem Warren Buffett die Aktie als attraktive Investition betrachten würde.</p>
-      <p className="font-medium mt-1">Berechnung:</p>
-      {intrinsicValue ? (
-        <p>{intrinsicValue.toFixed(2)} {currency} × (1 - {targetMarginOfSafety}%) = {bestBuyPrice.toFixed(2)} {currency}</p>
-      ) : (
-        <p>Innerer Wert × (1 - Margin of Safety) = {bestBuyPrice.toFixed(2)} {currency}</p>
-      )}
+      <p>Der Buffett-Kaufpreis ist der maximale Preis, zu dem Warren Buffett die Aktie als attraktive Investition betrachten würde.</p>
+      
+      <div className="border border-gray-200 rounded-md p-2 bg-gray-50 mt-2">
+        <h5 className="font-medium mb-1 text-sm">Berechnung:</h5>
+        <div className="text-sm">
+          <div className="flex items-center mb-1">
+            <div className="font-medium w-1/2">Innerer Wert:</div>
+            <div>{intrinsicValue ? `${intrinsicValue.toFixed(2)} ${currency}` : 'Berechnet aus DCF-Modell'}</div>
+          </div>
+          <div className="flex items-center mb-1">
+            <div className="font-medium w-1/2">Margin of Safety:</div>
+            <div>{targetMarginOfSafety}%</div>
+          </div>
+          <div className="flex items-center mb-1">
+            <div className="font-medium w-1/2">Berechnung:</div>
+            <div>{intrinsicValue ? `${intrinsicValue.toFixed(2)} ${currency} × (1 - ${targetMarginOfSafety}%)` : 'Innerer Wert × (1 - Margin of Safety)'}</div>
+          </div>
+          <div className="flex items-center font-medium text-buffett-blue">
+            <div className="w-1/2">Buffett-Kaufpreis:</div>
+            <div>{bestBuyPrice.toFixed(2)} {currency}</div>
+          </div>
+        </div>
+      </div>
       
       <div className="border-t border-gray-200 pt-2 mt-2">
-        <p className="font-medium">Konkrete Anwendung:</p>
-        <ul className="list-disc pl-4 text-sm">
-          <li>Innerer Wert: {intrinsicValue ? `${intrinsicValue.toFixed(2)} ${currency}` : 'Berechnet aus DCF'}</li>
-          <li>Margin of Safety: {targetMarginOfSafety}%</li>
-          <li>Buffett-Kaufpreis: {bestBuyPrice.toFixed(2)} {currency}</li>
-          <li className="font-medium text-buffett-blue">Implikation: Nur kaufen, wenn Aktie unter {bestBuyPrice.toFixed(2)} {currency} fällt</li>
-        </ul>
+        <p className="font-medium text-sm">Buffett's Prinzip:</p>
+        <p className="text-sm">Eine Aktie sollte nur gekauft werden, wenn sie deutlich unter ihrem inneren Wert gehandelt wird. Der Buffett-Kaufpreis stellt diese Grenze dar - kaufe nur unter diesem Preis.</p>
       </div>
+    </div>
+  );
+};
+
+// Score Breakdown Tooltip Component
+const ScoreBreakdownTooltip: React.FC<{
+  buffettScore: number;
+}> = ({ buffettScore }) => {
+  // Beispielhafte Aufschlüsselung der Punkteverteilung
+  const scoreComponents = [
+    { name: "Verständliches Geschäftsmodell", score: 3, total: 3 },
+    { name: "Wirtschaftlicher Burggraben", score: 2, total: 3 },
+    { name: "Finanzkennzahlen", score: 10, total: 12 },
+    { name: "Finanzielle Stabilität", score: 7, total: 9 },
+    { name: "Managementqualität", score: 8, total: 12 },
+    { name: "Bewertung (Preis)", score: 4, total: 12 },
+    { name: "Langfristiger Ausblick", score: 8, total: 12 },
+  ];
+  
+  // Summe zur Überprüfung
+  const totalPoints = scoreComponents.reduce((sum, item) => sum + item.score, 0);
+  const totalPossible = scoreComponents.reduce((sum, item) => sum + item.total, 0);
+  const calculatedScore = Math.round((totalPoints / totalPossible) * 100);
+  
+  return (
+    <div className="space-y-2">
+      <h4 className="font-semibold">Buffett-Score: {buffettScore}%</h4>
+      <p>Die Punktzahl zeigt, wie gut das Unternehmen zu Buffetts Investmentkriterien passt:</p>
+      
+      <div className="space-y-1 mt-2">
+        {scoreComponents.map((comp, index) => (
+          <div key={index} className="flex justify-between text-sm">
+            <span>{comp.name}:</span>
+            <span className="font-medium">{comp.score}/{comp.total} Punkte</span>
+          </div>
+        ))}
+        <div className="border-t border-gray-200 pt-1 mt-1 flex justify-between font-medium">
+          <span>Gesamt:</span>
+          <span>{totalPoints}/{totalPossible} Punkte ({calculatedScore}%)</span>
+        </div>
+      </div>
+      
+      <div className="border-t border-gray-200 pt-2 mt-2">
+        <p className="text-sm text-gray-600">
+          <span className="font-medium">Bewertungsschlüssel:</span><br/>
+          ≥75%: Hervorragende Übereinstimmung mit Buffetts Kriterien<br/>
+          50-74%: Gute Übereinstimmung, nähere Analyse empfohlen<br/>
+          &lt;50%: Schwache Übereinstimmung, entspricht nicht Buffetts Stil
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const BuffettScoreChart: React.FC<{ score: number }> = ({ score }) => {
+  // Berechnet den Umfang des Kreises, der gefüllt werden soll
+  const circumference = 2 * Math.PI * 40; // r = 40
+  const dashoffset = circumference * (1 - score / 100);
+  
+  // Farbe basierend auf Score
+  const getColor = () => {
+    if (score >= 75) return '#10b981'; // grün
+    if (score >= 50) return '#f59e0b'; // gelb
+    return '#ef4444'; // rot
+  };
+  
+  return (
+    <div className="relative w-24 h-24 flex items-center justify-center">
+      <svg className="w-full h-full" viewBox="0 0 100 100">
+        {/* Hintergrundkreis */}
+        <circle
+          cx="50"
+          cy="50"
+          r="40"
+          fill="none"
+          stroke="#e5e7eb"
+          strokeWidth="10"
+        />
+        {/* Fortschrittskreis */}
+        <circle
+          cx="50"
+          cy="50"
+          r="40"
+          fill="none"
+          stroke={getColor()}
+          strokeWidth="10"
+          strokeDasharray={circumference}
+          strokeDashoffset={dashoffset}
+          transform="rotate(-90 50 50)"
+        />
+      </svg>
+      <div className="absolute text-2xl font-bold">{score}%</div>
     </div>
   );
 };
@@ -188,6 +344,20 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     ? 'Fundamentalwerte gut, aber nicht optimal'
     : 'Preis und Qualität im Einklang';
   
+  // Funktion, die erklärt, warum die Empfehlung trotz hohem Score "Vermeiden" sein könnte
+  const explainRatingLogic = () => {
+    if (overall === 'avoid' && buffettScore && buffettScore >= 70) {
+      return "Trotz hoher Übereinstimmung mit Buffetts Qualitätskriterien ist der aktuelle Preis zu hoch. Buffett kauft nur mit signifikanter Sicherheitsmarge.";
+    } else if (overall === 'watch' && buffettScore && buffettScore >= 75) {
+      return "Das Unternehmen erfüllt viele von Buffetts Qualitätskriterien, aber der Preis bietet noch keine ausreichende Sicherheitsmarge für einen Kauf.";
+    } else if (overall === 'buy' && buffettScore && buffettScore < 70) {
+      return "Obwohl nicht alle Buffett-Kriterien perfekt erfüllt sind, macht der attraktive Preis die Aktie zu einer Kaufgelegenheit.";
+    }
+    return null;
+  };
+  
+  const ratingLogic = explainRatingLogic();
+  
   return (
     <div className="buffett-card animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Gesamtbewertung</h2>
@@ -198,6 +368,13 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           <div className="flex-1">
             <h3 className="text-xl font-bold">{ratingTitle}</h3>
             <p className="text-buffett-subtext">{summary}</p>
+            
+            {ratingLogic && (
+              <div className="mt-2 text-sm p-2 bg-white bg-opacity-50 rounded-md">
+                <p className="font-medium">Hinweis zur Bewertungslogik:</p>
+                <p>{ratingLogic}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -205,21 +382,31 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         {buffettScore !== undefined && (
           <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <BarChart3 size={18} className="text-buffett-blue" />
+            <div className="flex items-center gap-2 mb-3">
+              <PieChart size={18} className="text-buffett-blue" />
               <h4 className="font-semibold">Buffett-Kompatibilität</h4>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                      <Info size={14} className="text-gray-500" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <ScoreBreakdownTooltip buffettScore={buffettScore} />
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
-            <div className="text-2xl font-bold mb-2">{buffettScore}%</div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="h-2 rounded-full" 
-                   style={{
-                     width: `${buffettScore}%`,
-                     backgroundColor: buffettScore >= 70 ? '#10b981' : buffettScore >= 40 ? '#f59e0b' : '#ef4444'
-                   }}></div>
+            
+            <div className="flex items-center justify-center mb-3">
+              <BuffettScoreChart score={buffettScore} />
             </div>
-            <div className="text-sm mt-1 text-gray-600">
-              {buffettScore >= 70 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
-              buffettScore >= 40 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
+            
+            <div className="text-sm mt-2 text-gray-600">
+              {buffettScore >= 75 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
+              buffettScore >= 50 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
               'Geringe Übereinstimmung mit Buffetts Investitionskriterien'}
             </div>
           </div>
@@ -230,6 +417,24 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
             <div className="flex items-center gap-2 mb-2">
               <TrendingDown size={18} className="text-buffett-blue" />
               <h4 className="font-semibold">Margin of Safety</h4>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                      <Info size={14} className="text-gray-500" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <MarginOfSafetyTooltip 
+                      targetMarginOfSafety={targetMarginOfSafety}
+                      intrinsicValue={intrinsicValue}
+                      currentPrice={currentPrice}
+                      currency={currency}
+                    />
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <div className="text-2xl font-bold mb-2"
                  style={{
@@ -286,7 +491,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
             {intrinsicValue && (
               <div className="border-r border-gray-100 pr-4">
                 <div className="text-sm text-gray-600 mb-1 flex items-center gap-1">
-                  Innerer Wert (berechnet):
+                  Innerer Wert (DCF-berechnet):
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -294,14 +499,17 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                           <HelpCircle size={14} className="text-gray-500" />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
+                      <TooltipContent className="max-w-sm p-4">
                         <IntrinsicValueTooltip intrinsicValue={intrinsicValue} currency={currency} />
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
                 <div className="text-xl font-bold">{intrinsicValue.toFixed(2)} {currency}</div>
-                <div className="text-xs text-gray-500 mt-1">Basierend auf DCF-Analyse</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Discounted Cash Flow mit 8% Abzinsung
+                  <br />und 3% langfristigem Wachstum
+                </div>
               </div>
             )}
             
@@ -316,19 +524,27 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                       </button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <MarginOfSafetyTooltip targetMarginOfSafety={targetMarginOfSafety} />
+                      <MarginOfSafetyTooltip 
+                        targetMarginOfSafety={targetMarginOfSafety}
+                        intrinsicValue={intrinsicValue}
+                        currentPrice={currentPrice}
+                        currency={currency}
+                      />
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
               <div className="text-xl font-bold">{targetMarginOfSafety}%</div>
-              <div className="text-xs text-gray-500 mt-1">Nach Buffett-Prinzip</div>
+              <div className="text-xs text-gray-500 mt-1">
+                Sicherheitspuffer zwischen innerem Wert und
+                <br />maximalem Kaufpreis nach Buffett-Prinzip
+              </div>
             </div>
             
             {bestBuyPrice && (
               <div>
                 <div className="text-sm text-gray-600 mb-1 flex items-center gap-1">
-                  Buffett-Kaufpreis:
+                  Maximaler Buffett-Kaufpreis:
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -350,7 +566,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                 <div className="text-xl font-bold">{bestBuyPrice.toFixed(2)} {currency}</div>
                 <div className="text-xs text-gray-500 mt-1">
                   {intrinsicValue 
-                    ? `= Innerer Wert × ${(1 - targetMarginOfSafety / 100).toFixed(2)}`
+                    ? `= ${intrinsicValue.toFixed(2)} ${currency} × ${(1 - targetMarginOfSafety / 100).toFixed(2)}`
                     : 'Basierend auf Bewertungsanalyse'}
                 </div>
               </div>

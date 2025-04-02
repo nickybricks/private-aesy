@@ -10,6 +10,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface StockSearchProps {
   onSearch: (ticker: string) => void;
@@ -17,10 +19,27 @@ interface StockSearchProps {
   disabled?: boolean;
 }
 
+// Suggest common stocks with their names and symbols
+const suggestedStocks = [
+  { name: 'Apple', symbol: 'AAPL' },
+  { name: 'Microsoft', symbol: 'MSFT' },
+  { name: 'Amazon', symbol: 'AMZN' },
+  { name: 'Alphabet (Google)', symbol: 'GOOGL' },
+  { name: 'Meta (Facebook)', symbol: 'META' },
+  { name: 'Tesla', symbol: 'TSLA' },
+  { name: 'Adidas', symbol: 'ADS.DE' },
+  { name: 'BASF', symbol: 'BAS.DE' },
+  { name: 'BMW', symbol: 'BMW.DE' },
+  { name: 'Deutsche Telekom', symbol: 'DTE.DE' },
+  { name: 'SAP', symbol: 'SAP.DE' },
+  { name: 'Siemens', symbol: 'SIE.DE' },
+];
+
 const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false }) => {
   const [ticker, setTicker] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
-
+  const [open, setOpen] = useState(false);
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (ticker.trim()) {
@@ -32,6 +51,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       setShowAppleCorrection(false);
       onSearch(ticker.trim().toUpperCase());
+      setOpen(false);
     }
   };
 
@@ -41,21 +61,28 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     onSearch(correctTicker);
   };
 
-  const commonTickers = [
-    { symbol: 'AAPL', name: 'Apple' },
-    { symbol: 'MSFT', name: 'Microsoft' },
-    { symbol: 'AMZN', name: 'Amazon' },
-    { symbol: 'GOOGL', name: 'Alphabet (Google)' },
-    { symbol: 'META', name: 'Meta (Facebook)' },
-    { symbol: 'TSLA', name: 'Tesla' },
-  ];
+  const selectStock = (stock: string) => {
+    setTicker(stock);
+    setOpen(false);
+  };
+
+  const filteredStocks = ticker
+    ? suggestedStocks.filter(stock => 
+        stock.name.toLowerCase().includes(ticker.toLowerCase()) || 
+        stock.symbol.toLowerCase().includes(ticker.toLowerCase()))
+    : suggestedStocks;
 
   return (
     <div className="buffett-card mb-8 animate-fade-in">
       <h2 className="text-2xl font-semibold mb-4">Aktienanalyse nach Warren Buffett</h2>
       <p className="text-buffett-subtext mb-4">
-        Geben Sie ein Aktiensymbol ein (z.B. AAPL für Apple) oder einen Firmennamen, um die Buffett-Analyse zu starten.
+        Geben Sie einen Firmennamen oder ein Aktiensymbol ein (z.B. "Apple" oder "AAPL"), um die Buffett-Analyse zu starten.
       </p>
+      
+      <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-4 text-sm">
+        <p className="font-medium">Tipp zur Aktiensuche:</p>
+        <p>Für deutsche Aktien bitte .DE anhängen (z.B. ADS.DE für Adidas oder BAS.DE für BASF)</p>
+      </div>
       
       {showAppleCorrection && (
         <Alert className="mb-4 border-buffett-blue bg-buffett-blue bg-opacity-5">
@@ -75,15 +102,46 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       <form onSubmit={handleSubmit} className="flex gap-2">
         <div className="relative flex-1">
-          <Input
-            type="text"
-            value={ticker}
-            onChange={(e) => setTicker(e.target.value)}
-            placeholder="AAPL, MSFT, AMZN, META..."
-            className="apple-input pl-10"
-            disabled={disabled || isLoading}
-          />
-          <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <div className="relative w-full">
+                <Input
+                  type="text"
+                  value={ticker}
+                  onChange={(e) => setTicker(e.target.value)}
+                  placeholder="Aktienname oder Symbol eingeben..."
+                  className="apple-input pl-10"
+                  disabled={disabled || isLoading}
+                  onClick={() => setOpen(true)}
+                />
+                <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+              </div>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 w-full" align="start">
+              <Command>
+                <CommandInput 
+                  placeholder="Suche nach Aktien..." 
+                  value={ticker}
+                  onValueChange={setTicker}
+                />
+                <CommandList>
+                  <CommandEmpty>Keine passenden Aktien gefunden</CommandEmpty>
+                  <CommandGroup heading="Vorschläge">
+                    {filteredStocks.map((stock) => (
+                      <CommandItem 
+                        key={stock.symbol} 
+                        value={stock.symbol}
+                        onSelect={() => selectStock(stock.symbol)}
+                      >
+                        <span className="font-medium">{stock.name}</span>
+                        <span className="ml-2 text-gray-500">({stock.symbol})</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
         <Button 
           type="submit" 
@@ -111,7 +169,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       <div className="mt-6">
         <p className="text-sm font-medium mb-2">Häufig verwendete Symbole:</p>
         <div className="flex flex-wrap gap-2">
-          {commonTickers.map((item) => (
+          {suggestedStocks.slice(0, 6).map((item) => (
             <Button
               key={item.symbol}
               variant="outline"

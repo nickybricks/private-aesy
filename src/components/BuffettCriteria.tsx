@@ -11,7 +11,8 @@ import {
   Users, 
   DollarSign, 
   Clock,
-  HelpCircle
+  HelpCircle,
+  Info
 } from 'lucide-react';
 import {
   Tooltip,
@@ -93,6 +94,76 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   );
 };
 
+// Function to provide explanations for criteria
+const getCriteriaExplanation = (name: string) => {
+  const explanations = {
+    businessModel: "Buffett investiert nur in Unternehmen mit leicht verständlichen Geschäftsmodellen. Komplexe Modelle = höheres Risiko.",
+    economicMoat: "Ein wirtschaftlicher Burggraben (Wettbewerbsvorteil) schützt das Unternehmen vor Konkurrenz und sichert langfristige Profitabilität.",
+    financialMetrics: "Buffett sucht nach konsistent steigenden Gewinnen, hoher Eigenkapitalrendite und stabilen Margen über mindestens 10 Jahre.",
+    financialStability: "Geringe Verschuldung und hohe Liquidität sind entscheidend. Buffett vermeidet übermäßig verschuldete Unternehmen.",
+    management: "Das Management sollte aktionärsfreundlich, transparent und rational handeln. Integrität und Kompetenz sind zentral.",
+    valuation: "Selbst großartige Unternehmen können zu teuer sein. Buffett kauft nur, wenn der Preis deutlich unter dem inneren Wert liegt.",
+    longTermOutlook: "Die Geschäftsgrundlage sollte auch in 10-20 Jahren noch relevant sein. Buffett meidet kurzlebige Trends.",
+  };
+
+  return explanations[name as keyof typeof explanations] || "";
+};
+
+// Explains how scoring works
+const getScoringExplanation = (name: string) => {
+  const scoringExplanations = {
+    businessModel: "Einfach verständlich (3/3), moderat komplex (2/3), komplex/schwer verständlich (0-1/3)",
+    economicMoat: "Starker Burggraben (3/3), moderater Burggraben (2/3), schwacher/kein Burggraben (0-1/3)",
+    financialMetrics: "Bewertet nach: ROE (0-3 P.), Gewinnwachstum (0-3 P.), Marge (0-3 P.), EPS (0-3 P.)",
+    financialStability: "Bewertet nach: Schulden/EBITDA (0-3 P.), Liquidität (0-3 P.), Kapitalstruktur (0-3 P.)",
+    management: "Bewertet nach: Kapitalallokation (0-4 P.), Aktionärsorientierung (0-4 P.), Transparenz (0-4 P.)",
+    valuation: "Bewertet nach: KGV (0-3 P.), P/B (0-3 P.), P/CF (0-3 P.), Dividendenrendite (0-3 P.)",
+    longTermOutlook: "Bewertet nach: Zukunftsfähigkeit (0-4 P.), Innovationskraft (0-4 P.), Marktposition (0-4 P.)",
+  };
+
+  return scoringExplanations[name as keyof typeof scoringExplanations] || "";
+};
+
+// Key metrics explanation for tooltips
+const getMetricExplanation = (metricName: string) => {
+  const explanations: Record<string, { description: string, buffettGuideline: string }> = {
+    "ROE": {
+      description: "Eigenkapitalrendite: Gewinn pro investiertem Euro Eigenkapital",
+      buffettGuideline: "Buffett bevorzugt >15%, je höher desto besser"
+    },
+    "ROIC": {
+      description: "Rendite auf investiertes Kapital: Effizienz der Kapitalnutzung",
+      buffettGuideline: "Buffett bevorzugt >12%, sollte über Kapitalkosten liegen"
+    },
+    "Nettomarge": {
+      description: "Gewinn nach Steuern pro Euro Umsatz",
+      buffettGuideline: "Buffett bevorzugt >10%, höhere Margen = besserer Burggraben"
+    },
+    "Schulden zu EBITDA": {
+      description: "Zeigt, wie schnell Schulden aus Gewinnen zurückgezahlt werden könnten",
+      buffettGuideline: "Buffett bevorzugt <2,0, Werte unter 1 sind sehr gut"
+    },
+    "EPS": {
+      description: "Gewinn pro Aktie: Der auf eine einzelne Aktie entfallende Gewinn",
+      buffettGuideline: "Buffett sucht stabiles oder steigendes EPS über viele Jahre"
+    },
+    "KGV": {
+      description: "Kurs-Gewinn-Verhältnis: Preis der Aktie im Verhältnis zum Gewinn",
+      buffettGuideline: "Buffett bevorzugt KGV <15, idealerweise <12"
+    },
+    "P/B": {
+      description: "Kurs-Buchwert-Verhältnis: Preis im Verhältnis zum Buchwert",
+      buffettGuideline: "Buffett bevorzugt P/B <1,5, nahe 1 ist ideal"
+    },
+    "Turnaround": {
+      description: "Unternehmen in Restrukturierung oder grundlegender Neuausrichtung",
+      buffettGuideline: "Buffett meidet Turnaround-Situationen, bevorzugt stabile Unternehmen"
+    }
+  };
+  
+  return explanations[metricName];
+};
+
 const CriterionCard: React.FC<{ 
   name: string, 
   criterion: CriteriaResult,
@@ -107,6 +178,9 @@ const CriterionCard: React.FC<{
     fail: "border-red-300"
   }[status];
   
+  const criteriaExplanation = getCriteriaExplanation(name);
+  const scoringExplanation = getScoringExplanation(name);
+  
   return (
     <div className={`buffett-card mb-4 animate-slide-up ${cardBorderColor}`} style={{ animationDelay: `${index * 0.1}s` }}>
       <div className="flex items-start gap-4">
@@ -119,19 +193,69 @@ const CriterionCard: React.FC<{
             <h3 className="text-xl font-semibold">{title}</h3>
             <StatusIcon status={status} />
             <StatusBadge status={status} />
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="ml-1 rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+                    <Info size={14} className="text-gray-500" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs p-3">
+                  <div className="space-y-2">
+                    <p className="font-medium">Buffett-Kriterium: {title}</p>
+                    <p>{criteriaExplanation}</p>
+                    <div className="text-sm pt-2 border-t border-gray-100 mt-1">
+                      <p className="font-medium mb-1">Bewertungssystem:</p>
+                      <p>{scoringExplanation}</p>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           
           <p className="text-buffett-subtext mb-4">{description}</p>
           
           <div className="bg-gray-50 rounded-lg p-4">
             <h4 className="font-medium mb-2">Details:</h4>
-            <ul className="space-y-1">
-              {details.map((detail, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="text-buffett-subtext">•</span>
-                  <span>{detail}</span>
-                </li>
-              ))}
+            <ul className="space-y-2">
+              {details.map((detail, idx) => {
+                // Check if detail contains metrics that need explanation
+                const metricsToCheck = ["ROE", "ROIC", "Nettomarge", "Schulden zu EBITDA", "EPS", "KGV", "P/B", "Turnaround"];
+                const foundMetric = metricsToCheck.find(metric => detail.includes(metric));
+                const hasMetricExplanation = foundMetric && getMetricExplanation(foundMetric);
+                
+                return (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-buffett-subtext mt-0.5">•</span>
+                    <div>
+                      <span>{detail}</span>
+                      
+                      {hasMetricExplanation && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button className="ml-1 inline-flex items-center justify-center rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                                <HelpCircle size={12} className="text-gray-500" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs p-3">
+                              <div className="space-y-2">
+                                <p className="font-medium">{foundMetric}</p>
+                                <p>{hasMetricExplanation.description}</p>
+                                <p className="text-sm pt-2 border-t border-gray-100 mt-1">
+                                  <span className="font-medium">Buffett-Richtwert:</span> {hasMetricExplanation.buffettGuideline}
+                                </p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

@@ -9,7 +9,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Check, AlertTriangle, X } from 'lucide-react';
+import { Check, AlertTriangle, X, Info, HelpCircle } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface FinancialMetric {
   name: string;
@@ -28,6 +34,83 @@ interface FinancialMetricsProps {
     eps: { year: string; value: number }[];
   } | null;
 }
+
+// Detailed explanations for each metric
+const getMetricDetailedExplanation = (metricName: string) => {
+  const explanations: Record<string, { 
+    whatItIs: string, 
+    howCalculated: string,
+    whyImportant: string,
+    buffettGuideline: string,
+    goodValue: string
+  }> = {
+    "ROE (Eigenkapitalrendite)": {
+      whatItIs: "Return on Equity - Die Rendite auf das eingesetzte Eigenkapital",
+      howCalculated: "Jahresüberschuss ÷ Eigenkapital × 100",
+      whyImportant: "Zeigt, wie effizient das Unternehmen Kapital der Aktionäre in Gewinn umwandelt",
+      buffettGuideline: "Buffett sucht nach Unternehmen mit konstant hoher ROE über viele Jahre",
+      goodValue: "Über 15% ist hervorragend, 10-15% gut, unter 10% unterdurchschnittlich"
+    },
+    "ROIC (Kapitalrendite)": {
+      whatItIs: "Return on Invested Capital - Die Rendite auf das gesamte investierte Kapital",
+      howCalculated: "NOPAT ÷ (Eigenkapital + Finanzverbindlichkeiten)",
+      whyImportant: "Misst die Effizienz des Gesamtkapitals und ist weniger durch Verschuldung beeinflussbar als ROE",
+      buffettGuideline: "Buffett bevorzugt Unternehmen mit ROIC > 12%, idealerweise über viele Jahre",
+      goodValue: "Über 12% ist hervorragend, 8-12% gut, unter 8% unterdurchschnittlich"
+    },
+    "Nettomarge": {
+      whatItIs: "Der Anteil des Umsatzes, der als Gewinn übrig bleibt",
+      howCalculated: "Jahresüberschuss ÷ Umsatz × 100",
+      whyImportant: "Höhere Margen deuten auf einen stärkeren Wettbewerbsvorteil (Burggraben) hin",
+      buffettGuideline: "Buffett sucht nach Unternehmen mit stabilen oder steigenden Margen",
+      goodValue: "Über 15% ist hervorragend, 10-15% gut, 5-10% durchschnittlich"
+    },
+    "Gewinn pro Aktie": {
+      whatItIs: "Der auf eine einzelne Aktie entfallende Unternehmensgewinn (EPS)",
+      howCalculated: "Jahresüberschuss ÷ Anzahl ausstehender Aktien",
+      whyImportant: "Zeigt, wie profitabel das Unternehmen pro Aktie ist und ist Basis für KGV-Berechnung",
+      buffettGuideline: "Buffett sucht stabiles oder steigendes EPS über viele Jahre",
+      goodValue: "Die absolute Höhe ist weniger wichtig als das kontinuierliche Wachstum"
+    },
+    "Schulden zu EBITDA": {
+      whatItIs: "Verhältnis der Gesamtverschuldung zum operativen Ergebnis vor Zinsen, Steuern und Abschreibungen",
+      howCalculated: "Gesamtverschuldung ÷ EBITDA",
+      whyImportant: "Zeigt, wie viele Jahre das Unternehmen brauchen würde, um seine Schulden aus dem operativen Ergebnis zurückzuzahlen",
+      buffettGuideline: "Buffett bevorzugt Unternehmen mit niedriger Verschuldung",
+      goodValue: "Unter 1,0 ist hervorragend, 1,0-2,0 gut, 2,0-3,0 akzeptabel, über 3,0 bedenklich"
+    },
+    "KGV (Kurs-Gewinn-Verhältnis)": {
+      whatItIs: "Das Verhältnis zwischen Aktienkurs und Gewinn pro Aktie",
+      howCalculated: "Aktienkurs ÷ Gewinn pro Aktie",
+      whyImportant: "Zeigt, wie teuer eine Aktie im Verhältnis zu ihrem Gewinn ist",
+      buffettGuideline: "Buffett bevorzugt ein niedriges KGV, idealerweise unter 15",
+      goodValue: "Unter 12 günstig, 12-20 fair, über 20 teuer (abhängig von Branche und Wachstumsrate)"
+    },
+    "P/B (Kurs-Buchwert-Verhältnis)": {
+      whatItIs: "Das Verhältnis zwischen Aktienkurs und Buchwert pro Aktie",
+      howCalculated: "Aktienkurs ÷ Buchwert pro Aktie",
+      whyImportant: "Zeigt, wie teuer eine Aktie im Verhältnis zu ihrem Buchwert ist",
+      buffettGuideline: "Buffett bevorzugt ein P/B nahe 1, maximal 1,5",
+      goodValue: "Unter 1,0 potenziell unterbewertet, 1,0-3,0 fair, über 3,0 teuer"
+    },
+    "Dividendenrendite": {
+      whatItIs: "Die jährliche Dividende im Verhältnis zum Aktienkurs",
+      howCalculated: "Jährliche Dividende pro Aktie ÷ Aktienkurs × 100",
+      whyImportant: "Zeigt, wie viel Prozent des Aktienkurses als Dividende ausgeschüttet wird",
+      buffettGuideline: "Buffett bevorzugt stabile oder steigende Dividenden, aber nicht zu hohe Ausschüttungen",
+      goodValue: "2-4% ist solide, über 4% kann auf Unterbewertung oder Probleme hindeuten"
+    },
+    "Freier Cashflow": {
+      whatItIs: "Der Bargeldüberschuss, der nach allen operativen Ausgaben und Investitionen übrig bleibt",
+      howCalculated: "Operativer Cashflow − Investitionsausgaben",
+      whyImportant: "Zeigt die tatsächliche Fähigkeit, Bargeld zu generieren, das für Dividenden, Aktienrückkäufe oder Schuldenabbau verwendet werden kann",
+      buffettGuideline: "Buffett bevorzugt Unternehmen mit stabilem oder wachsendem freiem Cashflow",
+      goodValue: "Positiv und idealerweise steigend über die Jahre"
+    }
+  };
+  
+  return explanations[metricName];
+};
 
 const MetricStatus: React.FC<{ status: string }> = ({ status }) => {
   switch (status) {
@@ -68,11 +151,50 @@ const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
                          value === null;
   
   const displayValue = isValueMissing ? 'Keine Daten' : value;
+  const detailedExplanation = getMetricDetailedExplanation(name);
+  
+  // Clean up duplicate currency symbols
+  let cleanedDisplayValue = displayValue;
+  if (typeof displayValue === 'string') {
+    cleanedDisplayValue = displayValue
+      .replace(/USD USD/g, 'USD')
+      .replace(/EUR EUR/g, 'EUR')
+      .replace(/€ €/g, '€')
+      .replace(/\$ \$/g, '$');
+  }
   
   return (
     <Card className="metric-card p-4">
-      <h3 className="text-lg font-medium mb-1">{name}</h3>
-      <div className="text-2xl font-semibold mb-2">{displayValue}</div>
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-lg font-medium">{name}</h3>
+        
+        {detailedExplanation && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
+                  <Info size={14} className="text-gray-600" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-sm p-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold">{name}</h4>
+                  <p>{detailedExplanation.whatItIs}</p>
+                  
+                  <div className="space-y-1 pt-2">
+                    <p><span className="font-medium">Berechnung:</span> {detailedExplanation.howCalculated}</p>
+                    <p><span className="font-medium">Warum wichtig:</span> {detailedExplanation.whyImportant}</p>
+                    <p><span className="font-medium">Buffett-Maßstab:</span> {detailedExplanation.buffettGuideline}</p>
+                    <p><span className="font-medium">Gute Werte:</span> {detailedExplanation.goodValue}</p>
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
+      
+      <div className="text-2xl font-semibold mb-2">{cleanedDisplayValue}</div>
       
       <div className="text-sm text-buffett-subtext mb-1">
         <span className="font-medium">Formel:</span> {formula}
@@ -277,7 +399,32 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       
       {historicalData && historicalData.revenue && historicalData.revenue.length > 0 && (
         <Card className="buffett-card p-6">
-          <h3 className="text-lg font-semibold mb-4">Finanzielle Entwicklung (10 Jahre)</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Finanzielle Entwicklung (10 Jahre)</h3>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <HelpCircle size={16} className="text-gray-600" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs p-3">
+                  <div className="space-y-2">
+                    <p className="font-medium">Warum diese Daten wichtig sind:</p>
+                    <p>Warren Buffett analysiert die finanzielle Entwicklung über mindestens 10 Jahre, 
+                       um langfristige Trends und die Beständigkeit des Geschäftsmodells zu bewerten.</p>
+                    <p className="mt-1">Besonders achtet er auf:</p>
+                    <ul className="list-disc pl-4 space-y-1 text-sm">
+                      <li>Stabiles Umsatzwachstum</li>
+                      <li>Steigende Gewinne</li>
+                      <li>Kontinuierlichen Anstieg des Gewinns pro Aktie</li>
+                    </ul>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           
           <Table>
             <TableHeader>
@@ -325,6 +472,10 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
           
           <div className="mt-4 text-sm text-buffett-subtext">
             <p>Hinweis: 'N/A' bedeutet, dass keine Daten verfügbar sind.</p>
+            <p className="mt-2">
+              <span className="font-medium">EPS (Earnings Per Share):</span> Der Gewinn pro Aktie zeigt, wie viel Gewinn auf eine einzelne Aktie entfällt.
+              Buffett achtet besonders auf einen stabilen oder wachsenden EPS über viele Jahre.
+            </p>
           </div>
         </Card>
       )}
