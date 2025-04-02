@@ -172,15 +172,17 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       }
       
       setIsSearching(true);
-      const response = await axios.get(`https://financialmodelingprep.com/api/v3/isin/${possibleIsin}?apikey=${apiKey}`);
+      // Use the correct endpoint for ISIN search
+      const response = await axios.get(`https://financialmodelingprep.com/api/v3/search-ticker?isin=${possibleIsin}&apikey=${apiKey}`);
       
-      if (response.data && response.data.length > 0 && response.data[0]?.symbol) {
+      if (response.data && Array.isArray(response.data) && response.data.length > 0 && response.data[0]?.symbol) {
         const result = response.data[0];
         const isinStock: StockSuggestion = {
           symbol: result.symbol,
           name: result.name || `ISIN: ${possibleIsin}`,
-          stockExchange: result.stockExchange,
+          stockExchange: result.exchange,
           currency: result.currency,
+          exchangeShortName: result.exchangeShortName,
         };
         
         setIsinResults(isinStock);
@@ -192,9 +194,48 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         });
       } else {
         console.log("ISIN search returned no results:", response.data);
+        
+        // Try a fallback approach for known German ISINs
+        if (Object.keys(commonGermanIsins).includes(possibleIsin)) {
+          const symbol = commonGermanIsins[possibleIsin];
+          const isinStock: StockSuggestion = {
+            symbol: symbol,
+            name: `ISIN: ${possibleIsin}`,
+          };
+          
+          setIsinResults(isinStock);
+          setOpen(true);
+          
+          toast({
+            title: "ISIN erkannt (Fallback)",
+            description: `ISIN ${possibleIsin} wurde in der lokalen Datenbank gefunden. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching ISIN:', error);
+      
+      // Fallback to our own list for common ISINs if API fails
+      if (Object.keys(commonGermanIsins).includes(possibleIsin)) {
+        const symbol = commonGermanIsins[possibleIsin];
+        const isinStock: StockSuggestion = {
+          symbol: symbol,
+          name: `ISIN: ${possibleIsin}`,
+        };
+        
+        const matchingFallback = fallbackStocks.find(stock => stock.symbol === symbol);
+        if (matchingFallback) {
+          isinStock.name = matchingFallback.name;
+        }
+        
+        setIsinResults(isinStock);
+        setOpen(true);
+        
+        toast({
+          title: "ISIN erkannt (Fallback)",
+          description: `ISIN ${possibleIsin} wurde in der lokalen Datenbank gefunden.`,
+        });
+      }
     } finally {
       setIsSearching(false);
     }
