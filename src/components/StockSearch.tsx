@@ -135,6 +135,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     }
     
     if (isinPattern.test(searchQuery)) {
+      console.log("ISIN pattern detected:", searchQuery);
       handleIsinSearch(searchQuery);
     } else {
       setIsinResults(null);
@@ -142,8 +143,12 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   }, [searchQuery]);
 
   const handleIsinSearch = async (possibleIsin: string) => {
+    console.log("Starting ISIN search for:", possibleIsin);
+    
     if (commonGermanIsins[possibleIsin]) {
       const symbol = commonGermanIsins[possibleIsin];
+      console.log("Found ISIN in local database:", possibleIsin, "=>", symbol);
+      
       const isinStock: StockSuggestion = {
         symbol: symbol,
         name: `ISIN: ${possibleIsin}`,
@@ -175,10 +180,13 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       setIsSearching(true);
       
       try {
+        console.log("Searching for ISIN via search-ticker endpoint:", possibleIsin);
         const response = await axios.get(`https://financialmodelingprep.com/api/v3/search-ticker?isin=${possibleIsin}&apikey=${apiKey}`);
         
         if (response.data && Array.isArray(response.data) && response.data.length > 0 && response.data[0]?.symbol) {
           const result = response.data[0];
+          console.log("Found ISIN via search-ticker:", result);
+          
           const isinStock: StockSuggestion = {
             symbol: result.symbol,
             name: result.name || `ISIN: ${possibleIsin}`,
@@ -201,10 +209,13 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       }
       
       try {
+        console.log("Searching for ISIN via direct ISIN endpoint:", possibleIsin);
         const directResponse = await axios.get(`https://financialmodelingprep.com/api/v3/isin/${possibleIsin}?apikey=${apiKey}`);
         
         if (directResponse.data && Array.isArray(directResponse.data) && directResponse.data.length > 0 && directResponse.data[0]?.symbol) {
           const result = directResponse.data[0];
+          console.log("Found ISIN via direct endpoint:", result);
+          
           const isinStock: StockSuggestion = {
             symbol: result.symbol,
             name: result.name || `ISIN: ${possibleIsin}`,
@@ -227,6 +238,8 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       if (Object.keys(commonGermanIsins).includes(possibleIsin)) {
         const symbol = commonGermanIsins[possibleIsin];
+        console.log("Falling back to local database for ISIN:", possibleIsin);
+        
         const isinStock: StockSuggestion = {
           symbol: symbol,
           name: `ISIN: ${possibleIsin}`,
@@ -257,6 +270,8 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       if (Object.keys(commonGermanIsins).includes(possibleIsin)) {
         const symbol = commonGermanIsins[possibleIsin];
+        console.log("Final fallback to local database for ISIN:", possibleIsin);
+        
         const isinStock: StockSuggestion = {
           symbol: symbol,
           name: `ISIN: ${possibleIsin}`,
@@ -573,14 +588,17 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                   type="text"
                   value={ticker}
                   onChange={(e) => {
-                    setTicker(e.target.value);
-                    setSearchQuery(e.target.value);
+                    const newValue = e.target.value;
+                    setTicker(newValue);
+                    setSearchQuery(newValue);
                     
-                    if (!isinPattern.test(e.target.value)) {
+                    if (isinPattern.test(newValue)) {
+                      console.log("ISIN detected in input:", newValue);
+                    } else {
                       setIsinResults(null);
                     }
                     
-                    if (e.target.value.length >= 1) {
+                    if (newValue.length >= 1) {
                       setOpen(true);
                     }
                   }}
@@ -604,6 +622,10 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                   onValueChange={(value) => {
                     setSearchQuery(value);
                     setTicker(value);
+                    
+                    if (isinPattern.test(value)) {
+                      console.log("ISIN detected in CommandInput:", value);
+                    }
                   }}
                   autoFocus
                 />
@@ -636,8 +658,11 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                           <CommandItem
                             key={`isin-${isinResults.symbol}`}
                             value={`${isinResults.name} ${isinResults.symbol}`}
-                            onSelect={() => selectStock(isinResults)}
-                            className="flex justify-between bg-blue-50"
+                            onSelect={() => {
+                              console.log("ISIN result selected:", isinResults);
+                              selectStock(isinResults);
+                            }}
+                            className="flex justify-between bg-blue-50 font-medium"
                           >
                             <div className="flex-1 truncate">
                               <span className="font-medium">{isinResults.name}</span>
