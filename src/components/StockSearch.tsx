@@ -138,7 +138,12 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const selectStock = (stock: StockSuggestion) => {
     setTicker(stock.symbol);
     setOpen(false);
-    onSearch(stock.symbol);
+  };
+
+  // This function is now separate - it updates the ticker but doesn't start analysis
+  const selectQuickAccessStock = (symbol: string) => {
+    setTicker(symbol);
+    setShowAppleCorrection(false);
   };
 
   const formatStockDisplay = (stock: StockSuggestion) => {
@@ -297,11 +302,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               variant="outline"
               size="sm"
               className="text-xs py-1 h-auto"
-              onClick={() => {
-                setTicker(item.symbol);
-                onSearch(item.symbol);
-                setShowAppleCorrection(false);
-              }}
+              onClick={() => selectQuickAccessStock(item.symbol)}
             >
               {item.symbol} ({item.name})
             </Button>
