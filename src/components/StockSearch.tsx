@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -74,6 +75,9 @@ const commonGermanIsins: Record<string, string> = {
   "DE000ENER6Y0": "ENR.DE", // Siemens Energy
 };
 
+// List of excluded asset types
+const excludedAssetTypes = ['etf', 'crypto', 'mutual fund', 'trust', 'forex', 'commodity', 'index', 'bond', 'fund', 'reit', 'warrant', 'etn'];
+
 const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false }) => {
   const [ticker, setTicker] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,10 +133,35 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const prioritizeResults = (results: StockSuggestion[]): StockSuggestion[] => {
     if (!results.length) return [];
     
+    // First, filter out non-stock assets
+    const filteredResults = results.filter(stock => {
+      // Filter out assets based on their explicit type
+      if (stock.type && excludedAssetTypes.some(excludedType => 
+        stock.type?.toLowerCase().includes(excludedType))) {
+        return false;
+      }
+      
+      // Filter out assets based on their symbol patterns
+      // Common patterns for ETFs, funds, etc.
+      if (stock.symbol.includes('-USD') ||  // Crypto pair
+          stock.symbol.includes('USD-') || 
+          stock.symbol.endsWith('.ETF') ||
+          stock.symbol.endsWith('.FUND') ||
+          stock.symbol.includes('_ETF') ||
+          /^[A-Z0-9]{1,5}\d{1,2}$/.test(stock.symbol) || // Common pattern for futures
+          stock.symbol.includes('BTC') ||   // Common crypto symbols
+          stock.symbol.includes('ETH') ||
+          stock.symbol.includes('USDT')) {
+        return false;  
+      }
+      
+      return true;
+    });
+    
     const searchLower = searchQuery.toLowerCase();
     
-    // First, assign a score to each result
-    const scoredResults = results.map(stock => {
+    // Assign a score to each result
+    const scoredResults = filteredResults.map(stock => {
       let score = 0;
       
       // Prioritize exact name matches
@@ -167,11 +196,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           stock.exchangeShortName === 'NYSE' || 
           stock.exchangeShortName === 'NASDAQ') {
         score += 20;
-      }
-      
-      // Deprioritize certain types
-      if (stock.type === 'etf' || stock.type === 'mutual fund' || stock.type === 'trust') {
-        score -= 30;
       }
       
       return { ...stock, score };
@@ -247,11 +271,34 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=25&apikey=${apiKey}`);
         
         if (response.data && Array.isArray(response.data)) {
-          // Filter out results with empty names
-          const validResults = response.data.filter((item: any) => item.name && item.symbol);
+          // Filter out non-stock results first
+          const stocksOnly = response.data.filter((item: any) => {
+            if (!item.name || !item.symbol) return false;
+            
+            // Filter out by type if available
+            if (item.type && excludedAssetTypes.some(excludedType => 
+              item.type.toLowerCase().includes(excludedType))) {
+              return false;
+            }
+            
+            // Filter out non-stocks based on symbol patterns
+            if (item.symbol.includes('-USD') ||  // Crypto pair
+                item.symbol.includes('USD-') || 
+                item.symbol.endsWith('.ETF') ||
+                item.symbol.endsWith('.FUND') ||
+                item.symbol.includes('_ETF') ||
+                /^[A-Z0-9]{1,5}\d{1,2}$/.test(item.symbol) || // Common pattern for futures
+                item.symbol.includes('BTC') ||   // Common crypto symbols
+                item.symbol.includes('ETH') ||
+                item.symbol.includes('USDT')) {
+              return false;  
+            }
+            
+            return true;
+          });
           
           // Prioritize and sort results
-          const prioritizedResults = prioritizeResults(validResults);
+          const prioritizedResults = prioritizeResults(stocksOnly);
           setSuggestions(prioritizedResults);
           
           // Check for fuzzy matches
