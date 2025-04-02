@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -130,7 +129,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const [isinResults, setIsinResults] = useState<StockSuggestion | null>(null);
   const { toast } = useToast();
 
-  // Check if input matches ISIN pattern when search query changes
   useEffect(() => {
     if (isinPattern.test(searchQuery)) {
       handleIsinSearch(searchQuery);
@@ -140,7 +138,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   }, [searchQuery]);
 
   const handleIsinSearch = async (possibleIsin: string) => {
-    // Check if it's a common German ISIN we know
     if (commonGermanIsins[possibleIsin]) {
       const symbol = commonGermanIsins[possibleIsin];
       const isinStock: StockSuggestion = {
@@ -154,13 +151,13 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       }
       
       setIsinResults(isinStock);
+      setOpen(true);
       
       toast({
         title: "ISIN erkannt",
         description: `ISIN ${possibleIsin} wurde erkannt. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
       });
       
-      setOpen(true);
       return;
     }
     
@@ -172,50 +169,88 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       }
       
       setIsSearching(true);
-      // Use the correct endpoint for ISIN search
-      const response = await axios.get(`https://financialmodelingprep.com/api/v3/search-ticker?isin=${possibleIsin}&apikey=${apiKey}`);
       
-      if (response.data && Array.isArray(response.data) && response.data.length > 0 && response.data[0]?.symbol) {
-        const result = response.data[0];
-        const isinStock: StockSuggestion = {
-          symbol: result.symbol,
-          name: result.name || `ISIN: ${possibleIsin}`,
-          stockExchange: result.exchange,
-          currency: result.currency,
-          exchangeShortName: result.exchangeShortName,
-        };
+      try {
+        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search-ticker?isin=${possibleIsin}&apikey=${apiKey}`);
         
-        setIsinResults(isinStock);
-        setOpen(true);
-        
-        toast({
-          title: "ISIN erkannt",
-          description: `ISIN ${possibleIsin} wurde gefunden. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
-        });
-      } else {
-        console.log("ISIN search returned no results:", response.data);
-        
-        // Try a fallback approach for known German ISINs
-        if (Object.keys(commonGermanIsins).includes(possibleIsin)) {
-          const symbol = commonGermanIsins[possibleIsin];
+        if (response.data && Array.isArray(response.data) && response.data.length > 0 && response.data[0]?.symbol) {
+          const result = response.data[0];
           const isinStock: StockSuggestion = {
-            symbol: symbol,
-            name: `ISIN: ${possibleIsin}`,
+            symbol: result.symbol,
+            name: result.name || `ISIN: ${possibleIsin}`,
+            stockExchange: result.exchange,
+            currency: result.currency,
+            exchangeShortName: result.exchangeShortName,
           };
           
           setIsinResults(isinStock);
           setOpen(true);
           
           toast({
-            title: "ISIN erkannt (Fallback)",
-            description: `ISIN ${possibleIsin} wurde in der lokalen Datenbank gefunden. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
+            title: "ISIN erkannt",
+            description: `ISIN ${possibleIsin} wurde gefunden. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
           });
+          return;
         }
+      } catch (error) {
+        console.error("Error with search-ticker endpoint:", error);
+      }
+      
+      try {
+        const directResponse = await axios.get(`https://financialmodelingprep.com/api/v3/isin/${possibleIsin}?apikey=${apiKey}`);
+        
+        if (directResponse.data && Array.isArray(directResponse.data) && directResponse.data.length > 0 && directResponse.data[0]?.symbol) {
+          const result = directResponse.data[0];
+          const isinStock: StockSuggestion = {
+            symbol: result.symbol,
+            name: result.name || `ISIN: ${possibleIsin}`,
+            stockExchange: result.stockExchange,
+            currency: result.currency,
+          };
+          
+          setIsinResults(isinStock);
+          setOpen(true);
+          
+          toast({
+            title: "ISIN erkannt",
+            description: `ISIN ${possibleIsin} wurde gefunden. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
+          });
+          return;
+        }
+      } catch (error) {
+        console.error("Error with direct ISIN endpoint:", error);
+      }
+      
+      if (Object.keys(commonGermanIsins).includes(possibleIsin)) {
+        const symbol = commonGermanIsins[possibleIsin];
+        const isinStock: StockSuggestion = {
+          symbol: symbol,
+          name: `ISIN: ${possibleIsin}`,
+        };
+        
+        const matchingFallback = fallbackStocks.find(stock => stock.symbol === symbol);
+        if (matchingFallback) {
+          isinStock.name = matchingFallback.name;
+        }
+        
+        setIsinResults(isinStock);
+        setOpen(true);
+        
+        toast({
+          title: "ISIN erkannt (Fallback)",
+          description: `ISIN ${possibleIsin} wurde in der lokalen Datenbank gefunden.`,
+        });
+      } else {
+        console.log("No matches found for ISIN:", possibleIsin);
+        toast({
+          title: "ISIN nicht gefunden",
+          description: `Keine Aktie für ISIN ${possibleIsin} gefunden.`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error fetching ISIN:', error);
       
-      // Fallback to our own list for common ISINs if API fails
       if (Object.keys(commonGermanIsins).includes(possibleIsin)) {
         const symbol = commonGermanIsins[possibleIsin];
         const isinStock: StockSuggestion = {
@@ -446,6 +481,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
 
   const selectStock = (stock: StockSuggestion) => {
     setTicker(stock.symbol);
+    onSearch(stock.symbol);
     setOpen(false);
   };
 
@@ -514,6 +550,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               className="p-0 h-auto text-buffett-blue font-medium mt-1"
               onClick={() => {
                 setTicker(suggestedCorrection.symbol);
+                onSearch(suggestedCorrection.symbol);
                 setSuggestedCorrection(null);
               }}
             >
@@ -534,6 +571,10 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                   onChange={(e) => {
                     setTicker(e.target.value);
                     setSearchQuery(e.target.value);
+                    
+                    if (!isinPattern.test(e.target.value)) {
+                      setIsinResults(null);
+                    }
                   }}
                   placeholder="Aktienname, Symbol oder ISIN eingeben..."
                   className="apple-input pl-10"
