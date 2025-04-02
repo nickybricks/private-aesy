@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -129,13 +130,17 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const [isinResults, setIsinResults] = useState<StockSuggestion | null>(null);
   const { toast } = useToast();
 
+  // Check if input matches ISIN pattern when search query changes
   useEffect(() => {
     if (isinPattern.test(searchQuery)) {
       handleIsinSearch(searchQuery);
+    } else {
+      setIsinResults(null);
     }
   }, [searchQuery]);
 
   const handleIsinSearch = async (possibleIsin: string) => {
+    // Check if it's a common German ISIN we know
     if (commonGermanIsins[possibleIsin]) {
       const symbol = commonGermanIsins[possibleIsin];
       const isinStock: StockSuggestion = {
@@ -152,7 +157,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       toast({
         title: "ISIN erkannt",
-        description: `ISIN ${possibleIsin} wurde gefunden. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
+        description: `ISIN ${possibleIsin} wurde erkannt. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
       });
       
       setOpen(true);
@@ -161,12 +166,15 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     
     try {
       const apiKey = localStorage.getItem('fmp_api_key');
-      if (!apiKey) return;
+      if (!apiKey) {
+        console.log("No API key found for ISIN search");
+        return;
+      }
       
       setIsSearching(true);
       const response = await axios.get(`https://financialmodelingprep.com/api/v3/isin/${possibleIsin}?apikey=${apiKey}`);
       
-      if (response.data && response.data[0]?.symbol) {
+      if (response.data && response.data.length > 0 && response.data[0]?.symbol) {
         const result = response.data[0];
         const isinStock: StockSuggestion = {
           symbol: result.symbol,
@@ -182,6 +190,8 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           title: "ISIN erkannt",
           description: `ISIN ${possibleIsin} wurde gefunden. Bitte wählen Sie den Vorschlag aus der Liste aus.`,
         });
+      } else {
+        console.log("ISIN search returned no results:", response.data);
       }
     } catch (error) {
       console.error('Error fetching ISIN:', error);
@@ -293,7 +303,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       if (!searchQuery || searchQuery.length < 2) {
         setSuggestions(fallbackStocks.slice(0, 6));
         setSuggestedCorrection(null);
-        setIsinResults(null);
         return;
       }
 
@@ -548,29 +557,52 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                         </CommandGroup>
                       )}
                       
-                      <CommandGroup heading={searchQuery && searchQuery.length >= 2 ? "Vorschläge" : "Beliebte Aktien"}>
-                        {suggestions.map((stock) => {
-                          const display = formatStockDisplay(stock);
-                          return (
-                            <CommandItem 
-                              key={stock.symbol} 
-                              value={`${stock.name} ${stock.symbol}`}
-                              onSelect={() => selectStock(stock)}
-                              className="flex justify-between"
-                            >
-                              <div className="flex-1 truncate">
-                                <span className="font-medium">{display.name}</span>
-                                <span className="ml-2 text-sm text-muted-foreground">
-                                  ({display.symbol})
-                                </span>
-                              </div>
-                              <div className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
-                                {display.exchange && <span>{display.exchange}</span>}
-                              </div>
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
+                      {(!searchQuery || searchQuery.length < 2) ? (
+                        <CommandGroup heading="Beliebte Aktien">
+                          {fallbackStocks.slice(0, 6).map((stock) => {
+                            const display = formatStockDisplay(stock);
+                            return (
+                              <CommandItem 
+                                key={stock.symbol} 
+                                value={`${stock.name} ${stock.symbol}`}
+                                onSelect={() => selectStock(stock)}
+                                className="flex justify-between"
+                              >
+                                <div className="flex-1 truncate">
+                                  <span className="font-medium">{display.name}</span>
+                                  <span className="ml-2 text-sm text-muted-foreground">
+                                    ({display.symbol})
+                                  </span>
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      ) : (
+                        <CommandGroup heading="Vorschläge">
+                          {suggestions.map((stock) => {
+                            const display = formatStockDisplay(stock);
+                            return (
+                              <CommandItem 
+                                key={stock.symbol} 
+                                value={`${stock.name} ${stock.symbol}`}
+                                onSelect={() => selectStock(stock)}
+                                className="flex justify-between"
+                              >
+                                <div className="flex-1 truncate">
+                                  <span className="font-medium">{display.name}</span>
+                                  <span className="ml-2 text-sm text-muted-foreground">
+                                    ({display.symbol})
+                                  </span>
+                                </div>
+                                <div className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
+                                  {display.exchange && <span>{display.exchange}</span>}
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      )}
                     </>
                   )}
                 </CommandList>
