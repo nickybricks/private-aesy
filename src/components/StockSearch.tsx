@@ -78,6 +78,58 @@ const commonGermanIsins: Record<string, string> = {
 // List of excluded asset types
 const excludedAssetTypes = ['etf', 'crypto', 'mutual fund', 'trust', 'forex', 'commodity', 'index', 'bond', 'fund', 'reit', 'warrant', 'etn'];
 
+// Cryptocurrency keywords and patterns for more thorough filtering
+const cryptoKeywords = ['bitcoin', 'ethereum', 'crypto', 'token', 'coin', 'blockchain', 'defi', 'nft'];
+const cryptoSymbolPatterns = [
+  /^[A-Z0-9]{3,4}-[A-Z]{3}$/, // Format like BTC-USD
+  /^[A-Z0-9]{1,5}USDT$/,     // Format like BTCUSDT
+  /^[A-Z0-9]{1,5}USD$/,      // Format like BTCUSD
+  /COIN$/,                   // Ends with COIN
+  /TOKEN$/                   // Ends with TOKEN
+];
+
+// Function to check if an asset is likely a crypto
+const isCryptoAsset = (stock: StockSuggestion): boolean => {
+  if (!stock.name || !stock.symbol) return false;
+  
+  const nameLower = stock.name.toLowerCase();
+  const symbolLower = stock.symbol.toLowerCase();
+  
+  // Check against crypto keywords in name
+  if (cryptoKeywords.some(keyword => nameLower.includes(keyword))) {
+    return true;
+  }
+  
+  // Check symbol patterns common for crypto
+  if (symbolLower.includes('btc') || 
+      symbolLower.includes('eth') || 
+      symbolLower.includes('usdt') ||
+      symbolLower.includes('usdc') ||
+      symbolLower.includes('usd-') ||
+      symbolLower.includes('-usd') ||
+      cryptoSymbolPatterns.some(pattern => pattern.test(stock.symbol))) {
+    return true;
+  }
+  
+  // Check for cryptocurrency exchanges
+  if (stock.stockExchange && 
+      (stock.stockExchange.toLowerCase().includes('crypto') || 
+       stock.stockExchange.toLowerCase().includes('binance') || 
+       stock.stockExchange.toLowerCase().includes('coinbase'))) {
+    return true;
+  }
+  
+  // Check type field if available
+  if (stock.type && 
+      (stock.type.toLowerCase().includes('crypto') || 
+       stock.type.toLowerCase().includes('token') || 
+       stock.type.toLowerCase().includes('coin'))) {
+    return true;
+  }
+  
+  return false;
+};
+
 const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false }) => {
   const [ticker, setTicker] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -135,6 +187,11 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     
     // First, filter out non-stock assets
     const filteredResults = results.filter(stock => {
+      // Filter out crypto assets with the comprehensive function
+      if (isCryptoAsset(stock)) {
+        return false;
+      }
+      
       // Filter out assets based on their explicit type
       if (stock.type && excludedAssetTypes.some(excludedType => 
         stock.type?.toLowerCase().includes(excludedType))) {
@@ -274,6 +331,11 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           // Filter out non-stock results first
           const stocksOnly = response.data.filter((item: any) => {
             if (!item.name || !item.symbol) return false;
+            
+            // First check with comprehensive crypto detection
+            if (isCryptoAsset(item)) {
+              return false;
+            }
             
             // Filter out by type if available
             if (item.type && excludedAssetTypes.some(excludedType => 
