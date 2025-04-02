@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ import {
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import axios from 'axios';
+import { useToast } from '@/hooks/use-toast';
 
 interface StockSearchProps {
   onSearch: (ticker: string) => void;
@@ -19,8 +21,16 @@ interface StockSearchProps {
   disabled?: boolean;
 }
 
-// Suggest common stocks with their names and symbols
-const suggestedStocks = [
+interface StockSuggestion {
+  symbol: string;
+  name: string;
+  currency?: string;
+  stockExchange?: string;
+  exchangeShortName?: string;
+}
+
+// Fallback suggested stocks if API fails
+const fallbackStocks = [
   { name: 'Apple', symbol: 'AAPL' },
   { name: 'Microsoft', symbol: 'MSFT' },
   { name: 'Amazon', symbol: 'AMZN' },
@@ -35,10 +45,74 @@ const suggestedStocks = [
   { name: 'Siemens', symbol: 'SIE.DE' },
 ];
 
+// Popular stocks for quick access buttons
+const quickAccessStocks = [
+  { name: 'Apple', symbol: 'AAPL' },
+  { name: 'Microsoft', symbol: 'MSFT' },
+  { name: 'Amazon', symbol: 'AMZN' },
+  { name: 'Alphabet', symbol: 'GOOGL' },
+  { name: 'Tesla', symbol: 'TSLA' },
+  { name: 'Adidas', symbol: 'ADS.DE' },
+];
+
 const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false }) => {
   const [ticker, setTicker] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
   const [open, setOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<StockSuggestion[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const { toast } = useToast();
+  
+  // Fetch suggestions when user types
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!searchQuery || searchQuery.length < 2) {
+        setSuggestions([]);
+        return;
+      }
+
+      setIsSearching(true);
+      
+      try {
+        // Get API key from localStorage
+        const apiKey = localStorage.getItem('fmp_api_key');
+        if (!apiKey) {
+          setSuggestions(fallbackStocks.filter(stock => 
+            stock.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            stock.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+          ));
+          return;
+        }
+        
+        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=15&apikey=${apiKey}`);
+        
+        if (response.data && Array.isArray(response.data)) {
+          // Filter out results with empty names
+          const validResults = response.data.filter((item: any) => item.name && item.symbol);
+          setSuggestions(validResults);
+        }
+      } catch (error) {
+        console.error('Error fetching stock suggestions:', error);
+        toast({
+          title: "Fehler beim Laden der Vorschläge",
+          description: "Fallback-Liste wird angezeigt. Bitte prüfen Sie Ihren API-Key.",
+          variant: "destructive",
+        });
+        
+        // Fallback to static list filtered by search query
+        setSuggestions(fallbackStocks.filter(stock => 
+          stock.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+          stock.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+        ));
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, toast]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,16 +135,30 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     onSearch(correctTicker);
   };
 
-  const selectStock = (stock: string) => {
-    setTicker(stock);
+  const selectStock = (stock: StockSuggestion) => {
+    setTicker(stock.symbol);
     setOpen(false);
+    onSearch(stock.symbol);
   };
 
-  const filteredStocks = ticker
-    ? suggestedStocks.filter(stock => 
-        stock.name.toLowerCase().includes(ticker.toLowerCase()) || 
-        stock.symbol.toLowerCase().includes(ticker.toLowerCase()))
-    : suggestedStocks;
+  const formatStockDisplay = (stock: StockSuggestion) => {
+    let exchange = '';
+    
+    if (stock.exchangeShortName) {
+      exchange = stock.exchangeShortName;
+    } else if (stock.stockExchange) {
+      // Extract a short name from the exchange if possible
+      const exchangeParts = stock.stockExchange.split(' ');
+      exchange = exchangeParts.length > 1 ? exchangeParts[0] : stock.stockExchange;
+    }
+    
+    return {
+      name: stock.name,
+      symbol: stock.symbol,
+      exchange: exchange,
+      currency: stock.currency || '',
+    };
+  };
 
   return (
     <div className="buffett-card mb-8 animate-fade-in">
@@ -108,7 +196,10 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                 <Input
                   type="text"
                   value={ticker}
-                  onChange={(e) => setTicker(e.target.value)}
+                  onChange={(e) => {
+                    setTicker(e.target.value);
+                    setSearchQuery(e.target.value);
+                  }}
                   placeholder="Aktienname oder Symbol eingeben..."
                   className="apple-input pl-10"
                   disabled={disabled || isLoading}
@@ -121,24 +212,52 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               <Command>
                 <CommandInput 
                   placeholder="Suche nach Aktien..." 
-                  value={ticker}
-                  onValueChange={setTicker}
+                  value={searchQuery}
+                  onValueChange={(value) => {
+                    setSearchQuery(value);
+                    setTicker(value);
+                  }}
                 />
                 <CommandList>
-                  <CommandEmpty>Keine passenden Aktien gefunden</CommandEmpty>
-                  <CommandGroup heading="Vorschläge">
-                    {filteredStocks.map((stock) => (
-                      <CommandItem 
-                        key={stock.symbol} 
-                        value={stock.symbol}
-                        onSelect={() => selectStock(stock.symbol)}
-                        className="flex justify-between"
-                      >
-                        <span className="font-medium">{stock.name}</span>
-                        <span className="ml-2 text-gray-500">{stock.symbol}</span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
+                  {isSearching ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">
+                      Suche nach Unternehmen...
+                    </div>
+                  ) : (
+                    <>
+                      <CommandEmpty>
+                        <div className="py-6 text-center">
+                          <p>Keine passenden Aktien gefunden</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Versuchen Sie einen anderen Suchbegriff oder geben Sie das Symbol direkt ein
+                          </p>
+                        </div>
+                      </CommandEmpty>
+                      <CommandGroup heading="Vorschläge">
+                        {suggestions.map((stock) => {
+                          const display = formatStockDisplay(stock);
+                          return (
+                            <CommandItem 
+                              key={stock.symbol} 
+                              value={stock.symbol}
+                              onSelect={() => selectStock(stock)}
+                              className="flex justify-between"
+                            >
+                              <div>
+                                <span className="font-medium">{display.name}</span>
+                                {display.exchange && (
+                                  <span className="text-xs text-muted-foreground ml-2">
+                                    {display.exchange}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="ml-2 text-gray-500">{display.symbol}</span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </>
+                  )}
                 </CommandList>
               </Command>
             </PopoverContent>
@@ -172,7 +291,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       <div className="mt-6">
         <p className="text-sm font-medium mb-2">Häufig verwendete Symbole:</p>
         <div className="flex flex-wrap gap-2">
-          {suggestedStocks.slice(0, 6).map((item) => (
+          {quickAccessStocks.map((item) => (
             <Button
               key={item.symbol}
               variant="outline"
