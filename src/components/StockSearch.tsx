@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -129,22 +130,33 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const [isinResults, setIsinResults] = useState<StockSuggestion | null>(null);
   const { toast } = useToast();
 
+  // Memoized ISIN check and handler
+  const checkAndHandleIsin = useCallback((value: string) => {
+    if (isinPattern.test(value)) {
+      console.log("ISIN pattern detected in input/query:", value);
+      handleIsinSearch(value);
+      return true;
+    }
+    return false;
+  }, []);
+
   useEffect(() => {
     if (searchQuery.length >= 1) {
       setOpen(true);
     }
     
-    if (isinPattern.test(searchQuery)) {
-      console.log("ISIN pattern detected:", searchQuery);
-      handleIsinSearch(searchQuery);
+    // Check if the searchQuery is an ISIN
+    if (checkAndHandleIsin(searchQuery)) {
+      console.log("ISIN pattern detected in searchQuery effect:", searchQuery);
     } else {
       setIsinResults(null);
     }
-  }, [searchQuery]);
+  }, [searchQuery, checkAndHandleIsin]);
 
   const handleIsinSearch = async (possibleIsin: string) => {
     console.log("Starting ISIN search for:", possibleIsin);
     
+    // First check our local database of common German ISINs
     if (commonGermanIsins[possibleIsin]) {
       const symbol = commonGermanIsins[possibleIsin];
       console.log("Found ISIN in local database:", possibleIsin, "=>", symbol);
@@ -499,6 +511,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   };
 
   const selectStock = (stock: StockSuggestion) => {
+    console.log("Stock selected:", stock);
     setTicker(stock.symbol);
     onSearch(stock.symbol);
     setOpen(false);
@@ -592,18 +605,15 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                     setTicker(newValue);
                     setSearchQuery(newValue);
                     
-                    if (isinPattern.test(newValue)) {
-                      console.log("ISIN detected in input:", newValue);
-                    } else {
-                      setIsinResults(null);
-                    }
+                    // Explicitly check for ISIN pattern on every input change
+                    checkAndHandleIsin(newValue);
                     
                     if (newValue.length >= 1) {
                       setOpen(true);
                     }
                   }}
                   onFocus={() => {
-                    if (ticker.length >= 1) {
+                    if (ticker.length >= 1 || isinResults) {
                       setOpen(true);
                     }
                   }}
@@ -614,7 +624,17 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                 <Search className="absolute left-3 top-3 text-gray-400" size={20} />
               </div>
             </PopoverTrigger>
-            <PopoverContent className="p-0 w-[300px] md:w-[400px]" align="start" sideOffset={5}>
+            <PopoverContent 
+              className="p-0 w-[300px] md:w-[400px]" 
+              align="start" 
+              sideOffset={5}
+              onInteractOutside={(e) => {
+                // Prevent closing when interacting with the popover content
+                if (isinResults) {
+                  e.preventDefault();
+                }
+              }}
+            >
               <Command>
                 <CommandInput 
                   placeholder="Suche nach Aktien..." 
@@ -623,9 +643,8 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                     setSearchQuery(value);
                     setTicker(value);
                     
-                    if (isinPattern.test(value)) {
-                      console.log("ISIN detected in CommandInput:", value);
-                    }
+                    // Check for ISIN in command input
+                    checkAndHandleIsin(value);
                   }}
                   autoFocus
                 />
