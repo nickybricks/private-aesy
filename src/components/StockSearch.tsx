@@ -133,6 +133,12 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     if (searchQuery.length >= 1) {
       setOpen(true);
     }
+    
+    if (isinPattern.test(searchQuery)) {
+      handleIsinSearch(searchQuery);
+    } else {
+      setIsinResults(null);
+    }
   }, [searchQuery]);
 
   const handleIsinSearch = async (possibleIsin: string) => {
