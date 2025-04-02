@@ -61,9 +61,51 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-// Updated function to get score display based on status with improved logic
+// Helper function that automatically derives score from GPT analysis
+const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | undefined => {
+  if (!criterion.gptAnalysis || criterion.maxScore === undefined) {
+    return undefined;
+  }
+  
+  const analysis = criterion.gptAnalysis.toLowerCase();
+  
+  // Derive score for business model criterion
+  if (criterion.title === '1. Verstehbares Geschäftsmodell') {
+    if (analysis.includes('einfach') || analysis.includes('klar') || analysis.includes('verständlich')) {
+      return 3;
+    } else if (analysis.includes('moderat') || analysis.includes('mittlere komplexität')) {
+      return 2;
+    } else if (analysis.includes('komplex') || analysis.includes('schwer verständlich')) {
+      return 1;
+    }
+  }
+  
+  // Derive score for turnaround criterion
+  if (criterion.title === '11. Keine Turnarounds') {
+    if (analysis.includes('kein turnaround') || analysis.includes('keine umstrukturierung')) {
+      return 3;
+    } else if (analysis.includes('leichte umstrukturierung') || analysis.includes('moderate änderungen')) {
+      return 1;
+    } else if (analysis.includes('klarer turnaround') || analysis.includes('umfassende umstrukturierung')) {
+      return 0;
+    }
+  }
+  
+  // For other criteria, we could add similar pattern matching logic
+  return undefined;
+}
+
+// Function to get score display based on status with automated GPT score derivation
 const getScoreDisplay = (criterion: BuffettCriterionProps) => {
-  if (criterion.score === undefined || criterion.maxScore === undefined) {
+  if (criterion.maxScore === undefined) {
+    return null;
+  }
+  
+  // Try to derive score from GPT analysis if it doesn't match current score
+  const derivedScore = deriveScoreFromGptAnalysis(criterion);
+  const score = criterion.score !== undefined ? criterion.score : derivedScore;
+  
+  if (score === undefined) {
     return null;
   }
   
@@ -73,11 +115,11 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
       <Tooltip>
         <TooltipTrigger className="inline-flex items-center ml-2">
           <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-            criterion.score / criterion.maxScore >= 0.7 ? 'bg-green-100 text-green-700' :
-            criterion.score / criterion.maxScore >= 0.4 ? 'bg-yellow-100 text-yellow-700' :
+            score / criterion.maxScore >= 0.7 ? 'bg-green-100 text-green-700' :
+            score / criterion.maxScore >= 0.4 ? 'bg-yellow-100 text-yellow-700' :
             'bg-red-100 text-red-700'
           }`}>
-            {criterion.score}/{criterion.maxScore}
+            {score}/{criterion.maxScore}
           </span>
           <Info className="h-3 w-3 ml-1 text-gray-400" />
         </TooltipTrigger>
@@ -101,23 +143,11 @@ const hasInconsistentAnalysis = (criterion: BuffettCriterionProps): boolean => {
     return false;
   }
   
-  const gptAnalysis = criterion.gptAnalysis.toLowerCase();
-  const scoreRatio = criterion.score / criterion.maxScore;
+  // Get the derived score from GPT analysis
+  const derivedScore = deriveScoreFromGptAnalysis(criterion);
   
-  // Updated check for specific inconsistencies
-  if (criterion.title === '1. Verstehbares Geschäftsmodell') {
-    if ((gptAnalysis.includes('moderat') || gptAnalysis.includes('moderate')) && criterion.score > 2) return true;
-    if (gptAnalysis.includes('komplex') && criterion.score > 1) return true;
-    if (gptAnalysis.includes('einfach') && scoreRatio < 0.7) return true;
-  }
-  
-  if (criterion.title === '11. Keine Turnarounds') {
-    if (gptAnalysis.includes('kein turnaround') && scoreRatio < 0.9) return true;
-    if (gptAnalysis.includes('leichte umstrukturierung') && (criterion.score < 1 || criterion.score > 1)) return true;
-    if (gptAnalysis.includes('klarer turnaround') && criterion.score > 0) return true;
-  }
-  
-  return false;
+  // If we have a derived score and it doesn't match the current score, flag an inconsistency
+  return derivedScore !== undefined && derivedScore !== criterion.score;
 };
 
 // Helper function to extract key insights from GPT analysis
@@ -186,8 +216,8 @@ const BuffettScoreChart = ({ score }: { score: number }) => {
               </div>
             </div>
             <p className="mt-4 text-sm text-gray-600">
-              {score >= 70 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
-               score >= 40 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
+              {score >= 75 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
+               score >= 60 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
                'Geringe Übereinstimmung mit Buffetts Investitionskriterien'}
             </p>
           </div>
@@ -237,18 +267,33 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.turnaround
   ];
 
-  // Zählen der Punkte für die Gesamtbewertung
-  const totalPoints = allCriteria.reduce((acc, criterion) => {
+  // Process criteria to automatically update scores based on GPT analysis
+  const processedCriteria = allCriteria.map(criterion => {
+    const derivedScore = deriveScoreFromGptAnalysis(criterion);
+    
+    // Only update the score if it's different and we have a derived value
+    if (derivedScore !== undefined && (criterion.score === undefined || criterion.score !== derivedScore)) {
+      return {
+        ...criterion,
+        score: derivedScore
+      };
+    }
+    
+    return criterion;
+  });
+
+  // Calculate total points for overall rating
+  const totalPoints = processedCriteria.reduce((acc, criterion) => {
     if (criterion.status === 'pass') return acc + 3;
     if (criterion.status === 'warning') return acc + 1;
     return acc;
   }, 0);
   
-  const maxPoints = allCriteria.length * 3;
+  const maxPoints = processedCriteria.length * 3;
   const buffettScore = Math.round((totalPoints / maxPoints) * 100);
 
-  // Calculate the total detailed score if available
-  const detailedScores = allCriteria.filter(c => c.score !== undefined && c.maxScore !== undefined);
+  // Calculate detailed score based on the GPT-derived scores when available
+  const detailedScores = processedCriteria.filter(c => c.score !== undefined && c.maxScore !== undefined);
   const hasDetailedScores = detailedScores.length > 0;
   
   const totalDetailedScore = hasDetailedScores ? 
@@ -261,9 +306,9 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
 
   // Criteria distribution for visualization
   const criteriaDistribution = {
-    pass: allCriteria.filter(c => c.status === 'pass').length,
-    warning: allCriteria.filter(c => c.status === 'warning').length,
-    fail: allCriteria.filter(c => c.status === 'fail').length
+    pass: processedCriteria.filter(c => c.status === 'pass').length,
+    warning: processedCriteria.filter(c => c.status === 'warning').length,
+    fail: processedCriteria.filter(c => c.status === 'fail').length
   };
 
   return (
@@ -286,13 +331,13 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
           <div className="h-2.5 rounded-full" 
                style={{
                  width: `${hasDetailedScores ? detailedBuffettScore : buffettScore}%`,
-                 backgroundColor: (hasDetailedScores ? detailedBuffettScore : buffettScore) >= 70 ? '#10b981' : 
-                                 (hasDetailedScores ? detailedBuffettScore : buffettScore) >= 40 ? '#f59e0b' : '#ef4444'
+                 backgroundColor: (hasDetailedScores ? detailedBuffettScore : buffettScore) >= 75 ? '#10b981' : 
+                                 (hasDetailedScores ? detailedBuffettScore : buffettScore) >= 60 ? '#f59e0b' : '#ef4444'
                }}></div>
         </div>
         <p className="text-sm mt-2 text-gray-600">
-          {(hasDetailedScores ? detailedBuffettScore : buffettScore) >= 70 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
-          (hasDetailedScores ? detailedBuffettScore : buffettScore) >= 40 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
+          {(hasDetailedScores ? detailedBuffettScore : buffettScore) >= 75 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
+          (hasDetailedScores ? detailedBuffettScore : buffettScore) >= 60 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
           'Geringe Übereinstimmung mit Buffetts Investitionskriterien'}
         </p>
       </div>
@@ -301,7 +346,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       <BuffettScoreChart score={hasDetailedScores ? detailedBuffettScore : buffettScore} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {allCriteria.map((criterion, index) => {
+        {processedCriteria.map((criterion, index) => {
           const { summary, points } = extractKeyInsights(criterion.gptAnalysis);
           const hasInconsistency = hasInconsistentAnalysis(criterion);
           
