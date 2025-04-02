@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,6 +26,8 @@ interface StockSuggestion {
   currency?: string;
   stockExchange?: string;
   exchangeShortName?: string;
+  type?: string;
+  isin?: string;
 }
 
 // Fallback suggested stocks if API fails
@@ -55,20 +56,173 @@ const quickAccessStocks = [
   { name: 'Adidas', symbol: 'ADS.DE' },
 ];
 
+// ISIN patterns for major markets
+const isinPattern = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
+
+// Common German ISINs for quick detection
+const commonGermanIsins: Record<string, string> = {
+  "DE000A1EWWW0": "ADS.DE", // Adidas
+  "DE000BASF111": "BAS.DE", // BASF
+  "DE0005190003": "BMW.DE", // BMW
+  "DE0007100000": "DAI.DE", // Mercedes-Benz
+  "DE0007664039": "VOW3.DE", // Volkswagen
+  "DE0008404005": "ALV.DE", // Allianz
+  "DE0007164600": "SAP.DE", // SAP
+  "DE0007236101": "SIE.DE", // Siemens
+  "DE000ENAG999": "EOAN.DE", // E.ON
+  "DE0005557508": "DTE.DE", // Deutsche Telekom
+  "DE000ENER6Y0": "ENR.DE", // Siemens Energy
+};
+
 const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false }) => {
   const [ticker, setTicker] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
+  const [suggestedCorrection, setSuggestedCorrection] = useState<{original: string, suggestion: string, symbol: string} | null>(null);
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<StockSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
+  
+  // Detect if input looks like an ISIN
+  useEffect(() => {
+    if (isinPattern.test(searchQuery)) {
+      handleIsinSearch(searchQuery);
+    }
+  }, [searchQuery]);
+
+  // Handle ISIN search
+  const handleIsinSearch = async (possibleIsin: string) => {
+    // Check if it's a common German ISIN we know
+    if (commonGermanIsins[possibleIsin]) {
+      setTicker(commonGermanIsins[possibleIsin]);
+      toast({
+        title: "ISIN erkannt",
+        description: `ISIN ${possibleIsin} wurde als ${commonGermanIsins[possibleIsin]} identifiziert.`,
+      });
+      return;
+    }
+    
+    // Otherwise try to look it up via API if we have a key
+    try {
+      const apiKey = localStorage.getItem('fmp_api_key');
+      if (!apiKey) return;
+      
+      setIsSearching(true);
+      const response = await axios.get(`https://financialmodelingprep.com/api/v3/isin/${possibleIsin}?apikey=${apiKey}`);
+      
+      if (response.data && response.data[0]?.symbol) {
+        setTicker(response.data[0].symbol);
+        toast({
+          title: "ISIN erkannt",
+          description: `ISIN ${possibleIsin} wurde als ${response.data[0].symbol} identifiziert.`,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching ISIN:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+  
+  // Function to prioritize and sort search results
+  const prioritizeResults = (results: StockSuggestion[]): StockSuggestion[] => {
+    if (!results.length) return [];
+    
+    const searchLower = searchQuery.toLowerCase();
+    
+    // First, assign a score to each result
+    const scoredResults = results.map(stock => {
+      let score = 0;
+      
+      // Prioritize exact name matches
+      if (stock.name.toLowerCase() === searchLower) {
+        score += 100;
+      } 
+      // Prioritize name starts with search query
+      else if (stock.name.toLowerCase().startsWith(searchLower)) {
+        score += 80;
+      }
+      // Name contains search query
+      else if (stock.name.toLowerCase().includes(searchLower)) {
+        score += 60;
+      }
+      
+      // Symbol exact match
+      if (stock.symbol.toLowerCase() === searchLower) {
+        score += 50;
+      }
+      // Symbol starts with search query
+      else if (stock.symbol.toLowerCase().startsWith(searchLower)) {
+        score += 40;
+      }
+      
+      // Prioritize German stocks (.DE)
+      if (stock.symbol.endsWith('.DE')) {
+        score += 30;
+      }
+      
+      // Prioritize main exchanges over OTC
+      if (stock.exchangeShortName === 'XETRA' || 
+          stock.exchangeShortName === 'NYSE' || 
+          stock.exchangeShortName === 'NASDAQ') {
+        score += 20;
+      }
+      
+      // Deprioritize certain types
+      if (stock.type === 'etf' || stock.type === 'mutual fund' || stock.type === 'trust') {
+        score -= 30;
+      }
+      
+      return { ...stock, score };
+    });
+    
+    // Sort by score
+    return scoredResults.sort((a: any, b: any) => b.score - a.score);
+  };
+
+  // Simple fuzzy match to suggest corrections
+  const getFuzzyMatches = (query: string, stocks: StockSuggestion[]) => {
+    if (query.length < 4) return null;
+    
+    const queryLower = query.toLowerCase();
+    
+    // Look for popular stocks with similar names (levenshtein distance would be better but this is simpler)
+    for (const stock of stocks) {
+      const nameLower = stock.name.toLowerCase();
+      
+      // Check if stock name contains most of the query chars in sequence
+      let matchCount = 0;
+      let lastIndex = -1;
+      
+      for (const char of queryLower) {
+        const index = nameLower.indexOf(char, lastIndex + 1);
+        if (index > -1) {
+          matchCount++;
+          lastIndex = index;
+        }
+      }
+      
+      // If we match at least 70% of the characters and it's a somewhat known stock
+      if (matchCount >= queryLower.length * 0.7 && 
+          (stock.symbol.endsWith('.DE') || ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'].includes(stock.symbol))) {
+        return {
+          original: query,
+          suggestion: stock.name,
+          symbol: stock.symbol
+        };
+      }
+    }
+    
+    return null;
+  };
   
   // Fetch suggestions when user types
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (!searchQuery || searchQuery.length < 2) {
         setSuggestions([]);
+        setSuggestedCorrection(null);
         return;
       }
 
@@ -78,19 +232,31 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         // Get API key from localStorage
         const apiKey = localStorage.getItem('fmp_api_key');
         if (!apiKey) {
-          setSuggestions(fallbackStocks.filter(stock => 
+          const filteredResults = fallbackStocks.filter(stock => 
             stock.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
             stock.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-          ));
+          );
+          setSuggestions(filteredResults);
+          
+          // Check for fuzzy matches in fallback stocks
+          const correction = getFuzzyMatches(searchQuery, filteredResults);
+          setSuggestedCorrection(correction);
           return;
         }
         
-        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=15&apikey=${apiKey}`);
+        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=25&apikey=${apiKey}`);
         
         if (response.data && Array.isArray(response.data)) {
           // Filter out results with empty names
           const validResults = response.data.filter((item: any) => item.name && item.symbol);
-          setSuggestions(validResults);
+          
+          // Prioritize and sort results
+          const prioritizedResults = prioritizeResults(validResults);
+          setSuggestions(prioritizedResults);
+          
+          // Check for fuzzy matches
+          const correction = getFuzzyMatches(searchQuery, prioritizedResults);
+          setSuggestedCorrection(correction);
         }
       } catch (error) {
         console.error('Error fetching stock suggestions:', error);
@@ -101,10 +267,15 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         });
         
         // Fallback to static list filtered by search query
-        setSuggestions(fallbackStocks.filter(stock => 
+        const filteredResults = fallbackStocks.filter(stock => 
           stock.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
           stock.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-        ));
+        );
+        setSuggestions(filteredResults);
+        
+        // Check for fuzzy matches in fallback stocks
+        const correction = getFuzzyMatches(searchQuery, filteredResults);
+        setSuggestedCorrection(correction);
       } finally {
         setIsSearching(false);
       }
@@ -173,8 +344,12 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       </p>
       
       <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-4 text-sm">
-        <p className="font-medium">Tipp zur Aktiensuche:</p>
-        <p>Für deutsche Aktien bitte .DE anhängen (z.B. ADS.DE für Adidas oder BAS.DE für BASF)</p>
+        <p className="font-medium">Tipps zur Aktiensuche:</p>
+        <ul className="mt-1 list-disc list-inside">
+          <li>Geben Sie den Firmennamen (z.B. "Adidas") oder das Symbol (z.B. "ADS.DE") ein</li>
+          <li>Deutsche Aktien enden meist auf .DE (z.B. ADS.DE für Adidas)</li>
+          <li>Sie können auch eine ISIN eingeben (z.B. DE000A1EWWW0 für Adidas)</li>
+        </ul>
       </div>
       
       {showAppleCorrection && (
@@ -193,6 +368,25 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         </Alert>
       )}
       
+      {suggestedCorrection && (
+        <Alert className="mb-4 border-buffett-blue bg-buffett-blue bg-opacity-5">
+          <AlertTitle>Meinten Sie {suggestedCorrection.suggestion}?</AlertTitle>
+          <AlertDescription>
+            <p>Wir haben eine ähnliche Aktie gefunden.</p>
+            <Button 
+              variant="link" 
+              className="p-0 h-auto text-buffett-blue font-medium mt-1"
+              onClick={() => {
+                setTicker(suggestedCorrection.symbol);
+                setSuggestedCorrection(null);
+              }}
+            >
+              {suggestedCorrection.symbol} ({suggestedCorrection.suggestion}) verwenden →
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <form onSubmit={handleSubmit} className="flex gap-2">
         <div className="relative flex-1">
           <Popover open={open} onOpenChange={setOpen}>
@@ -205,7 +399,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                     setTicker(e.target.value);
                     setSearchQuery(e.target.value);
                   }}
-                  placeholder="Aktienname oder Symbol eingeben..."
+                  placeholder="Aktienname, Symbol oder ISIN eingeben..."
                   className="apple-input pl-10"
                   disabled={disabled || isLoading}
                   onClick={() => setOpen(true)}
@@ -244,19 +438,19 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                           return (
                             <CommandItem 
                               key={stock.symbol} 
-                              value={stock.symbol}
+                              value={`${stock.name} ${stock.symbol}`}
                               onSelect={() => selectStock(stock)}
                               className="flex justify-between"
                             >
-                              <div>
+                              <div className="flex-1 truncate">
                                 <span className="font-medium">{display.name}</span>
-                                {display.exchange && (
-                                  <span className="text-xs text-muted-foreground ml-2">
-                                    {display.exchange}
-                                  </span>
-                                )}
+                                <span className="ml-2 text-sm text-muted-foreground">
+                                  ({display.symbol})
+                                </span>
                               </div>
-                              <span className="ml-2 text-gray-500">{display.symbol}</span>
+                              <div className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
+                                {display.exchange && <span>{display.exchange}</span>}
+                              </div>
                             </CommandItem>
                           );
                         })}
