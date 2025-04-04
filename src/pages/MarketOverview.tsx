@@ -398,7 +398,7 @@ const MarketOverview = () => {
                     <ul className="list-disc ml-5 space-y-1">
                       <li>Aktien mit Buffett-Scores ab 7 in Betracht ziehen</li>
                       <li>Auf Unternehmen mit nachhaltigen Wettbewerbsvorteilen konzentrieren</li>
-                      <li>Auf überdurchschnittliche Profitabilität (ROE > 15%) achten</li>
+                      <li>Auf überdurchschnittliche Profitabilität (ROE {'>'} 15%) achten</li>
                       <li>Starke Bilanz als Absicherung gegen Marktrückgänge bevorzugen</li>
                     </ul>
                   )}
@@ -524,17 +524,17 @@ const MarketOverview = () => {
                                     <ul className="space-y-1 text-sm">
                                       {stock.criteria.roe.pass && (
                                         <li className="flex items-center">
-                                          <span className="text-green-500 mr-1">✓</span> ROE > 15% ({formatValue(stock.criteria.roe.value, '%')})
+                                          <span className="text-green-500 mr-1">✓</span> ROE {'>'} 15% ({formatValue(stock.criteria.roe.value, '%')})
                                         </li>
                                       )}
                                       {stock.criteria.roic.pass && (
                                         <li className="flex items-center">
-                                          <span className="text-green-500 mr-1">✓</span> ROIC > 10% ({formatValue(stock.criteria.roic.value, '%')})
+                                          <span className="text-green-500 mr-1">✓</span> ROIC {'>'} 10% ({formatValue(stock.criteria.roic.value, '%')})
                                         </li>
                                       )}
                                       {stock.criteria.netMargin.pass && (
                                         <li className="flex items-center">
-                                          <span className="text-green-500 mr-1">✓</span> Nettomarge > 10% ({formatValue(stock.criteria.netMargin.value, '%')})
+                                          <span className="text-green-500 mr-1">✓</span> Nettomarge {'>'} 10% ({formatValue(stock.criteria.netMargin.value, '%')})
                                         </li>
                                       )}
                                       {stock.criteria.epsGrowth.pass && (
@@ -549,27 +549,27 @@ const MarketOverview = () => {
                                       )}
                                       {stock.criteria.interestCoverage.pass && (
                                         <li className="flex items-center">
-                                          <span className="text-green-500 mr-1">✓</span> Zinsdeckung > 5 ({formatValue(stock.criteria.interestCoverage.value)})
+                                          <span className="text-green-500 mr-1">✓</span> Zinsdeckung {'>'} 5 ({formatValue(stock.criteria.interestCoverage.value)})
                                         </li>
                                       )}
                                       {stock.criteria.debtRatio.pass && (
                                         <li className="flex items-center">
-                                          <span className="text-green-500 mr-1">✓</span> Schuldenquote < 70% ({formatValue(stock.criteria.debtRatio.value, '%')})
+                                          <span className="text-green-500 mr-1">✓</span> Schuldenquote {'<'} 70% ({formatValue(stock.criteria.debtRatio.value, '%')})
                                         </li>
                                       )}
                                       {stock.criteria.pe.pass && (
                                         <li className="flex items-center">
-                                          <span className="text-green-500 mr-1">✓</span> KGV < 15 ({formatValue(stock.criteria.pe.value)})
+                                          <span className="text-green-500 mr-1">✓</span> KGV {'<'} 15 ({formatValue(stock.criteria.pe.value)})
                                         </li>
                                       )}
                                       {stock.criteria.pb.pass && (
                                         <li className="flex items-center">
-                                          <span className="text-green-500 mr-1">✓</span> KBV < 1.5/3 ({formatValue(stock.criteria.pb.value)})
+                                          <span className="text-green-500 mr-1">✓</span> KBV {'<'} 1.5/3 ({formatValue(stock.criteria.pb.value)})
                                         </li>
                                       )}
                                       {stock.criteria.dividendYield.pass && (
                                         <li className="flex items-center">
-                                          <span className="text-green-500 mr-1">✓</span> Div. Rendite > 2% ({formatValue(stock.criteria.dividendYield.value, '%')})
+                                          <span className="text-green-500 mr-1">✓</span> Div. Rendite {'>'} 2% ({formatValue(stock.criteria.dividendYield.value, '%')})
                                         </li>
                                       )}
                                     </ul>
@@ -752,3 +752,4 @@ const MarketOverview = () => {
 };
 
 export default MarketOverview;
+
