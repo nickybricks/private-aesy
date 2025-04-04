@@ -8,6 +8,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { exchanges } from '@/api/quantAnalyzerApi';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from 'lucide-react';
 
 interface ExchangeSelectorProps {
   selectedExchange: string;
@@ -20,7 +27,23 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
 }) => {
   return (
     <div className="mb-6">
-      <h2 className="text-lg font-medium mb-2">Börse auswählen</h2>
+      <div className="flex items-center mb-2">
+        <h2 className="text-lg font-medium">Börse auswählen</h2>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="ml-2 rounded-full bg-gray-100 p-1 hover:bg-gray-200 transition-colors">
+                <Info className="h-4 w-4 text-gray-500" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-sm">
+              <p>Wählen Sie eine Börse aus, deren Aktien Sie nach Buffett-Kriterien analysieren möchten.</p>
+              <p className="mt-1">Die Analyse berücksichtigt 10 quantitative Kriterien.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      
       <Select value={selectedExchange} onValueChange={onExchangeChange}>
         <SelectTrigger className="w-full md:w-80">
           <SelectValue placeholder="Börse auswählen" />
@@ -35,6 +58,7 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
       </Select>
       <p className="text-sm text-gray-500 mt-2">
         Wählen Sie eine Börse aus, um Aktien nach Warren Buffetts Kriterien zu analysieren.
+        <span className="block mt-1 text-gray-400 italic">Hinweis: In der nächsten Version wird die Analyse mehrerer Börsen gleichzeitig möglich sein.</span>
       </p>
     </div>
   );
