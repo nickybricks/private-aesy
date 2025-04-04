@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
+
+const FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
 
 interface StockSearchProps {
   onSearch: (ticker: string) => void;
@@ -130,7 +131,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const [isinResults, setIsinResults] = useState<StockSuggestion | null>(null);
   const { toast } = useToast();
 
-  // Memoized ISIN check and handler
   const checkAndHandleIsin = useCallback((value: string) => {
     if (isinPattern.test(value)) {
       console.log("ISIN pattern detected in input/query:", value);
@@ -145,7 +145,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       setOpen(true);
     }
     
-    // Check if the searchQuery is an ISIN
     if (checkAndHandleIsin(searchQuery)) {
       console.log("ISIN pattern detected in searchQuery effect:", searchQuery);
     } else {
@@ -156,7 +155,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const handleIsinSearch = async (possibleIsin: string) => {
     console.log("Starting ISIN search for:", possibleIsin);
     
-    // First check our local database of common German ISINs
     if (commonGermanIsins[possibleIsin]) {
       const symbol = commonGermanIsins[possibleIsin];
       console.log("Found ISIN in local database:", possibleIsin, "=>", symbol);
@@ -183,17 +181,11 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     }
     
     try {
-      const apiKey = localStorage.getItem('fmp_api_key');
-      if (!apiKey) {
-        console.log("No API key found for ISIN search");
-        return;
-      }
-      
       setIsSearching(true);
       
       try {
         console.log("Searching for ISIN via search-ticker endpoint:", possibleIsin);
-        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search-ticker?isin=${possibleIsin}&apikey=${apiKey}`);
+        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search-ticker?isin=${possibleIsin}&apikey=${FMP_API_KEY}`);
         
         if (response.data && Array.isArray(response.data) && response.data.length > 0 && response.data[0]?.symbol) {
           const result = response.data[0];
@@ -222,7 +214,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       try {
         console.log("Searching for ISIN via direct ISIN endpoint:", possibleIsin);
-        const directResponse = await axios.get(`https://financialmodelingprep.com/api/v3/isin/${possibleIsin}?apikey=${apiKey}`);
+        const directResponse = await axios.get(`https://financialmodelingprep.com/api/v3/isin/${possibleIsin}?apikey=${FMP_API_KEY}`);
         
         if (directResponse.data && Array.isArray(directResponse.data) && directResponse.data.length > 0 && directResponse.data[0]?.symbol) {
           const result = directResponse.data[0];
@@ -416,20 +408,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       setIsSearching(true);
       
       try {
-        const apiKey = localStorage.getItem('fmp_api_key');
-        if (!apiKey) {
-          const filteredResults = fallbackStocks.filter(stock => 
-            stock.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-            stock.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-          setSuggestions(filteredResults);
-          
-          const correction = getFuzzyMatches(searchQuery, filteredResults);
-          setSuggestedCorrection(correction);
-          return;
-        }
-        
-        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=25&apikey=${apiKey}`);
+        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=25&apikey=${FMP_API_KEY}`);
         
         if (response.data && Array.isArray(response.data)) {
           const stocksOnly = response.data.filter((item: any) => {
@@ -469,7 +448,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         console.error('Error fetching stock suggestions:', error);
         toast({
           title: "Fehler beim Laden der Vorschläge",
-          description: "Fallback-Liste wird angezeigt. Bitte prüfen Sie Ihren API-Key.",
+          description: "Fallback-Liste wird angezeigt. Bitte versuchen Sie es später erneut.",
           variant: "destructive",
         });
         
@@ -605,7 +584,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                     setTicker(newValue);
                     setSearchQuery(newValue);
                     
-                    // Explicitly check for ISIN pattern on every input change
                     checkAndHandleIsin(newValue);
                     
                     if (newValue.length >= 1) {
@@ -629,7 +607,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               align="start" 
               sideOffset={5}
               onInteractOutside={(e) => {
-                // Prevent closing when interacting with the popover content
                 if (isinResults) {
                   e.preventDefault();
                 }
@@ -643,7 +620,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                     setSearchQuery(value);
                     setTicker(value);
                     
-                    // Check for ISIN in command input
                     checkAndHandleIsin(value);
                   }}
                   autoFocus
