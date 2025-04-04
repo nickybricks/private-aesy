@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, BarChart3, Calculator } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
 import ExchangeSelector from '@/components/ExchangeSelector';
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
