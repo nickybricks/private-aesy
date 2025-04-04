@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Table, 
@@ -37,7 +36,6 @@ interface QuantAnalysisTableProps {
   isLoading: boolean;
 }
 
-// Definitionen der Kennzahlen für Tooltips
 const metricsDefinitions = {
   roe: {
     name: "ROE (Eigenkapitalrendite)",
@@ -93,7 +91,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
   results, 
   isLoading 
 }) => {
-  // Für Sortierung und Filterung
   const [sortField, setSortField] = useState<string>("buffettScore");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [minScore, setMinScore] = useState<number>(0);
@@ -123,9 +120,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
     exportToCsv(results);
   };
 
-  // Sortiere Ergebnisse
   const sortedResults = [...results].sort((a, b) => {
-    // Hilfsfunktion um Werte aus verschachtelten Objekten zu holen
     const getNestedValue = (obj: any, path: string) => {
       const parts = path.split('.');
       let value = obj;
@@ -140,36 +135,43 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
     let valueA = getNestedValue(a, sortField);
     let valueB = getNestedValue(b, sortField);
     
-    // Null-Werte am Ende platzieren
     if (valueA === null && valueB === null) return 0;
     if (valueA === null) return 1;
     if (valueB === null) return -1;
     
-    // Aufsteigend oder absteigend sortieren
     return sortDirection === "asc" 
       ? (valueA < valueB ? -1 : valueA > valueB ? 1 : 0)
       : (valueA > valueB ? -1 : valueA < valueB ? 1 : 0);
   });
 
-  // Filtere Ergebnisse nach Score
   const filteredResults = sortedResults.filter(result => result.buffettScore >= minScore);
 
-  // Zeige das passende Icon für bestanden/nicht bestanden
   const StatusIcon = ({ passed, value }: { passed: boolean, value: number | null }) => {
-    if (value === null) return <AlertCircle className="h-5 w-5 text-gray-400" title="Keine Daten verfügbar" />;
+    if (value === null) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span><AlertCircle className="h-5 w-5 text-gray-400" /></span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Keine Daten verfügbar</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
     
     return passed ? 
       <CheckCircle2 className="h-5 w-5 text-green-500" /> : 
       <XCircle className="h-5 w-5 text-red-500" />;
   };
 
-  // Formatiere Zahlenwerte mit Prozent oder Dezimalstellen
   const formatValue = (value: number | null, isPercentage: boolean = false) => {
     if (value === null) return "N/A";
     return isPercentage ? `${value.toFixed(2)}%` : value.toFixed(2);
   };
 
-  // Spaltenüberschrift mit Sortierfunktion
   const SortableHeader = ({ 
     field, 
     name, 
@@ -210,8 +212,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
       </TableHead>
     );
   };
-  
-  // Liste der erfüllten Kriterien für die HoverCard
+
   const getPassedCriteriaList = (stock: QuantAnalysisResult) => {
     const criteria = [
       { name: "ROE > 15%", passed: stock.criteria.roe.pass },
@@ -241,7 +242,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
     );
   };
 
-  // Filter für minimalen Score
   const scoreFilterOptions = [0, 5, 6, 7, 8, 9];
 
   return (
