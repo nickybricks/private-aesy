@@ -19,16 +19,20 @@ import { Info } from 'lucide-react';
 interface ExchangeSelectorProps {
   selectedExchange: string;
   onExchangeChange: (value: string) => void;
+  label?: string;
+  description?: string;
 }
 
 const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({ 
   selectedExchange, 
-  onExchangeChange 
+  onExchangeChange,
+  label = "Börse auswählen",
+  description = "Wählen Sie eine Börse aus, um Aktien nach Warren Buffetts Kriterien zu analysieren."
 }) => {
   return (
     <div className="mb-6">
       <div className="flex items-center mb-2">
-        <h2 className="text-lg font-medium">Börse auswählen</h2>
+        <h2 className="text-lg font-medium">{label}</h2>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -57,7 +61,7 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
         </SelectContent>
       </Select>
       <p className="text-sm text-gray-500 mt-2">
-        Wählen Sie eine Börse aus, um Aktien nach Warren Buffetts Kriterien zu analysieren.
+        {description}
       </p>
     </div>
   );
