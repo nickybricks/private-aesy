@@ -41,8 +41,15 @@ interface OverallRatingProps {
     currency?: string;
     intrinsicValue?: number;
     targetMarginOfSafety?: number;
+    // New field for data source currency
+    originalCurrency?: string;
+    currencyConversionRate?: number;
   } | null;
 }
+
+// Maximum reasonable values to prevent unrealistic calculations
+const MAX_REASONABLE_INTRINSIC_VALUE = 10000; // Maximum reasonable intrinsic value per share
+const MAX_REASONABLE_PRICE = 10000; // Maximum reasonable price per share
 
 // Utility function to determine the correct rating based on Buffett score and MoS
 const determineRating = (
@@ -93,6 +100,29 @@ const getMarginOfSafetyDescription = (value: number): string => {
   return 'Keine Sicherheitsmarge (überbewertet)';
 };
 
+// Function to check if a value is realistic
+const isRealisticValue = (value: number | undefined): boolean => {
+  if (value === undefined) return false;
+  return value > 0 && value < MAX_REASONABLE_INTRINSIC_VALUE;
+};
+
+// Function to format currency with proper symbol
+const formatCurrency = (value: number | undefined, currency: string): string => {
+  if (value === undefined) return 'N/A';
+  
+  // Format based on currency
+  switch(currency) {
+    case 'KRW':
+      return `${Math.round(value).toLocaleString()} ${currency}`;
+    case 'USD':
+      return `$${value.toFixed(2)}`;
+    case 'EUR':
+      return `${value.toFixed(2)} €`;
+    default:
+      return `${value.toFixed(2)} ${currency}`;
+  }
+};
+
 const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
   switch (rating) {
     case 'buy':
@@ -110,7 +140,9 @@ const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
 const IntrinsicValueTooltip: React.FC<{
   intrinsicValue: number;
   currency: string;
-}> = ({ intrinsicValue, currency }) => {
+  originalCurrency?: string;
+  conversionRate?: number;
+}> = ({ intrinsicValue, currency, originalCurrency, conversionRate }) => {
   // Beispielwerte für die DCF-Berechnung basierend auf dem intrinsischen Wert
   const yearlyFCF = intrinsicValue * 0.025; // Geschätzt als 2,5% des intrinsischen Wertes
   const growthRate1 = 15; // 15% Wachstum in Jahren 1-5
@@ -137,6 +169,17 @@ const IntrinsicValueTooltip: React.FC<{
           <li><span className="font-medium">Terminal Value:</span> {terminalValue.toFixed(2)} {currency} ({(terminalValue/intrinsicValue*100).toFixed(0)}% des Gesamtwerts)</li>
         </ul>
       </div>
+      
+      {originalCurrency && originalCurrency !== currency && conversionRate && (
+        <div className="border border-yellow-200 bg-yellow-50 rounded-md p-2 mt-2">
+          <h5 className="font-medium mb-1 text-sm text-yellow-800">Währungsumrechnung:</h5>
+          <p className="text-sm text-yellow-700">
+            Die ursprünglichen Werte wurden von {originalCurrency} in {currency} umgerechnet.
+            <br />
+            Verwendeter Wechselkurs: 1 {currency} = {conversionRate} {originalCurrency}
+          </p>
+        </div>
+      )}
       
       <div className="border-t border-gray-200 pt-2 mt-2">
         <h5 className="font-medium mb-1 text-sm">Schritte der DCF-Berechnung:</h5>
@@ -168,7 +211,9 @@ const MarginOfSafetyTooltip: React.FC<{
   intrinsicValue?: number;
   currentPrice?: number;
   currency?: string;
-}> = ({ targetMarginOfSafety, intrinsicValue, currentPrice, currency }) => {
+  originalCurrency?: string;
+  conversionRate?: number;
+}> = ({ targetMarginOfSafety, intrinsicValue, currentPrice, currency, originalCurrency, conversionRate }) => {
   // Berechnen wir ein konkretes Beispiel mit realen Zahlen, falls verfügbar
   const hasRealData = intrinsicValue && currentPrice && currency;
   const actualMarginValue = hasRealData ? intrinsicValue * (targetMarginOfSafety / 100) : 20;
@@ -185,6 +230,17 @@ const MarginOfSafetyTooltip: React.FC<{
         <li>Minimiert Verlustrisiko (selbst bei ungünstigeren Entwicklungen)</li>
       </ul>
       <p className="font-medium">Buffett und Graham empfehlen mindestens {targetMarginOfSafety}% Sicherheitsmarge.</p>
+      
+      {originalCurrency && originalCurrency !== currency && conversionRate && (
+        <div className="border border-yellow-200 bg-yellow-50 rounded-md p-2 mt-2">
+          <h5 className="font-medium mb-1 text-sm text-yellow-800">Währungsumrechnung:</h5>
+          <p className="text-sm text-yellow-700">
+            Die ursprünglichen Werte wurden von {originalCurrency} in {currency} umgerechnet.
+            <br />
+            Verwendeter Wechselkurs: 1 {currency} = {conversionRate} {originalCurrency}
+          </p>
+        </div>
+      )}
       
       <div className="border-t border-gray-200 pt-2 mt-2">
         <h5 className="font-medium mb-1">Berechnung der Margin of Safety:</h5>
@@ -219,7 +275,9 @@ const BuffettBuyPriceTooltip: React.FC<{
   bestBuyPrice: number;
   targetMarginOfSafety: number;
   currency: string;
-}> = ({ intrinsicValue, bestBuyPrice, targetMarginOfSafety, currency }) => {
+  originalCurrency?: string;
+  conversionRate?: number;
+}> = ({ intrinsicValue, bestBuyPrice, targetMarginOfSafety, currency, originalCurrency, conversionRate }) => {
   return (
     <div className="space-y-2">
       <h4 className="font-semibold">Der Buffett-Kaufpreis</h4>
@@ -246,6 +304,17 @@ const BuffettBuyPriceTooltip: React.FC<{
           </div>
         </div>
       </div>
+      
+      {originalCurrency && originalCurrency !== currency && conversionRate && (
+        <div className="border border-yellow-200 bg-yellow-50 rounded-md p-2 mt-2">
+          <h5 className="font-medium mb-1 text-sm text-yellow-800">Währungsumrechnung:</h5>
+          <p className="text-sm text-yellow-700">
+            Die ursprünglichen Werte wurden von {originalCurrency} in {currency} umgerechnet.
+            <br />
+            Verwendeter Wechselkurs: 1 {currency} = {conversionRate} {originalCurrency}
+          </p>
+        </div>
+      )}
       
       <div className="border-t border-gray-200 pt-2 mt-2">
         <p className="font-medium text-sm">Buffett's Prinzip:</p>
@@ -362,33 +431,65 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     currentPrice,
     currency = '€',
     intrinsicValue,
-    targetMarginOfSafety = 20
+    targetMarginOfSafety = 20,
+    originalCurrency,
+    currencyConversionRate
   } = rating;
+  
+  // Ensure values are within reasonable range - prevents unrealistic valuations
+  if (intrinsicValue && intrinsicValue > MAX_REASONABLE_INTRINSIC_VALUE) {
+    console.warn(`Unrealistic intrinsic value detected: ${intrinsicValue} ${currency}. Capping at ${MAX_REASONABLE_INTRINSIC_VALUE}.`);
+    intrinsicValue = MAX_REASONABLE_INTRINSIC_VALUE;
+  }
+  
+  if (bestBuyPrice && bestBuyPrice > MAX_REASONABLE_PRICE) {
+    console.warn(`Unrealistic best buy price detected: ${bestBuyPrice} ${currency}. Capping at ${MAX_REASONABLE_PRICE}.`);
+    bestBuyPrice = MAX_REASONABLE_PRICE;
+  }
+  
+  // If margin of safety is unrealistically high (>100%), cap it
+  if (marginOfSafety && marginOfSafety.value > 100) {
+    console.warn(`Unrealistic margin of safety detected: ${marginOfSafety.value}%. Capping at 100%.`);
+    marginOfSafety.value = 100;
+  }
   
   // Override the marginOfSafety status based on the actual value
   if (marginOfSafety) {
     marginOfSafety.status = interpretMarginOfSafety(marginOfSafety.value);
   }
   
+  // Recalculate bestBuyPrice if intrinsic value and margin changed
+  if (intrinsicValue && !isRealisticValue(bestBuyPrice)) {
+    bestBuyPrice = intrinsicValue * (1 - (targetMarginOfSafety / 100));
+  }
+  
   // Re-determine the overall rating based on buffettScore and marginOfSafety
   if (buffettScore !== undefined && marginOfSafety !== undefined) {
-    const newRatingData = determineRating(buffettScore, marginOfSafety.value);
-    overall = newRatingData.rating;
-    
-    // Update summary based on the new rating logic
-    summary = newRatingData.reasoning;
-    
-    // Update recommendation based on new rating
-    if (overall === 'buy') {
-      recommendation = `Basierend auf der hohen Buffett-Kompatibilität (${buffettScore}%) und der attraktiven Unterbewertung (MoS: ${marginOfSafety.value.toFixed(1)}%) wird ein Kauf empfohlen. Der aktuelle Preis bietet eine ausreichende Sicherheitsmarge zum inneren Wert.`;
-    } else if (overall === 'watch') {
-      recommendation = `Die Aktie zeigt ${buffettScore >= 75 ? 'sehr gute' : 'solide'} Fundamentaldaten (${buffettScore}%), aber ${marginOfSafety.value >= 0 ? 'bietet nicht genug Sicherheitsmarge' : 'ist zu teuer'}. Es wird empfohlen, die Aktie auf die Beobachtungsliste zu setzen und bei einem günstigeren Kurs erneut zu prüfen.`;
-    } else {
-      if (buffettScore < 60) {
-        recommendation = `Die Aktie erfüllt zu wenige von Buffetts Qualitätskriterien (${buffettScore}%). Unabhängig vom Preis sollte nach Alternativen mit besseren Fundamentaldaten gesucht werden.`;
+    // Only apply new rating logic if data is realistic
+    if (isRealisticValue(intrinsicValue) && isRealisticValue(bestBuyPrice)) {
+      const newRatingData = determineRating(buffettScore, marginOfSafety.value);
+      overall = newRatingData.rating;
+      
+      // Update summary based on the new rating logic
+      summary = newRatingData.reasoning;
+      
+      // Update recommendation based on new rating
+      if (overall === 'buy') {
+        recommendation = `Basierend auf der hohen Buffett-Kompatibilität (${buffettScore}%) und der attraktiven Unterbewertung (MoS: ${marginOfSafety.value.toFixed(1)}%) wird ein Kauf empfohlen. Der aktuelle Preis bietet eine ausreichende Sicherheitsmarge zum inneren Wert.`;
+      } else if (overall === 'watch') {
+        recommendation = `Die Aktie zeigt ${buffettScore >= 75 ? 'sehr gute' : 'solide'} Fundamentaldaten (${buffettScore}%), aber ${marginOfSafety.value >= 0 ? 'bietet nicht genug Sicherheitsmarge' : 'ist zu teuer'}. Es wird empfohlen, die Aktie auf die Beobachtungsliste zu setzen und bei einem günstigeren Kurs erneut zu prüfen.`;
       } else {
-        recommendation = `Trotz ${buffettScore >= 75 ? 'sehr guter' : 'solider'} Fundamentaldaten (${buffettScore}%) ist die Aktie mit einer negativen Sicherheitsmarge von ${Math.abs(marginOfSafety.value).toFixed(1)}% zu teuer. Ein Kauf ist erst bei deutlich niedrigeren Kursen zu empfehlen.`;
+        if (buffettScore < 60) {
+          recommendation = `Die Aktie erfüllt zu wenige von Buffetts Qualitätskriterien (${buffettScore}%). Unabhängig vom Preis sollte nach Alternativen mit besseren Fundamentaldaten gesucht werden.`;
+        } else {
+          recommendation = `Trotz ${buffettScore >= 75 ? 'sehr guter' : 'solider'} Fundamentaldaten (${buffettScore}%) ist die Aktie mit einer negativen Sicherheitsmarge von ${Math.abs(marginOfSafety.value).toFixed(1)}% zu teuer. Ein Kauf ist erst bei deutlich niedrigeren Kursen zu empfehlen.`;
+        }
       }
+    } else {
+      // If data is unrealistic, default to watch
+      overall = 'watch';
+      summary = "Daten möglicherweise unvollständig oder ungenau";
+      recommendation = "Aufgrund potenziell ungenauer oder unvollständiger Daten sollten Sie eigene Recherchen durchführen, bevor Sie eine Entscheidung treffen. Die automatische Bewertung könnte in diesem Fall unzuverlässig sein.";
     }
   }
   
@@ -446,6 +547,22 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   return (
     <div className="buffett-card animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Gesamtbewertung</h2>
+      
+      {/* Currency conversion info alert */}
+      {originalCurrency && originalCurrency !== currency && currencyConversionRate && (
+        <div className="mb-6 bg-yellow-50 p-4 rounded-lg border border-yellow-300">
+          <div className="flex items-start">
+            <Info className="h-5 w-5 text-yellow-600 mr-2 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-yellow-800">Währungsumrechnung aktiviert</h3>
+              <p className="text-yellow-700 mt-1">
+                Die Finanzdaten wurden aus {originalCurrency} in {currency} umgerechnet. 
+                Wechselkurs: 1 {currency} = {currencyConversionRate} {originalCurrency}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className={`rounded-xl p-6 border ${ratingColor} mb-6`}>
         <div className="flex items-center gap-4">
@@ -516,6 +633,8 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                       intrinsicValue={intrinsicValue}
                       currentPrice={currentPrice}
                       currency={currency}
+                      originalCurrency={originalCurrency}
+                      conversionRate={currencyConversionRate}
                     />
                   </TooltipContent>
                 </Tooltip>
@@ -557,7 +676,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                 <DollarSign size={16} className="text-gray-600" />
                 <div className="text-sm text-gray-600">Aktueller Marktpreis:</div>
               </div>
-              <div className="text-lg font-bold">{currentPrice.toFixed(2)} {currency}</div>
+              <div className="text-lg font-bold">{formatCurrency(currentPrice, currency)}</div>
             </div>
           )}
         </div>
@@ -583,12 +702,17 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                         </button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-sm p-4">
-                        <IntrinsicValueTooltip intrinsicValue={intrinsicValue} currency={currency} />
+                        <IntrinsicValueTooltip 
+                          intrinsicValue={intrinsicValue} 
+                          currency={currency}
+                          originalCurrency={originalCurrency}
+                          conversionRate={currencyConversionRate}
+                        />
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <div className="text-xl font-bold">{intrinsicValue.toFixed(2)} {currency}</div>
+                <div className="text-xl font-bold">{formatCurrency(intrinsicValue, currency)}</div>
                 <div className="text-xs text-gray-500 mt-1">
                   Discounted Cash Flow mit 8% Abzinsung
                   <br />und 3% langfristigem Wachstum
@@ -612,6 +736,8 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                         intrinsicValue={intrinsicValue}
                         currentPrice={currentPrice}
                         currency={currency}
+                        originalCurrency={originalCurrency}
+                        conversionRate={currencyConversionRate}
                       />
                     </TooltipContent>
                   </Tooltip>
@@ -641,15 +767,17 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                           bestBuyPrice={bestBuyPrice}
                           targetMarginOfSafety={targetMarginOfSafety}
                           currency={currency}
+                          originalCurrency={originalCurrency}
+                          conversionRate={currencyConversionRate}
                         />
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <div className="text-xl font-bold">{bestBuyPrice.toFixed(2)} {currency}</div>
+                <div className="text-xl font-bold">{formatCurrency(bestBuyPrice, currency)}</div>
                 <div className="text-xs text-gray-500 mt-1">
                   {intrinsicValue 
-                    ? `= ${intrinsicValue.toFixed(2)} ${currency} × ${(1 - targetMarginOfSafety / 100).toFixed(2)}`
+                    ? `= ${formatCurrency(intrinsicValue, currency)} × ${(1 - targetMarginOfSafety / 100).toFixed(2)}`
                     : 'Basierend auf Bewertungsanalyse'}
                 </div>
               </div>
@@ -663,7 +791,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                   {priceDifference > 0 ? 'Überbewertet um:' : 'Unterbewertet um:'}
                 </div>
                 <div className={`text-lg font-bold ${priceDifference > 0 ? 'text-buffett-red' : 'text-buffett-green'}`}>
-                  {Math.abs(priceDifference).toFixed(2)} {currency} / {Math.abs(priceDifferencePercent).toFixed(1)}%
+                  {formatCurrency(Math.abs(priceDifference), currency)} / {Math.abs(priceDifferencePercent).toFixed(1)}%
                 </div>
                 <div className="text-xs text-gray-500">(bezogen auf Buffett-Kaufpreis)</div>
               </div>

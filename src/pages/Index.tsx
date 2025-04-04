@@ -8,12 +8,22 @@ import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import Navigation from '@/components/Navigation';
-import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
+import { 
+  fetchStockInfo, 
+  analyzeBuffettCriteria, 
+  getFinancialMetrics, 
+  getOverallRating 
+} from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  analyzeCurrencyData, 
+  normalizeFinancialMetrics, 
+  getCurrencyConversionInfo 
+} from '@/helpers/currencyConverter';
 
 const Index = () => {
   const { toast } = useToast();
@@ -26,6 +36,7 @@ const Index = () => {
   const [hasApiKey, setHasApiKey] = useState(false);
   const [gptAvailable, setGptAvailable] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
+  const [currencyInfo, setCurrencyInfo] = useState<ReturnType<typeof analyzeCurrencyData> | null>(null);
 
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
@@ -64,6 +75,8 @@ const Index = () => {
   const handleSearch = async (ticker: string) => {
     setIsLoading(true);
     setError(null);
+    setCurrencyInfo(null);
+    
     try {
       setStockInfo(null);
       setBuffettCriteria(null);
@@ -74,6 +87,11 @@ const Index = () => {
       console.log('Stock Info:', JSON.stringify(info, null, 2));
       setStockInfo(info);
       
+      // Detect currency and analyze if conversion is needed
+      const detectedCurrencyInfo = analyzeCurrencyData(info);
+      console.log('Currency analysis:', detectedCurrencyInfo);
+      setCurrencyInfo(detectedCurrencyInfo);
+      
       toast({
         title: "Analyse läuft",
         description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
@@ -83,7 +101,8 @@ const Index = () => {
         setActiveTab('gpt');
       }
       
-      const [criteria, metrics, rating] = await Promise.all([
+      // Fetch all required data
+      const [criteria, metrics, ratingData] = await Promise.all([
         analyzeBuffettCriteria(ticker),
         getFinancialMetrics(ticker),
         getOverallRating(ticker)
@@ -91,11 +110,57 @@ const Index = () => {
       
       console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
       console.log('Financial Metrics:', JSON.stringify(metrics, null, 2));
-      console.log('Overall Rating:', JSON.stringify(rating, null, 2));
+      console.log('Overall Rating:', JSON.stringify(ratingData, null, 2));
+      
+      // Apply currency normalization if needed
+      let normalizedMetrics = metrics;
+      let normalizedRating = ratingData;
+      
+      if (detectedCurrencyInfo.conversionNeeded) {
+        normalizedMetrics = normalizeFinancialMetrics(metrics, detectedCurrencyInfo);
+        console.log('Normalized Metrics:', JSON.stringify(normalizedMetrics, null, 2));
+        
+        // Add currency information to rating data
+        if (ratingData) {
+          normalizedRating = {
+            ...ratingData,
+            originalCurrency: detectedCurrencyInfo.originalCurrency,
+            currencyConversionRate: detectedCurrencyInfo.conversionRate
+          };
+          
+          // Normalize intrinsic value and best buy price if needed
+          if (detectedCurrencyInfo.conversionRate && detectedCurrencyInfo.originalCurrency !== 'EUR') {
+            if (normalizedRating.intrinsicValue) {
+              normalizedRating.intrinsicValue = normalizedRating.intrinsicValue / detectedCurrencyInfo.conversionRate;
+            }
+            
+            if (normalizedRating.bestBuyPrice) {
+              normalizedRating.bestBuyPrice = normalizedRating.bestBuyPrice / detectedCurrencyInfo.conversionRate;
+            }
+            
+            // Adjust current price if needed
+            if (normalizedRating.currentPrice) {
+              normalizedRating.currentPrice = normalizedRating.currentPrice / detectedCurrencyInfo.conversionRate;
+            }
+            
+            console.log('Normalized Rating:', JSON.stringify(normalizedRating, null, 2));
+          }
+        }
+        
+        // Show toast about currency conversion
+        const conversionInfo = getCurrencyConversionInfo(detectedCurrencyInfo);
+        if (conversionInfo) {
+          toast({
+            title: "Währungsumrechnung aktiviert",
+            description: conversionInfo,
+            variant: "default",
+          });
+        }
+      }
       
       setBuffettCriteria(criteria);
-      setFinancialMetrics(metrics);
-      setOverallRating(rating);
+      setFinancialMetrics(normalizedMetrics);
+      setOverallRating(normalizedRating);
       
       toast({
         title: "Analyse abgeschlossen",
@@ -172,6 +237,21 @@ const Index = () => {
       
       <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
       
+      {currencyInfo && currencyInfo.conversionNeeded && (
+        <Alert className="mb-6 bg-yellow-50 border-yellow-200">
+          <InfoIcon className="h-4 w-4 text-yellow-500" />
+          <AlertTitle className="text-yellow-700">Währungsumrechnung aktiviert</AlertTitle>
+          <AlertDescription className="text-yellow-600">
+            Die Finanzdaten für diese Aktie sind in {currencyInfo.originalCurrency}, wurden aber automatisch in {currencyInfo.targetCurrency} umgerechnet.
+            {currencyInfo.conversionRate && (
+              <p className="mt-1">
+                Verwendeter Wechselkurs: 1 {currencyInfo.targetCurrency} = {currencyInfo.conversionRate} {currencyInfo.originalCurrency}
+              </p>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {error && (
         <Alert variant="destructive" className="mb-6">
           <InfoIcon className="h-4 w-4" />
@@ -240,7 +320,8 @@ const Index = () => {
             <div className="mb-10">
               <FinancialMetrics 
                 metrics={financialMetrics.metrics} 
-                historicalData={financialMetrics.historicalData} 
+                historicalData={financialMetrics.historicalData}
+                currencyInfo={currencyInfo}
               />
             </div>
           )}
