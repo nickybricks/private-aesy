@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { BarChart3, LineChart } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { BarChart3, LineChart, Calculator } from 'lucide-react';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -10,9 +10,11 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { cn } from "@/lib/utils";
 
 const Navigation = () => {
+  const location = useLocation();
+  const isActive = (path: string) => location.pathname === path;
+
   return (
     <NavigationMenu className="mb-6">
       <NavigationMenuList>
@@ -23,7 +25,11 @@ const Navigation = () => {
               <li className="row-span-3">
                 <NavigationMenuLink asChild>
                   <Link
-                    className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-buffett-blue/50 to-buffett-blue p-6 no-underline outline-none focus:shadow-md"
+                    className={`flex h-full w-full select-none flex-col justify-end rounded-md p-6 no-underline outline-none focus:shadow-md ${
+                      isActive('/') 
+                      ? 'bg-gradient-to-b from-buffett-blue to-buffett-blue/90 text-white' 
+                      : 'bg-gradient-to-b from-buffett-blue/50 to-buffett-blue p-6'
+                    }`}
                     to="/"
                   >
                     <LineChart className="h-6 w-6 text-white" />
@@ -39,7 +45,11 @@ const Navigation = () => {
               <li>
                 <NavigationMenuLink asChild>
                   <Link
-                    className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                    className={`block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors ${
+                      isActive('/quant-analyzer')
+                      ? 'bg-buffett-blue/10 text-buffett-blue' 
+                      : 'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground'
+                    }`}
                     to="/quant-analyzer"
                   >
                     <div className="flex items-center">
@@ -51,6 +61,19 @@ const Navigation = () => {
                     </p>
                   </Link>
                 </NavigationMenuLink>
+              </li>
+              <li>
+                <div 
+                  className="block select-none space-y-1 rounded-md p-3 leading-none transition-colors text-muted-foreground/70"
+                >
+                  <div className="flex items-center">
+                    <Calculator className="h-4 w-4 mr-2 text-muted-foreground/70" />
+                    <div className="text-sm font-medium leading-none">Portfolio Tracker</div>
+                  </div>
+                  <p className="line-clamp-2 text-sm leading-snug">
+                    Portfolio-Tracking nach Buffett-Prinzipien (Coming Soon)
+                  </p>
+                </div>
               </li>
             </ul>
           </NavigationMenuContent>
