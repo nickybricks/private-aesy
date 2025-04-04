@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -32,43 +33,16 @@ const Index = () => {
   const [financialMetrics, setFinancialMetrics] = useState(null);
   const [overallRating, setOverallRating] = useState(null);
   const [error, setError] = useState<string | null>(null);
-  const [hasApiKey, setHasApiKey] = useState(false);
   const [gptAvailable, setGptAvailable] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
   const [currencyInfo, setCurrencyInfo] = useState<ReturnType<typeof analyzeCurrencyData> | null>(null);
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('fmp_api_key');
-    setHasApiKey(!!savedKey);
-    
     setGptAvailable(hasOpenAiApiKey());
     
     if (hasOpenAiApiKey()) {
       setActiveTab('gpt');
     }
-  }, []);
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const savedKey = localStorage.getItem('fmp_api_key');
-      setHasApiKey(!!savedKey);
-      setGptAvailable(hasOpenAiApiKey());
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function(key, value) {
-      originalSetItem.apply(this, [key, value]);
-      if (key === 'fmp_api_key') {
-        setHasApiKey(!!value);
-      }
-    };
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      localStorage.setItem = originalSetItem;
-    };
   }, []);
 
   const handleSearch = async (ticker: string) => {
@@ -206,21 +180,6 @@ const Index = () => {
       
       <Navigation />
       
-      {!hasApiKey && (
-        <div className="mb-8 animate-fade-in">
-          <Alert className="mb-4">
-            <InfoIcon className="h-4 w-4" />
-            <AlertTitle>API-Key erforderlich</AlertTitle>
-            <AlertDescription>
-              Um das Buffett Benchmark Tool nutzen zu können, benötigen Sie einen API-Key von Financial Modeling Prep.
-              Bitte konfigurieren Sie Ihren API-Key unten.
-            </AlertDescription>
-          </Alert>
-          
-          <ApiKeyInput />
-        </div>
-      )}
-      
       {!gptAvailable && (
         <div className="mb-8 animate-fade-in">
           <Alert className="mb-4 bg-yellow-50 border-yellow-200">
@@ -234,7 +193,7 @@ const Index = () => {
         </div>
       )}
       
-      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
+      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={false} />
       
       {currencyInfo && currencyInfo.conversionNeeded && (
         <Alert className="mb-6 bg-yellow-50 border-yellow-200">
@@ -258,15 +217,7 @@ const Index = () => {
           <AlertDescription>
             <p>{error}</p>
             <p className="mt-2 text-sm">
-              {error.includes('API-Key') ? (
-                <>
-                  Bitte stellen Sie sicher, dass ein gültiger API-Schlüssel verwendet wird. 
-                  Die Financial Modeling Prep API benötigt einen gültigen API-Schlüssel, den Sie
-                  unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="underline">financialmodelingprep.com</a> kostenlos erhalten können.
-                </>
-              ) : (
-                'Bitte überprüfen Sie das eingegebene Aktiensymbol oder versuchen Sie es später erneut.'
-              )}
+              Bitte überprüfen Sie das eingegebene Aktiensymbol oder versuchen Sie es später erneut.
             </p>
           </AlertDescription>
         </Alert>

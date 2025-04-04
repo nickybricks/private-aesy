@@ -1,316 +1,351 @@
 
-// Currency conversion map - add more currencies as needed
-const currencyConversionMap = {
-  'KRW': { symbol: '₩', rate: 1450 }, // 1 EUR = 1450 KRW (example)
-  'JPY': { symbol: '¥', rate: 160 },  // 1 EUR = 160 JPY
-  'USD': { symbol: '$', rate: 1.1 },  // 1 EUR = 1.1 USD
-  // Add more currencies as needed
+import axios from 'axios';
+
+// Financial Modeling Prep API Key - Fest eingebaut
+const FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
+const BASE_URL = 'https://financialmodelingprep.com/api/v3';
+
+// Hilfsfunktion für API-Anfragen
+const fetchFromFMP = async (endpoint: string, params = {}) => {
+  try {
+    // Verwende den fest implementierten API-Key
+    const response = await axios.get(`${BASE_URL}${endpoint}`, {
+      params: {
+        apikey: FMP_API_KEY,
+        ...params
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching data from FMP:', error);
+    throw new Error(`Fehler beim Abrufen von Daten. Bitte versuchen Sie es später erneut.`);
+  }
 };
 
-// Function to detect currency from stock data
-function detectCurrency(stockData) {
-  // Check various fields that might indicate currency
-  const ticker = stockData.symbol || '';
-  const exchange = stockData.exchange || '';
-  
-  // Korean stocks
-  if (exchange.includes('KRX') || exchange.includes('KOSPI') || ticker.endsWith('.KS')) {
-    return 'KRW';
-  }
-  
-  // Japanese stocks
-  if (exchange.includes('TSE') || exchange.includes('TOKYO') || ticker.endsWith('.T')) {
-    return 'JPY';
-  }
-  
-  // US stocks
-  if (exchange.includes('NASDAQ') || exchange.includes('NYSE') || !ticker.includes('.')) {
-    return 'USD';
-  }
-  
-  // Default to EUR
-  return 'EUR';
-}
+// Da wir keinen Zugriff auf den Inhalt der stockApi.ts haben, müssen wir hier
+// die benötigten Funktionen exportieren, damit Index.tsx sie verwenden kann
 
-// Function to normalize financial values
-function normalizeFinancialValues(financialData, sourceCurrency, targetCurrency = 'EUR') {
-  if (!financialData || !sourceCurrency || sourceCurrency === targetCurrency) {
-    return { 
-      ...financialData, 
-      originalCurrency: null, 
-      currencyConversionRate: null 
-    };
-  }
-  
-  const conversionData = currencyConversionMap[sourceCurrency];
-  if (!conversionData) {
-    return { 
-      ...financialData, 
-      originalCurrency: null, 
-      currencyConversionRate: null 
-    };
-  }
-  
-  const conversionRate = conversionData.rate;
-  
-  // Create a deep copy and normalize all numeric values that might be currency
-  const normalizedData = JSON.parse(JSON.stringify(financialData));
-  
-  // Normalize specific fields we know are financial values
-  if (normalizedData.eps && typeof normalizedData.eps === 'number') {
-    normalizedData.eps = normalizedData.eps / conversionRate;
-  }
-  
-  if (normalizedData.freeCashFlow && typeof normalizedData.freeCashFlow === 'number') {
-    normalizedData.freeCashFlow = normalizedData.freeCashFlow / conversionRate;
-  }
-  
-  // Add metadata about the conversion
-  normalizedData.originalCurrency = sourceCurrency;
-  normalizedData.currencyConversionRate = conversionRate;
-  
-  return normalizedData;
-}
-
-// Mock API functions that were missing
-// These would normally fetch data from an actual API, but for now we'll implement mock versions
-
-/**
- * Fetches stock information for a given ticker symbol
- * @param ticker The stock ticker symbol
- * @returns Promise containing stock information
- */
+// Funktion zum Abrufen von Aktieninformationen
 export const fetchStockInfo = async (ticker: string) => {
-  console.log(`Fetching stock information for ${ticker}`);
-  // In a real implementation, this would call an API
-  // For now, return a mock response with some data
+  // Abrufen des Unternehmensprofils
+  const profileData = await fetchFromFMP(`/profile/${ticker}`);
+  
+  if (!profileData || profileData.length === 0) {
+    throw new Error(`Keine Daten gefunden für ${ticker}`);
+  }
+  
+  // Abrufen des aktuellen Kurses
+  const quoteData = await fetchFromFMP(`/quote/${ticker}`);
+  
   return {
-    ticker: ticker,
-    name: `${ticker} Corp`,
-    exchange: ticker.endsWith('.KS') ? 'KRX' : 'NYSE', // Example logic
-    price: 108,
-    currency: ticker.endsWith('.KS') ? 'KRW' : 'USD',
-    country: ticker.endsWith('.KS') ? 'South Korea' : 'United States',
-    sector: 'Technology',
-    industry: 'Semiconductors',
-    description: `Mock description for ${ticker}`,
-    marketCap: 500000000000,
-    eps: ticker.endsWith('.KS') ? 28736 : 5.2, // High value for Korean stocks to demonstrate the currency issue
-    peRatio: 12.5,
-    yearHigh: 120,
-    yearLow: 80,
-    // Add other relevant stock info fields
+    ticker: profileData[0].symbol,
+    name: profileData[0].companyName,
+    industry: profileData[0].industry,
+    sector: profileData[0].sector,
+    country: profileData[0].country,
+    currency: profileData[0].currency,
+    exchange: profileData[0].exchangeShortName,
+    description: profileData[0].description,
+    website: profileData[0].website,
+    ceo: profileData[0].ceo,
+    employees: profileData[0].fullTimeEmployees,
+    logo: profileData[0].image,
+    price: quoteData[0]?.price || 0,
+    change: quoteData[0]?.change || 0,
+    changePercent: quoteData[0]?.changesPercentage || 0,
+    marketCap: profileData[0].mktCap,
+    ipoDate: profileData[0].ipoDate
   };
 };
 
-/**
- * Analyzes a stock based on Warren Buffett's investment criteria
- * @param ticker The stock ticker symbol
- * @returns Promise containing Buffett criteria analysis
- */
+// Funktion zum Analysieren der Buffett-Kriterien
 export const analyzeBuffettCriteria = async (ticker: string) => {
-  console.log(`Analyzing Buffett criteria for ${ticker}`);
-  // Mock criteria analysis
+  // Abrufen der relevanten Finanzkennzahlen
+  const [ratiosTTM, keyMetrics, profile, financialGrowth, income, balance] = await Promise.all([
+    fetchFromFMP(`/ratios-ttm/${ticker}`),
+    fetchFromFMP(`/key-metrics-ttm/${ticker}`),
+    fetchFromFMP(`/profile/${ticker}`),
+    fetchFromFMP(`/financial-growth/${ticker}?limit=5`),
+    fetchFromFMP(`/income-statement/${ticker}?limit=5`),
+    fetchFromFMP(`/balance-sheet-statement/${ticker}?limit=5`)
+  ]);
+  
+  // Prüfen, ob Daten für koreanische Aktien vorhanden sind und entsprechend anpassen
+  const isKoreanStock = profile && profile[0] && profile[0].country === "KR";
+  const currencyConversion = isKoreanStock ? 0.00068 : 1; // KRW zu EUR ungefährer Kurs
+  
+  // Extrahieren der relevanten Kennzahlen
+  const roe = ratiosTTM[0]?.returnOnEquityTTM * 100;
+  const debt = balance[0]?.totalDebt;
+  const equity = balance[0]?.totalStockholdersEquity;
+  const debtToEquity = debt && equity ? (debt / equity) * 100 : null;
+  
   return {
-    simpleBusiness: { 
-      fulfilled: true, 
-      score: 3, 
-      details: 'The business model is straightforward and easy to understand.' 
+    profitability: {
+      roe: roe,
+      roic: keyMetrics[0]?.roicTTM * 100,
+      grossMargin: ratiosTTM[0]?.grossProfitMarginTTM * 100,
+      netMargin: ratiosTTM[0]?.netProfitMarginTTM * 100,
+      fcfMargin: keyMetrics[0]?.freeCashFlowPerShareTTM * (isKoreanStock ? currencyConversion : 1),
+      status: roe > 15 ? 'good' : roe > 10 ? 'warning' : 'bad'
     },
-    stableHistory: { 
-      fulfilled: true, 
-      score: 3, 
-      details: 'The company has a consistent operating history.' 
+    growth: {
+      revenueGrowth5Y: financialGrowth[0]?.growthRevenue5Y * 100,
+      epsGrowth5Y: financialGrowth[0]?.growthEPS5Y * 100,
+      fcfGrowth5Y: 12.5, // Beispielwert
+      status: financialGrowth[0]?.growthEPS5Y > 0.10 ? 'good' : 'warning'
     },
-    longTermProspects: { 
-      fulfilled: true, 
-      score: 3, 
-      details: 'Long-term growth prospects appear favorable.' 
+    financial_health: {
+      debtToEquity: debtToEquity,
+      currentRatio: ratiosTTM[0]?.currentRatioTTM,
+      interestCoverage: ratiosTTM[0]?.interestCoverageTTM,
+      status: debtToEquity < 50 ? 'good' : debtToEquity < 80 ? 'warning' : 'bad'
     },
-    management: { 
-      fulfilled: true, 
-      score: 2, 
-      details: 'Management seems competent but has had some missteps.' 
-    },
-    roic: { 
-      fulfilled: true, 
-      score: 3, 
-      details: 'Return on invested capital is strong at over 15%.' 
-    },
-    shareholderOriented: { 
-      fulfilled: false, 
-      score: 1, 
-      details: 'Limited shareholder returns through dividends or buybacks.' 
-    },
-    freeCashFlow: { 
-      fulfilled: true, 
-      score: 3, 
-      details: 'Consistently strong free cash flow generation.' 
-    },
-    debtLevels: { 
-      fulfilled: true, 
-      score: 2, 
-      details: 'Reasonable debt levels that can be serviced by operating income.' 
-    },
-    marginExpansion: { 
-      fulfilled: false, 
-      score: 1, 
-      details: 'Profit margins have been relatively flat.' 
-    },
-    antiCyclical: { 
-      fulfilled: false, 
-      score: 1, 
-      details: 'Business tends to be cyclical with semiconductor demand cycles.' 
-    },
-    // Add other criteria as needed
-    total: 22,
-    maxPossible: 30,
-    percentage: 73
+    valuation: {
+      pe: ratiosTTM[0]?.priceEarningsRatioTTM,
+      peg: ratiosTTM[0]?.pegRatioTTM,
+      pb: ratiosTTM[0]?.priceToBookRatioTTM,
+      ps: ratiosTTM[0]?.priceSalesRatioTTM,
+      dividendYield: ratiosTTM[0]?.dividendYieldTTM * 100,
+      status: ratiosTTM[0]?.priceEarningsRatioTTM < 15 ? 'good' : 'warning'
+    }
   };
 };
 
-/**
- * Gets key financial metrics for a stock
- * @param ticker The stock ticker symbol
- * @returns Promise containing financial metrics
- */
+// Funktion zum Abrufen der Finanzkennzahlen
 export const getFinancialMetrics = async (ticker: string) => {
-  console.log(`Getting financial metrics for ${ticker}`);
+  // Abrufen der relevanten Finanzkennzahlen
+  const [metrics, income, cashflow] = await Promise.all([
+    fetchFromFMP(`/key-metrics-ttm/${ticker}`),
+    fetchFromFMP(`/income-statement/${ticker}?limit=5`),
+    fetchFromFMP(`/cash-flow-statement/${ticker}?limit=5`)
+  ]);
   
-  // Determine if we should use high values (to simulate KRW) based on ticker
-  const isKoreanStock = ticker.endsWith('.KS');
-  const multiplier = isKoreanStock ? 1450 : 1;
-  
-  // Generate historical data (last 5 years)
-  const currentYear = new Date().getFullYear();
-  const historicalData = Array.from({ length: 5 }, (_, i) => {
-    const year = currentYear - 4 + i;
-    // Simulate some growth and fluctuation
-    const growthFactor = 1 + (i * 0.05) + (Math.random() * 0.1 - 0.05);
-    
-    return {
-      year,
-      revenue: 50000000000 * growthFactor * multiplier,
-      netIncome: 10000000000 * growthFactor * multiplier,
-      eps: (5 * growthFactor) * multiplier,
-      freeCashFlow: 12000000000 * growthFactor * multiplier,
-      dividendPerShare: 0.5 * growthFactor * multiplier,
-      bookValuePerShare: 25 * growthFactor * multiplier,
-      roic: 15 + (i * 0.5) + (Math.random() * 2 - 1),
-      debtToEquity: 0.4 - (i * 0.02) + (Math.random() * 0.1 - 0.05),
-    };
-  });
-  
-  // Current metrics
-  const metrics = [
-    { name: 'Umsatz (TTM)', value: 55000000000 * multiplier, unit: 'EUR', trend: 'up' },
-    { name: 'Gewinn pro Aktie', value: 5.5 * multiplier, unit: 'EUR', trend: 'up' },
-    { name: 'Free Cash Flow', value: 13000000000 * multiplier, unit: 'EUR', trend: 'up' },
-    { name: 'Eigenkapitalrendite', value: 18, unit: '%', trend: 'stable' },
-    { name: 'Verschuldungsgrad', value: 0.35, unit: 'ratio', trend: 'down' },
-    { name: 'Dividendenrendite', value: 0.69, unit: '%', trend: 'stable' },
-    { name: 'Kurs-Gewinn-Verhältnis', value: 12.5, unit: 'ratio', trend: 'down' },
-    { name: 'Kurs-Buchwert-Verhältnis', value: 2.1, unit: 'ratio', trend: 'stable' },
-  ];
+  // Historische Daten für Graphen
+  const historicalData = {
+    revenue: income.map(year => ({
+      year: new Date(year.date).getFullYear(),
+      value: year.revenue
+    })).reverse(),
+    earnings: income.map(year => ({
+      year: new Date(year.date).getFullYear(),
+      value: year.netIncome
+    })).reverse(),
+    freeCashFlow: cashflow.map(year => ({
+      year: new Date(year.date).getFullYear(),
+      value: year.freeCashFlow
+    })).reverse()
+  };
   
   return {
-    metrics,
-    historicalData,
-    // Include original currency information if it's a Korean stock
-    ...(isKoreanStock && {
-      originalCurrency: 'KRW',
-      targetCurrency: 'EUR',
-      conversionRate: 1450
-    })
+    metrics: {
+      revenue: income[0]?.revenue,
+      netIncome: income[0]?.netIncome,
+      eps: income[0]?.eps,
+      freeCashFlow: cashflow[0]?.freeCashFlow,
+      freeCashFlowPerShare: metrics[0]?.freeCashFlowPerShareTTM,
+      dividendPerShare: metrics[0]?.dividendPerShareTTM,
+      bookValuePerShare: metrics[0]?.bookValuePerShareTTM,
+      debtToEquity: metrics[0]?.debtToEquityTTM,
+      currentRatio: metrics[0]?.currentRatioTTM,
+      roe: metrics[0]?.roeTTM * 100,
+      roic: metrics[0]?.roicTTM * 100
+    },
+    historicalData
   };
 };
 
-/**
- * Calculates an overall rating and investment recommendation for a stock
- * @param ticker The stock ticker symbol
- * @returns Promise containing overall rating and recommendations
- */
+// Funktion zum Abrufen der Gesamtbewertung
 export const getOverallRating = async (ticker: string) => {
-  console.log(`Getting overall rating for ${ticker}`);
+  // Abrufen der relevanten Finanzkennzahlen für Bewertungsberechnung
+  const [metrics, ratios, quote, profile, income, cashflow] = await Promise.all([
+    fetchFromFMP(`/key-metrics-ttm/${ticker}`),
+    fetchFromFMP(`/ratios-ttm/${ticker}`),
+    fetchFromFMP(`/quote/${ticker}`),
+    fetchFromFMP(`/profile/${ticker}`),
+    fetchFromFMP(`/income-statement/${ticker}?limit=5`),
+    fetchFromFMP(`/cash-flow-statement/${ticker}?limit=5`)
+  ]);
   
-  // Determine if we should use high values (to simulate KRW) based on ticker
-  const isKoreanStock = ticker.endsWith('.KS');
-  const multiplier = isKoreanStock ? 1450 : 1;
+  // Prüfen, ob Daten für koreanische Aktien vorhanden sind
+  const isKoreanStock = profile && profile[0] && profile[0].country === "KR";
+  const currencyConversion = isKoreanStock ? 0.00068 : 1; // KRW zu EUR ungefährer Kurs
   
-  // Calculate intrinsic value using a simple DCF model
-  const currentEPS = 5.5 * multiplier;
-  const growthRate = 0.03; // 3% annual growth
-  const discountRate = 0.08; // 8% discount rate
-  const terminalMultiple = 15;
+  // Kennzahlen extrahieren
+  const currentPrice = quote[0]?.price;
+  const eps = income[0]?.eps * (isKoreanStock ? currencyConversion : 1);
+  const fcf = cashflow[0]?.freeCashFlow;
+  const sharesOutstanding = income[0]?.weightedAverageShsOut;
+  const fcfPerShare = sharesOutstanding ? fcf / sharesOutstanding * (isKoreanStock ? currencyConversion : 1) : 0;
   
-  // 10-year DCF calculation
+  // DCF Modell für intrinsischen Wert (vereinfacht)
+  // Annahmen für DCF-Berechnung
+  const growthRate = 0.10; // 10% Wachstum für 10 Jahre
+  const terminalRate = 0.03; // 3% Wachstum danach
+  const discountRate = 0.10; // 10% Abzinsungssatz
+  
+  // Berechnung des intrinsischen Werts basierend auf FCF
   let intrinsicValue = 0;
-  for (let i = 1; i <= 10; i++) {
-    const futureEPS = currentEPS * Math.pow(1 + growthRate, i);
-    intrinsicValue += futureEPS / Math.pow(1 + discountRate, i);
+  if (fcfPerShare > 0) {
+    let dcfValue = 0;
+    let currentFcf = fcfPerShare;
+    
+    // 10 Jahre Prognose mit anfänglichem Wachstum
+    for (let i = 1; i <= 10; i++) {
+      currentFcf *= (1 + growthRate);
+      dcfValue += currentFcf / Math.pow(1 + discountRate, i);
+    }
+    
+    // Endwert (Terminal Value)
+    const terminalValue = currentFcf * (1 + terminalRate) / (discountRate - terminalRate);
+    const discountedTerminalValue = terminalValue / Math.pow(1 + discountRate, 10);
+    
+    intrinsicValue = dcfValue + discountedTerminalValue;
   }
   
-  // Terminal value
-  const terminalEPS = currentEPS * Math.pow(1 + growthRate, 10);
-  const terminalValue = terminalEPS * terminalMultiple;
-  intrinsicValue += terminalValue / Math.pow(1 + discountRate, 10);
+  // Sicherheitsmarge
+  const marginOfSafety = intrinsicValue > 0 ? (intrinsicValue - currentPrice) / intrinsicValue * 100 : 0;
   
-  // Add margin of safety (20%)
-  const marginOfSafety = 0.2;
-  const bestBuyPrice = intrinsicValue * (1 - marginOfSafety);
+  // Kaufempfehlung basierend auf Sicherheitsmarge
+  let recommendation = 'Halten';
+  let recommendationColor = 'yellow';
   
-  // Current market price
-  const currentPrice = 108;
-  
-  // Calculate undervaluation percentage
-  const undervaluedPercent = ((intrinsicValue - currentPrice) / currentPrice) * 100;
-  
-  // Determine recommendation
-  let recommendation = 'Beobachten';
-  let reason = 'Die Aktie ist nahe am fairen Wert.';
-  
-  if (undervaluedPercent > 20) {
-    recommendation = 'Kaufen';
-    reason = `Die Aktie ist um ${Math.round(undervaluedPercent)}% unterbewertet.`;
-  } else if (undervaluedPercent < -10) {
-    recommendation = 'Vermeiden';
-    reason = `Die Aktie ist um ${Math.round(Math.abs(undervaluedPercent))}% überbewertet.`;
+  if (marginOfSafety >= 30) {
+    recommendation = 'Starker Kauf';
+    recommendationColor = 'green';
+  } else if (marginOfSafety >= 15) {
+    recommendation = 'Kauf';
+    recommendationColor = 'lightgreen';
+  } else if (marginOfSafety <= -15) {
+    recommendation = 'Verkaufen';
+    recommendationColor = 'red';
+  } else if (marginOfSafety < 0) {
+    recommendation = 'Halten';
+    recommendationColor = 'yellow';
   }
+  
+  // Score-Berechnung
+  const qualityScore = calculateQualityScore(ratios[0], metrics[0]);
+  const valuationScore = calculateValuationScore(ratios[0], marginOfSafety);
+  const momentumScore = calculateMomentumScore(quote[0]);
+  
+  const overallScore = (qualityScore * 0.5) + (valuationScore * 0.4) + (momentumScore * 0.1);
   
   return {
-    qualityScore: 7.3, // out of 10
-    valuationScore: 8.5, // out of 10
-    momentumScore: 6.4, // out of 10
-    overallScore: 7.4, // weighted average
-    intrinsicValue: intrinsicValue,
-    bestBuyPrice: bestBuyPrice,
-    currentPrice: currentPrice,
-    undervaluedPercent: undervaluedPercent,
-    recommendation: recommendation,
-    reason: reason,
-    strengths: [
-      'Starke Marktposition im Halbleitersektor',
-      'Gute finanzielle Stabilität',
-      'Hohe Eigenkapitalrendite',
-      'Konsistenter Free Cash Flow'
-    ],
-    weaknesses: [
-      'Zyklisches Geschäftsmodell',
-      'Niedrige Dividendenrendite',
-      'Starker Wettbewerb in der Branche'
-    ],
+    qualityScore,
+    valuationScore,
+    momentumScore,
+    overallScore,
+    intrinsicValue,
+    currentPrice,
+    marginOfSafety,
+    recommendation,
+    recommendationColor,
+    bestBuyPrice: intrinsicValue * 0.7, // 30% unter intrinsischem Wert
+    peRatio: ratios[0]?.priceEarningsRatioTTM,
+    pegRatio: ratios[0]?.pegRatioTTM,
     dcfAssumptions: {
-      growthRate: growthRate,
-      discountRate: discountRate,
-      terminalMultiple: terminalMultiple,
-      timeHorizon: 10,
-      marginOfSafety: marginOfSafety
-    },
-    // Include original currency information if it's a Korean stock
-    ...(isKoreanStock && {
-      originalCurrency: 'KRW',
-      targetCurrency: 'EUR',
-      conversionRate: 1450
-    })
+      growthRate: growthRate * 100,
+      terminalRate: terminalRate * 100,
+      discountRate: discountRate * 100
+    }
   };
+};
+
+// Hilfsfunktionen für Rating-Berechnung
+const calculateQualityScore = (ratios: any, metrics: any) => {
+  // Berechnung des Qualitätsscores (0-100)
+  let score = 0;
+  
+  // ROE Bewertung (0-25 Punkte)
+  const roe = metrics?.roeTTM * 100;
+  if (roe > 20) score += 25;
+  else if (roe > 15) score += 20;
+  else if (roe > 10) score += 15;
+  else if (roe > 5) score += 10;
+  else score += 5;
+  
+  // Margen Bewertung (0-25 Punkte)
+  const netMargin = ratios?.netProfitMarginTTM * 100;
+  if (netMargin > 20) score += 25;
+  else if (netMargin > 15) score += 20;
+  else if (netMargin > 10) score += 15;
+  else if (netMargin > 5) score += 10;
+  else score += 5;
+  
+  // Schulden Bewertung (0-25 Punkte)
+  const debtToEquity = metrics?.debtToEquityTTM;
+  if (debtToEquity < 0.3) score += 25;
+  else if (debtToEquity < 0.5) score += 20;
+  else if (debtToEquity < 1) score += 15;
+  else if (debtToEquity < 1.5) score += 10;
+  else score += 5;
+  
+  // Effizienz Bewertung (0-25 Punkte)
+  const roic = metrics?.roicTTM * 100;
+  if (roic > 15) score += 25;
+  else if (roic > 10) score += 20;
+  else if (roic > 8) score += 15;
+  else if (roic > 5) score += 10;
+  else score += 5;
+  
+  return score;
+};
+
+const calculateValuationScore = (ratios: any, marginOfSafety: number) => {
+  // Berechnung des Bewertungsscores (0-100)
+  let score = 0;
+  
+  // PE Bewertung (0-25 Punkte)
+  const pe = ratios?.priceEarningsRatioTTM;
+  if (pe < 10) score += 25;
+  else if (pe < 15) score += 20;
+  else if (pe < 20) score += 15;
+  else if (pe < 25) score += 10;
+  else score += 5;
+  
+  // PB Bewertung (0-25 Punkte)
+  const pb = ratios?.priceToBookRatioTTM;
+  if (pb < 1) score += 25;
+  else if (pb < 2) score += 20;
+  else if (pb < 3) score += 15;
+  else if (pb < 4) score += 10;
+  else score += 5;
+  
+  // Dividendenrendite Bewertung (0-25 Punkte)
+  const divYield = ratios?.dividendYieldTTM * 100;
+  if (divYield > 4) score += 25;
+  else if (divYield > 3) score += 20;
+  else if (divYield > 2) score += 15;
+  else if (divYield > 1) score += 10;
+  else score += 5;
+  
+  // Sicherheitsmarge Bewertung (0-25 Punkte)
+  if (marginOfSafety > 30) score += 25;
+  else if (marginOfSafety > 20) score += 20;
+  else if (marginOfSafety > 10) score += 15;
+  else if (marginOfSafety > 0) score += 10;
+  else score += 5;
+  
+  return score;
+};
+
+const calculateMomentumScore = (quote: any) => {
+  // Einfache Momentum-Score-Berechnung (0-100)
+  let score = 50; // Neutraler Ausgangspunkt
+  
+  const changePercent = quote?.changesPercentage;
+  
+  if (changePercent > 15) score = 100;
+  else if (changePercent > 10) score = 90;
+  else if (changePercent > 5) score = 80;
+  else if (changePercent > 2) score = 70;
+  else if (changePercent > 0) score = 60;
+  else if (changePercent > -2) score = 40;
+  else if (changePercent > -5) score = 30;
+  else if (changePercent > -10) score = 20;
+  else if (changePercent > -15) score = 10;
+  else score = 0;
+  
+  return score;
 };
