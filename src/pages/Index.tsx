@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -125,7 +124,7 @@ const Index = () => {
           normalizedRating = {
             ...ratingData,
             originalCurrency: detectedCurrencyInfo.originalCurrency,
-            currencyConversionRate: detectedCurrencyInfo.conversionRate
+            conversionRate: detectedCurrencyInfo.conversionRate
           };
           
           // Normalize intrinsic value and best buy price if needed
