@@ -53,11 +53,14 @@ const determineRating = (
   const score = buffettScore || 0;
   const mos = marginOfSafetyValue || 0;
   
+  // Prevent unreasonable margin of safety values
+  const cappedMos = Math.min(mos, 80); // Cap at 80% to avoid unrealistic recommendations
+  
   // High quality (Buffett score ≥75%)
   if (score >= 75) {
-    if (mos > 20) {
-      return { rating: 'buy', reasoning: 'Hohe Qualität und stark unterbewertet' };
-    } else if (mos >= 0) {
+    if (cappedMos > 20) {
+      return { rating: 'buy', reasoning: 'Hohe Qualität und unterbewertet' };
+    } else if (cappedMos >= 0) {
       return { rating: 'watch', reasoning: 'Hohe Qualität, aber fair oder nur leicht unterbewertet' };
     } else {
       return { rating: 'avoid', reasoning: 'Hohe Qualität, aber aktuell zu teuer' };
@@ -65,7 +68,7 @@ const determineRating = (
   }
   // Medium quality (Buffett score 60-74%)
   else if (score >= 60) {
-    if (mos > 10) {
+    if (cappedMos > 10) {
       return { rating: 'watch', reasoning: 'Mittlere Qualität, nur mit Vorsicht kaufen' };
     } else {
       return { rating: 'avoid', reasoning: 'Mittlere Qualität, nicht ausreichend unterbewertet' };
@@ -79,18 +82,39 @@ const determineRating = (
 
 // Function to interpret MoS status properly
 const interpretMarginOfSafety = (value: number): 'pass' | 'warning' | 'fail' => {
-  if (value > 30) return 'pass'; // Strongly undervalued
-  if (value >= 10) return 'warning'; // Slightly undervalued
-  if (value >= 0) return 'warning'; // Fair value (borderline)
+  // Cap margin of safety to prevent extreme, unrealistic values
+  const cappedValue = Math.min(value, 80); 
+  
+  if (cappedValue > 30) return 'pass'; // Strongly undervalued
+  if (cappedValue >= 10) return 'warning'; // Slightly undervalued
+  if (cappedValue >= 0) return 'warning'; // Fair value (borderline)
   return 'fail'; // Overvalued
 };
 
 // Function to get MoS description based on value
 const getMarginOfSafetyDescription = (value: number): string => {
-  if (value > 30) return 'Signifikante Sicherheitsmarge (stark unterbewertet)';
-  if (value >= 10) return 'Moderate Sicherheitsmarge (leicht unterbewertet)';
-  if (value >= 0) return 'Minimale Sicherheitsmarge (fair bewertet)';
+  // Cap margin of safety to prevent extreme descriptions
+  const cappedValue = Math.min(value, 80);
+  
+  if (cappedValue > 30) return 'Signifikante Sicherheitsmarge (unterbewertet)';
+  if (cappedValue >= 10) return 'Moderate Sicherheitsmarge (leicht unterbewertet)';
+  if (cappedValue >= 0) return 'Minimale Sicherheitsmarge (fair bewertet)';
   return 'Keine Sicherheitsmarge (überbewertet)';
+};
+
+// Function to validate and normalize financial values
+const normalizeFinancialValue = (value: number | undefined, max: number): number | undefined => {
+  if (value === undefined) return undefined;
+  if (value <= 0) return value; // Keep negative values as they may represent losses
+  
+  // If value is unreasonably high, attempt to normalize it
+  if (value > max) {
+    // Try to detect common scaling errors and correct them
+    if (value > max * 1000) return value / 1000; // Likely thousand unit error
+    return Math.min(value, max); // Cap at maximum reasonable value
+  }
+  
+  return value;
 };
 
 const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
@@ -110,14 +134,17 @@ const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
 const IntrinsicValueTooltip: React.FC<{
   intrinsicValue: number;
   currency: string;
-}> = ({ intrinsicValue, currency }) => {
-  // Beispielwerte für die DCF-Berechnung basierend auf dem intrinsischen Wert
-  const yearlyFCF = intrinsicValue * 0.025; // Geschätzt als 2,5% des intrinsischen Wertes
+  currentPrice?: number;
+}> = ({ intrinsicValue, currency, currentPrice }) => {
+  // Plausibilitätsprüfung und realistische FCF-Schätzung
+  const estimatedEPS = currentPrice ? (currentPrice * 0.05) : (intrinsicValue * 0.025);
+  const yearlyFCF = Math.min(estimatedEPS, intrinsicValue * 0.025); // Maximum 2.5% des intrinsischen Wertes als FCF
+  
   const growthRate1 = 15; // 15% Wachstum in Jahren 1-5
   const growthRate2 = 8; // 8% in Jahren 6-10
   const terminalGrowth = 3; // 3% ewiges Wachstum
   const discountRate = 8; // 8% Abzinsungsrate
-  const terminalValue = intrinsicValue * 0.85; // 85% des Gesamtwerts
+  const terminalValue = intrinsicValue * 0.65; // 65% des Gesamtwerts (realistischer)
   
   // Beispiel für Jahr 1 und 2 berechnen
   const fcfYear1 = yearlyFCF * (1 + growthRate1/100) / (1 + discountRate/100);
@@ -173,7 +200,10 @@ const MarginOfSafetyTooltip: React.FC<{
   const hasRealData = intrinsicValue && currentPrice && currency;
   const actualMarginValue = hasRealData ? intrinsicValue * (targetMarginOfSafety / 100) : 20;
   const safePrice = hasRealData ? intrinsicValue - actualMarginValue : 80;
-  const actualMargin = hasRealData ? ((intrinsicValue - currentPrice) / intrinsicValue) * 100 : -25;
+  
+  // Realistischen Wert für die Sicherheitsmarge berechnen, begrenzt auf maximal 80%
+  let actualMargin = hasRealData ? ((intrinsicValue - currentPrice) / intrinsicValue) * 100 : -25;
+  actualMargin = Math.min(actualMargin, 80); // Begrenzen auf maximal 80%
   
   return (
     <div className="space-y-2">
@@ -365,6 +395,62 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     targetMarginOfSafety = 20
   } = rating;
   
+  // Validieren und normalisieren der finanziellen Werte, um unrealistische Darstellungen zu vermeiden
+  if (currentPrice) {
+    // Maximalwerte basierend auf aktuellen Marktpreisen realistischer Aktien
+    const maxReasonableIntrinsicValue = currentPrice * 5; // Max. 5x des aktuellen Preises
+    const maxReasonableBuyPrice = currentPrice * 3; // Max. 3x des aktuellen Preises
+    
+    // Intrinsic Value normalisieren
+    if (intrinsicValue !== undefined) {
+      const normalizedIntrinsicValue = normalizeFinancialValue(intrinsicValue, maxReasonableIntrinsicValue);
+      
+      // Wenn der normalisierte Wert sich vom Original unterscheidet, passen wir ihn an
+      if (normalizedIntrinsicValue !== undefined && normalizedIntrinsicValue !== intrinsicValue) {
+        intrinsicValue = normalizedIntrinsicValue;
+        console.log(`Korrigierter innerer Wert: ${intrinsicValue}`);
+      }
+    }
+    
+    // Buy Price normalisieren
+    if (bestBuyPrice !== undefined) {
+      const normalizedBuyPrice = normalizeFinancialValue(bestBuyPrice, maxReasonableBuyPrice);
+      
+      // Wenn der normalisierte Wert sich vom Original unterscheidet, passen wir ihn an
+      if (normalizedBuyPrice !== undefined && normalizedBuyPrice !== bestBuyPrice) {
+        bestBuyPrice = normalizedBuyPrice;
+        console.log(`Korrigierter Buffett-Kaufpreis: ${bestBuyPrice}`);
+      }
+    }
+    
+    // Wenn beide Werte vorhanden sind, stellen wir sicher, dass der Kaufpreis niedriger ist als der innere Wert
+    if (intrinsicValue !== undefined && bestBuyPrice !== undefined) {
+      if (bestBuyPrice > intrinsicValue) {
+        bestBuyPrice = intrinsicValue * (1 - targetMarginOfSafety / 100);
+        console.log(`Kaufpreis angepasst auf: ${bestBuyPrice} (basierend auf MoS)`);
+      }
+    }
+    
+    // Margin of Safety neuberechnen, falls erforderlich
+    if (intrinsicValue !== undefined && currentPrice !== undefined) {
+      const newMoSValue = ((intrinsicValue - currentPrice) / intrinsicValue) * 100;
+      
+      // Prüfen und aktualisieren, falls der Wert unrealistisch ist
+      if (marginOfSafety) {
+        if (Math.abs(newMoSValue - marginOfSafety.value) > 20) {
+          marginOfSafety.value = newMoSValue;
+          console.log(`Korrigierte Margin of Safety: ${newMoSValue.toFixed(2)}%`);
+        }
+      }
+    }
+  }
+  
+  // Stellen sicher, dass die Margin of Safety realistisch ist (auf max. 80% begrenzt)
+  if (marginOfSafety && marginOfSafety.value > 80) {
+    marginOfSafety.value = 80;
+    console.log("Margin of Safety auf realistischen Maximalwert (80%) begrenzt");
+  }
+  
   // Override the marginOfSafety status based on the actual value
   if (marginOfSafety) {
     marginOfSafety.status = interpretMarginOfSafety(marginOfSafety.value);
@@ -442,6 +528,11 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   };
   
   const ratingLogic = explainRatingLogic();
+  
+  // Hinzufügen fehlender Schwächen, wie z.B. niedrige Dividendenrendite
+  if (weaknesses.length === 0 && marginOfSafety && marginOfSafety.value < 0) {
+    weaknesses.push("Aktie ist aktuell überbewertet (negative Margin of Safety)");
+  }
   
   return (
     <div className="buffett-card animate-fade-in">
@@ -583,7 +674,11 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                         </button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-sm p-4">
-                        <IntrinsicValueTooltip intrinsicValue={intrinsicValue} currency={currency} />
+                        <IntrinsicValueTooltip 
+                          intrinsicValue={intrinsicValue} 
+                          currency={currency} 
+                          currentPrice={currentPrice}
+                        />
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
