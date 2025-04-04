@@ -32,8 +32,8 @@ const BuffettQuantAnalyzer = () => {
     setIsLoading(true);
     setResults([]);
     try {
-      // Limitiere auf 25 Aktien für Demo-Zwecke (um API-Limits zu respektieren)
-      const analysisResults = await analyzeExchange(selectedExchange, 25);
+      // Analyse mit erhöhtem Limit für mehr Aktien
+      const analysisResults = await analyzeExchange(selectedExchange, 200);
       setResults(analysisResults);
       setHasAnalyzed(true);
       
@@ -130,24 +130,18 @@ const BuffettQuantAnalyzer = () => {
           
           <div>
             <h3 className="font-semibold mb-2">Bewertungslegende:</h3>
-            <ul className="pl-6 text-gray-600 space-y-1">
-              <li>
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-800 mr-2">
-                  7+
-                </span>
-                <span>Starke Buffett-Kandidaten</span>
+            <ul className="pl-6 text-gray-600 space-y-2">
+              <li className="flex items-center">
+                <Badge className="bg-green-100 text-green-800 mr-2">🟢 Kandidat</Badge>
+                <span>Score 7-10: Starke Buffett-Kandidaten</span>
               </li>
-              <li>
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-100 text-yellow-800 mr-2">
-                  5-6
-                </span>
-                <span>Moderate Buffett-Konformität</span>
+              <li className="flex items-center">
+                <Badge className="bg-yellow-100 text-yellow-800 mr-2">🟡 Beobachten</Badge>
+                <span>Score 5-6: Moderate Buffett-Konformität</span>
               </li>
-              <li>
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-800 mr-2">
-                  &lt;5
-                </span>
-                <span>Nicht Buffett-konform</span>
+              <li className="flex items-center">
+                <Badge className="bg-red-100 text-red-800 mr-2">🔴 Vermeiden</Badge>
+                <span>Score &lt;5: Nicht Buffett-konform</span>
               </li>
             </ul>
           </div>

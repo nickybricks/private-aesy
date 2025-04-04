@@ -210,13 +210,13 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
 };
 
 // Batch-Analyse für mehrere Aktien einer Börse
-export const analyzeExchange = async (exchange: string, limit: number = 50) => {
+export const analyzeExchange = async (exchange: string, limit: number = 500) => {
   try {
     // Aktien der Börse abrufen
     const stocks = await fetchFromFMP(`/stock/list`);
     const exchangeStocks = stocks
       .filter((stock: any) => stock.exchangeShortName === exchange && stock.type === 'stock')
-      .slice(0, limit); // Limitieren, um API-Limits zu respektieren
+      .slice(0, limit); // Erhöht auf 500 für mehr Daten
     
     console.log(`Analysiere ${exchangeStocks.length} Aktien von ${exchange}`);
     

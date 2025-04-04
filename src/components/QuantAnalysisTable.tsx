@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -13,11 +13,15 @@ import {
   AlertCircle,
   Download,
   Info,
-  ArrowUpDown,
+  Search,
+  ExternalLink,
+  Filter,
   SortAsc,
   SortDesc
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { QuantAnalysisResult, exportToCsv } from '@/api/quantAnalyzerApi';
 import {
   Tooltip,
@@ -30,6 +34,11 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface QuantAnalysisTableProps {
   results: QuantAnalysisResult[];
@@ -87,6 +96,16 @@ const metricsDefinitions = {
   }
 };
 
+const BuffettScoreBadge = ({ score }: { score: number }) => {
+  if (score >= 7) {
+    return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">🟢 Kandidat</Badge>;
+  } else if (score >= 5) {
+    return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">🟡 Beobachten</Badge>;
+  } else {
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">🔴 Vermeiden</Badge>;
+  }
+};
+
 const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({ 
   results, 
   isLoading 
@@ -94,6 +113,51 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
   const [sortField, setSortField] = useState<string>("buffettScore");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [minScore, setMinScore] = useState<number>(0);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [filteredResults, setFilteredResults] = useState<QuantAnalysisResult[]>([]);
+  
+  useEffect(() => {
+    if (results.length === 0) {
+      setFilteredResults([]);
+      return;
+    }
+
+    const sortedData = [...results].sort((a, b) => {
+      const getNestedValue = (obj: any, path: string) => {
+        const parts = path.split('.');
+        let value = obj;
+        for (const part of parts) {
+          if (value === null || value === undefined) return null;
+          value = value[part];
+          if (part.endsWith('value') && (value === null || value === undefined)) return null;
+        }
+        return value;
+      };
+
+      let valueA = getNestedValue(a, sortField);
+      let valueB = getNestedValue(b, sortField);
+      
+      if (valueA === null && valueB === null) return 0;
+      if (valueA === null) return 1;
+      if (valueB === null) return -1;
+      
+      return sortDirection === "asc" 
+        ? (valueA < valueB ? -1 : valueA > valueB ? 1 : 0)
+        : (valueA > valueB ? -1 : valueA < valueB ? 1 : 0);
+    });
+
+    let filtered = sortedData.filter(result => result.buffettScore >= minScore);
+    
+    if (searchTerm.trim() !== "") {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        stock => stock.symbol.toLowerCase().includes(term) || 
+                stock.name.toLowerCase().includes(term)
+      );
+    }
+    
+    setFilteredResults(filtered);
+  }, [results, sortField, sortDirection, minScore, searchTerm]);
   
   if (isLoading) {
     return (
@@ -119,32 +183,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
   const handleExport = () => {
     exportToCsv(results);
   };
-
-  const sortedResults = [...results].sort((a, b) => {
-    const getNestedValue = (obj: any, path: string) => {
-      const parts = path.split('.');
-      let value = obj;
-      for (const part of parts) {
-        if (value === null || value === undefined) return null;
-        value = value[part];
-        if (part.endsWith('value') && (value === null || value === undefined)) return null;
-      }
-      return value;
-    };
-
-    let valueA = getNestedValue(a, sortField);
-    let valueB = getNestedValue(b, sortField);
-    
-    if (valueA === null && valueB === null) return 0;
-    if (valueA === null) return 1;
-    if (valueB === null) return -1;
-    
-    return sortDirection === "asc" 
-      ? (valueA < valueB ? -1 : valueA > valueB ? 1 : 0)
-      : (valueA > valueB ? -1 : valueA < valueB ? 1 : 0);
-  });
-
-  const filteredResults = sortedResults.filter(result => result.buffettScore >= minScore);
 
   const StatusIcon = ({ passed, value }: { passed: boolean, value: number | null }) => {
     if (value === null) {
@@ -242,14 +280,53 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
     );
   };
 
+  const getStockUrl = (symbol: string) => {
+    return `https://finance.yahoo.com/quote/${symbol}`;
+  };
+
+  const getProfileUrl = (symbol: string) => {
+    return `https://financialmodelingprep.com/financial-summary/${symbol}`;
+  };
+
   const scoreFilterOptions = [0, 5, 6, 7, 8, 9];
 
   return (
     <div>
+      <div className="mb-6 bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm">
+        <div className="flex items-center space-x-2 mb-1">
+          <Info className="h-4 w-4 text-blue-500" />
+          <span className="font-medium">Buffett-Score Bewertung:</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+          <div className="flex items-center space-x-2">
+            <Badge className="bg-green-100 text-green-800">🟢 Kandidat</Badge>
+            <span>Score 7-10</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Badge className="bg-yellow-100 text-yellow-800">🟡 Beobachten</Badge>
+            <span>Score 5-6</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Badge className="bg-red-100 text-red-800">🔴 Vermeiden</Badge>
+            <span>Score &lt;5</span>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
         <h2 className="text-xl font-semibold">Analyseergebnisse ({filteredResults.length} von {results.length} Aktien)</h2>
         
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div className="flex flex-1 items-center space-x-2">
+            <Search className="h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Symbol oder Name suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-xs"
+            />
+          </div>
+          
           <div className="flex items-center space-x-2">
             <label htmlFor="min-score" className="text-sm whitespace-nowrap">Min. Score:</label>
             <select 
@@ -326,22 +403,51 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   tooltipText={`${metricsDefinitions.dividendYield.definition} Ziel: ${metricsDefinitions.dividendYield.target}`}
                 />
                 <SortableHeader field="price" name="Preis" />
+                <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredResults.map((stock) => (
                 <TableRow key={stock.symbol}>
-                  <TableCell className="font-medium">{stock.symbol}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{stock.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <a href={getStockUrl(stock.symbol)} target="_blank" rel="noopener noreferrer" className="flex items-center hover:text-blue-600">
+                      {stock.symbol}
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </a>
+                  </TableCell>
+                  <TableCell className="max-w-[200px] truncate">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger className="text-left">
+                          {stock.name}
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>{stock.name}</p>
+                          <a 
+                            href={getProfileUrl(stock.symbol)} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 flex items-center mt-1 hover:underline"
+                          >
+                            Weitere Informationen
+                            <ExternalLink className="h-3 w-3 ml-1" />
+                          </a>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableCell>
                   <TableCell>
                     <HoverCard>
                       <HoverCardTrigger asChild>
-                        <span className={`inline-flex items-center justify-center cursor-help w-8 h-8 rounded-full 
-                          ${stock.buffettScore >= 7 ? 'bg-green-100 text-green-800' :
-                            stock.buffettScore >= 5 ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'}`}>
-                          {stock.buffettScore}
-                        </span>
+                        <div className="flex items-center gap-2 cursor-help">
+                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full 
+                            ${stock.buffettScore >= 7 ? 'bg-green-100 text-green-800' :
+                              stock.buffettScore >= 5 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'}`}>
+                            {stock.buffettScore}
+                          </span>
+                          <BuffettScoreBadge score={stock.buffettScore} />
+                        </div>
                       </HoverCardTrigger>
                       <HoverCardContent className="w-80">
                         {getPassedCriteriaList(stock)}
@@ -398,6 +504,54 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
                     {stock.price.toFixed(2)} {stock.currency}
+                  </TableCell>
+                  <TableCell>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                          <span className="sr-only">Mehr Optionen</span>
+                          <Info className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80" align="end">
+                        <div className="space-y-3">
+                          <h4 className="font-medium">{stock.name} ({stock.symbol})</h4>
+                          <div className="grid gap-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Buffett-Score:</span>
+                              <span className="font-medium">{stock.buffettScore}/10</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Bewertung:</span>
+                              <BuffettScoreBadge score={stock.buffettScore} />
+                            </div>
+                          </div>
+                          <div className="pt-2">
+                            {getPassedCriteriaList(stock)}
+                          </div>
+                          <div className="border-t pt-2 flex justify-between">
+                            <a 
+                              href={getStockUrl(stock.symbol)} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:underline flex items-center"
+                            >
+                              Yahoo Finance
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </a>
+                            <a 
+                              href={getProfileUrl(stock.symbol)} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:underline flex items-center"
+                            >
+                              FMP Profil
+                              <ExternalLink className="h-3 w-3 ml-1" />
+                            </a>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </TableCell>
                 </TableRow>
               ))}
