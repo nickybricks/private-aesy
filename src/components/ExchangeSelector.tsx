@@ -58,7 +58,6 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
       </Select>
       <p className="text-sm text-gray-500 mt-2">
         Wählen Sie eine Börse aus, um Aktien nach Warren Buffetts Kriterien zu analysieren.
-        <span className="block mt-1 text-gray-400 italic">Hinweis: In der nächsten Version wird die Analyse mehrerer Börsen gleichzeitig möglich sein.</span>
       </p>
     </div>
   );

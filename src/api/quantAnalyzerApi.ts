@@ -48,6 +48,7 @@ export interface QuantAnalysisResult {
   symbol: string;
   name: string;
   exchange: string;
+  sector: string; // Added sector field
   buffettScore: number;
   criteria: {
     roe: { value: number | null; pass: boolean },
@@ -187,6 +188,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       symbol: ticker,
       name: companyProfile.companyName,
       exchange: companyProfile.exchangeShortName,
+      sector: companyProfile.sector || 'Unbekannt', // Add sector info
       buffettScore,
       criteria: {
         roe: { value: roe, pass: roePass },
@@ -216,7 +218,7 @@ export const analyzeExchange = async (exchange: string, limit: number = 500) => 
     const stocks = await fetchFromFMP(`/stock/list`);
     const exchangeStocks = stocks
       .filter((stock: any) => stock.exchangeShortName === exchange && stock.type === 'stock')
-      .slice(0, limit); // Erhöht auf 500 für mehr Daten
+      .slice(0, limit); // Begrenzt auf die gewählte Anzahl
     
     console.log(`Analysiere ${exchangeStocks.length} Aktien von ${exchange}`);
     
@@ -245,7 +247,7 @@ export const analyzeExchange = async (exchange: string, limit: number = 500) => 
 // Exportieren der CSV-Datei
 export const exportToCsv = (results: QuantAnalysisResult[]) => {
   const headers = [
-    'Symbol', 'Name', 'Exchange', 'Buffett Score',
+    'Symbol', 'Name', 'Exchange', 'Sector', 'Buffett Score',
     'ROE (%)', 'ROIC (%)', 'Net Margin (%)', 'EPS Growth (%)', 'Revenue Growth (%)',
     'Interest Coverage', 'Debt Ratio (%)', 'P/E', 'P/B', 'Dividend Yield (%)',
     'Price', 'Currency'
@@ -255,6 +257,7 @@ export const exportToCsv = (results: QuantAnalysisResult[]) => {
     result.symbol,
     result.name,
     result.exchange,
+    result.sector,
     result.buffettScore,
     result.criteria.roe.value !== null ? result.criteria.roe.value.toFixed(2) : 'N/A',
     result.criteria.roic.value !== null ? result.criteria.roic.value.toFixed(2) : 'N/A',

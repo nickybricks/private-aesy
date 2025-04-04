@@ -1,26 +1,101 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, BarChart3, Calculator } from 'lucide-react';
+import { ArrowLeft, BarChart3, Calculator, AlertCircle, Filter, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
 import ExchangeSelector from '@/components/ExchangeSelector';
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
-import { analyzeExchange, QuantAnalysisResult } from '@/api/quantAnalyzerApi';
+import { analyzeExchange, QuantAnalysisResult, exchanges } from '@/api/quantAnalyzerApi';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+// Verfügbare Sektoren
+const sectors = [
+  { id: 'all', name: 'Alle Sektoren' },
+  { id: 'Technology', name: 'Technologie' },
+  { id: 'Financial Services', name: 'Finanzdienstleistungen' },
+  { id: 'Healthcare', name: 'Gesundheitswesen' },
+  { id: 'Consumer Cyclical', name: 'Konsumgüter (zyklisch)' },
+  { id: 'Industrials', name: 'Industrie' },
+  { id: 'Communication Services', name: 'Kommunikationsdienste' },
+  { id: 'Consumer Defensive', name: 'Konsumgüter (defensiv)' },
+  { id: 'Energy', name: 'Energie' },
+  { id: 'Basic Materials', name: 'Grundstoffe' },
+  { id: 'Real Estate', name: 'Immobilien' },
+  { id: 'Utilities', name: 'Versorgung' }
+];
+
+// Optionen für die Anzahl der zu analysierenden Aktien
+const stockLimitOptions = [
+  { value: 25, label: '25 Aktien (ca. 30 Sekunden)' },
+  { value: 50, label: '50 Aktien (ca. 1 Minute)' },
+  { value: 100, label: '100 Aktien (ca. 2 Minuten)' },
+  { value: 250, label: '250 Aktien (ca. 4-5 Minuten)' },
+  { value: 500, label: '500 Aktien (ca. 8-10 Minuten)' },
+  { value: 1000, label: '1000 Aktien (ca. 15+ Minuten)' }
+];
 
 const BuffettQuantAnalyzer = () => {
   const { toast } = useToast();
   const [selectedExchange, setSelectedExchange] = useState('NYSE');
+  const [selectedSector, setSelectedSector] = useState('all');
+  const [stockLimit, setStockLimit] = useState(100);
   const [results, setResults] = useState<QuantAnalysisResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
+  const [currentOperation, setCurrentOperation] = useState('');
+  
+  // Schätzen der Analysezeit basierend auf der Anzahl der Aktien
+  const estimatedTime = useMemo(() => {
+    if (stockLimit <= 25) return "ca. 30 Sekunden";
+    if (stockLimit <= 50) return "ca. 1 Minute";
+    if (stockLimit <= 100) return "ca. 2 Minuten";
+    if (stockLimit <= 250) return "ca. 4-5 Minuten";
+    if (stockLimit <= 500) return "ca. 8-10 Minuten";
+    return "ca. 15+ Minuten";
+  }, [stockLimit]);
   
   const handleExchangeChange = (value: string) => {
     setSelectedExchange(value);
   };
   
-  const handleAnalyzeExchange = async () => {
+  const handleSectorChange = (value: string) => {
+    setSelectedSector(value);
+  };
+  
+  const handleStockLimitChange = (value: string) => {
+    const numValue = parseInt(value, 10);
+    setStockLimit(numValue);
+    
+    // Zeige Warnung bei großen Datenmengen
+    if (numValue >= 500) {
+      setShowWarningDialog(true);
+    }
+  };
+  
+  const startAnalysis = async () => {
     if (!selectedExchange) {
       toast({
         title: "Bitte wählen Sie eine Börse aus",
@@ -32,15 +107,42 @@ const BuffettQuantAnalyzer = () => {
     
     setIsLoading(true);
     setResults([]);
+    setCurrentOperation("Lade Aktien...");
+    setProgress(5);
+    
     try {
-      // Analyse mit erhöhtem Limit für mehr Aktien
-      const analysisResults = await analyzeExchange(selectedExchange, 200);
-      setResults(analysisResults);
+      // Simpler Fortschrittsindikator
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev < 95) {
+            return prev + 1;
+          }
+          return prev;
+        });
+      }, stockLimit > 500 ? 1000 : 500);
+      
+      setCurrentOperation(`Analysiere Aktien von ${selectedExchange}...`);
+      
+      // Analyse mit dem eingestellten Limit
+      const analysisResults = await analyzeExchange(selectedExchange, stockLimit);
+      
+      // Filter nach Sektor, falls nicht "Alle" ausgewählt
+      const filteredResults = selectedSector === 'all' 
+        ? analysisResults 
+        : analysisResults.filter(result => {
+            // Annahme: Die Sektor-Information ist Teil der Ergebnisdaten
+            // Falls nicht, muss die API entsprechend angepasst werden
+            return result.sector === selectedSector;
+          });
+      
+      setResults(filteredResults);
       setHasAnalyzed(true);
+      clearInterval(progressInterval);
+      setProgress(100);
       
       toast({
         title: "Analyse abgeschlossen",
-        description: `${analysisResults.length} Aktien von ${selectedExchange} wurden nach Buffett-Kriterien analysiert.`,
+        description: `${filteredResults.length} Aktien von ${selectedExchange} wurden nach Buffett-Kriterien analysiert.`,
         variant: "default"
       });
     } catch (error) {
@@ -52,6 +154,7 @@ const BuffettQuantAnalyzer = () => {
       });
     } finally {
       setIsLoading(false);
+      setCurrentOperation("");
     }
   };
 
@@ -77,14 +180,56 @@ const BuffettQuantAnalyzer = () => {
         </div>
         
         <div className="space-y-6">
+          {/* Börsenauswahl */}
           <ExchangeSelector 
             selectedExchange={selectedExchange} 
             onExchangeChange={handleExchangeChange} 
           />
           
+          {/* Sektorenfilter */}
+          <div className="mb-6">
+            <Label htmlFor="sector" className="block text-sm font-medium mb-2">Sektor / Branche</Label>
+            <Select value={selectedSector} onValueChange={handleSectorChange}>
+              <SelectTrigger className="w-full md:w-80" id="sector">
+                <SelectValue placeholder="Sektor auswählen" />
+              </SelectTrigger>
+              <SelectContent>
+                {sectors.map(sector => (
+                  <SelectItem key={sector.id} value={sector.id}>
+                    {sector.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-gray-500 mt-2">
+              Schränken Sie die Analyse auf einen bestimmten Sektor ein.
+            </p>
+          </div>
+          
+          {/* Anzahl der Aktien festlegen */}
+          <div className="mb-6">
+            <Label htmlFor="stockLimit" className="block text-sm font-medium mb-2">Anzahl der Aktien</Label>
+            <Select value={stockLimit.toString()} onValueChange={handleStockLimitChange}>
+              <SelectTrigger className="w-full md:w-80" id="stockLimit">
+                <SelectValue placeholder="Anzahl auswählen" />
+              </SelectTrigger>
+              <SelectContent>
+                {stockLimitOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value.toString()}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-gray-500 mt-2 flex items-center">
+              <Clock className="h-4 w-4 mr-1 inline" />
+              Geschätzte Analysezeit: <span className="font-medium ml-1">{estimatedTime}</span>
+            </p>
+          </div>
+          
           <div>
             <Button 
-              onClick={handleAnalyzeExchange} 
+              onClick={() => stockLimit >= 500 ? setShowWarningDialog(true) : startAnalysis()} 
               disabled={isLoading}
               className="bg-buffett-blue hover:bg-blue-700"
             >
@@ -97,6 +242,20 @@ const BuffettQuantAnalyzer = () => {
           </div>
         </div>
       </div>
+
+      {/* Fortschrittsanzeige während der Analyse */}
+      {isLoading && (
+        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 mb-8">
+          <div className="mb-2 flex justify-between">
+            <span className="text-sm font-medium">{currentOperation}</span>
+            <span className="text-sm font-medium">{progress}%</span>
+          </div>
+          <Progress value={progress} className="h-2" />
+          <p className="text-xs text-gray-500 mt-2">
+            Bitte haben Sie Geduld. Die Analyse von {stockLimit} Aktien kann {estimatedTime} dauern.
+          </p>
+        </div>
+      )}
 
       {(hasAnalyzed || isLoading) && (
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
@@ -157,6 +316,30 @@ const BuffettQuantAnalyzer = () => {
           Datenquelle: Financial Modeling Prep API
         </p>
       </footer>
+
+      {/* Warnungsdialog für große Analysen */}
+      <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Große Datenanalyse</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sie haben {stockLimit} Aktien zur Analyse ausgewählt. Dies kann {estimatedTime} oder länger dauern und 
+              eine hohe Serverlast verursachen. 
+              
+              <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200 flex items-center">
+                <AlertCircle className="text-yellow-500 h-5 w-5 mr-2" />
+                <span>Bei instabiler Verbindung kann die Analyse unterbrochen werden.</span>
+              </div>
+              
+              <div className="mt-3">Möchten Sie mit der Analyse fortfahren?</div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={startAnalysis}>Ja, analysieren</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
