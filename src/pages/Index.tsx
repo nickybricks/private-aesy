@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -6,6 +7,7 @@ import BuffettCriteriaGPT from '@/components/BuffettCriteriaGPT';
 import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
+import Navigation from '@/components/Navigation';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
@@ -137,6 +139,8 @@ const Index = () => {
           Analysieren Sie Aktien nach Warren Buffetts Investmentprinzipien
         </p>
       </header>
+      
+      <Navigation />
       
       {!hasApiKey && (
         <div className="mb-8 animate-fade-in">
