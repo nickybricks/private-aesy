@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Financial Modeling Prep API Key - Fest eingebaut
@@ -244,6 +243,7 @@ export const getOverallRating = async (ticker: string) => {
     bestBuyPrice: intrinsicValue * 0.7, // 30% unter intrinsischem Wert
     peRatio: ratios[0]?.priceEarningsRatioTTM,
     pegRatio: ratios[0]?.pegRatioTTM,
+    currency: profile[0]?.currency || 'EUR',  // Add currency to the output
     dcfAssumptions: {
       growthRate: growthRate * 100,
       terminalRate: terminalRate * 100,
