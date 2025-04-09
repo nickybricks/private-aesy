@@ -75,70 +75,83 @@ const Index = () => {
       }
       
       // Fetch all required data
-      const [criteria, metrics, ratingData] = await Promise.all([
-        analyzeBuffettCriteria(ticker),
-        getFinancialMetrics(ticker),
-        getOverallRating(ticker)
-      ]);
-      
-      console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
-      console.log('Financial Metrics:', JSON.stringify(metrics, null, 2));
-      console.log('Overall Rating:', JSON.stringify(ratingData, null, 2));
-      
-      // Apply currency normalization if needed
-      let normalizedMetrics = metrics;
-      let normalizedRating = ratingData;
-      
-      if (detectedCurrencyInfo.conversionNeeded) {
-        normalizedMetrics = normalizeFinancialMetrics(metrics, detectedCurrencyInfo);
-        console.log('Normalized Metrics:', JSON.stringify(normalizedMetrics, null, 2));
+      try {
+        const [criteria, metrics, ratingData] = await Promise.all([
+          analyzeBuffettCriteria(ticker),
+          getFinancialMetrics(ticker),
+          getOverallRating(ticker)
+        ]);
         
-        // Add currency information to rating data
-        if (ratingData) {
-          normalizedRating = {
-            ...ratingData,
-            // Add currency information only if it exists in the type
-            currency: detectedCurrencyInfo.targetCurrency
-          };
+        console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
+        console.log('Financial Metrics:', JSON.stringify(metrics, null, 2));
+        console.log('Overall Rating:', JSON.stringify(ratingData, null, 2));
+        
+        // Apply currency normalization if needed
+        let normalizedMetrics = metrics;
+        let normalizedRating = ratingData;
+        
+        if (detectedCurrencyInfo.conversionNeeded) {
+          normalizedMetrics = normalizeFinancialMetrics(metrics, detectedCurrencyInfo);
+          console.log('Normalized Metrics:', JSON.stringify(normalizedMetrics, null, 2));
           
-          // Normalize intrinsic value and best buy price if needed
-          if (detectedCurrencyInfo.conversionRate && detectedCurrencyInfo.originalCurrency !== 'EUR') {
-            if (normalizedRating.intrinsicValue) {
-              normalizedRating.intrinsicValue = normalizedRating.intrinsicValue / detectedCurrencyInfo.conversionRate;
-            }
+          // Add currency information to rating data
+          if (ratingData) {
+            // Create a safe copy of the rating data
+            normalizedRating = {
+              ...ratingData,
+              // Add just the currency information without adding properties not in the type
+              currency: detectedCurrencyInfo.targetCurrency
+            };
             
-            if (normalizedRating.bestBuyPrice) {
-              normalizedRating.bestBuyPrice = normalizedRating.bestBuyPrice / detectedCurrencyInfo.conversionRate;
+            // Normalize intrinsic value and best buy price if needed
+            if (detectedCurrencyInfo.conversionRate && detectedCurrencyInfo.originalCurrency !== 'EUR') {
+              if (normalizedRating.intrinsicValue) {
+                normalizedRating.intrinsicValue = normalizedRating.intrinsicValue / detectedCurrencyInfo.conversionRate;
+              }
+              
+              if (normalizedRating.bestBuyPrice) {
+                normalizedRating.bestBuyPrice = normalizedRating.bestBuyPrice / detectedCurrencyInfo.conversionRate;
+              }
+              
+              // Adjust current price if needed
+              if (normalizedRating.currentPrice) {
+                normalizedRating.currentPrice = normalizedRating.currentPrice / detectedCurrencyInfo.conversionRate;
+              }
+              
+              console.log('Normalized Rating:', JSON.stringify(normalizedRating, null, 2));
             }
-            
-            // Adjust current price if needed
-            if (normalizedRating.currentPrice) {
-              normalizedRating.currentPrice = normalizedRating.currentPrice / detectedCurrencyInfo.conversionRate;
-            }
-            
-            console.log('Normalized Rating:', JSON.stringify(normalizedRating, null, 2));
+          }
+          
+          // Show toast about currency conversion
+          const conversionInfo = getCurrencyConversionInfo(detectedCurrencyInfo);
+          if (conversionInfo) {
+            toast({
+              title: "Währungsumrechnung aktiviert",
+              description: conversionInfo,
+              variant: "default",
+            });
           }
         }
         
-        // Show toast about currency conversion
-        const conversionInfo = getCurrencyConversionInfo(detectedCurrencyInfo);
-        if (conversionInfo) {
-          toast({
-            title: "Währungsumrechnung aktiviert",
-            description: conversionInfo,
-            variant: "default",
-          });
-        }
+        // Set the state with data - ensure we're not setting undefined
+        if (criteria) setBuffettCriteria(criteria);
+        if (normalizedMetrics) setFinancialMetrics(normalizedMetrics);
+        if (normalizedRating) setOverallRating(normalizedRating);
+        
+        toast({
+          title: "Analyse abgeschlossen",
+          description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
+        });
+      } catch (dataError) {
+        console.error('Error getting analysis data:', dataError);
+        const errorMessage = dataError instanceof Error ? dataError.message : 'Fehler bei der Datenanalyse';
+        
+        toast({
+          title: "Fehler bei der Analyse",
+          description: errorMessage,
+          variant: "destructive",
+        });
       }
-      
-      setBuffettCriteria(criteria);
-      setFinancialMetrics(normalizedMetrics);
-      setOverallRating(normalizedRating);
-      
-      toast({
-        title: "Analyse abgeschlossen",
-        description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
-      });
     } catch (error) {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';

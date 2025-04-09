@@ -284,6 +284,9 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
 
   // Process criteria to automatically update scores based on GPT analysis
   const processedCriteria = allCriteria.map(criterion => {
+    // Ensure criterion exists before trying to access properties
+    if (!criterion) return null;
+    
     const derivedScore = deriveScoreFromGptAnalysis(criterion);
     
     // Only update the score if it's different and we have a derived value
@@ -295,20 +298,21 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     }
     
     return criterion;
-  });
+  }).filter(Boolean) as BuffettCriterionProps[]; // Filter out null values
 
   // Calculate total points for overall rating
   const totalPoints = processedCriteria.reduce((acc, criterion) => {
+    if (!criterion) return acc;
     if (criterion.status === 'pass') return acc + 3;
     if (criterion.status === 'warning') return acc + 1;
     return acc;
   }, 0);
   
   const maxPoints = processedCriteria.length * 3;
-  const buffettScore = Math.round((totalPoints / maxPoints) * 100);
+  const buffettScore = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
 
   // Calculate detailed score based on the GPT-derived scores when available
-  const detailedScores = processedCriteria.filter(c => c.score !== undefined && c.maxScore !== undefined);
+  const detailedScores = processedCriteria.filter(c => c && c.score !== undefined && c.maxScore !== undefined);
   const hasDetailedScores = detailedScores.length > 0;
   
   const totalDetailedScore = hasDetailedScores ? 
@@ -321,9 +325,9 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
 
   // Criteria distribution for visualization
   const criteriaDistribution = {
-    pass: processedCriteria.filter(c => c.status === 'pass').length,
-    warning: processedCriteria.filter(c => c.status === 'warning').length,
-    fail: processedCriteria.filter(c => c.status === 'fail').length
+    pass: processedCriteria.filter(c => c && c.status === 'pass').length,
+    warning: processedCriteria.filter(c => c && c.status === 'warning').length,
+    fail: processedCriteria.filter(c => c && c.status === 'fail').length
   };
 
   return (
@@ -362,6 +366,8 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {processedCriteria.map((criterion, index) => {
+          if (!criterion) return null;
+          
           // Add null checks to prevent accessing properties of undefined
           const { summary, points } = extractKeyInsights(criterion?.gptAnalysis);
           const hasInconsistency = hasInconsistentAnalysis(criterion);
@@ -404,7 +410,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
               <CardContent>
                 <div className="space-y-1 text-sm">
                   <ul className="list-disc pl-5 space-y-1 mb-3">
-                    {criterion.details.map((detail, i) => (
+                    {criterion.details && criterion.details.map((detail, i) => (
                       <li key={i} className="text-gray-700">{detail}</li>
                     ))}
                   </ul>

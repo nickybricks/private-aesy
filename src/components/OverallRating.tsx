@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   CheckCircle, 
@@ -423,8 +424,8 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   let { 
     overall, 
     summary, 
-    strengths, 
-    weaknesses, 
+    strengths = [], // Provide default empty arrays to prevent map errors
+    weaknesses = [], // Provide default empty arrays to prevent map errors
     recommendation, 
     buffettScore, 
     marginOfSafety, 
@@ -550,7 +551,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   };
   
   const ratingLogic = explainRatingLogic();
-  
+
   return (
     <div className="buffett-card animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Gesamtbewertung</h2>
@@ -817,7 +818,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         <div>
           <h3 className="text-lg font-medium mb-3 text-buffett-green">Stärken</h3>
           <ul className="space-y-2">
-            {strengths.map((strength, index) => (
+            {strengths && strengths.map((strength, index) => (
               <li key={index} className="flex items-start gap-2">
                 <span className="text-buffett-green">•</span>
                 <span>{strength}</span>
@@ -829,7 +830,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         <div>
           <h3 className="text-lg font-medium mb-3 text-buffett-red">Schwächen</h3>
           <ul className="space-y-2">
-            {weaknesses.map((weakness, index) => (
+            {weaknesses && weaknesses.map((weakness, index) => (
               <li key={index} className="flex items-start gap-2">
                 <span className="text-buffett-red">•</span>
                 <span>{weakness}</span>
