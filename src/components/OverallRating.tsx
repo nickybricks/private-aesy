@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   CheckCircle, 
@@ -22,6 +21,11 @@ import {
 
 type Rating = 'buy' | 'watch' | 'avoid';
 
+interface MarginOfSafety {
+  value: number;
+  status: 'pass' | 'warning' | 'fail';
+}
+
 interface OverallRatingProps {
   rating: {
     overall: Rating;
@@ -31,10 +35,7 @@ interface OverallRatingProps {
     recommendation: string;
     // Optional fields for additional metrics
     buffettScore?: number;
-    marginOfSafety?: {
-      value: number;
-      status: 'pass' | 'warning' | 'fail';
-    };
+    marginOfSafety?: number | MarginOfSafety;
     bestBuyPrice?: number;
     // New fields for price analysis
     currentPrice?: number;
@@ -447,15 +448,21 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     bestBuyPrice = MAX_REASONABLE_PRICE;
   }
   
-  // If margin of safety is unrealistically high (>100%), cap it
-  if (marginOfSafety && marginOfSafety.value > 100) {
-    console.warn(`Unrealistic margin of safety detected: ${marginOfSafety.value}%. Capping at 100%.`);
-    marginOfSafety.value = 100;
-  }
+  // Convert marginOfSafety number to object if needed
+  let marginOfSafetyObject: MarginOfSafety | undefined;
   
-  // Override the marginOfSafety status based on the actual value
-  if (marginOfSafety) {
-    marginOfSafety.status = interpretMarginOfSafety(marginOfSafety.value);
+  if (typeof marginOfSafety === 'number') {
+    // If marginOfSafety is a number, we need to create a proper object
+    marginOfSafetyObject = {
+      value: marginOfSafety,
+      status: interpretMarginOfSafety(marginOfSafety)
+    };
+  } else if (marginOfSafety && typeof marginOfSafety === 'object') {
+    // If it's already an object, make sure the status is valid
+    marginOfSafetyObject = {
+      ...marginOfSafety,
+      status: interpretMarginOfSafety(marginOfSafety.value)
+    };
   }
   
   // Recalculate bestBuyPrice if intrinsic value and margin changed
@@ -464,10 +471,10 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   }
   
   // Re-determine the overall rating based on buffettScore and marginOfSafety
-  if (buffettScore !== undefined && marginOfSafety !== undefined) {
+  if (buffettScore !== undefined && marginOfSafetyObject !== undefined) {
     // Only apply new rating logic if data is realistic
     if (isRealisticValue(intrinsicValue) && isRealisticValue(bestBuyPrice)) {
-      const newRatingData = determineRating(buffettScore, marginOfSafety.value);
+      const newRatingData = determineRating(buffettScore, marginOfSafetyObject.value);
       overall = newRatingData.rating;
       
       // Update summary based on the new rating logic
@@ -475,14 +482,14 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       
       // Update recommendation based on new rating
       if (overall === 'buy') {
-        recommendation = `Basierend auf der hohen Buffett-Kompatibilität (${buffettScore}%) und der attraktiven Unterbewertung (MoS: ${marginOfSafety.value.toFixed(1)}%) wird ein Kauf empfohlen. Der aktuelle Preis bietet eine ausreichende Sicherheitsmarge zum inneren Wert.`;
+        recommendation = `Basierend auf der hohen Buffett-Kompatibilität (${buffettScore}%) und der attraktiven Unterbewertung (MoS: ${marginOfSafetyObject.value.toFixed(1)}%) wird ein Kauf empfohlen. Der aktuelle Preis bietet eine ausreichende Sicherheitsmarge zum inneren Wert.`;
       } else if (overall === 'watch') {
-        recommendation = `Die Aktie zeigt ${buffettScore >= 75 ? 'sehr gute' : 'solide'} Fundamentaldaten (${buffettScore}%), aber ${marginOfSafety.value >= 0 ? 'bietet nicht genug Sicherheitsmarge' : 'ist zu teuer'}. Es wird empfohlen, die Aktie auf die Beobachtungsliste zu setzen und bei einem günstigeren Kurs erneut zu prüfen.`;
+        recommendation = `Die Aktie zeigt ${buffettScore >= 75 ? 'sehr gute' : 'solide'} Fundamentaldaten (${buffettScore}%), aber ${marginOfSafetyObject.value >= 0 ? 'bietet nicht genug Sicherheitsmarge' : 'ist zu teuer'}. Es wird empfohlen, die Aktie auf die Beobachtungsliste zu setzen und bei einem günstigeren Kurs erneut zu prüfen.`;
       } else {
         if (buffettScore < 60) {
           recommendation = `Die Aktie erfüllt zu wenige von Buffetts Qualitätskriterien (${buffettScore}%). Unabhängig vom Preis sollte nach Alternativen mit besseren Fundamentaldaten gesucht werden.`;
         } else {
-          recommendation = `Trotz ${buffettScore >= 75 ? 'sehr guter' : 'solider'} Fundamentaldaten (${buffettScore}%) ist die Aktie mit einer negativen Sicherheitsmarge von ${Math.abs(marginOfSafety.value).toFixed(1)}% zu teuer. Ein Kauf ist erst bei deutlich niedrigeren Kursen zu empfehlen.`;
+          recommendation = `Trotz ${buffettScore >= 75 ? 'sehr guter' : 'solider'} Fundamentaldaten (${buffettScore}%) ist die Aktie mit einer negativen Sicherheitsmarge von ${Math.abs(marginOfSafetyObject.value).toFixed(1)}% zu teuer. Ein Kauf ist erst bei deutlich niedrigeren Kursen zu empfehlen.`;
         }
       }
     } else {
@@ -513,7 +520,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     ? ((currentPrice - bestBuyPrice) / bestBuyPrice) * 100
     : undefined;
 
-  const decisionFactor = overall === 'avoid' && marginOfSafety && marginOfSafety.value < 0 
+  const decisionFactor = overall === 'avoid' && marginOfSafetyObject && marginOfSafetyObject.value < 0 
     ? 'Preis ist zu hoch für ein Investment' 
     : overall === 'avoid' && buffettScore && buffettScore < 60
     ? 'Zu wenige Buffett-Kriterien erfüllt'
@@ -523,17 +530,17 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   
   // Funktion, die die Rating-Logik erklärt
   const explainRatingLogic = () => {
-    if (buffettScore === undefined || marginOfSafety === undefined) {
+    if (buffettScore === undefined || marginOfSafetyObject === undefined) {
       return null;
     }
 
-    if (buffettScore >= 75 && marginOfSafety.value > 20 && overall === 'buy') {
+    if (buffettScore >= 75 && marginOfSafetyObject.value > 20 && overall === 'buy') {
       return "Hohe Qualität (≥75%) + starke Unterbewertung (>20%) = Kaufempfehlung";
-    } else if (buffettScore >= 75 && marginOfSafety.value >= 0 && overall === 'watch') {
+    } else if (buffettScore >= 75 && marginOfSafetyObject.value >= 0 && overall === 'watch') {
       return "Hohe Qualität (≥75%) + faire/leichte Bewertung = Beobachten";
-    } else if (buffettScore >= 75 && marginOfSafety.value < 0 && overall === 'avoid') {
+    } else if (buffettScore >= 75 && marginOfSafetyObject.value < 0 && overall === 'avoid') {
       return "Hohe Qualität (≥75%), aber überbewertet (<0%) = Vermeiden";
-    } else if (buffettScore >= 60 && buffettScore < 75 && marginOfSafety.value > 10 && overall === 'watch') {
+    } else if (buffettScore >= 60 && buffettScore < 75 && marginOfSafetyObject.value > 10 && overall === 'watch') {
       return "Mittlere Qualität (60-74%) + Unterbewertung (>10%) = Beobachten (vorsichtiger Kauf)";
     } else if (buffettScore < 60 && overall === 'avoid') {
       return "Schwache Qualität (<60%) = Vermeiden (unabhängig vom Preis)";
@@ -614,7 +621,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           </div>
         )}
         
-        {marginOfSafety !== undefined && (
+        {marginOfSafetyObject !== undefined && (
           <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <TrendingDown size={18} className="text-buffett-blue" />
@@ -642,23 +649,23 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
             </div>
             <div className="text-2xl font-bold mb-2"
                  style={{
-                   color: marginOfSafety.value >= 30 ? '#10b981' : 
-                         marginOfSafety.value >= 10 ? '#f59e0b' : 
-                         marginOfSafety.value >= 0 ? '#f59e0b' : '#ef4444'
+                   color: marginOfSafetyObject.value >= 30 ? '#10b981' : 
+                         marginOfSafetyObject.value >= 10 ? '#f59e0b' : 
+                         marginOfSafetyObject.value >= 0 ? '#f59e0b' : '#ef4444'
                  }}>
-              {marginOfSafety.value >= 0 ? `+${marginOfSafety.value.toFixed(1)}%` : `${marginOfSafety.value.toFixed(1)}%`}
+              {marginOfSafetyObject.value >= 0 ? `+${marginOfSafetyObject.value.toFixed(1)}%` : `${marginOfSafetyObject.value.toFixed(1)}%`}
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
               <div className="h-2 rounded-full" 
                    style={{
-                     width: `${Math.min(Math.max(marginOfSafety.value + 30, 0), 100)}%`,
-                     backgroundColor: marginOfSafety.value >= 30 ? '#10b981' : 
-                                     marginOfSafety.value >= 10 ? '#f59e0b' : 
-                                     marginOfSafety.value >= 0 ? '#f59e0b' : '#ef4444'
+                     width: `${Math.min(Math.max(marginOfSafetyObject.value + 30, 0), 100)}%`,
+                     backgroundColor: marginOfSafetyObject.value >= 30 ? '#10b981' : 
+                                     marginOfSafetyObject.value >= 10 ? '#f59e0b' : 
+                                     marginOfSafetyObject.value >= 0 ? '#f59e0b' : '#ef4444'
                    }}></div>
             </div>
             <div className="text-sm">
-              {getMarginOfSafetyDescription(marginOfSafety.value)}
+              {getMarginOfSafetyDescription(marginOfSafetyObject.value)}
             </div>
           </div>
         )}

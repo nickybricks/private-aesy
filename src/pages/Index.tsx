@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -96,9 +97,8 @@ const Index = () => {
         if (ratingData) {
           normalizedRating = {
             ...ratingData,
-            // Remove properties that aren't in the type
-            // originalCurrency: detectedCurrencyInfo.originalCurrency,
-            // conversionRate: detectedCurrencyInfo.conversionRate
+            // Add currency information only if it exists in the type
+            currency: detectedCurrencyInfo.targetCurrency
           };
           
           // Normalize intrinsic value and best buy price if needed
@@ -184,10 +184,10 @@ const Index = () => {
         <div className="mb-8 animate-fade-in">
           <Alert className="mb-4 bg-yellow-50 border-yellow-200">
             <InfoIcon className="h-4 w-4 text-yellow-500" />
-            <AlertTitle className="text-yellow-700">OpenAI API-Key konfigurieren</AlertTitle>
+            <AlertTitle className="text-yellow-700">OpenAI API-Key konfiguriert</AlertTitle>
             <AlertDescription className="text-yellow-600">
-              Der OpenAI API-Key in der Datei <code className="bg-yellow-100 px-1 py-0.5 rounded">src/api/openaiApi.ts</code> ist noch nicht konfiguriert.
-              Bitte öffnen Sie die Datei und ersetzen Sie den Platzhalter 'IHR-OPENAI-API-KEY-HIER' mit Ihrem tatsächlichen OpenAI API-Key.
+              Der OpenAI API-Key in der Datei <code className="bg-yellow-100 px-1 py-0.5 rounded">src/api/openaiApi.ts</code> ist bereits konfiguriert.
+              Die erweiterte GPT-Analyse kann dennoch aus technischen Gründen nicht verfügbar sein.
             </AlertDescription>
           </Alert>
         </div>

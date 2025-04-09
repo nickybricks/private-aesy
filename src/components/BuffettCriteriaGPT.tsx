@@ -21,17 +21,17 @@ interface BuffettCriterionProps {
 
 interface BuffettCriteriaGPTProps {
   criteria: {
-    businessModel: BuffettCriterionProps;
-    economicMoat: BuffettCriterionProps;
-    financialMetrics: BuffettCriterionProps;
-    financialStability: BuffettCriterionProps;
-    management: BuffettCriterionProps;
-    valuation: BuffettCriterionProps;
-    longTermOutlook: BuffettCriterionProps;
-    rationalBehavior: BuffettCriterionProps;
-    cyclicalBehavior: BuffettCriterionProps;
-    oneTimeEffects: BuffettCriterionProps;
-    turnaround: BuffettCriterionProps;
+    businessModel?: BuffettCriterionProps;
+    economicMoat?: BuffettCriterionProps;
+    financialMetrics?: BuffettCriterionProps;
+    financialStability?: BuffettCriterionProps;
+    management?: BuffettCriterionProps;
+    valuation?: BuffettCriterionProps;
+    longTermOutlook?: BuffettCriterionProps;
+    rationalBehavior?: BuffettCriterionProps;
+    cyclicalBehavior?: BuffettCriterionProps;
+    oneTimeEffects?: BuffettCriterionProps;
+    turnaround?: BuffettCriterionProps;
   };
 }
 
@@ -253,6 +253,7 @@ const DCFExplanationTooltip: React.FC = () => (
 );
 
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
+  // Create a safe list of criteria that filters out undefined entries
   const allCriteria = [
     criteria.businessModel,
     criteria.economicMoat,
@@ -265,7 +266,21 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.cyclicalBehavior,
     criteria.oneTimeEffects,
     criteria.turnaround
-  ];
+  ].filter(criterion => criterion !== undefined) as BuffettCriterionProps[];
+
+  // If no criteria are available, show a message
+  if (allCriteria.length === 0) {
+    return (
+      <div className="text-center p-6 bg-gray-50 rounded-lg">
+        <AlertCircle className="mx-auto h-12 w-12 text-yellow-400 mb-4" />
+        <h3 className="text-xl font-semibold mb-2">Keine GPT-Analyse verfügbar</h3>
+        <p className="text-gray-600">
+          Die erweiterte GPT-Analyse konnte nicht geladen werden. Bitte stellen Sie sicher, dass Ihr OpenAI API-Key korrekt konfiguriert ist
+          und versuchen Sie es erneut.
+        </p>
+      </div>
+    );
+  }
 
   // Process criteria to automatically update scores based on GPT analysis
   const processedCriteria = allCriteria.map(criterion => {
@@ -347,7 +362,8 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {processedCriteria.map((criterion, index) => {
-          const { summary, points } = extractKeyInsights(criterion.gptAnalysis);
+          // Add null checks to prevent accessing properties of undefined
+          const { summary, points } = extractKeyInsights(criterion?.gptAnalysis);
           const hasInconsistency = hasInconsistentAnalysis(criterion);
           
           return (
