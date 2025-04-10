@@ -508,27 +508,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
           </div>
         </Card>
       )}
-      
-      <Card className="buffett-card p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
-          <pre className="text-xs whitespace-pre-wrap break-words">
-            <strong>Metrics-Daten:</strong>
-            {JSON.stringify(metrics, null, 2)}
-          </pre>
-        </div>
-      </Card>
-      
-      {historicalData && (
-        <Card className="buffett-card p-6 mb-8">
-          <h3 className="text-lg font-semibold mb-4">Debug: Historische Daten</h3>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
-            <pre className="text-xs whitespace-pre-wrap break-words">
-              {JSON.stringify(historicalData, null, 2)}
-            </pre>
-          </div>
-        </Card>
-      )}
     </div>
   );
 };
