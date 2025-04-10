@@ -23,13 +23,13 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
 
 // Verfügbare Börsen
 export const exchanges = [
-  { id: 'XETRA', name: 'XETRA (Deutschland)' },
-  { id: 'NYSE', name: 'NYSE (New York)' },
-  { id: 'NASDAQ', name: 'NASDAQ' },
-  { id: 'LSE', name: 'LSE (London)' },
-  { id: 'EURONEXT', name: 'EURONEXT' },
-  { id: 'TSX', name: 'TSX (Toronto)' },
-  { id: 'HKSE', name: 'HKSE (Hong Kong)' }
+  { id: 'XETRA', name: 'XETRA (Deutschland)', currency: 'EUR' },
+  { id: 'NYSE', name: 'NYSE (New York)', currency: 'USD' },
+  { id: 'NASDAQ', name: 'NASDAQ', currency: 'USD' },
+  { id: 'LSE', name: 'LSE (London)', currency: 'GBP' },
+  { id: 'EURONEXT', name: 'EURONEXT', currency: 'EUR' },
+  { id: 'TSX', name: 'TSX (Toronto)', currency: 'CAD' },
+  { id: 'HKSE', name: 'HKSE (Hong Kong)', currency: 'HKD' }
 ];
 
 // Ticker für eine Börse abrufen

@@ -16,13 +16,57 @@ import { InfoIcon, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
 
+// Define types for our data structures
+interface FinancialMetricsData {
+  eps?: any;
+  roe?: any;
+  netMargin?: any;
+  roic?: any;
+  debtToAssets?: any;
+  interestCoverage?: any;
+  metrics?: Array<{
+    name: string;
+    value: any;
+    formula: string;
+    explanation: string;
+    threshold: string;
+    status: string;
+    originalValue?: any;
+    originalCurrency?: string;
+  }>;
+  historicalData?: {
+    revenue: any[];
+    earnings: any[];
+    eps: any[];
+  };
+}
+
+interface OverallRatingData {
+  overall: any;
+  summary: any;
+  strengths: any[];
+  weaknesses: any[];
+  recommendation: any;
+  buffettScore: number;
+  marginOfSafety: { value: number; status: "pass" | "warning" | "fail"; };
+  bestBuyPrice: number;
+  currentPrice: any;
+  currency: any;
+  intrinsicValue: any;
+  targetMarginOfSafety: number;
+  originalIntrinsicValue?: number;
+  originalBestBuyPrice?: number;
+  originalPrice?: number;
+  originalCurrency?: string;
+}
+
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [stockInfo, setStockInfo] = useState(null);
   const [buffettCriteria, setBuffettCriteria] = useState(null);
-  const [financialMetrics, setFinancialMetrics] = useState(null);
-  const [overallRating, setOverallRating] = useState(null);
+  const [financialMetrics, setFinancialMetrics] = useState<FinancialMetricsData | null>(null);
+  const [overallRating, setOverallRating] = useState<OverallRatingData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [gptAvailable, setGptAvailable] = useState(false);
@@ -156,18 +200,36 @@ const Index = () => {
         setActiveTab('gpt');
       }
       
-      const [criteria, metricsData, rating] = await Promise.all([
+      const [criteria, rawMetricsData, rating] = await Promise.all([
         analyzeBuffettCriteria(ticker),
         getFinancialMetrics(ticker),
         getOverallRating(ticker)
       ]);
       
       console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
-      console.log('Financial Metrics:', JSON.stringify(metricsData, null, 2));
+      console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
       console.log('Overall Rating:', JSON.stringify(rating, null, 2));
       
       // Set currency from stock info if available
       const stockCurrency = info?.currency || 'EUR';
+      
+      // Prepare metrics data structure for FinancialMetrics component
+      const metricsData: FinancialMetricsData = {
+        ...rawMetricsData,
+        metrics: [
+          { name: 'Gewinn pro Aktie (EPS)', value: rawMetricsData.eps, formula: 'Nettogewinn / Anzahl Aktien', explanation: 'Zeigt den Unternehmensgewinn pro Aktie', threshold: '> 0, wachsend', status: rawMetricsData.eps > 0 ? 'positive' : 'negative' },
+          { name: 'Eigenkapitalrendite (ROE)', value: rawMetricsData.roe * 100, formula: 'Nettogewinn / Eigenkapital', explanation: 'Zeigt die Effizienz des eingesetzten Kapitals', threshold: '> 15%', status: rawMetricsData.roe * 100 > 15 ? 'positive' : 'warning' },
+          { name: 'Nettomarge', value: rawMetricsData.netMargin * 100, formula: 'Nettogewinn / Umsatz', explanation: 'Zeigt die Profitabilität', threshold: '> 10%', status: rawMetricsData.netMargin * 100 > 10 ? 'positive' : 'warning' },
+          { name: 'Kapitalrendite (ROIC)', value: rawMetricsData.roic * 100, formula: 'NOPAT / Investiertes Kapital', explanation: 'Zeigt die Effizienz aller Investments', threshold: '> 10%', status: rawMetricsData.roic * 100 > 10 ? 'positive' : 'warning' },
+          { name: 'Schulden zu Vermögen', value: rawMetricsData.debtToAssets * 100, formula: 'Gesamtschulden / Gesamtvermögen', explanation: 'Zeigt die Verschuldungsquote', threshold: '< 50%', status: rawMetricsData.debtToAssets * 100 < 50 ? 'positive' : 'warning' },
+          { name: 'Zinsdeckungsgrad', value: rawMetricsData.interestCoverage, formula: 'EBIT / Zinsaufwand', explanation: 'Zeigt die Fähigkeit, Zinsen zu decken', threshold: '> 5', status: rawMetricsData.interestCoverage > 5 ? 'positive' : 'warning' },
+        ],
+        historicalData: {
+          revenue: [],
+          earnings: [],
+          eps: []
+        }
+      };
       
       // Convert financial metrics if needed
       if (metricsData) {
@@ -184,29 +246,34 @@ const Index = () => {
       
       // Adjust overall rating values for currency
       if (rating && needsCurrencyConversion(stockCurrency)) {
-        if (rating.intrinsicValue) {
-          rating.originalIntrinsicValue = rating.intrinsicValue;
-          rating.intrinsicValue = convertCurrency(rating.intrinsicValue, stockCurrency, 'EUR');
+        const updatedRating: OverallRatingData = { ...rating };
+        
+        if (updatedRating.intrinsicValue) {
+          updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
+          updatedRating.intrinsicValue = convertCurrency(updatedRating.intrinsicValue, stockCurrency, 'EUR');
         }
-        if (rating.bestBuyPrice) {
-          rating.originalBestBuyPrice = rating.bestBuyPrice;
-          rating.bestBuyPrice = convertCurrency(rating.bestBuyPrice, stockCurrency, 'EUR');
+        if (updatedRating.bestBuyPrice) {
+          updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
+          updatedRating.bestBuyPrice = convertCurrency(updatedRating.bestBuyPrice, stockCurrency, 'EUR');
         }
-        if (rating.currentPrice) {
-          rating.originalPrice = rating.currentPrice;
-          rating.currentPrice = convertCurrency(rating.currentPrice, stockCurrency, 'EUR');
+        if (updatedRating.currentPrice) {
+          updatedRating.originalPrice = updatedRating.currentPrice;
+          updatedRating.currentPrice = convertCurrency(updatedRating.currentPrice, stockCurrency, 'EUR');
         }
         
         // Update currency to indicate conversion
-        if (rating.currency !== 'EUR') {
-          rating.originalCurrency = rating.currency;
-          rating.currency = 'EUR';
+        if (updatedRating.currency !== 'EUR') {
+          updatedRating.originalCurrency = updatedRating.currency;
+          updatedRating.currency = 'EUR';
         }
+        
+        setOverallRating(updatedRating);
+      } else {
+        setOverallRating(rating);
       }
       
       setBuffettCriteria(criteria);
       setFinancialMetrics(metricsData);
-      setOverallRating(rating);
       
       toast({
         title: "Analyse abgeschlossen",
