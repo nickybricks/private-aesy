@@ -168,6 +168,8 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         .replace(/€ €/g, '€')
         .replace(/\$ \$/g, '$');
     } else {
+      const numericValue = typeof displayValue === 'number' ? displayValue : 0;
+      
       if (name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum')) {
         cleanedDisplayValue = `${numericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
       } else {
