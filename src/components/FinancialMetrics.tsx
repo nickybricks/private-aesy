@@ -38,7 +38,6 @@ interface FinancialMetricsProps {
   currency?: string;
 }
 
-// Detailed explanations for each metric
 const getMetricDetailedExplanation = (metricName: string) => {
   const explanations: Record<string, { 
     whatItIs: string, 
@@ -118,6 +117,7 @@ const getMetricDetailedExplanation = (metricName: string) => {
 const MetricStatus: React.FC<{ status: string }> = ({ status }) => {
   switch (status) {
     case 'pass':
+    case 'positive':
       return (
         <div className="flex items-center gap-1">
           <Check className="text-buffett-green h-4 w-4" />
@@ -132,6 +132,7 @@ const MetricStatus: React.FC<{ status: string }> = ({ status }) => {
         </div>
       );
     case 'fail':
+    case 'negative':
       return (
         <div className="flex items-center gap-1">
           <X className="text-buffett-red h-4 w-4" />
@@ -146,7 +147,6 @@ const MetricStatus: React.FC<{ status: string }> = ({ status }) => {
 const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ metric, currency }) => {
   const { name, value, formula, explanation, threshold, status, originalValue, originalCurrency } = metric;
   
-  // Verbesserte Prüfung für fehlende Werte
   const isValueMissing = value === 'N/A' || 
                          (typeof value === 'string' && (value.includes('N/A') || value === '0.00' || value === '0.00%')) ||
                          (typeof value === 'number' && (value === 0 || isNaN(value))) ||
@@ -156,22 +156,18 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   const displayValue = isValueMissing ? 'Keine Daten' : value;
   const detailedExplanation = getMetricDetailedExplanation(name);
   
-  // Format value with currency conversion if needed
   let cleanedDisplayValue = displayValue;
   
   if (!isValueMissing) {
     if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency)) {
-      // If we have original currency data and it's different from EUR or USD, show converted value
       cleanedDisplayValue = formatCurrency(value, currency, true, originalValue, originalCurrency);
     } else if (typeof displayValue === 'string') {
-      // Clean up duplicate currency symbols if it's already a formatted string
       cleanedDisplayValue = displayValue
         .replace(/USD USD/g, 'USD')
         .replace(/EUR EUR/g, 'EUR')
         .replace(/€ €/g, '€')
         .replace(/\$ \$/g, '$');
     } else {
-      // Format number without showing original
       cleanedDisplayValue = formatCurrency(displayValue, currency);
     }
   }
@@ -374,7 +370,6 @@ const BuffettCriteriaSection: React.FC = () => {
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData, currency = 'EUR' }) => {
   if (!metrics) return null;
   
-  // Ensure metrics is an array
   const metricsArray = Array.isArray(metrics) ? metrics : [];
   
   return (
@@ -446,18 +441,14 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             </TableHeader>
             <TableBody>
               {historicalData.revenue.map((item, i) => {
-                // Entsprechende EPS-Daten finden
                 const epsDataForYear = historicalData.eps && historicalData.eps.find(e => e.year === item.year);
-                // Entsprechende Gewinn-Daten finden
                 const earningsDataForYear = historicalData.earnings && historicalData.earnings.find(e => e.year === item.year);
                 
-                // Convert values if needed
                 let revenueValue = item.value;
                 let earningsValue = earningsDataForYear?.value;
                 let epsValue = epsDataForYear?.value;
                 
                 if (needsCurrencyConversion(currency)) {
-                  // If these are in a non-EUR/USD currency, convert them
                   revenueValue = revenueValue ? convertCurrency(revenueValue, currency, 'EUR') : 0;
                   earningsValue = earningsValue ? convertCurrency(earningsValue, currency, 'EUR') : 0;
                   epsValue = epsValue ? convertCurrency(epsValue, currency, 'EUR') : 0;
@@ -506,7 +497,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
         </Card>
       )}
       
-      {/* Debug-Ansicht für die API-Daten */}
       <Card className="buffett-card p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">

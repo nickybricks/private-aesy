@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -30,7 +29,7 @@ interface FinancialMetricsData {
     formula: string;
     explanation: string;
     threshold: string;
-    status: string;
+    status: "pass" | "warning" | "fail";
     originalValue?: any;
     originalCurrency?: string;
   }>;
@@ -110,13 +109,10 @@ const Index = () => {
   const convertFinancialMetrics = (metrics: any, currency: string) => {
     if (!metrics || !currency) return metrics;
     
-    // Early return if no conversion needed
     if (!needsCurrencyConversion(currency)) return metrics;
     
-    // If metrics is an array (FinancialMetric[])
     if (Array.isArray(metrics)) {
       return metrics.map(metric => {
-        // Skip non-numeric values or metrics that don't need currency conversion
         if (
           typeof metric.value !== 'number' || 
           isNaN(metric.value) || 
@@ -128,10 +124,8 @@ const Index = () => {
           return metric;
         }
         
-        // Store original values
         const originalValue = metric.value;
         
-        // Convert the value to EUR
         const convertedValue = convertCurrency(metric.value, currency, 'EUR');
         
         return {
@@ -143,7 +137,6 @@ const Index = () => {
       });
     }
     
-    // For non-array financial metrics
     return metrics;
   };
 
@@ -182,7 +175,6 @@ const Index = () => {
       console.log('Stock Info:', JSON.stringify(info, null, 2));
       setStockInfo(info);
       
-      // Store the stock's currency
       if (info && info.currency) {
         setStockCurrency(info.currency);
         console.log(`Stock currency: ${info.currency}`);
@@ -210,19 +202,17 @@ const Index = () => {
       console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
       console.log('Overall Rating:', JSON.stringify(rating, null, 2));
       
-      // Set currency from stock info if available
       const stockCurrency = info?.currency || 'EUR';
       
-      // Prepare metrics data structure for FinancialMetrics component
       const metricsData: FinancialMetricsData = {
         ...rawMetricsData,
         metrics: [
-          { name: 'Gewinn pro Aktie (EPS)', value: rawMetricsData.eps, formula: 'Nettogewinn / Anzahl Aktien', explanation: 'Zeigt den Unternehmensgewinn pro Aktie', threshold: '> 0, wachsend', status: rawMetricsData.eps > 0 ? 'positive' : 'negative' },
-          { name: 'Eigenkapitalrendite (ROE)', value: rawMetricsData.roe * 100, formula: 'Nettogewinn / Eigenkapital', explanation: 'Zeigt die Effizienz des eingesetzten Kapitals', threshold: '> 15%', status: rawMetricsData.roe * 100 > 15 ? 'positive' : 'warning' },
-          { name: 'Nettomarge', value: rawMetricsData.netMargin * 100, formula: 'Nettogewinn / Umsatz', explanation: 'Zeigt die Profitabilität', threshold: '> 10%', status: rawMetricsData.netMargin * 100 > 10 ? 'positive' : 'warning' },
-          { name: 'Kapitalrendite (ROIC)', value: rawMetricsData.roic * 100, formula: 'NOPAT / Investiertes Kapital', explanation: 'Zeigt die Effizienz aller Investments', threshold: '> 10%', status: rawMetricsData.roic * 100 > 10 ? 'positive' : 'warning' },
-          { name: 'Schulden zu Vermögen', value: rawMetricsData.debtToAssets * 100, formula: 'Gesamtschulden / Gesamtvermögen', explanation: 'Zeigt die Verschuldungsquote', threshold: '< 50%', status: rawMetricsData.debtToAssets * 100 < 50 ? 'positive' : 'warning' },
-          { name: 'Zinsdeckungsgrad', value: rawMetricsData.interestCoverage, formula: 'EBIT / Zinsaufwand', explanation: 'Zeigt die Fähigkeit, Zinsen zu decken', threshold: '> 5', status: rawMetricsData.interestCoverage > 5 ? 'positive' : 'warning' },
+          { name: 'Gewinn pro Aktie (EPS)', value: rawMetricsData.eps, formula: 'Nettogewinn / Anzahl Aktien', explanation: 'Zeigt den Unternehmensgewinn pro Aktie', threshold: '> 0, wachsend', status: rawMetricsData.eps > 0 ? 'positive' as 'pass' : 'negative' as 'fail' },
+          { name: 'Eigenkapitalrendite (ROE)', value: rawMetricsData.roe * 100, formula: 'Nettogewinn / Eigenkapital', explanation: 'Zeigt die Effizienz des eingesetzten Kapitals', threshold: '> 15%', status: rawMetricsData.roe * 100 > 15 ? 'positive' as 'pass' : 'warning' },
+          { name: 'Nettomarge', value: rawMetricsData.netMargin * 100, formula: 'Nettogewinn / Umsatz', explanation: 'Zeigt die Profitabilität', threshold: '> 10%', status: rawMetricsData.netMargin * 100 > 10 ? 'positive' as 'pass' : 'warning' },
+          { name: 'Kapitalrendite (ROIC)', value: rawMetricsData.roic * 100, formula: 'NOPAT / Investiertes Kapital', explanation: 'Zeigt die Effizienz aller Investments', threshold: '> 10%', status: rawMetricsData.roic * 100 > 10 ? 'positive' as 'pass' : 'warning' },
+          { name: 'Schulden zu Vermögen', value: rawMetricsData.debtToAssets * 100, formula: 'Gesamtschulden / Gesamtvermögen', explanation: 'Zeigt die Verschuldungsquote', threshold: '< 50%', status: rawMetricsData.debtToAssets * 100 < 50 ? 'positive' as 'pass' : 'warning' },
+          { name: 'Zinsdeckungsgrad', value: rawMetricsData.interestCoverage, formula: 'EBIT / Zinsaufwand', explanation: 'Zeigt die Fähigkeit, Zinsen zu decken', threshold: '> 5', status: rawMetricsData.interestCoverage > 5 ? 'positive' as 'pass' : 'warning' },
         ],
         historicalData: {
           revenue: [],
@@ -231,20 +221,16 @@ const Index = () => {
         }
       };
       
-      // Convert financial metrics if needed
       if (metricsData) {
-        // Convert metrics array data
         if (metricsData.metrics) {
           metricsData.metrics = convertFinancialMetrics(metricsData.metrics, stockCurrency);
         }
         
-        // Convert historical data
         if (metricsData.historicalData) {
           metricsData.historicalData = convertHistoricalData(metricsData.historicalData, stockCurrency);
         }
       }
       
-      // Adjust overall rating values for currency
       if (rating && needsCurrencyConversion(stockCurrency)) {
         const updatedRating: OverallRatingData = { ...rating };
         
@@ -261,7 +247,6 @@ const Index = () => {
           updatedRating.currentPrice = convertCurrency(updatedRating.currentPrice, stockCurrency, 'EUR');
         }
         
-        // Update currency to indicate conversion
         if (updatedRating.currency !== 'EUR') {
           updatedRating.originalCurrency = updatedRating.currency;
           updatedRating.currency = 'EUR';
@@ -441,9 +426,8 @@ const Index = () => {
               <OverallRating 
                 rating={{
                   ...overallRating,
-                  // Add original currency information if available
                   originalCurrency: needsCurrencyConversion(stockCurrency) ? stockCurrency : undefined
-                }} 
+                } as OverallRatingData} 
               />
             </div>
           )}
