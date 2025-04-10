@@ -96,8 +96,8 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
 }
 
 // Function to get score display based on status with automated GPT score derivation
-const getScoreDisplay = (criterion: BuffettCriterionProps) => {
-  if (criterion.maxScore === undefined) {
+const getScoreDisplay = (criterion: BuffettCriterionProps | undefined) => {
+  if (!criterion || criterion.maxScore === undefined) {
     return null;
   }
   
@@ -138,8 +138,8 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
 };
 
 // Improved function to detect inconsistencies between GPT analysis and score
-const hasInconsistentAnalysis = (criterion: BuffettCriterionProps): boolean => {
-  if (!criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
+const hasInconsistentAnalysis = (criterion: BuffettCriterionProps | undefined): boolean => {
+  if (!criterion || !criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
     return false;
   }
   
@@ -253,6 +253,18 @@ const DCFExplanationTooltip: React.FC = () => (
 );
 
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
+  if (!criteria) {
+    return (
+      <div className="text-center p-6 bg-gray-50 rounded-lg">
+        <AlertCircle className="mx-auto h-12 w-12 text-yellow-400 mb-4" />
+        <h3 className="text-xl font-semibold mb-2">Keine Buffett-Kriterien verfügbar</h3>
+        <p className="text-gray-600">
+          Die Buffett-Kriterien konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
+        </p>
+      </div>
+    );
+  }
+
   // Create a safe list of criteria that filters out undefined entries
   const allCriteria = [
     criteria.businessModel,

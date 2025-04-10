@@ -91,16 +91,20 @@ const Index = () => {
         let normalizedRating = ratingData;
         
         if (detectedCurrencyInfo.conversionNeeded) {
-          normalizedMetrics = normalizeFinancialMetrics(metrics, detectedCurrencyInfo);
-          console.log('Normalized Metrics:', JSON.stringify(normalizedMetrics, null, 2));
+          if (metrics && metrics.metrics && metrics.historicalData) {
+            normalizedMetrics = normalizeFinancialMetrics(metrics, detectedCurrencyInfo);
+            console.log('Normalized Metrics:', JSON.stringify(normalizedMetrics, null, 2));
+          }
           
           // Add currency information to rating data
           if (ratingData) {
             // Create a safe copy of the rating data
             normalizedRating = {
               ...ratingData,
-              // Add just the currency information without adding properties not in the type
-              currency: detectedCurrencyInfo.targetCurrency
+              // Add currency information
+              currency: detectedCurrencyInfo.targetCurrency,
+              originalCurrency: detectedCurrencyInfo.originalCurrency,
+              currencyConversionRate: detectedCurrencyInfo.conversionRate
             };
             
             // Normalize intrinsic value and best buy price if needed
@@ -279,7 +283,7 @@ const Index = () => {
             </div>
           )}
           
-          {financialMetrics && (
+          {financialMetrics && financialMetrics.metrics && financialMetrics.historicalData && (
             <div className="mb-10">
               <FinancialMetrics 
                 metrics={financialMetrics.metrics} 

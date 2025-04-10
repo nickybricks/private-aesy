@@ -818,24 +818,38 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         <div>
           <h3 className="text-lg font-medium mb-3 text-buffett-green">Stärken</h3>
           <ul className="space-y-2">
-            {strengths && strengths.map((strength, index) => (
-              <li key={index} className="flex items-start gap-2">
+            {strengths && strengths.length > 0 ? (
+              strengths.map((strength, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-buffett-green">•</span>
+                  <span>{strength}</span>
+                </li>
+              ))
+            ) : (
+              <li className="flex items-start gap-2">
                 <span className="text-buffett-green">•</span>
-                <span>{strength}</span>
+                <span>Keine spezifischen Stärken identifiziert</span>
               </li>
-            ))}
+            )}
           </ul>
         </div>
         
         <div>
           <h3 className="text-lg font-medium mb-3 text-buffett-red">Schwächen</h3>
           <ul className="space-y-2">
-            {weaknesses && weaknesses.map((weakness, index) => (
-              <li key={index} className="flex items-start gap-2">
+            {weaknesses && weaknesses.length > 0 ? (
+              weaknesses.map((weakness, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-buffett-red">•</span>
+                  <span>{weakness}</span>
+                </li>
+              ))
+            ) : (
+              <li className="flex items-start gap-2">
                 <span className="text-buffett-red">•</span>
-                <span>{weakness}</span>
+                <span>Keine spezifischen Schwächen identifiziert</span>
               </li>
-            ))}
+            )}
           </ul>
         </div>
       </div>
