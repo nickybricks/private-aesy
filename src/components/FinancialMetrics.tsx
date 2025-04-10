@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -383,7 +384,11 @@ const BuffettCriteriaSection: React.FC = () => {
 };
 
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData, currencyInfo }) => {
+  // Early return if no metrics are provided
   if (!metrics) return null;
+  
+  // Ensure metrics is an array before attempting to map over it
+  const metricsArray = Array.isArray(metrics) ? metrics : [];
   
   const formatHistoricalValue = (value: number | undefined): string => {
     if (value === undefined || value === null || isNaN(value) || value === 0) return 'N/A';
@@ -420,11 +425,12 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {metrics.map((metric, index) => (
+        {metricsArray.map((metric, index) => (
           <MetricCard key={index} metric={metric} currencyInfo={currencyInfo} />
         ))}
       </div>
       
+      {/* Debug section for metrics data */}
       <Card className="buffett-card p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">

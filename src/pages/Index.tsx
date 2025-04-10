@@ -76,18 +76,18 @@ const Index = () => {
       
       // Fetch all required data
       try {
-        const [criteria, metrics, ratingData] = await Promise.all([
+        const [criteria, metricsData, ratingData] = await Promise.all([
           analyzeBuffettCriteria(ticker),
           getFinancialMetrics(ticker),
           getOverallRating(ticker)
         ]);
         
         console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
-        console.log('Financial Metrics:', JSON.stringify(metrics, null, 2));
+        console.log('Financial Metrics:', JSON.stringify(metricsData, null, 2));
         console.log('Overall Rating:', JSON.stringify(ratingData, null, 2));
         
         // Apply currency normalization if needed
-        let normalizedMetrics = metrics;
+        let normalizedMetrics = metricsData;
         let normalizedRating = ratingData;
         let currencyConversionInfo = null;
         
@@ -144,7 +144,33 @@ const Index = () => {
         
         // Set the state with data - ensure we're not setting undefined
         if (criteria) setBuffettCriteria(criteria);
-        if (normalizedMetrics) setFinancialMetrics(normalizedMetrics);
+        
+        // Make sure metrics data is properly structured for the component
+        if (normalizedMetrics) {
+          // If normalizedMetrics.metrics is an object, convert it to an array of metric objects
+          if (normalizedMetrics.metrics && typeof normalizedMetrics.metrics === 'object' && !Array.isArray(normalizedMetrics.metrics)) {
+            const metricsArray = Object.entries(normalizedMetrics.metrics).map(([key, value]) => {
+              // Create a proper FinancialMetric object
+              return {
+                name: key,
+                value: value,
+                formula: `Calculated from financial data`,
+                explanation: `${key} is an important financial indicator`,
+                threshold: `Varies by industry`,
+                status: 'pass' // Default status
+              };
+            });
+            
+            // Update the metrics to be an array
+            normalizedMetrics = {
+              ...normalizedMetrics,
+              metrics: metricsArray
+            };
+          }
+          
+          setFinancialMetrics(normalizedMetrics);
+        }
+        
         if (normalizedRating) setOverallRating(normalizedRating);
         
         toast({
