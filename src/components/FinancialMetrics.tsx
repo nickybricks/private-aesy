@@ -31,9 +31,9 @@ interface FinancialMetric {
 interface FinancialMetricsProps {
   metrics: FinancialMetric[] | null;
   historicalData: {
-    revenue: { year: string; value: number }[];
-    earnings: { year: string; value: number }[];
-    eps: { year: string; value: number }[];
+    revenue: { year: string; value: number; originalValue?: number }[];
+    earnings: { year: string; value: number; originalValue?: number }[];
+    eps: { year: string; value: number; originalValue?: number }[];
   } | null;
   currency?: string;
 }
@@ -114,7 +114,7 @@ const getMetricDetailedExplanation = (metricName: string) => {
   return explanations[metricName];
 };
 
-const MetricStatus: React.FC<{ status: string }> = ({ status }) => {
+const MetricStatus: React.FC<{ status: 'pass' | 'warning' | 'fail' | 'positive' | 'negative' }> = ({ status }) => {
   switch (status) {
     case 'pass':
     case 'positive':
@@ -168,7 +168,11 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         .replace(/€ €/g, '€')
         .replace(/\$ \$/g, '$');
     } else {
-      cleanedDisplayValue = formatCurrency(displayValue, currency);
+      if (name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum')) {
+        cleanedDisplayValue = `${numericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+      } else {
+        cleanedDisplayValue = formatCurrency(displayValue, currency);
+      }
     }
   }
   
@@ -380,7 +384,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       
       <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
       
-      {currency && currency !== 'EUR' && currency !== 'USD' && (
+      {currency && currency !== 'EUR' && (
         <Card className="p-4 mb-4 bg-yellow-50 border-yellow-200">
           <div className="flex items-start gap-2">
             <AlertTriangle className="text-yellow-500 h-5 w-5 mt-0.5" />
@@ -448,32 +452,38 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                 let earningsValue = earningsDataForYear?.value;
                 let epsValue = epsDataForYear?.value;
                 
-                if (needsCurrencyConversion(currency)) {
-                  revenueValue = revenueValue ? convertCurrency(revenueValue, currency, 'EUR') : 0;
-                  earningsValue = earningsValue ? convertCurrency(earningsValue, currency, 'EUR') : 0;
-                  epsValue = epsValue ? convertCurrency(epsValue, currency, 'EUR') : 0;
-                }
+                const originalRevenueValue = item.originalValue || item.value;
+                const originalEarningsValue = earningsDataForYear?.originalValue || earningsDataForYear?.value;
+                const originalEpsValue = epsDataForYear?.originalValue || epsDataForYear?.value;
+                
+                const showOriginal = currency !== 'EUR' && needsCurrencyConversion(currency);
                 
                 return (
                   <TableRow key={item.year || i}>
                     <TableCell>{item.year || 'N/A'}</TableCell>
                     <TableCell className="text-right">
                       {typeof revenueValue === 'number' && revenueValue !== 0 
-                        ? revenueValue.toFixed(2) 
+                        ? (showOriginal 
+                           ? `${revenueValue.toFixed(2)} (${originalRevenueValue.toFixed(2)} ${currency})` 
+                           : revenueValue.toFixed(2))
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
                       {earningsValue && 
                       typeof earningsValue === 'number' && 
                       earningsValue !== 0
-                        ? earningsValue.toFixed(2) 
+                        ? (showOriginal 
+                           ? `${earningsValue.toFixed(2)} (${originalEarningsValue.toFixed(2)} ${currency})` 
+                           : earningsValue.toFixed(2)) 
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
                       {epsValue && 
                       typeof epsValue === 'number' && 
                       epsValue !== 0
-                        ? epsValue.toFixed(2) 
+                        ? (showOriginal 
+                           ? `${epsValue.toFixed(2)} (${originalEpsValue.toFixed(2)} ${currency})` 
+                           : epsValue.toFixed(2)) 
                         : 'N/A'}
                     </TableCell>
                   </TableRow>

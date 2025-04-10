@@ -5,7 +5,7 @@ import axios from 'axios';
 const FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
-// Hilfsfunktion für API-Anfragen
+// Helper function for API requests
 const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
     const response = await axios.get(`${BASE_URL}${endpoint}`, {
@@ -21,7 +21,7 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
   }
 };
 
-// Verfügbare Börsen
+// Available exchanges
 export const exchanges = [
   { id: 'XETRA', name: 'XETRA (Deutschland)', currency: 'EUR' },
   { id: 'NYSE', name: 'NYSE (New York)', currency: 'USD' },
@@ -32,7 +32,7 @@ export const exchanges = [
   { id: 'HKSE', name: 'HKSE (Hong Kong)', currency: 'HKD' }
 ];
 
-// Ticker für eine Börse abrufen
+// Get tickers for an exchange
 export const getStocksByExchange = async (exchange: string) => {
   const stocks = await fetchFromFMP('/stock/list');
   return stocks.filter((stock: any) => 
@@ -43,12 +43,12 @@ export const getStocksByExchange = async (exchange: string) => {
   );
 };
 
-// Funktionstypen für die Quantitative Analyse
+// Function types for Quantitative Analysis
 export interface QuantAnalysisResult {
   symbol: string;
   name: string;
   exchange: string;
-  sector: string; // Added sector field
+  sector: string;
   buffettScore: number;
   criteria: {
     roe: { value: number | null; pass: boolean },
@@ -64,19 +64,29 @@ export interface QuantAnalysisResult {
   };
   price: number;
   currency: string;
+  originalValues?: {
+    roe?: number | null;
+    roic?: number | null;
+    netMargin?: number | null;
+    eps?: number | null;
+    revenue?: number | null;
+    pe?: number | null;
+    pb?: number | null;
+    price?: number | null;
+  };
 }
 
-// Sicherer Wert-Extraktor
+// Safe value extractor
 const safeValue = (value: any) => {
   if (value === undefined || value === null) return null;
   const numValue = Number(value);
   return isNaN(numValue) ? null : numValue;
 };
 
-// Analysiere einen einzelnen Ticker nach Buffett-Kriterien
+// Analyze a single ticker by Buffett criteria
 export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<QuantAnalysisResult | null> => {
   try {
-    // Alle nötigen Daten parallel abrufen
+    // Fetch all necessary data in parallel
     const [
       ratiosTTM, 
       profile, 
@@ -93,9 +103,9 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       fetchFromFMP(`/quote/${ticker}`)
     ]);
 
-    // Überprüfen, ob genügend Daten vorhanden sind
+    // Check if we have enough data
     if (!ratiosTTM || ratiosTTM.length === 0 || !profile || profile.length === 0) {
-      console.warn(`Nicht genügend Daten für ${ticker}`);
+      console.warn(`Not enough data for ${ticker}`);
       return null;
     }
 
@@ -103,6 +113,18 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     const ratios = ratiosTTM[0];
     const metrics = keyMetrics && keyMetrics.length > 0 ? keyMetrics[0] : null;
     const quoteData = quote && quote.length > 0 ? quote[0] : null;
+    
+    // Extract currency info
+    const stockCurrency = companyProfile.currency || 'USD';
+    console.log(`Analyzing ${ticker} with currency: ${stockCurrency}`);
+    
+    // Store original values before any currency conversion
+    const originalValues = {
+      roe: safeValue(ratios.returnOnEquityTTM) * 100,
+      roic: metrics ? safeValue(metrics.roicTTM) * 100 : null,
+      netMargin: safeValue(ratios.netProfitMarginTTM) * 100,
+      price: quoteData ? quoteData.price : 0
+    };
 
     // 1. ROE > 15%
     const roe = safeValue(ratios.returnOnEquityTTM) * 100;
@@ -112,11 +134,11 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     const roic = metrics ? safeValue(metrics.roicTTM) * 100 : null;
     const roicPass = roic !== null && roic > 10;
 
-    // 3. Nettomarge > 10%
+    // 3. Net margin > 10%
     const netMargin = safeValue(ratios.netProfitMarginTTM) * 100;
     const netMarginPass = netMargin !== null && netMargin > 10;
 
-    // 4. Stabiles EPS-Wachstum
+    // 4. Stable EPS growth
     let epsGrowth = null;
     let epsGrowthPass = false;
     
@@ -130,7 +152,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       }
     }
 
-    // 5. Stabiles Umsatzwachstum
+    // 5. Stable revenue growth
     let revenueGrowth = null;
     let revenueGrowthPass = false;
     
@@ -144,11 +166,11 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       }
     }
 
-    // 6. Zinsdeckungsgrad > 5
+    // 6. Interest coverage > 5
     const interestCoverage = safeValue(ratios.interestCoverageTTM);
     const interestCoveragePass = interestCoverage !== null && interestCoverage > 5;
 
-    // 7. Schuldenquote < 70%
+    // 7. Debt ratio < 70%
     let debtRatio = null;
     let debtRatioPass = false;
     
@@ -163,22 +185,22 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       }
     }
 
-    // 8. KGV < 15
+    // 8. P/E < 15
     const pe = safeValue(ratios.priceEarningsRatioTTM);
     const pePass = pe !== null && pe > 0 && pe < 15;
 
-    // 9. P/B < 1.5 (oder < 3 bei Moat-Unternehmen)
+    // 9. P/B < 1.5 (or < 3 for moat companies)
     const pb = safeValue(ratios.priceToBookRatioTTM);
-    // Vereinfacht: Wir nehmen an, dass Unternehmen mit höherer Bruttomarge einen Moat haben könnten
-    const hasMoat = safeValue(ratios.grossProfitMarginTTM) > 0.5; // 50% Bruttomarge als Proxy für Moat
+    // Simplified: We assume companies with higher gross margin might have a moat
+    const hasMoat = safeValue(ratios.grossProfitMarginTTM) > 0.5; // 50% gross margin as a proxy for moat
     const pbThreshold = hasMoat ? 3 : 1.5;
     const pbPass = pb !== null && pb > 0 && pb < pbThreshold;
 
-    // 10. Dividendenrendite > 2%
+    // 10. Dividend yield > 2%
     const dividendYield = safeValue(ratios.dividendYieldTTM) * 100;
     const dividendYieldPass = dividendYield !== null && dividendYield > 2;
 
-    // Buffett-Score berechnen (1 Punkt pro erfülltes Kriterium)
+    // Calculate Buffett Score (1 point per criterion met)
     const buffettScore = [
       roePass, roicPass, netMarginPass, epsGrowthPass, revenueGrowthPass,
       interestCoveragePass, debtRatioPass, pePass, pbPass, dividendYieldPass
@@ -188,7 +210,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       symbol: ticker,
       name: companyProfile.companyName,
       exchange: companyProfile.exchangeShortName,
-      sector: companyProfile.sector || 'Unbekannt', // Add sector info
+      sector: companyProfile.sector || 'Unknown',
       buffettScore,
       criteria: {
         roe: { value: roe, pass: roePass },
@@ -203,10 +225,11 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
         dividendYield: { value: dividendYield, pass: dividendYieldPass }
       },
       price: quoteData ? quoteData.price : 0,
-      currency: companyProfile.currency
+      currency: stockCurrency,
+      originalValues
     };
   } catch (error) {
-    console.error(`Fehler bei der Analyse von ${ticker}:`, error);
+    console.error(`Error analyzing ${ticker}:`, error);
     return null;
   }
 };

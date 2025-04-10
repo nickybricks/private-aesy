@@ -2,8 +2,8 @@
  * Currency conversion utility for financial data
  */
 
-// Fixed exchange rates (for demonstration purposes)
-// In a production environment, these should be fetched from an API like exchangerate.host or fixer.io
+// Exchange rates (ideally these would be fetched from an API)
+// In a production environment, these should be updated from an API like exchangerate.host or fixer.io
 const exchangeRates: Record<string, number> = {
   USD: 0.92, // 1 USD = 0.92 EUR
   EUR: 1.0,  // 1 EUR = 1 EUR
@@ -15,6 +15,8 @@ const exchangeRates: Record<string, number> = {
   CHF: 1.0, // 1 CHF = 1 EUR
   CAD: 0.68, // 1 CAD = 0.68 EUR
   AUD: 0.61, // 1 AUD = 0.61 EUR
+  MXN: 0.05, // 1 MXN = 0.05 EUR
+  SGD: 0.68, // 1 SGD = 0.68 EUR
   // Add more currencies as needed
 };
 
@@ -135,5 +137,5 @@ export const formatCurrency = (
  * @returns True if conversion is needed
  */
 export const needsCurrencyConversion = (currency: string): boolean => {
-  return currency !== 'EUR' && currency !== 'USD';
+  return currency !== 'EUR';
 };
