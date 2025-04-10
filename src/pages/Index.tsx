@@ -88,8 +88,9 @@ const Index = () => {
         // Apply currency normalization if needed
         let normalizedMetrics = metrics;
         let normalizedRating = ratingData;
+        let currencyConversionInfo = null;
         
-        if (detectedCurrencyInfo.conversionNeeded) {
+        if (detectedCurrencyInfo && detectedCurrencyInfo.conversionNeeded) {
           if (metrics && metrics.metrics && metrics.historicalData) {
             normalizedMetrics = normalizeFinancialMetrics(metrics, detectedCurrencyInfo);
             console.log('Normalized Metrics:', JSON.stringify(normalizedMetrics, null, 2));
@@ -105,8 +106,7 @@ const Index = () => {
             };
             
             // Store the currency conversion info separately to be passed to the OverallRating component
-            // instead of trying to add it directly to the rating object
-            const currencyConversionInfo = {
+            currencyConversionInfo = {
               originalCurrency: detectedCurrencyInfo.originalCurrency,
               conversionRate: detectedCurrencyInfo.conversionRate
             };
@@ -127,14 +127,6 @@ const Index = () => {
               }
               
               console.log('Normalized Rating:', JSON.stringify(normalizedRating, null, 2));
-            }
-            
-            // We'll pass the currency conversion info separately to the OverallRating component
-            if (overallRating) {
-              setOverallRating({
-                ...normalizedRating,
-                currencyInfo: currencyConversionInfo
-              });
             }
           }
           
