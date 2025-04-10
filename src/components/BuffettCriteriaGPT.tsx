@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -248,6 +249,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     );
   }
 
+  // Create a safe array of criteria
   const allCriteria = [
     criteria.businessModel,
     criteria.economicMoat,
@@ -354,7 +356,8 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
         {processedCriteria.map((criterion, index) => {
           if (!criterion) return null;
           
-          const { summary, points } = extractKeyInsights(criterion?.gptAnalysis);
+          // Make sure to handle undefined gptAnalysis
+          const { summary, points } = extractKeyInsights(criterion?.gptAnalysis || null);
           const hasInconsistency = hasInconsistentAnalysis(criterion);
           
           return (
