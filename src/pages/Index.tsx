@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -7,22 +8,12 @@ import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import Navigation from '@/components/Navigation';
-import { 
-  fetchStockInfo, 
-  analyzeBuffettCriteria, 
-  getFinancialMetrics, 
-  getOverallRating 
-} from '@/api/stockApi';
+import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  analyzeCurrencyData, 
-  normalizeFinancialMetrics, 
-  getCurrencyConversionInfo 
-} from '@/helpers/currencyConverter';
 
 const Index = () => {
   const { toast } = useToast();
@@ -32,11 +23,14 @@ const Index = () => {
   const [financialMetrics, setFinancialMetrics] = useState(null);
   const [overallRating, setOverallRating] = useState(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasApiKey, setHasApiKey] = useState(false);
   const [gptAvailable, setGptAvailable] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
-  const [currencyInfo, setCurrencyInfo] = useState<ReturnType<typeof analyzeCurrencyData> | null>(null);
 
   useEffect(() => {
+    const savedKey = localStorage.getItem('fmp_api_key');
+    setHasApiKey(!!savedKey);
+    
     setGptAvailable(hasOpenAiApiKey());
     
     if (hasOpenAiApiKey()) {
@@ -44,11 +38,32 @@ const Index = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedKey = localStorage.getItem('fmp_api_key');
+      setHasApiKey(!!savedKey);
+      setGptAvailable(hasOpenAiApiKey());
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+      originalSetItem.apply(this, [key, value]);
+      if (key === 'fmp_api_key') {
+        setHasApiKey(!!value);
+      }
+    };
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      localStorage.setItem = originalSetItem;
+    };
+  }, []);
+
   const handleSearch = async (ticker: string) => {
     setIsLoading(true);
     setError(null);
-    setCurrencyInfo(null);
-    
     try {
       setStockInfo(null);
       setBuffettCriteria(null);
@@ -59,11 +74,6 @@ const Index = () => {
       console.log('Stock Info:', JSON.stringify(info, null, 2));
       setStockInfo(info);
       
-      // Detect currency and analyze if conversion is needed
-      const detectedCurrencyInfo = analyzeCurrencyData(info);
-      console.log('Currency analysis:', detectedCurrencyInfo);
-      setCurrencyInfo(detectedCurrencyInfo);
-      
       toast({
         title: "Analyse läuft",
         description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
@@ -73,100 +83,24 @@ const Index = () => {
         setActiveTab('gpt');
       }
       
-      // Fetch all required data
-      try {
-        const [criteria, metricsData, ratingData] = await Promise.all([
-          analyzeBuffettCriteria(ticker),
-          getFinancialMetrics(ticker),
-          getOverallRating(ticker)
-        ]);
-        
-        console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
-        console.log('Financial Metrics:', JSON.stringify(metricsData, null, 2));
-        console.log('Overall Rating:', JSON.stringify(ratingData, null, 2));
-        
-        // Apply currency normalization if needed
-        let normalizedMetrics = metricsData;
-        let normalizedRating = ratingData;
-        let currencyConversionInfo = null;
-        
-        if (detectedCurrencyInfo && detectedCurrencyInfo.conversionNeeded) {
-          if (metricsData && metricsData.metrics && metricsData.historicalData) {
-            normalizedMetrics = normalizeFinancialMetrics(metricsData, detectedCurrencyInfo);
-            console.log('Normalized Metrics:', JSON.stringify(normalizedMetrics, null, 2));
-          }
-          
-          // Add currency information to rating data
-          if (ratingData) {
-            // Create a copy of the rating data with only allowed properties
-            normalizedRating = {
-              ...ratingData,
-              // Add currency information (ensure these are defined in the type)
-              currency: detectedCurrencyInfo.targetCurrency
-            };
-            
-            // Store the currency conversion info separately to be passed to the OverallRating component
-            currencyConversionInfo = {
-              originalCurrency: detectedCurrencyInfo.originalCurrency,
-              conversionRate: detectedCurrencyInfo.conversionRate
-            };
-            
-            // Normalize intrinsic value and best buy price if needed
-            if (detectedCurrencyInfo.conversionRate && detectedCurrencyInfo.originalCurrency !== 'EUR') {
-              if (normalizedRating.intrinsicValue) {
-                normalizedRating.intrinsicValue = normalizedRating.intrinsicValue / detectedCurrencyInfo.conversionRate;
-              }
-              
-              if (normalizedRating.bestBuyPrice) {
-                normalizedRating.bestBuyPrice = normalizedRating.bestBuyPrice / detectedCurrencyInfo.conversionRate;
-              }
-              
-              // Adjust current price if needed
-              if (normalizedRating.currentPrice) {
-                normalizedRating.currentPrice = normalizedRating.currentPrice / detectedCurrencyInfo.conversionRate;
-              }
-              
-              console.log('Normalized Rating:', JSON.stringify(normalizedRating, null, 2));
-            }
-          }
-          
-          // Show toast about currency conversion
-          const conversionInfo = getCurrencyConversionInfo(detectedCurrencyInfo);
-          if (conversionInfo) {
-            toast({
-              title: "Währungsumrechnung aktiviert",
-              description: conversionInfo,
-              variant: "default",
-            });
-          }
-        }
-        
-        // Set the state with data - ensure we're not setting undefined
-        if (criteria) setBuffettCriteria(criteria);
-        
-        // Make sure metrics data is properly structured for the component
-        if (normalizedMetrics) {
-          // Instead of converting metrics to an array, preserve the original structure
-          // The FinancialMetrics component expects an object with specific properties
-          setFinancialMetrics(normalizedMetrics);
-        }
-        
-        if (normalizedRating) setOverallRating(normalizedRating);
-        
-        toast({
-          title: "Analyse abgeschlossen",
-          description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
-        });
-      } catch (dataError) {
-        console.error('Error getting analysis data:', dataError);
-        const errorMessage = dataError instanceof Error ? dataError.message : 'Fehler bei der Datenanalyse';
-        
-        toast({
-          title: "Fehler bei der Analyse",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
+      const [criteria, metrics, rating] = await Promise.all([
+        analyzeBuffettCriteria(ticker),
+        getFinancialMetrics(ticker),
+        getOverallRating(ticker)
+      ]);
+      
+      console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
+      console.log('Financial Metrics:', JSON.stringify(metrics, null, 2));
+      console.log('Overall Rating:', JSON.stringify(rating, null, 2));
+      
+      setBuffettCriteria(criteria);
+      setFinancialMetrics(metrics);
+      setOverallRating(rating);
+      
+      toast({
+        title: "Analyse abgeschlossen",
+        description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
+      });
     } catch (error) {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
@@ -208,35 +142,35 @@ const Index = () => {
       
       <Navigation />
       
+      {!hasApiKey && (
+        <div className="mb-8 animate-fade-in">
+          <Alert className="mb-4">
+            <InfoIcon className="h-4 w-4" />
+            <AlertTitle>API-Key erforderlich</AlertTitle>
+            <AlertDescription>
+              Um das Buffett Benchmark Tool nutzen zu können, benötigen Sie einen API-Key von Financial Modeling Prep.
+              Bitte konfigurieren Sie Ihren API-Key unten.
+            </AlertDescription>
+          </Alert>
+          
+          <ApiKeyInput />
+        </div>
+      )}
+      
       {!gptAvailable && (
         <div className="mb-8 animate-fade-in">
           <Alert className="mb-4 bg-yellow-50 border-yellow-200">
             <InfoIcon className="h-4 w-4 text-yellow-500" />
-            <AlertTitle className="text-yellow-700">OpenAI API-Key konfiguriert</AlertTitle>
+            <AlertTitle className="text-yellow-700">OpenAI API-Key konfigurieren</AlertTitle>
             <AlertDescription className="text-yellow-600">
-              Der OpenAI API-Key in der Datei <code className="bg-yellow-100 px-1 py-0.5 rounded">src/api/openaiApi.ts</code> ist bereits konfiguriert.
-              Die erweiterte GPT-Analyse kann dennoch aus technischen Gründen nicht verfügbar sein.
+              Der OpenAI API-Key in der Datei <code className="bg-yellow-100 px-1 py-0.5 rounded">src/api/openaiApi.ts</code> ist noch nicht konfiguriert.
+              Bitte öffnen Sie die Datei und ersetzen Sie den Platzhalter 'IHR-OPENAI-API-KEY-HIER' mit Ihrem tatsächlichen OpenAI API-Key.
             </AlertDescription>
           </Alert>
         </div>
       )}
       
-      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={false} />
-      
-      {currencyInfo && currencyInfo.conversionNeeded && (
-        <Alert className="mb-6 bg-yellow-50 border-yellow-200">
-          <InfoIcon className="h-4 w-4 text-yellow-500" />
-          <AlertTitle className="text-yellow-700">Währungsumrechnung aktiviert</AlertTitle>
-          <AlertDescription className="text-yellow-600">
-            Die Finanzdaten für diese Aktie sind in {currencyInfo.originalCurrency}, wurden aber automatisch in {currencyInfo.targetCurrency} umgerechnet.
-            {currencyInfo.conversionRate && (
-              <p className="mt-1">
-                Verwendeter Wechselkurs: 1 {currencyInfo.targetCurrency} = {currencyInfo.conversionRate} {currencyInfo.originalCurrency}
-              </p>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
+      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
       
       {error && (
         <Alert variant="destructive" className="mb-6">
@@ -245,7 +179,15 @@ const Index = () => {
           <AlertDescription>
             <p>{error}</p>
             <p className="mt-2 text-sm">
-              Bitte überprüfen Sie das eingegebene Aktiensymbol oder versuchen Sie es später erneut.
+              {error.includes('API-Key') ? (
+                <>
+                  Bitte stellen Sie sicher, dass ein gültiger API-Schlüssel verwendet wird. 
+                  Die Financial Modeling Prep API benötigt einen gültigen API-Schlüssel, den Sie
+                  unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="underline">financialmodelingprep.com</a> kostenlos erhalten können.
+                </>
+              ) : (
+                'Bitte überprüfen Sie das eingegebene Aktiensymbol oder versuchen Sie es später erneut.'
+              )}
             </p>
           </AlertDescription>
         </Alert>
@@ -294,25 +236,18 @@ const Index = () => {
             </div>
           )}
           
-          {financialMetrics && financialMetrics.metrics && financialMetrics.historicalData && (
+          {financialMetrics && (
             <div className="mb-10">
               <FinancialMetrics 
                 metrics={financialMetrics.metrics} 
-                historicalData={financialMetrics.historicalData}
-                currencyInfo={currencyInfo}
+                historicalData={financialMetrics.historicalData} 
               />
             </div>
           )}
           
           {overallRating && (
             <div className="mb-10">
-              <OverallRating 
-                rating={overallRating} 
-                currencyInfo={currencyInfo && currencyInfo.conversionNeeded ? {
-                  originalCurrency: currencyInfo.originalCurrency,
-                  conversionRate: currencyInfo.conversionRate
-                } : null}
-              />
+              <OverallRating rating={overallRating} />
             </div>
           )}
         </>

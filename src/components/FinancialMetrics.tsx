@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -15,7 +16,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { formatCurrency } from '@/helpers/currencyConverter';
 
 interface FinancialMetric {
   name: string;
@@ -26,30 +26,16 @@ interface FinancialMetric {
   status: 'pass' | 'warning' | 'fail';
 }
 
-interface MetricsObject {
-  revenue: any;
-  netIncome: any;
-  eps: any;
-  freeCashFlow: any;
-  freeCashFlowPerShare: any;
-  dividendPerShare: any;
-  bookValuePerShare: any;
-  debtToEquity: any;
-  currentRatio: any;
-  roe: number;
-  roic: number;
-}
-
 interface FinancialMetricsProps {
-  metrics: FinancialMetric[] | MetricsObject | null;
+  metrics: FinancialMetric[] | null;
   historicalData: {
     revenue: { year: string; value: number }[];
     earnings: { year: string; value: number }[];
     eps: { year: string; value: number }[];
   } | null;
-  currencyInfo?: any;
 }
 
+// Detailed explanations for each metric
 const getMetricDetailedExplanation = (metricName: string) => {
   const explanations: Record<string, { 
     whatItIs: string, 
@@ -154,9 +140,10 @@ const MetricStatus: React.FC<{ status: string }> = ({ status }) => {
   }
 };
 
-const MetricCard: React.FC<{ metric: FinancialMetric; currencyInfo?: any }> = ({ metric, currencyInfo }) => {
+const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
   const { name, value, formula, explanation, threshold, status } = metric;
   
+  // Verbesserte Prüfung für fehlende Werte
   const isValueMissing = value === 'N/A' || 
                          (typeof value === 'string' && (value.includes('N/A') || value === '0.00' || value === '0.00%')) ||
                          (typeof value === 'number' && (value === 0 || isNaN(value))) ||
@@ -166,6 +153,7 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currencyInfo?: any }> = ({
   const displayValue = isValueMissing ? 'Keine Daten' : value;
   const detailedExplanation = getMetricDetailedExplanation(name);
   
+  // Clean up duplicate currency symbols
   let cleanedDisplayValue = displayValue;
   if (typeof displayValue === 'string') {
     cleanedDisplayValue = displayValue
@@ -174,15 +162,6 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currencyInfo?: any }> = ({
       .replace(/€ €/g, '€')
       .replace(/\$ \$/g, '$');
   }
-  
-  const needsCurrencyIndicator = 
-    currencyInfo && 
-    currencyInfo.conversionNeeded && 
-    (name.includes("Gewinn") || 
-     name.includes("Cashflow") || 
-     name.includes("Umsatz") ||
-     name.includes("Wert") ||
-     name.includes("Kurs"));
   
   return (
     <Card className="metric-card p-4">
@@ -215,24 +194,7 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currencyInfo?: any }> = ({
         )}
       </div>
       
-      <div className="text-2xl font-semibold mb-2">
-        {cleanedDisplayValue}
-        {needsCurrencyIndicator && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex items-center justify-center ml-1 rounded-full bg-yellow-100">
-                  <Info size={14} className="text-yellow-600" />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Umgerechnet von {currencyInfo.originalCurrency} in {currencyInfo.targetCurrency}</p>
-                <p className="text-xs text-gray-500">Wechselkurs: 1 {currencyInfo.targetCurrency} = {currencyInfo.conversionRate} {currencyInfo.originalCurrency}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
+      <div className="text-2xl font-semibold mb-2">{cleanedDisplayValue}</div>
       
       <div className="text-sm text-buffett-subtext mb-1">
         <span className="font-medium">Formel:</span> {formula}
@@ -396,60 +358,24 @@ const BuffettCriteriaSection: React.FC = () => {
   );
 };
 
-const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData, currencyInfo }) => {
+const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData }) => {
   if (!metrics) return null;
-  
-  const metricsArray = Array.isArray(metrics) 
-    ? metrics 
-    : Object.entries(metrics as MetricsObject).map(([key, value]) => ({
-        name: key,
-        value: value,
-        formula: `Calculated from financial data`,
-        explanation: `${key} is an important financial indicator`,
-        threshold: `Varies by industry`,
-        status: 'pass' as const
-      }));
-  
-  const formatHistoricalValue = (value: number | undefined): string => {
-    if (value === undefined || value === null || isNaN(value) || value === 0) return 'N/A';
-    
-    if (currencyInfo && currencyInfo.conversionNeeded && currencyInfo.conversionRate) {
-      value = value / currencyInfo.conversionRate;
-    }
-    
-    return value.toFixed(2);
-  };
   
   return (
     <div className="animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Buffett-Analyse Framework</h2>
-      
-      {currencyInfo && currencyInfo.conversionNeeded && (
-        <div className="mb-6 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-          <div className="flex items-center gap-2 text-yellow-800">
-            <Info className="h-5 w-5 text-yellow-600" />
-            <h3 className="font-medium">Währungsumrechnung aktiviert</h3>
-          </div>
-          <p className="mt-1 text-yellow-700">
-            Die Finanzdaten für diese Aktie wurden automatisch von {currencyInfo.originalCurrency} in {currencyInfo.targetCurrency} umgerechnet.
-            Dies sichert eine korrekte Analyse und verhindert unrealistische Werte.
-          </p>
-          <p className="mt-1 text-sm text-yellow-600">
-            Wechselkurs: 1 {currencyInfo.targetCurrency} = {currencyInfo.conversionRate} {currencyInfo.originalCurrency}
-          </p>
-        </div>
-      )}
       
       <BuffettCriteriaSection />
       
       <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {metricsArray.map((metric, index) => (
-          <MetricCard key={index} metric={metric} currencyInfo={currencyInfo} />
+        {metrics.map((metric, index) => (
+          <MetricCard key={index} metric={metric} />
         ))}
       </div>
       
+      {/* Debug-Ansicht für die API-Daten */}
       <Card className="buffett-card p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
@@ -500,40 +426,43 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             </TooltipProvider>
           </div>
           
-          {currencyInfo && currencyInfo.conversionNeeded && (
-            <div className="mb-4 text-sm text-yellow-600 bg-yellow-50 p-2 rounded border border-yellow-200">
-              <div className="flex items-center gap-1">
-                <Info className="h-4 w-4" />
-                <span>Die historischen Daten wurden von {currencyInfo.originalCurrency} in {currencyInfo.targetCurrency} umgerechnet.</span>
-              </div>
-            </div>
-          )}
-          
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Jahr</TableHead>
-                <TableHead className="text-right">Umsatz (Mio. {currencyInfo?.targetCurrency || '€'})</TableHead>
-                <TableHead className="text-right">Gewinn (Mio. {currencyInfo?.targetCurrency || '€'})</TableHead>
-                <TableHead className="text-right">EPS ({currencyInfo?.targetCurrency || '€'})</TableHead>
+                <TableHead className="text-right">Umsatz (Mio. $)</TableHead>
+                <TableHead className="text-right">Gewinn (Mio. $)</TableHead>
+                <TableHead className="text-right">EPS ($)</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {historicalData.revenue.map((item, i) => {
+                // Entsprechende EPS-Daten finden
                 const epsDataForYear = historicalData.eps && historicalData.eps.find(e => e.year === item.year);
+                // Entsprechende Gewinn-Daten finden
                 const earningsDataForYear = historicalData.earnings && historicalData.earnings.find(e => e.year === item.year);
                 
                 return (
                   <TableRow key={item.year || i}>
                     <TableCell>{item.year || 'N/A'}</TableCell>
                     <TableCell className="text-right">
-                      {formatHistoricalValue(item.value)}
+                      {typeof item.value === 'number' && item.value !== 0 
+                        ? item.value.toFixed(2) 
+                        : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatHistoricalValue(earningsDataForYear?.value)}
+                      {earningsDataForYear && 
+                      typeof earningsDataForYear.value === 'number' && 
+                      earningsDataForYear.value !== 0
+                        ? earningsDataForYear.value.toFixed(2) 
+                        : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatHistoricalValue(epsDataForYear?.value)}
+                      {epsDataForYear && 
+                      typeof epsDataForYear.value === 'number' && 
+                      epsDataForYear.value !== 0
+                        ? epsDataForYear.value.toFixed(2) 
+                        : 'N/A'}
                     </TableCell>
                   </TableRow>
                 );

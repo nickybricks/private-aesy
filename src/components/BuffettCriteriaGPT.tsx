@@ -21,18 +21,18 @@ interface BuffettCriterionProps {
 
 interface BuffettCriteriaGPTProps {
   criteria: {
-    businessModel?: BuffettCriterionProps;
-    economicMoat?: BuffettCriterionProps;
-    financialMetrics?: BuffettCriterionProps;
-    financialStability?: BuffettCriterionProps;
-    management?: BuffettCriterionProps;
-    valuation?: BuffettCriterionProps;
-    longTermOutlook?: BuffettCriterionProps;
-    rationalBehavior?: BuffettCriterionProps;
-    cyclicalBehavior?: BuffettCriterionProps;
-    oneTimeEffects?: BuffettCriterionProps;
-    turnaround?: BuffettCriterionProps;
-  } | null | undefined;
+    businessModel: BuffettCriterionProps;
+    economicMoat: BuffettCriterionProps;
+    financialMetrics: BuffettCriterionProps;
+    financialStability: BuffettCriterionProps;
+    management: BuffettCriterionProps;
+    valuation: BuffettCriterionProps;
+    longTermOutlook: BuffettCriterionProps;
+    rationalBehavior: BuffettCriterionProps;
+    cyclicalBehavior: BuffettCriterionProps;
+    oneTimeEffects: BuffettCriterionProps;
+    turnaround: BuffettCriterionProps;
+  };
 }
 
 const getStatusColor = (status: string) => {
@@ -61,6 +61,7 @@ const getStatusBadge = (status: string) => {
   }
 };
 
+// Helper function that automatically derives score from GPT analysis
 const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | undefined => {
   if (!criterion.gptAnalysis || criterion.maxScore === undefined) {
     return undefined;
@@ -68,6 +69,7 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
   
   const analysis = criterion.gptAnalysis.toLowerCase();
   
+  // Derive score for business model criterion
   if (criterion.title === '1. Verstehbares Geschäftsmodell') {
     if (analysis.includes('einfach') || analysis.includes('klar') || analysis.includes('verständlich')) {
       return 3;
@@ -78,6 +80,7 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
     }
   }
   
+  // Derive score for turnaround criterion
   if (criterion.title === '11. Keine Turnarounds') {
     if (analysis.includes('kein turnaround') || analysis.includes('keine umstrukturierung')) {
       return 3;
@@ -88,14 +91,17 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
     }
   }
   
+  // For other criteria, we could add similar pattern matching logic
   return undefined;
-};
+}
 
-const getScoreDisplay = (criterion: BuffettCriterionProps | undefined) => {
-  if (!criterion || criterion.maxScore === undefined) {
+// Function to get score display based on status with automated GPT score derivation
+const getScoreDisplay = (criterion: BuffettCriterionProps) => {
+  if (criterion.maxScore === undefined) {
     return null;
   }
   
+  // Try to derive score from GPT analysis if it doesn't match current score
   const derivedScore = deriveScoreFromGptAnalysis(criterion);
   const score = criterion.score !== undefined ? criterion.score : derivedScore;
   
@@ -103,6 +109,7 @@ const getScoreDisplay = (criterion: BuffettCriterionProps | undefined) => {
     return null;
   }
   
+  // Added tooltip with detailed explanation
   return (
     <TooltipProvider>
       <Tooltip>
@@ -130,23 +137,30 @@ const getScoreDisplay = (criterion: BuffettCriterionProps | undefined) => {
   );
 };
 
-const hasInconsistentAnalysis = (criterion: BuffettCriterionProps | undefined): boolean => {
-  if (!criterion || !criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
+// Improved function to detect inconsistencies between GPT analysis and score
+const hasInconsistentAnalysis = (criterion: BuffettCriterionProps): boolean => {
+  if (!criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
     return false;
   }
   
+  // Get the derived score from GPT analysis
   const derivedScore = deriveScoreFromGptAnalysis(criterion);
   
+  // If we have a derived score and it doesn't match the current score, flag an inconsistency
   return derivedScore !== undefined && derivedScore !== criterion.score;
 };
 
+// Helper function to extract key insights from GPT analysis
 const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   if (!gptAnalysis) return { summary: '', points: [] };
   
+  // Split by new lines and filter out empty lines
   const lines = gptAnalysis.split('\n').filter(line => line.trim() !== '');
   
+  // Extract first sentence or paragraph as summary
   const summary = lines[0] || '';
   
+  // Extract bullet points (lines starting with - or *)
   const points = lines
     .filter(line => line.trim().startsWith('-') || line.trim().startsWith('*'))
     .map(line => line.trim().replace(/^[-*]\s*/, ''));
@@ -154,6 +168,7 @@ const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   return { summary, points };
 };
 
+// New component for a more visual score presentation
 const BuffettScoreChart = ({ score }: { score: number }) => {
   const COLORS = ['#10b981', '#f0f0f0'];
   const data = [
@@ -212,6 +227,7 @@ const BuffettScoreChart = ({ score }: { score: number }) => {
   );
 };
 
+// Added component to help explain DCF calculations
 const DCFExplanationTooltip: React.FC = () => (
   <TooltipProvider>
     <Tooltip>
@@ -237,19 +253,6 @@ const DCFExplanationTooltip: React.FC = () => (
 );
 
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
-  if (!criteria) {
-    return (
-      <div className="text-center p-6 bg-gray-50 rounded-lg">
-        <AlertCircle className="mx-auto h-12 w-12 text-yellow-400 mb-4" />
-        <h3 className="text-xl font-semibold mb-2">Keine Buffett-Kriterien verfügbar</h3>
-        <p className="text-gray-600">
-          Die Buffett-Kriterien konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
-        </p>
-      </div>
-    );
-  }
-
-  // Create a safe array of criteria
   const allCriteria = [
     criteria.businessModel,
     criteria.economicMoat,
@@ -262,26 +265,13 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.cyclicalBehavior,
     criteria.oneTimeEffects,
     criteria.turnaround
-  ].filter(criterion => criterion !== undefined) as BuffettCriterionProps[];
+  ];
 
-  if (allCriteria.length === 0) {
-    return (
-      <div className="text-center p-6 bg-gray-50 rounded-lg">
-        <AlertCircle className="mx-auto h-12 w-12 text-yellow-400 mb-4" />
-        <h3 className="text-xl font-semibold mb-2">Keine GPT-Analyse verfügbar</h3>
-        <p className="text-gray-600">
-          Die erweiterte GPT-Analyse konnte nicht geladen werden. Bitte stellen Sie sicher, dass Ihr OpenAI API-Key korrekt konfiguriert ist
-          und versuchen Sie es erneut.
-        </p>
-      </div>
-    );
-  }
-
+  // Process criteria to automatically update scores based on GPT analysis
   const processedCriteria = allCriteria.map(criterion => {
-    if (!criterion) return null;
-    
     const derivedScore = deriveScoreFromGptAnalysis(criterion);
     
+    // Only update the score if it's different and we have a derived value
     if (derivedScore !== undefined && (criterion.score === undefined || criterion.score !== derivedScore)) {
       return {
         ...criterion,
@@ -290,19 +280,20 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     }
     
     return criterion;
-  }).filter(Boolean) as BuffettCriterionProps[];
+  });
 
+  // Calculate total points for overall rating
   const totalPoints = processedCriteria.reduce((acc, criterion) => {
-    if (!criterion) return acc;
     if (criterion.status === 'pass') return acc + 3;
     if (criterion.status === 'warning') return acc + 1;
     return acc;
   }, 0);
   
   const maxPoints = processedCriteria.length * 3;
-  const buffettScore = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
+  const buffettScore = Math.round((totalPoints / maxPoints) * 100);
 
-  const detailedScores = processedCriteria.filter(c => c && c.score !== undefined && c.maxScore !== undefined);
+  // Calculate detailed score based on the GPT-derived scores when available
+  const detailedScores = processedCriteria.filter(c => c.score !== undefined && c.maxScore !== undefined);
   const hasDetailedScores = detailedScores.length > 0;
   
   const totalDetailedScore = hasDetailedScores ? 
@@ -313,10 +304,11 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
   const detailedBuffettScore = hasDetailedScores && maxDetailedScore > 0 ? 
     Math.round((totalDetailedScore / maxDetailedScore) * 100) : buffettScore;
 
+  // Criteria distribution for visualization
   const criteriaDistribution = {
-    pass: processedCriteria.filter(c => c && c.status === 'pass').length,
-    warning: processedCriteria.filter(c => c && c.status === 'warning').length,
-    fail: processedCriteria.filter(c => c && c.status === 'fail').length
+    pass: processedCriteria.filter(c => c.status === 'pass').length,
+    warning: processedCriteria.filter(c => c.status === 'warning').length,
+    fail: processedCriteria.filter(c => c.status === 'fail').length
   };
 
   return (
@@ -350,14 +342,12 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
         </p>
       </div>
       
+      {/* New Score Visualization */}
       <BuffettScoreChart score={hasDetailedScores ? detailedBuffettScore : buffettScore} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {processedCriteria.map((criterion, index) => {
-          if (!criterion) return null;
-          
-          // Make sure to handle undefined gptAnalysis
-          const { summary, points } = extractKeyInsights(criterion?.gptAnalysis || null);
+          const { summary, points } = extractKeyInsights(criterion.gptAnalysis);
           const hasInconsistency = hasInconsistentAnalysis(criterion);
           
           return (
@@ -386,6 +376,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                       </TooltipProvider>
                     )}
                     
+                    {/* DCF explanation for valuation criterion */}
                     {criterion.title === '6. Akzeptable Bewertung' && (
                       <DCFExplanationTooltip />
                     )}
@@ -397,11 +388,12 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
               <CardContent>
                 <div className="space-y-1 text-sm">
                   <ul className="list-disc pl-5 space-y-1 mb-3">
-                    {criterion.details && Array.isArray(criterion.details) && criterion.details.map((detail, i) => (
+                    {criterion.details.map((detail, i) => (
                       <li key={i} className="text-gray-700">{detail}</li>
                     ))}
                   </ul>
                   
+                  {/* Additional risks for long-term outlook */}
                   {criterion.title === '7. Langfristige Perspektive' && criterion.status === 'pass' && (
                     <div className="mt-2 pt-2 border-t border-gray-100">
                       <p className="text-sm text-gray-700 font-medium">Zu beachtende Langzeitrisiken:</p>
