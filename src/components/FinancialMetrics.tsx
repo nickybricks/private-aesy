@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -27,8 +26,22 @@ interface FinancialMetric {
   status: 'pass' | 'warning' | 'fail';
 }
 
+interface MetricsObject {
+  revenue: any;
+  netIncome: any;
+  eps: any;
+  freeCashFlow: any;
+  freeCashFlowPerShare: any;
+  dividendPerShare: any;
+  bookValuePerShare: any;
+  debtToEquity: any;
+  currentRatio: any;
+  roe: number;
+  roic: number;
+}
+
 interface FinancialMetricsProps {
-  metrics: FinancialMetric[] | null;
+  metrics: FinancialMetric[] | MetricsObject | null;
   historicalData: {
     revenue: { year: string; value: number }[];
     earnings: { year: string; value: number }[];
@@ -384,11 +397,18 @@ const BuffettCriteriaSection: React.FC = () => {
 };
 
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData, currencyInfo }) => {
-  // Early return if no metrics are provided
   if (!metrics) return null;
   
-  // Ensure metrics is an array before attempting to map over it
-  const metricsArray = Array.isArray(metrics) ? metrics : [];
+  const metricsArray = Array.isArray(metrics) 
+    ? metrics 
+    : Object.entries(metrics as MetricsObject).map(([key, value]) => ({
+        name: key,
+        value: value,
+        formula: `Calculated from financial data`,
+        explanation: `${key} is an important financial indicator`,
+        threshold: `Varies by industry`,
+        status: 'pass' as const
+      }));
   
   const formatHistoricalValue = (value: number | undefined): string => {
     if (value === undefined || value === null || isNaN(value) || value === 0) return 'N/A';
@@ -430,7 +450,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
         ))}
       </div>
       
-      {/* Debug section for metrics data */}
       <Card className="buffett-card p-6 mb-8">
         <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">

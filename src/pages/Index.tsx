@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -92,8 +91,8 @@ const Index = () => {
         let currencyConversionInfo = null;
         
         if (detectedCurrencyInfo && detectedCurrencyInfo.conversionNeeded) {
-          if (metrics && metrics.metrics && metrics.historicalData) {
-            normalizedMetrics = normalizeFinancialMetrics(metrics, detectedCurrencyInfo);
+          if (metricsData && metricsData.metrics && metricsData.historicalData) {
+            normalizedMetrics = normalizeFinancialMetrics(metricsData, detectedCurrencyInfo);
             console.log('Normalized Metrics:', JSON.stringify(normalizedMetrics, null, 2));
           }
           
@@ -147,27 +146,8 @@ const Index = () => {
         
         // Make sure metrics data is properly structured for the component
         if (normalizedMetrics) {
-          // If normalizedMetrics.metrics is an object, convert it to an array of metric objects
-          if (normalizedMetrics.metrics && typeof normalizedMetrics.metrics === 'object' && !Array.isArray(normalizedMetrics.metrics)) {
-            const metricsArray = Object.entries(normalizedMetrics.metrics).map(([key, value]) => {
-              // Create a proper FinancialMetric object
-              return {
-                name: key,
-                value: value,
-                formula: `Calculated from financial data`,
-                explanation: `${key} is an important financial indicator`,
-                threshold: `Varies by industry`,
-                status: 'pass' // Default status
-              };
-            });
-            
-            // Update the metrics to be an array
-            normalizedMetrics = {
-              ...normalizedMetrics,
-              metrics: metricsArray
-            };
-          }
-          
+          // Instead of converting metrics to an array, preserve the original structure
+          // The FinancialMetrics component expects an object with specific properties
           setFinancialMetrics(normalizedMetrics);
         }
         
