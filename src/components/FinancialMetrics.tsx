@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -160,7 +161,10 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   
   if (!isValueMissing) {
     if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency)) {
-      cleanedDisplayValue = formatCurrency(value, currency, true, originalValue, originalCurrency);
+      // Format correctly showing both converted and original value
+      const numericValue = typeof displayValue === 'number' ? displayValue : 
+                      typeof displayValue === 'string' ? parseFloat(displayValue) : 0;
+      cleanedDisplayValue = formatCurrency(numericValue, currency, true, originalValue, originalCurrency);
     } else if (typeof displayValue === 'string') {
       cleanedDisplayValue = displayValue
         .replace(/USD USD/g, 'USD')
@@ -168,10 +172,10 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         .replace(/€ €/g, '€')
         .replace(/\$ \$/g, '$');
     } else {
-      const numValue = typeof displayValue === 'number' ? displayValue : 0;
+      const numericValue = typeof displayValue === 'number' ? displayValue : 0;
       
       if (name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum')) {
-        cleanedDisplayValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+        cleanedDisplayValue = `${numericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
       } else {
         cleanedDisplayValue = formatCurrency(displayValue, currency);
       }
@@ -235,20 +239,22 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
   if (!metrics) return null;
   
   const metricsArray = Array.isArray(metrics) ? metrics : [];
+  const showCurrencyWarning = currency && currency !== 'EUR' && needsCurrencyConversion(currency);
   
   return (
     <div className="animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
       
-      {currency && currency !== 'EUR' && (
+      {showCurrencyWarning && (
         <Card className="p-4 mb-4 bg-yellow-50 border-yellow-200">
           <div className="flex items-start gap-2">
             <AlertTriangle className="text-yellow-500 h-5 w-5 mt-0.5" />
             <div>
               <h3 className="font-medium text-yellow-700">Währungshinweis</h3>
               <p className="text-yellow-600 text-sm">
-                Die Finanzdaten dieser Aktie werden in {currency} angegeben. Alle Werte wurden in EUR umgerechnet, 
-                um eine korrekte Analyse zu ermöglichen. Die Originalwerte in {currency} werden in Klammern angezeigt.
+                Die Finanzdaten dieser Aktie werden in <strong>{currency}</strong> angegeben und wurden automatisch in Euro umgerechnet.
+                Der angezeigte innere Wert basiert auf der realen Kaufkraft in Euro, nicht auf falsch interpretierten Zahlen.
+                Die Originalwerte in {currency} werden in Klammern angezeigt.
               </p>
             </div>
           </div>
@@ -294,9 +300,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             <TableHeader>
               <TableRow>
                 <TableHead>Jahr</TableHead>
-                <TableHead className="text-right">Umsatz (Mio. {currency})</TableHead>
-                <TableHead className="text-right">Gewinn (Mio. {currency})</TableHead>
-                <TableHead className="text-right">EPS ({currency})</TableHead>
+                <TableHead className="text-right">Umsatz (Mio. {currency !== 'EUR' ? 'EUR' : currency})</TableHead>
+                <TableHead className="text-right">Gewinn (Mio. {currency !== 'EUR' ? 'EUR' : currency})</TableHead>
+                <TableHead className="text-right">EPS ({currency !== 'EUR' ? 'EUR' : currency})</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -351,8 +357,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
           <div className="mt-4 text-sm text-buffett-subtext">
             <p>Hinweis: 'N/A' bedeutet, dass keine Daten verfügbar sind.</p>
             {needsCurrencyConversion(currency) && (
-              <p className="mt-2 font-medium text-buffett-subtext">
-                Diese Werte wurden aus {currency} in EUR umgerechnet, um eine bessere Vergleichbarkeit zu gewährleisten.
+              <p className="mt-2 font-medium text-yellow-600">
+                Diese Werte wurden aus {currency} in EUR umgerechnet, um eine korrekte Bewertung zu gewährleisten.
+                Die Originalwerte in {currency} werden in Klammern angezeigt.
               </p>
             )}
             <p className="mt-2">

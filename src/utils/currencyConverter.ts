@@ -1,3 +1,4 @@
+
 /**
  * Currency conversion utility for financial data
  */
@@ -138,4 +139,28 @@ export const formatCurrency = (
  */
 export const needsCurrencyConversion = (currency: string): boolean => {
   return currency !== 'EUR';
+};
+
+/**
+ * Get a human-readable description of the currency
+ * @param currencyCode The ISO currency code
+ * @returns Human-readable currency name
+ */
+export const getCurrencyName = (currencyCode: string): string => {
+  const currencyNames: Record<string, string> = {
+    'USD': 'US-Dollar',
+    'EUR': 'Euro',
+    'GBP': 'Britisches Pfund',
+    'JPY': 'Japanischer Yen',
+    'KRW': 'Südkoreanischer Won',
+    'CNY': 'Chinesischer Yuan',
+    'HKD': 'Hongkong-Dollar',
+    'CHF': 'Schweizer Franken',
+    'CAD': 'Kanadischer Dollar',
+    'AUD': 'Australischer Dollar',
+    'MXN': 'Mexikanischer Peso',
+    'SGD': 'Singapur-Dollar'
+  };
+  
+  return currencyNames[currencyCode] || currencyCode;
 };
