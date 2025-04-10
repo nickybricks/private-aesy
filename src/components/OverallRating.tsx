@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   CheckCircle, 
@@ -27,6 +26,11 @@ interface MarginOfSafety {
   status: 'pass' | 'warning' | 'fail';
 }
 
+interface CurrencyInfo {
+  originalCurrency?: string;
+  conversionRate?: number;
+}
+
 interface OverallRatingProps {
   rating: {
     overall: Rating;
@@ -43,10 +47,9 @@ interface OverallRatingProps {
     currency?: string;
     intrinsicValue?: number;
     targetMarginOfSafety?: number;
-    // New field for data source currency
-    originalCurrency?: string;
-    currencyConversionRate?: number;
   } | null;
+  // Add a separate prop for currency info
+  currencyInfo?: CurrencyInfo | null;
 }
 
 // Maximum reasonable values to prevent unrealistic calculations
@@ -142,9 +145,8 @@ const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
 const IntrinsicValueTooltip: React.FC<{
   intrinsicValue: number;
   currency: string;
-  originalCurrency?: string;
-  conversionRate?: number;
-}> = ({ intrinsicValue, currency, originalCurrency, conversionRate }) => {
+  currencyInfo?: CurrencyInfo | null;
+}> = ({ intrinsicValue, currency, currencyInfo }) => {
   // Beispielwerte für die DCF-Berechnung basierend auf dem intrinsischen Wert
   const yearlyFCF = intrinsicValue * 0.025; // Geschätzt als 2,5% des intrinsischen Wertes
   const growthRate1 = 15; // 15% Wachstum in Jahren 1-5
@@ -172,13 +174,13 @@ const IntrinsicValueTooltip: React.FC<{
         </ul>
       </div>
       
-      {originalCurrency && originalCurrency !== currency && conversionRate && (
+      {currencyInfo && currencyInfo.originalCurrency && currencyInfo.originalCurrency !== currency && currencyInfo.conversionRate && (
         <div className="border border-yellow-200 bg-yellow-50 rounded-md p-2 mt-2">
           <h5 className="font-medium mb-1 text-sm text-yellow-800">Währungsumrechnung:</h5>
           <p className="text-sm text-yellow-700">
-            Die ursprünglichen Werte wurden von {originalCurrency} in {currency} umgerechnet.
+            Die ursprünglichen Werte wurden von {currencyInfo.originalCurrency} in {currency} umgerechnet.
             <br />
-            Verwendeter Wechselkurs: 1 {currency} = {conversionRate} {originalCurrency}
+            Verwendeter Wechselkurs: 1 {currency} = {currencyInfo.conversionRate} {currencyInfo.originalCurrency}
           </p>
         </div>
       )}
@@ -213,9 +215,8 @@ const MarginOfSafetyTooltip: React.FC<{
   intrinsicValue?: number;
   currentPrice?: number;
   currency?: string;
-  originalCurrency?: string;
-  conversionRate?: number;
-}> = ({ targetMarginOfSafety, intrinsicValue, currentPrice, currency, originalCurrency, conversionRate }) => {
+  currencyInfo?: CurrencyInfo | null;
+}> = ({ targetMarginOfSafety, intrinsicValue, currentPrice, currency, currencyInfo }) => {
   // Berechnen wir ein konkretes Beispiel mit realen Zahlen, falls verfügbar
   const hasRealData = intrinsicValue && currentPrice && currency;
   const actualMarginValue = hasRealData ? intrinsicValue * (targetMarginOfSafety / 100) : 20;
@@ -233,13 +234,13 @@ const MarginOfSafetyTooltip: React.FC<{
       </ul>
       <p className="font-medium">Buffett und Graham empfehlen mindestens {targetMarginOfSafety}% Sicherheitsmarge.</p>
       
-      {originalCurrency && originalCurrency !== currency && conversionRate && (
+      {currencyInfo && currencyInfo.originalCurrency && currencyInfo.originalCurrency !== currency && currencyInfo.conversionRate && (
         <div className="border border-yellow-200 bg-yellow-50 rounded-md p-2 mt-2">
           <h5 className="font-medium mb-1 text-sm text-yellow-800">Währungsumrechnung:</h5>
           <p className="text-sm text-yellow-700">
-            Die ursprünglichen Werte wurden von {originalCurrency} in {currency} umgerechnet.
+            Die ursprünglichen Werte wurden von {currencyInfo.originalCurrency} in {currency} umgerechnet.
             <br />
-            Verwendeter Wechselkurs: 1 {currency} = {conversionRate} {originalCurrency}
+            Verwendeter Wechselkurs: 1 {currency} = {currencyInfo.conversionRate} {currencyInfo.originalCurrency}
           </p>
         </div>
       )}
@@ -277,9 +278,8 @@ const BuffettBuyPriceTooltip: React.FC<{
   bestBuyPrice: number;
   targetMarginOfSafety: number;
   currency: string;
-  originalCurrency?: string;
-  conversionRate?: number;
-}> = ({ intrinsicValue, bestBuyPrice, targetMarginOfSafety, currency, originalCurrency, conversionRate }) => {
+  currencyInfo?: CurrencyInfo | null;
+}> = ({ intrinsicValue, bestBuyPrice, targetMarginOfSafety, currency, currencyInfo }) => {
   return (
     <div className="space-y-2">
       <h4 className="font-semibold">Der Buffett-Kaufpreis</h4>
@@ -307,13 +307,13 @@ const BuffettBuyPriceTooltip: React.FC<{
         </div>
       </div>
       
-      {originalCurrency && originalCurrency !== currency && conversionRate && (
+      {currencyInfo && currencyInfo.originalCurrency && currencyInfo.originalCurrency !== currency && currencyInfo.conversionRate && (
         <div className="border border-yellow-200 bg-yellow-50 rounded-md p-2 mt-2">
           <h5 className="font-medium mb-1 text-sm text-yellow-800">Währungsumrechnung:</h5>
           <p className="text-sm text-yellow-700">
-            Die ursprünglichen Werte wurden von {originalCurrency} in {currency} umgerechnet.
+            Die ursprünglichen Werte wurden von {currencyInfo.originalCurrency} in {currency} umgerechnet.
             <br />
-            Verwendeter Wechselkurs: 1 {currency} = {conversionRate} {originalCurrency}
+            Verwendeter Wechselkurs: 1 {currency} = {currencyInfo.conversionRate} {currencyInfo.originalCurrency}
           </p>
         </div>
       )}
@@ -418,7 +418,7 @@ const BuffettScoreChart: React.FC<{ score: number }> = ({ score }) => {
   );
 };
 
-const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
+const OverallRating: React.FC<OverallRatingProps> = ({ rating, currencyInfo }) => {
   if (!rating) return null;
   
   let { 
@@ -433,9 +433,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     currentPrice,
     currency = '€',
     intrinsicValue,
-    targetMarginOfSafety = 20,
-    originalCurrency,
-    currencyConversionRate
+    targetMarginOfSafety = 20
   } = rating;
   
   // Ensure values are within reasonable range - prevents unrealistic valuations
@@ -557,15 +555,15 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       <h2 className="text-2xl font-semibold mb-6">Gesamtbewertung</h2>
       
       {/* Currency conversion info alert */}
-      {originalCurrency && originalCurrency !== currency && currencyConversionRate && (
+      {currencyInfo && currencyInfo.originalCurrency && currencyInfo.originalCurrency !== currency && currencyInfo.conversionRate && (
         <div className="mb-6 bg-yellow-50 p-4 rounded-lg border border-yellow-300">
           <div className="flex items-start">
             <Info className="h-5 w-5 text-yellow-600 mr-2 mt-0.5" />
             <div>
               <h3 className="font-medium text-yellow-800">Währungsumrechnung aktiviert</h3>
               <p className="text-yellow-700 mt-1">
-                Die Finanzdaten wurden aus {originalCurrency} in {currency} umgerechnet. 
-                Wechselkurs: 1 {currency} = {currencyConversionRate} {originalCurrency}
+                Die Finanzdaten wurden aus {currencyInfo.originalCurrency} in {currency} umgerechnet. 
+                Wechselkurs: 1 {currency} = {currencyInfo.conversionRate} {currencyInfo.originalCurrency}
               </p>
             </div>
           </div>
@@ -641,8 +639,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                       intrinsicValue={intrinsicValue}
                       currentPrice={currentPrice}
                       currency={currency}
-                      originalCurrency={originalCurrency}
-                      conversionRate={currencyConversionRate}
+                      currencyInfo={currencyInfo}
                     />
                   </TooltipContent>
                 </Tooltip>
@@ -713,8 +710,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                         <IntrinsicValueTooltip 
                           intrinsicValue={intrinsicValue} 
                           currency={currency}
-                          originalCurrency={originalCurrency}
-                          conversionRate={currencyConversionRate}
+                          currencyInfo={currencyInfo}
                         />
                       </TooltipContent>
                     </Tooltip>
@@ -744,8 +740,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                         intrinsicValue={intrinsicValue}
                         currentPrice={currentPrice}
                         currency={currency}
-                        originalCurrency={originalCurrency}
-                        conversionRate={currencyConversionRate}
+                        currencyInfo={currencyInfo}
                       />
                     </TooltipContent>
                   </Tooltip>
@@ -775,8 +770,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                           bestBuyPrice={bestBuyPrice}
                           targetMarginOfSafety={targetMarginOfSafety}
                           currency={currency}
-                          originalCurrency={originalCurrency}
-                          conversionRate={currencyConversionRate}
+                          currencyInfo={currencyInfo}
                         />
                       </TooltipContent>
                     </Tooltip>

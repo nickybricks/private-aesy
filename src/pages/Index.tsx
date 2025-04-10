@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -98,13 +97,18 @@ const Index = () => {
           
           // Add currency information to rating data
           if (ratingData) {
-            // Create a safe copy of the rating data
+            // Create a copy of the rating data with only allowed properties
             normalizedRating = {
               ...ratingData,
-              // Add currency information
-              currency: detectedCurrencyInfo.targetCurrency,
+              // Add currency information (ensure these are defined in the type)
+              currency: detectedCurrencyInfo.targetCurrency
+            };
+            
+            // Store the currency conversion info separately to be passed to the OverallRating component
+            // instead of trying to add it directly to the rating object
+            const currencyConversionInfo = {
               originalCurrency: detectedCurrencyInfo.originalCurrency,
-              currencyConversionRate: detectedCurrencyInfo.conversionRate
+              conversionRate: detectedCurrencyInfo.conversionRate
             };
             
             // Normalize intrinsic value and best buy price if needed
@@ -123,6 +127,14 @@ const Index = () => {
               }
               
               console.log('Normalized Rating:', JSON.stringify(normalizedRating, null, 2));
+            }
+            
+            // We'll pass the currency conversion info separately to the OverallRating component
+            if (overallRating) {
+              setOverallRating({
+                ...normalizedRating,
+                currencyInfo: currencyConversionInfo
+              });
             }
           }
           
@@ -295,7 +307,13 @@ const Index = () => {
           
           {overallRating && (
             <div className="mb-10">
-              <OverallRating rating={overallRating} />
+              <OverallRating 
+                rating={overallRating} 
+                currencyInfo={currencyInfo && currencyInfo.conversionNeeded ? {
+                  originalCurrency: currencyInfo.originalCurrency,
+                  conversionRate: currencyInfo.conversionRate
+                } : null}
+              />
             </div>
           )}
         </>
