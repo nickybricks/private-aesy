@@ -168,10 +168,10 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         .replace(/€ €/g, '€')
         .replace(/\$ \$/g, '$');
     } else {
-      const numericValue = typeof displayValue === 'number' ? displayValue : 0;
+      const numValue = typeof displayValue === 'number' ? displayValue : 0;
       
       if (name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum')) {
-        cleanedDisplayValue = `${numericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+        cleanedDisplayValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
       } else {
         cleanedDisplayValue = formatCurrency(displayValue, currency);
       }
@@ -231,148 +231,6 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   );
 };
 
-const BuffettCriteriaSection: React.FC = () => {
-  return (
-    <div className="mb-8">
-      <h3 className="text-lg font-semibold mb-4">11 Buffett-Kriterien Übersicht</h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-4">
-          <div className="flex items-start gap-2 mb-2">
-            <div className="mt-1 bg-buffett-blue p-1 rounded-full">
-              <span className="text-white text-xs font-medium">1</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Verstehbares Geschäftsmodell</h4>
-              <p className="text-sm text-buffett-subtext">Ist das Geschäftsmodell in wenigen Sätzen erklärbar?</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-start gap-2 mb-2">
-            <div className="mt-1 bg-buffett-blue p-1 rounded-full">
-              <span className="text-white text-xs font-medium">2</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Wirtschaftlicher Burggraben</h4>
-              <p className="text-sm text-buffett-subtext">Hat das Unternehmen einen dauerhaften Wettbewerbsvorteil?</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-start gap-2 mb-2">
-            <div className="mt-1 bg-buffett-blue p-1 rounded-full">
-              <span className="text-white text-xs font-medium">3</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Finanzkennzahlen (10 Jahre)</h4>
-              <p className="text-sm text-buffett-subtext">Zeigt konstantes Wachstum und Rentabilität</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-start gap-2 mb-2">
-            <div className="mt-1 bg-buffett-blue p-1 rounded-full">
-              <span className="text-white text-xs font-medium">4</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Finanzielle Stabilität</h4>
-              <p className="text-sm text-buffett-subtext">Gesunde Bilanzstruktur ohne übermäßige Verschuldung</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-start gap-2 mb-2">
-            <div className="mt-1 bg-buffett-blue p-1 rounded-full">
-              <span className="text-white text-xs font-medium">5</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Managementqualität</h4>
-              <p className="text-sm text-buffett-subtext">Ehrliches und rational handelndes Management</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-start gap-2 mb-2">
-            <div className="mt-1 bg-buffett-blue p-1 rounded-full">
-              <span className="text-white text-xs font-medium">6</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Bewertung</h4>
-              <p className="text-sm text-buffett-subtext">Ist die Aktie zu einem angemessenen Preis erhältlich?</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-start gap-2 mb-2">
-            <div className="mt-1 bg-buffett-blue p-1 rounded-full">
-              <span className="text-white text-xs font-medium">7</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Langfristiger Horizont</h4>
-              <p className="text-sm text-buffett-subtext">Ist das Unternehmen auch in 20 Jahren noch relevant?</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-start gap-2 mb-2">
-            <div className="mt-1 bg-buffett-blue p-1 rounded-full">
-              <span className="text-white text-xs font-medium">8</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Rationalität & Disziplin</h4>
-              <p className="text-sm text-buffett-subtext">Handelt das Unternehmen vernünftig und diszipliniert?</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-start gap-2 mb-2">
-            <div className="mt-1 bg-buffett-blue p-1 rounded-full">
-              <span className="text-white text-xs font-medium">9</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Antizyklisches Verhalten</h4>
-              <p className="text-sm text-buffett-subtext">Kauft, wenn andere verkaufen?</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-start gap-2 mb-2">
-            <div className="mt-1 bg-buffett-blue p-1 rounded-full">
-              <span className="text-white text-xs font-medium">10</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Vergangenheit ≠ Zukunft</h4>
-              <p className="text-sm text-buffett-subtext">Beruht der Erfolg auf nachhaltigen Faktoren?</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-start gap-2 mb-2">
-            <div className="mt-1 bg-buffett-blue p-1 rounded-full">
-              <span className="text-white text-xs font-medium">11</span>
-            </div>
-            <div>
-              <h4 className="font-medium">Keine Turnarounds</h4>
-              <p className="text-sm text-buffett-subtext">Bewährte Unternehmen statt Restrukturierungsfälle</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData, currency = 'EUR' }) => {
   if (!metrics) return null;
   
@@ -380,10 +238,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
   
   return (
     <div className="animate-fade-in">
-      <h2 className="text-2xl font-semibold mb-6">Buffett-Analyse Framework</h2>
-      
-      <BuffettCriteriaSection />
-      
       <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
       
       {currency && currency !== 'EUR' && (
