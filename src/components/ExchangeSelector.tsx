@@ -39,6 +39,9 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
             <TooltipContent className="max-w-sm">
               <p>Wählen Sie eine Börse aus, deren Aktien Sie nach Buffett-Kriterien analysieren möchten.</p>
               <p className="mt-1">Die Analyse berücksichtigt 10 quantitative Kriterien.</p>
+              <p className="mt-1 text-sm text-yellow-600 font-medium">
+                Hinweis: Bei ausländischen Börsen werden Werte automatisch in EUR umgerechnet.
+              </p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -52,12 +55,27 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
           {exchanges.map(exchange => (
             <SelectItem key={exchange.id} value={exchange.id}>
               {exchange.name}
+              {exchange.currency && exchange.currency !== 'EUR' && exchange.currency !== 'USD' && (
+                <span className="ml-2 text-sm text-muted-foreground">({exchange.currency})</span>
+              )}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
       <p className="text-sm text-gray-500 mt-2">
         Wählen Sie eine Börse aus, um Aktien nach Warren Buffetts Kriterien zu analysieren.
+        {selectedExchange && (
+          <span className="ml-1">
+            {exchanges.find(e => e.id === selectedExchange)?.currency && 
+            exchanges.find(e => e.id === selectedExchange)?.currency !== 'EUR' && 
+            exchanges.find(e => e.id === selectedExchange)?.currency !== 'USD' && (
+              <span className="text-yellow-600">
+                Finanzdaten werden automatisch von {exchanges.find(e => e.id === selectedExchange)?.currency} 
+                in EUR umgerechnet.
+              </span>
+            )}
+          </span>
+        )}
       </p>
     </div>
   );

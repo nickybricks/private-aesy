@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -16,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { convertCurrency, formatCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
 
 interface FinancialMetric {
   name: string;
@@ -24,6 +24,8 @@ interface FinancialMetric {
   explanation: string;
   threshold: string;
   status: 'pass' | 'warning' | 'fail';
+  originalValue?: number | string;
+  originalCurrency?: string;
 }
 
 interface FinancialMetricsProps {
@@ -33,6 +35,7 @@ interface FinancialMetricsProps {
     earnings: { year: string; value: number }[];
     eps: { year: string; value: number }[];
   } | null;
+  currency?: string;
 }
 
 // Detailed explanations for each metric
@@ -140,8 +143,8 @@ const MetricStatus: React.FC<{ status: string }> = ({ status }) => {
   }
 };
 
-const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
-  const { name, value, formula, explanation, threshold, status } = metric;
+const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ metric, currency }) => {
+  const { name, value, formula, explanation, threshold, status, originalValue, originalCurrency } = metric;
   
   // Verbesserte Prüfung für fehlende Werte
   const isValueMissing = value === 'N/A' || 
@@ -153,14 +156,24 @@ const MetricCard: React.FC<{ metric: FinancialMetric }> = ({ metric }) => {
   const displayValue = isValueMissing ? 'Keine Daten' : value;
   const detailedExplanation = getMetricDetailedExplanation(name);
   
-  // Clean up duplicate currency symbols
+  // Format value with currency conversion if needed
   let cleanedDisplayValue = displayValue;
-  if (typeof displayValue === 'string') {
-    cleanedDisplayValue = displayValue
-      .replace(/USD USD/g, 'USD')
-      .replace(/EUR EUR/g, 'EUR')
-      .replace(/€ €/g, '€')
-      .replace(/\$ \$/g, '$');
+  
+  if (!isValueMissing) {
+    if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency)) {
+      // If we have original currency data and it's different from EUR or USD, show converted value
+      cleanedDisplayValue = formatCurrency(value, currency, true, originalValue, originalCurrency);
+    } else if (typeof displayValue === 'string') {
+      // Clean up duplicate currency symbols if it's already a formatted string
+      cleanedDisplayValue = displayValue
+        .replace(/USD USD/g, 'USD')
+        .replace(/EUR EUR/g, 'EUR')
+        .replace(/€ €/g, '€')
+        .replace(/\$ \$/g, '$');
+    } else {
+      // Format number without showing original
+      cleanedDisplayValue = formatCurrency(displayValue, currency);
+    }
   }
   
   return (
@@ -358,8 +371,11 @@ const BuffettCriteriaSection: React.FC = () => {
   );
 };
 
-const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData }) => {
+const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData, currency = 'EUR' }) => {
   if (!metrics) return null;
+  
+  // Ensure metrics is an array
+  const metricsArray = Array.isArray(metrics) ? metrics : [];
   
   return (
     <div className="animate-fade-in">
@@ -369,33 +385,26 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       
       <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {metrics.map((metric, index) => (
-          <MetricCard key={index} metric={metric} />
-        ))}
-      </div>
-      
-      {/* Debug-Ansicht für die API-Daten */}
-      <Card className="buffett-card p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
-          <pre className="text-xs whitespace-pre-wrap break-words">
-            <strong>Metrics-Daten:</strong>
-            {JSON.stringify(metrics, null, 2)}
-          </pre>
-        </div>
-      </Card>
-      
-      {historicalData && (
-        <Card className="buffett-card p-6 mb-8">
-          <h3 className="text-lg font-semibold mb-4">Debug: Historische Daten</h3>
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
-            <pre className="text-xs whitespace-pre-wrap break-words">
-              {JSON.stringify(historicalData, null, 2)}
-            </pre>
+      {currency && currency !== 'EUR' && currency !== 'USD' && (
+        <Card className="p-4 mb-4 bg-yellow-50 border-yellow-200">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="text-yellow-500 h-5 w-5 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-yellow-700">Währungshinweis</h3>
+              <p className="text-yellow-600 text-sm">
+                Die Finanzdaten dieser Aktie werden in {currency} angegeben. Alle Werte wurden in EUR umgerechnet, 
+                um eine korrekte Analyse zu ermöglichen. Die Originalwerte in {currency} werden in Klammern angezeigt.
+              </p>
+            </div>
           </div>
         </Card>
       )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        {metricsArray.map((metric, index) => (
+          <MetricCard key={index} metric={metric} currency={currency} />
+        ))}
+      </div>
       
       {historicalData && historicalData.revenue && historicalData.revenue.length > 0 && (
         <Card className="buffett-card p-6">
@@ -430,9 +439,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             <TableHeader>
               <TableRow>
                 <TableHead>Jahr</TableHead>
-                <TableHead className="text-right">Umsatz (Mio. $)</TableHead>
-                <TableHead className="text-right">Gewinn (Mio. $)</TableHead>
-                <TableHead className="text-right">EPS ($)</TableHead>
+                <TableHead className="text-right">Umsatz (Mio. {currency})</TableHead>
+                <TableHead className="text-right">Gewinn (Mio. {currency})</TableHead>
+                <TableHead className="text-right">EPS ({currency})</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -442,26 +451,38 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                 // Entsprechende Gewinn-Daten finden
                 const earningsDataForYear = historicalData.earnings && historicalData.earnings.find(e => e.year === item.year);
                 
+                // Convert values if needed
+                let revenueValue = item.value;
+                let earningsValue = earningsDataForYear?.value;
+                let epsValue = epsDataForYear?.value;
+                
+                if (needsCurrencyConversion(currency)) {
+                  // If these are in a non-EUR/USD currency, convert them
+                  revenueValue = revenueValue ? convertCurrency(revenueValue, currency, 'EUR') : 0;
+                  earningsValue = earningsValue ? convertCurrency(earningsValue, currency, 'EUR') : 0;
+                  epsValue = epsValue ? convertCurrency(epsValue, currency, 'EUR') : 0;
+                }
+                
                 return (
                   <TableRow key={item.year || i}>
                     <TableCell>{item.year || 'N/A'}</TableCell>
                     <TableCell className="text-right">
-                      {typeof item.value === 'number' && item.value !== 0 
-                        ? item.value.toFixed(2) 
+                      {typeof revenueValue === 'number' && revenueValue !== 0 
+                        ? revenueValue.toFixed(2) 
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
-                      {earningsDataForYear && 
-                      typeof earningsDataForYear.value === 'number' && 
-                      earningsDataForYear.value !== 0
-                        ? earningsDataForYear.value.toFixed(2) 
+                      {earningsValue && 
+                      typeof earningsValue === 'number' && 
+                      earningsValue !== 0
+                        ? earningsValue.toFixed(2) 
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
-                      {epsDataForYear && 
-                      typeof epsDataForYear.value === 'number' && 
-                      epsDataForYear.value !== 0
-                        ? epsDataForYear.value.toFixed(2) 
+                      {epsValue && 
+                      typeof epsValue === 'number' && 
+                      epsValue !== 0
+                        ? epsValue.toFixed(2) 
                         : 'N/A'}
                     </TableCell>
                   </TableRow>
@@ -472,10 +493,37 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
           
           <div className="mt-4 text-sm text-buffett-subtext">
             <p>Hinweis: 'N/A' bedeutet, dass keine Daten verfügbar sind.</p>
+            {needsCurrencyConversion(currency) && (
+              <p className="mt-2 font-medium text-buffett-subtext">
+                Diese Werte wurden aus {currency} in EUR umgerechnet, um eine bessere Vergleichbarkeit zu gewährleisten.
+              </p>
+            )}
             <p className="mt-2">
               <span className="font-medium">EPS (Earnings Per Share):</span> Der Gewinn pro Aktie zeigt, wie viel Gewinn auf eine einzelne Aktie entfällt.
               Buffett achtet besonders auf einen stabilen oder wachsenden EPS über viele Jahre.
             </p>
+          </div>
+        </Card>
+      )}
+      
+      {/* Debug-Ansicht für die API-Daten */}
+      <Card className="buffett-card p-6 mb-8">
+        <h3 className="text-lg font-semibold mb-4">Debug: API-Rohdaten</h3>
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
+          <pre className="text-xs whitespace-pre-wrap break-words">
+            <strong>Metrics-Daten:</strong>
+            {JSON.stringify(metrics, null, 2)}
+          </pre>
+        </div>
+      </Card>
+      
+      {historicalData && (
+        <Card className="buffett-card p-6 mb-8">
+          <h3 className="text-lg font-semibold mb-4">Debug: Historische Daten</h3>
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-auto max-h-[500px]">
+            <pre className="text-xs whitespace-pre-wrap break-words">
+              {JSON.stringify(historicalData, null, 2)}
+            </pre>
           </div>
         </Card>
       )}

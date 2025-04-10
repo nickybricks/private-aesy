@@ -12,8 +12,9 @@ import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverall
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
 
 const Index = () => {
   const { toast } = useToast();
@@ -26,6 +27,7 @@ const Index = () => {
   const [hasApiKey, setHasApiKey] = useState(false);
   const [gptAvailable, setGptAvailable] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
+  const [stockCurrency, setStockCurrency] = useState<string>('EUR');
 
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
@@ -61,6 +63,68 @@ const Index = () => {
     };
   }, []);
 
+  const convertFinancialMetrics = (metrics: any, currency: string) => {
+    if (!metrics || !currency) return metrics;
+    
+    // Early return if no conversion needed
+    if (!needsCurrencyConversion(currency)) return metrics;
+    
+    // If metrics is an array (FinancialMetric[])
+    if (Array.isArray(metrics)) {
+      return metrics.map(metric => {
+        // Skip non-numeric values or metrics that don't need currency conversion
+        if (
+          typeof metric.value !== 'number' || 
+          isNaN(metric.value) || 
+          metric.name.includes('Ratio') || 
+          metric.name.includes('Rate') ||
+          metric.name.includes('Marge') ||
+          metric.name.includes('%')
+        ) {
+          return metric;
+        }
+        
+        // Store original values
+        const originalValue = metric.value;
+        
+        // Convert the value to EUR
+        const convertedValue = convertCurrency(metric.value, currency, 'EUR');
+        
+        return {
+          ...metric,
+          value: convertedValue,
+          originalValue: originalValue,
+          originalCurrency: currency
+        };
+      });
+    }
+    
+    // For non-array financial metrics
+    return metrics;
+  };
+
+  const convertHistoricalData = (historicalData: any, currency: string) => {
+    if (!historicalData || !currency || !needsCurrencyConversion(currency)) return historicalData;
+    
+    return {
+      revenue: historicalData.revenue ? historicalData.revenue.map((item: any) => ({
+        ...item,
+        originalValue: item.value,
+        value: convertCurrency(item.value, currency, 'EUR')
+      })) : [],
+      earnings: historicalData.earnings ? historicalData.earnings.map((item: any) => ({
+        ...item,
+        originalValue: item.value,
+        value: convertCurrency(item.value, currency, 'EUR')
+      })) : [],
+      eps: historicalData.eps ? historicalData.eps.map((item: any) => ({
+        ...item,
+        originalValue: item.value,
+        value: convertCurrency(item.value, currency, 'EUR')
+      })) : []
+    };
+  };
+
   const handleSearch = async (ticker: string) => {
     setIsLoading(true);
     setError(null);
@@ -74,6 +138,15 @@ const Index = () => {
       console.log('Stock Info:', JSON.stringify(info, null, 2));
       setStockInfo(info);
       
+      // Store the stock's currency
+      if (info && info.currency) {
+        setStockCurrency(info.currency);
+        console.log(`Stock currency: ${info.currency}`);
+      } else {
+        setStockCurrency('EUR');
+        console.log('No currency information available, defaulting to EUR');
+      }
+      
       toast({
         title: "Analyse läuft",
         description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
@@ -83,18 +156,56 @@ const Index = () => {
         setActiveTab('gpt');
       }
       
-      const [criteria, metrics, rating] = await Promise.all([
+      const [criteria, metricsData, rating] = await Promise.all([
         analyzeBuffettCriteria(ticker),
         getFinancialMetrics(ticker),
         getOverallRating(ticker)
       ]);
       
       console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
-      console.log('Financial Metrics:', JSON.stringify(metrics, null, 2));
+      console.log('Financial Metrics:', JSON.stringify(metricsData, null, 2));
       console.log('Overall Rating:', JSON.stringify(rating, null, 2));
       
+      // Set currency from stock info if available
+      const stockCurrency = info?.currency || 'EUR';
+      
+      // Convert financial metrics if needed
+      if (metricsData) {
+        // Convert metrics array data
+        if (metricsData.metrics) {
+          metricsData.metrics = convertFinancialMetrics(metricsData.metrics, stockCurrency);
+        }
+        
+        // Convert historical data
+        if (metricsData.historicalData) {
+          metricsData.historicalData = convertHistoricalData(metricsData.historicalData, stockCurrency);
+        }
+      }
+      
+      // Adjust overall rating values for currency
+      if (rating && needsCurrencyConversion(stockCurrency)) {
+        if (rating.intrinsicValue) {
+          rating.originalIntrinsicValue = rating.intrinsicValue;
+          rating.intrinsicValue = convertCurrency(rating.intrinsicValue, stockCurrency, 'EUR');
+        }
+        if (rating.bestBuyPrice) {
+          rating.originalBestBuyPrice = rating.bestBuyPrice;
+          rating.bestBuyPrice = convertCurrency(rating.bestBuyPrice, stockCurrency, 'EUR');
+        }
+        if (rating.currentPrice) {
+          rating.originalPrice = rating.currentPrice;
+          rating.currentPrice = convertCurrency(rating.currentPrice, stockCurrency, 'EUR');
+        }
+        
+        // Update currency to indicate conversion
+        if (rating.currency !== 'EUR') {
+          rating.originalCurrency = rating.currency;
+          rating.currency = 'EUR';
+        }
+      }
+      
       setBuffettCriteria(criteria);
-      setFinancialMetrics(metrics);
+      setFinancialMetrics(metricsData);
       setOverallRating(rating);
       
       toast({
@@ -170,6 +281,18 @@ const Index = () => {
         </div>
       )}
       
+      {stockInfo && stockInfo.currency && needsCurrencyConversion(stockInfo.currency) && (
+        <Alert className="mb-4 bg-yellow-50 border-yellow-200">
+          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+          <AlertTitle className="text-yellow-700">Währungsumrechnung aktiviert</AlertTitle>
+          <AlertDescription className="text-yellow-600">
+            Die Daten dieser Aktie werden in <strong>{stockInfo.currency}</strong> angegeben. 
+            Für eine korrekte Analyse werden alle finanziellen Kennzahlen automatisch in EUR umgerechnet.
+            Die Originalwerte werden zur Transparenz ebenfalls angezeigt.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
       
       {error && (
@@ -241,13 +364,20 @@ const Index = () => {
               <FinancialMetrics 
                 metrics={financialMetrics.metrics} 
                 historicalData={financialMetrics.historicalData} 
+                currency={stockCurrency}
               />
             </div>
           )}
           
           {overallRating && (
             <div className="mb-10">
-              <OverallRating rating={overallRating} />
+              <OverallRating 
+                rating={{
+                  ...overallRating,
+                  // Add original currency information if available
+                  originalCurrency: needsCurrencyConversion(stockCurrency) ? stockCurrency : undefined
+                }} 
+              />
             </div>
           )}
         </>
