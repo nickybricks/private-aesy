@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { convertCurrency, formatCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
+import { convertCurrency, formatCurrency, needsCurrencyConversion, getCurrencyName } from '@/utils/currencyConverter';
 
 interface FinancialMetric {
   name: string;
@@ -252,7 +252,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             <div>
               <h3 className="font-medium text-yellow-700">Währungshinweis</h3>
               <p className="text-yellow-600 text-sm">
-                Die Finanzdaten dieser Aktie werden in <strong>{currency}</strong> angegeben und wurden automatisch in Euro umgerechnet.
+                Die Finanzdaten dieser Aktie werden in <strong>{currency}</strong> ({getCurrencyName(currency)}) angegeben und wurden automatisch in Euro umgerechnet.
                 Der angezeigte innere Wert basiert auf der realen Kaufkraft in Euro, nicht auf falsch interpretierten Zahlen.
                 Die Originalwerte in {currency} werden in Klammern angezeigt.
               </p>
@@ -358,7 +358,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             <p>Hinweis: 'N/A' bedeutet, dass keine Daten verfügbar sind.</p>
             {needsCurrencyConversion(currency) && (
               <p className="mt-2 font-medium text-yellow-600">
-                Diese Werte wurden aus {currency} in EUR umgerechnet, um eine korrekte Bewertung zu gewährleisten.
+                Diese Werte wurden aus {currency} ({getCurrencyName(currency)}) in EUR umgerechnet, um eine korrekte Bewertung zu gewährleisten.
                 Die Originalwerte in {currency} werden in Klammern angezeigt.
               </p>
             )}

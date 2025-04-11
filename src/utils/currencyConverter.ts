@@ -1,4 +1,3 @@
-
 /**
  * Currency conversion utility for financial data
  */
@@ -53,15 +52,18 @@ export const convertCurrency = (
     return numericValue;
   }
   
-  // Convert to EUR first (as our base currency)
-  const valueInEUR = numericValue * exchangeRates[fromCurrency];
-  
-  // If target is EUR, return the EUR value
+  // If target is EUR, convert directly using the fromCurrency rate
   if (toCurrency === 'EUR') {
-    return valueInEUR;
+    return numericValue * exchangeRates[fromCurrency];
   }
   
-  // Otherwise convert from EUR to target currency
+  // If source is EUR, convert directly using the inverse of toCurrency rate
+  if (fromCurrency === 'EUR') {
+    return numericValue / exchangeRates[toCurrency];
+  }
+  
+  // Otherwise convert from source to EUR first, then from EUR to target
+  const valueInEUR = numericValue * exchangeRates[fromCurrency];
   return valueInEUR / exchangeRates[toCurrency];
 };
 
@@ -138,6 +140,7 @@ export const formatCurrency = (
  * @returns True if conversion is needed
  */
 export const needsCurrencyConversion = (currency: string): boolean => {
+  if (!currency) return false;
   return currency !== 'EUR';
 };
 

@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Financial Modeling Prep API Key
@@ -123,7 +122,9 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       roe: safeValue(ratios.returnOnEquityTTM) * 100,
       roic: metrics ? safeValue(metrics.roicTTM) * 100 : null,
       netMargin: safeValue(ratios.netProfitMarginTTM) * 100,
-      price: quoteData ? quoteData.price : 0
+      price: quoteData ? quoteData.price : 0,
+      pe: safeValue(ratios.priceEarningsRatioTTM),
+      pb: safeValue(ratios.priceToBookRatioTTM)
     };
 
     // 1. ROE > 15%
