@@ -15,7 +15,6 @@ import { InfoIcon, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
 
-// Define types for our data structures
 interface FinancialMetricsData {
   eps?: any;
   roe?: any;
