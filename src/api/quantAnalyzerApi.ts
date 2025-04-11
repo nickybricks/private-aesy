@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { convertCurrency } from '@/utils/currencyConverter';
 
@@ -69,8 +68,8 @@ export interface QuantAnalysisResult {
     roe?: number | null;
     roic?: number | null;
     netMargin?: number | null;
-    eps?: number | null;
-    revenue?: number | null;
+    eps?: number | null | { current: number; past: number };
+    revenue?: number | null | { current: number; past: number };
     pe?: number | null;
     pb?: number | null;
     price?: number | null;
@@ -126,7 +125,9 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       netMargin: safeValue(ratios.netProfitMarginTTM) * 100,
       price: quoteData ? quoteData.price : 0,
       pe: safeValue(ratios.priceEarningsRatioTTM),
-      pb: safeValue(ratios.priceToBookRatioTTM)
+      pb: safeValue(ratios.priceToBookRatioTTM),
+      eps: null as (number | null | { current: number; past: number }),
+      revenue: null as (number | null | { current: number; past: number })
     };
 
     // 1. ROE > 15%
