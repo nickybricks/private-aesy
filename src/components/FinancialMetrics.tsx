@@ -19,9 +19,11 @@ import {
 import { 
   convertCurrency, 
   formatCurrency, 
+  formatPercentage,
   needsCurrencyConversion, 
   getCurrencyName,
-  getCurrencySymbol
+  getCurrencySymbol,
+  isPercentageMetric
 } from '@/utils/currencyConverter';
 
 interface FinancialMetric {
@@ -164,6 +166,7 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   const detailedExplanation = getMetricDetailedExplanation(name);
   
   let cleanedDisplayValue = displayValue;
+  const isPercentage = isPercentageMetric(name);
   
   if (!isValueMissing) {
     if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency, currency)) {
@@ -171,8 +174,8 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
       const numericValue = typeof displayValue === 'number' ? displayValue : 
                       typeof displayValue === 'string' ? parseFloat(displayValue) : 0;
       
-      if (name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum') || name.includes('%')) {
-        cleanedDisplayValue = `${numericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+      if (isPercentage) {
+        cleanedDisplayValue = formatPercentage(numericValue);
       } else {
         cleanedDisplayValue = formatCurrency(numericValue, currency, true, originalValue, originalCurrency);
       }
@@ -185,10 +188,10 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
     } else {
       const numericValue = typeof displayValue === 'number' ? displayValue : 0;
       
-      if (name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum') || name.includes('%')) {
-        cleanedDisplayValue = `${numericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+      if (isPercentage) {
+        cleanedDisplayValue = formatPercentage(numericValue);
       } else {
-        cleanedDisplayValue = formatCurrency(displayValue, currency);
+        cleanedDisplayValue = formatCurrency(numericValue, currency);
       }
     }
   }
@@ -224,7 +227,14 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         )}
       </div>
       
-      <div className="text-2xl font-semibold mb-2">{cleanedDisplayValue}</div>
+      <div className="text-2xl font-semibold mb-2">
+        {cleanedDisplayValue}
+        {needsCurrencyConversion(originalCurrency, currency) && !isPercentage && !isValueMissing && (
+          <span className="ml-1 text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded font-normal">
+            🔄
+          </span>
+        )}
+      </div>
       
       <div className="text-sm text-buffett-subtext mb-1">
         <span className="font-medium">Formel:</span> {formula}
@@ -264,7 +274,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
               <h3 className="font-medium text-yellow-700">Währungshinweis</h3>
               <p className="text-yellow-600 text-sm">
                 Die Finanzdaten dieser Aktie werden in einer anderen Währung als {getCurrencyName(currency)} angegeben und wurden automatisch in {getCurrencySymbol(currency)} umgerechnet.
-                Der angezeigte innere Wert basiert auf der realen Kaufkraft in {currency}, nicht auf falsch interpretierten Zahlen.
+                Werte mit dem Symbol 🔄 zeigen an, dass eine Währungsumrechnung stattgefunden hat.
                 Die Originalwerte werden in Klammern angezeigt.
               </p>
             </div>
@@ -340,28 +350,28 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                 return (
                   <TableRow key={item.year || i}>
                     <TableCell>{item.year || 'N/A'}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
                       {typeof revenueValue === 'number' && revenueValue !== 0 
                         ? (showOriginal && originalRevenueValue !== undefined
-                           ? `${revenueValue.toFixed(2)} (${originalRevenueValue.toFixed(2)} ${anyOriginalCurrency})` 
+                           ? `${revenueValue.toFixed(2)} ${currency} (${originalRevenueValue.toFixed(2)} ${anyOriginalCurrency}) 🔄` 
                            : revenueValue.toFixed(2))
                         : 'N/A'}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
                       {earningsValue && 
                       typeof earningsValue === 'number' && 
                       earningsValue !== 0
                         ? (showOriginal && originalEarningsValue !== undefined
-                           ? `${earningsValue.toFixed(2)} (${originalEarningsValue.toFixed(2)} ${anyOriginalCurrency})` 
+                           ? `${earningsValue.toFixed(2)} ${currency} (${originalEarningsValue.toFixed(2)} ${anyOriginalCurrency}) 🔄` 
                            : earningsValue.toFixed(2)) 
                         : 'N/A'}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
                       {epsValue && 
                       typeof epsValue === 'number' && 
                       epsValue !== 0
                         ? (showOriginal && originalEpsValue !== undefined
-                           ? `${epsValue.toFixed(2)} (${originalEpsValue.toFixed(2)} ${anyOriginalCurrency})` 
+                           ? `${epsValue.toFixed(2)} ${currency} (${originalEpsValue.toFixed(2)} ${anyOriginalCurrency}) 🔄` 
                            : epsValue.toFixed(2)) 
                         : 'N/A'}
                     </TableCell>
@@ -375,8 +385,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             <p>Hinweis: 'N/A' bedeutet, dass keine Daten verfügbar sind.</p>
             {hasConvertedData && (
               <p className="mt-2 font-medium text-yellow-600">
-                Diese Werte wurden aus der Originalwährung in {currency} ({getCurrencyName(currency)}) umgerechnet, um eine korrekte Bewertung zu gewährleisten.
-                Die Originalwerte werden in Klammern angezeigt.
+                <span className="inline-flex items-center">
+                  <span className="mr-1">🔄</span> Diese Werte wurden aus der Originalwährung in {currency} ({getCurrencyName(currency)}) umgerechnet, um eine korrekte Bewertung zu gewährleisten.
+                </span>
               </p>
             )}
             <p className="mt-2">

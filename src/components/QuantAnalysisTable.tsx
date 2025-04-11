@@ -17,7 +17,8 @@ import {
   ExternalLink,
   Filter,
   SortAsc,
-  SortDesc
+  SortDesc,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { formatCurrency, formatPercentage } from '@/utils/currencyConverter';
 
 interface QuantAnalysisTableProps {
   results: QuantAnalysisResult[];
@@ -207,7 +209,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
 
   const formatValue = (value: number | null, isPercentage: boolean = false) => {
     if (value === null) return "N/A";
-    return isPercentage ? `${value.toFixed(2)}%` : value.toFixed(2);
+    return isPercentage ? formatPercentage(value) : value.toFixed(2);
   };
 
   const SortableHeader = ({ 
@@ -486,13 +488,13 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
-                      {formatValue(stock.criteria.pe.value)}
+                      {formatValue(stock.criteria.pe.value, false)}
                       <StatusIcon passed={stock.criteria.pe.pass} value={stock.criteria.pe.value} />
                     </div>
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
-                      {formatValue(stock.criteria.pb.value)}
+                      {formatValue(stock.criteria.pb.value, false)}
                       <StatusIcon passed={stock.criteria.pb.pass} value={stock.criteria.pb.value} />
                     </div>
                   </TableCell>
@@ -503,7 +505,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                     </div>
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
-                    {stock.price.toFixed(2)} {stock.currency}
+                    {formatCurrency(stock.price, stock.currency)}
                   </TableCell>
                   <TableCell>
                     <Popover>
@@ -579,6 +581,12 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
             <AlertCircle className="h-4 w-4 text-gray-400" />
             <span>
               "N/A" zeigt an, dass ein Datenpunkt fehlt und daher nicht in die Bewertung eingeflossen ist.
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <RefreshCw className="h-4 w-4 text-blue-500" />
+            <span>
+              Das Symbol 🔄 zeigt an, dass eine Währungsumrechnung stattgefunden hat.
             </span>
           </div>
         </div>

@@ -1,5 +1,6 @@
+
 import axios from 'axios';
-import { convertCurrency } from '@/utils/currencyConverter';
+import { convertCurrency, formatPercentage, isPercentageMetric } from '@/utils/currencyConverter';
 
 // Financial Modeling Prep API Key
 const FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
@@ -308,16 +309,26 @@ export const exportToCsv = (results: QuantAnalysisResult[], targetCurrency: stri
       result.exchange,
       result.sector,
       result.buffettScore,
-      result.criteria.roe.value !== null ? result.criteria.roe.value.toFixed(2) : 'N/A',
-      result.criteria.roic.value !== null ? result.criteria.roic.value.toFixed(2) : 'N/A',
-      result.criteria.netMargin.value !== null ? result.criteria.netMargin.value.toFixed(2) : 'N/A',
-      result.criteria.epsGrowth.value !== null ? result.criteria.epsGrowth.value.toFixed(2) : 'N/A',
-      result.criteria.revenueGrowth.value !== null ? result.criteria.revenueGrowth.value.toFixed(2) : 'N/A',
-      result.criteria.interestCoverage.value !== null ? result.criteria.interestCoverage.value.toFixed(2) : 'N/A',
-      result.criteria.debtRatio.value !== null ? result.criteria.debtRatio.value.toFixed(2) : 'N/A',
-      result.criteria.pe.value !== null ? result.criteria.pe.value.toFixed(2) : 'N/A',
-      result.criteria.pb.value !== null ? result.criteria.pb.value.toFixed(2) : 'N/A',
-      result.criteria.dividendYield.value !== null ? result.criteria.dividendYield.value.toFixed(2) : 'N/A',
+      result.criteria.roe.value !== null ? 
+        result.criteria.roe.value.toFixed(2) : 'N/A',
+      result.criteria.roic.value !== null ? 
+        result.criteria.roic.value.toFixed(2) : 'N/A',
+      result.criteria.netMargin.value !== null ? 
+        result.criteria.netMargin.value.toFixed(2) : 'N/A',
+      result.criteria.epsGrowth.value !== null ? 
+        result.criteria.epsGrowth.value.toFixed(2) : 'N/A',
+      result.criteria.revenueGrowth.value !== null ? 
+        result.criteria.revenueGrowth.value.toFixed(2) : 'N/A',
+      result.criteria.interestCoverage.value !== null ? 
+        result.criteria.interestCoverage.value.toFixed(2) : 'N/A',
+      result.criteria.debtRatio.value !== null ? 
+        result.criteria.debtRatio.value.toFixed(2) : 'N/A',
+      result.criteria.pe.value !== null ? 
+        result.criteria.pe.value.toFixed(2) : 'N/A',
+      result.criteria.pb.value !== null ? 
+        result.criteria.pb.value.toFixed(2) : 'N/A',
+      result.criteria.dividendYield.value !== null ? 
+        result.criteria.dividendYield.value.toFixed(2) : 'N/A',
       price.toFixed(2),
       displayCurrency
     ];

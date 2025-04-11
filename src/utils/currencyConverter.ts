@@ -1,3 +1,4 @@
+
 /**
  * Currency conversion utility for financial data
  */
@@ -151,13 +152,30 @@ export const formatCurrency = (
         origFormattedValue = `${origNumericValue.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${originalCurrency}`;
     }
     
+    // Calculate and display exchange rate
+    const exchangeRateValue = exchangeRates[originalCurrency] / exchangeRates[currency];
     const exchangeRateInfo = originalCurrency && currency ? 
       ` (Wechselkurs: 1 ${currency} ≈ ${(1/exchangeRates[originalCurrency]*exchangeRates[currency]).toFixed(2)} ${originalCurrency})` : '';
     
-    return `${formattedValue} (umgerechnet aus ${origFormattedValue}${exchangeRateInfo})`;
+    return `${formattedValue} (${origFormattedValue}${exchangeRateInfo})`;
   }
   
   return formattedValue;
+};
+
+/**
+ * Format a percentage value for display
+ * @param value The value to format
+ * @returns Formatted percentage string
+ */
+export const formatPercentage = (value: number | string | null): string => {
+  if (value === null || value === undefined || value === '' || 
+      (typeof value === 'string' && value.toLowerCase().includes('n/a'))) {
+    return 'N/A';
+  }
+  
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  return `${numericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
 };
 
 /**
@@ -220,4 +238,19 @@ export const getCurrencySymbol = (currencyCode: string): string => {
   };
   
   return symbols[currencyCode] || currencyCode;
+};
+
+/**
+ * Determine if a value needs to be displayed as a percentage
+ * @param metricName The name of the metric
+ * @returns True if the metric should be shown as a percentage
+ */
+export const isPercentageMetric = (metricName: string): boolean => {
+  const percentageKeywords = [
+    'rendite', 'yield', 'margin', 'marge', 'wachstum', 'growth', 
+    'roe', 'roi', 'roic', 'ratio', '%'
+  ];
+  
+  const name = metricName.toLowerCase();
+  return percentageKeywords.some(keyword => name.includes(keyword));
 };
