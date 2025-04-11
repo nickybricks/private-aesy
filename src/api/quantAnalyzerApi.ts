@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { convertCurrency, formatPercentage, isPercentageMetric } from '@/utils/currencyConverter';
 
@@ -74,6 +73,7 @@ export interface QuantAnalysisResult {
     pe?: number | null;
     pb?: number | null;
     price?: number | null;
+    // Add other relevant fields
   };
 }
 

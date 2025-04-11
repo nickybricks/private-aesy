@@ -155,7 +155,7 @@ export const formatCurrency = (
     // Calculate and display exchange rate
     const exchangeRateValue = exchangeRates[originalCurrency] / exchangeRates[currency];
     const exchangeRateInfo = originalCurrency && currency ? 
-      ` (Wechselkurs: 1 ${currency} ≈ ${(1/exchangeRates[originalCurrency]*exchangeRates[currency]).toFixed(2)} ${originalCurrency})` : '';
+      ` (Wechselkurs: 1 ${originalCurrency} ≈ ${(exchangeRates[currency]/exchangeRates[originalCurrency]).toFixed(4)} ${currency})` : '';
     
     return `${formattedValue} (${origFormattedValue}${exchangeRateInfo})`;
   }
@@ -248,7 +248,7 @@ export const getCurrencySymbol = (currencyCode: string): string => {
 export const isPercentageMetric = (metricName: string): boolean => {
   const percentageKeywords = [
     'rendite', 'yield', 'margin', 'marge', 'wachstum', 'growth', 
-    'roe', 'roi', 'roic', 'ratio', '%'
+    'roe', 'roi', 'roic', 'ratio', '%', 'quote', 'deckungsgrad'
   ];
   
   const name = metricName.toLowerCase();
