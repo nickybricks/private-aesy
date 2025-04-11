@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -7,13 +8,19 @@ import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import Navigation from '@/components/Navigation';
+import CurrencySelector from '@/components/CurrencySelector';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
+import { 
+  convertCurrency, 
+  needsCurrencyConversion, 
+  getCurrencyName, 
+  availableTargetCurrencies 
+} from '@/utils/currencyConverter';
 
 interface FinancialMetricsData {
   eps?: any;
@@ -70,6 +77,7 @@ const Index = () => {
   const [gptAvailable, setGptAvailable] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
   const [stockCurrency, setStockCurrency] = useState<string>('EUR');
+  const [targetCurrency, setTargetCurrency] = useState<string>('EUR');
 
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
@@ -79,6 +87,12 @@ const Index = () => {
     
     if (hasOpenAiApiKey()) {
       setActiveTab('gpt');
+    }
+
+    // Load saved target currency preference if exists
+    const savedTargetCurrency = localStorage.getItem('target_currency');
+    if (savedTargetCurrency) {
+      setTargetCurrency(savedTargetCurrency);
     }
   }, []);
 
@@ -105,10 +119,44 @@ const Index = () => {
     };
   }, []);
 
+  // Save target currency preference when it changes
+  useEffect(() => {
+    localStorage.setItem('target_currency', targetCurrency);
+    
+    // If we already have stock data, recalculate with the new target currency
+    if (stockInfo && financialMetrics) {
+      updateCurrencyConversions(stockInfo.currency);
+    }
+  }, [targetCurrency]);
+
+  const handleCurrencyChange = (newCurrency: string) => {
+    setTargetCurrency(newCurrency);
+  };
+
+  const updateCurrencyConversions = (sourceCurrency: string) => {
+    if (!financialMetrics || !overallRating) return;
+
+    // Recalculate metrics with new target currency
+    if (financialMetrics.metrics) {
+      const convertedMetrics = convertFinancialMetrics(financialMetrics.metrics, sourceCurrency);
+      setFinancialMetrics({
+        ...financialMetrics,
+        metrics: convertedMetrics,
+        historicalData: convertHistoricalData(financialMetrics.historicalData, sourceCurrency)
+      });
+    }
+
+    // Recalculate overall rating with new target currency
+    if (overallRating) {
+      const updatedRating = convertOverallRating(overallRating, sourceCurrency);
+      setOverallRating(updatedRating);
+    }
+  };
+
   const convertFinancialMetrics = (metrics: any, currency: string) => {
     if (!metrics || !currency) return metrics;
     
-    if (!needsCurrencyConversion(currency)) return metrics;
+    if (!needsCurrencyConversion(currency, targetCurrency)) return metrics;
     
     if (Array.isArray(metrics)) {
       return metrics.map(metric => {
@@ -123,15 +171,16 @@ const Index = () => {
           return metric;
         }
         
-        const originalValue = metric.value;
+        const originalValue = metric.originalValue || metric.value;
+        const originalCurrency = metric.originalCurrency || currency;
         
-        const convertedValue = convertCurrency(metric.value, currency, 'EUR');
+        const convertedValue = convertCurrency(originalValue, originalCurrency, targetCurrency);
         
         return {
           ...metric,
           value: convertedValue,
           originalValue: originalValue,
-          originalCurrency: currency
+          originalCurrency: originalCurrency
         };
       });
     }
@@ -140,25 +189,62 @@ const Index = () => {
   };
 
   const convertHistoricalData = (historicalData: any, currency: string) => {
-    if (!historicalData || !currency || !needsCurrencyConversion(currency)) return historicalData;
+    if (!historicalData || !currency || !needsCurrencyConversion(currency, targetCurrency)) return historicalData;
     
     return {
-      revenue: historicalData.revenue ? historicalData.revenue.map((item: any) => ({
-        ...item,
-        originalValue: item.value,
-        value: convertCurrency(item.value, currency, 'EUR')
-      })) : [],
-      earnings: historicalData.earnings ? historicalData.earnings.map((item: any) => ({
-        ...item,
-        originalValue: item.value,
-        value: convertCurrency(item.value, currency, 'EUR')
-      })) : [],
-      eps: historicalData.eps ? historicalData.eps.map((item: any) => ({
-        ...item,
-        originalValue: item.value,
-        value: convertCurrency(item.value, currency, 'EUR')
-      })) : []
+      revenue: historicalData.revenue ? historicalData.revenue.map((item: any) => {
+        const originalValue = item.originalValue || item.value;
+        return {
+          ...item,
+          originalValue: originalValue,
+          value: convertCurrency(originalValue, currency, targetCurrency)
+        };
+      }) : [],
+      earnings: historicalData.earnings ? historicalData.earnings.map((item: any) => {
+        const originalValue = item.originalValue || item.value;
+        return {
+          ...item,
+          originalValue: originalValue,
+          value: convertCurrency(originalValue, currency, targetCurrency)
+        };
+      }) : [],
+      eps: historicalData.eps ? historicalData.eps.map((item: any) => {
+        const originalValue = item.originalValue || item.value;
+        return {
+          ...item,
+          originalValue: originalValue,
+          value: convertCurrency(originalValue, currency, targetCurrency)
+        };
+      }) : []
     };
+  };
+
+  const convertOverallRating = (rating: OverallRatingData, currency: string): OverallRatingData => {
+    if (!rating || !needsCurrencyConversion(currency, targetCurrency)) return rating;
+    
+    const updatedRating: OverallRatingData = { ...rating };
+    
+    // Store original values if not already stored
+    const originalIntrinsicValue = updatedRating.originalIntrinsicValue || updatedRating.intrinsicValue;
+    const originalBestBuyPrice = updatedRating.originalBestBuyPrice || updatedRating.bestBuyPrice;
+    const originalPrice = updatedRating.originalPrice || updatedRating.currentPrice;
+    const originalCurrency = updatedRating.originalCurrency || currency;
+    
+    // Convert values to target currency
+    updatedRating.intrinsicValue = convertCurrency(originalIntrinsicValue, originalCurrency, targetCurrency);
+    updatedRating.bestBuyPrice = convertCurrency(originalBestBuyPrice, originalCurrency, targetCurrency);
+    updatedRating.currentPrice = convertCurrency(originalPrice, originalCurrency, targetCurrency);
+    
+    // Store original values and currency for transparency
+    updatedRating.originalIntrinsicValue = originalIntrinsicValue;
+    updatedRating.originalBestBuyPrice = originalBestBuyPrice;
+    updatedRating.originalPrice = originalPrice;
+    updatedRating.originalCurrency = originalCurrency;
+    
+    // Update display currency
+    updatedRating.currency = targetCurrency;
+    
+    return updatedRating;
   };
 
   const handleSearch = async (ticker: string) => {
@@ -230,27 +316,8 @@ const Index = () => {
         }
       }
       
-      if (rating && needsCurrencyConversion(stockCurrency)) {
-        const updatedRating: OverallRatingData = { ...rating };
-        
-        if (updatedRating.intrinsicValue) {
-          updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
-          updatedRating.intrinsicValue = convertCurrency(updatedRating.intrinsicValue, stockCurrency, 'EUR');
-        }
-        if (updatedRating.bestBuyPrice) {
-          updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
-          updatedRating.bestBuyPrice = convertCurrency(updatedRating.bestBuyPrice, stockCurrency, 'EUR');
-        }
-        if (updatedRating.currentPrice) {
-          updatedRating.originalPrice = updatedRating.currentPrice;
-          updatedRating.currentPrice = convertCurrency(updatedRating.currentPrice, stockCurrency, 'EUR');
-        }
-        
-        if (updatedRating.currency !== 'EUR') {
-          updatedRating.originalCurrency = updatedRating.currency;
-          updatedRating.currency = 'EUR';
-        }
-        
+      if (rating && needsCurrencyConversion(stockCurrency, targetCurrency)) {
+        const updatedRating = convertOverallRating(rating, stockCurrency);
         setOverallRating(updatedRating);
       } else {
         setOverallRating(rating);
@@ -331,20 +398,23 @@ const Index = () => {
           </Alert>
         </div>
       )}
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
+        <CurrencySelector selectedCurrency={targetCurrency} onCurrencyChange={handleCurrencyChange} />
+      </div>
       
-      {stockInfo && stockInfo.currency && needsCurrencyConversion(stockInfo.currency) && (
+      {stockInfo && stockInfo.currency && needsCurrencyConversion(stockInfo.currency, targetCurrency) && (
         <Alert className="mb-4 bg-yellow-50 border-yellow-200">
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
           <AlertTitle className="text-yellow-700">Währungsumrechnung aktiviert</AlertTitle>
           <AlertDescription className="text-yellow-600">
-            Die Daten dieser Aktie werden in <strong>{stockInfo.currency}</strong> angegeben. 
-            Für eine korrekte Analyse werden alle finanziellen Kennzahlen automatisch in EUR umgerechnet.
+            Die Daten dieser Aktie werden in <strong>{stockInfo.currency}</strong> ({getCurrencyName(stockInfo.currency)}) angegeben. 
+            Für eine korrekte Analyse werden alle finanziellen Kennzahlen automatisch in <strong>{targetCurrency}</strong> umgerechnet.
             Die Originalwerte werden zur Transparenz ebenfalls angezeigt.
           </AlertDescription>
         </Alert>
       )}
-      
-      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
       
       {error && (
         <Alert variant="destructive" className="mb-6">
@@ -415,7 +485,7 @@ const Index = () => {
               <FinancialMetrics 
                 metrics={financialMetrics.metrics} 
                 historicalData={financialMetrics.historicalData} 
-                currency={stockCurrency}
+                currency={targetCurrency}
               />
             </div>
           )}
@@ -425,7 +495,7 @@ const Index = () => {
               <OverallRating 
                 rating={{
                   ...overallRating,
-                  originalCurrency: needsCurrencyConversion(stockCurrency) ? stockCurrency : undefined
+                  originalCurrency: needsCurrencyConversion(stockCurrency, targetCurrency) ? stockCurrency : undefined
                 } as OverallRatingData} 
               />
             </div>

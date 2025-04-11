@@ -20,6 +20,17 @@ const exchangeRates: Record<string, number> = {
   // Add more currencies as needed
 };
 
+// List of available target currencies
+export const availableTargetCurrencies = [
+  { code: 'EUR', name: 'Euro (€)' },
+  { code: 'USD', name: 'US-Dollar ($)' },
+  { code: 'GBP', name: 'Britisches Pfund (£)' },
+  { code: 'CHF', name: 'Schweizer Franken (CHF)' },
+  { code: 'CAD', name: 'Kanadischer Dollar (CAD)' },
+  { code: 'JPY', name: 'Japanischer Yen (¥)' },
+  { code: 'AUD', name: 'Australischer Dollar (AUD)' }
+];
+
 /**
  * Convert a value from source currency to target currency
  * @param value The value to convert
@@ -52,18 +63,15 @@ export const convertCurrency = (
     return numericValue;
   }
   
-  // If target is EUR, convert directly using the fromCurrency rate
-  if (toCurrency === 'EUR') {
-    return numericValue * exchangeRates[fromCurrency];
-  }
-  
-  // If source is EUR, convert directly using the inverse of toCurrency rate
-  if (fromCurrency === 'EUR') {
-    return numericValue / exchangeRates[toCurrency];
-  }
-  
-  // Otherwise convert from source to EUR first, then from EUR to target
+  // First convert to EUR (our base currency for conversion)
   const valueInEUR = numericValue * exchangeRates[fromCurrency];
+  
+  // If target is EUR, we're done
+  if (toCurrency === 'EUR') {
+    return valueInEUR;
+  }
+  
+  // Otherwise convert from EUR to target currency
   return valueInEUR / exchangeRates[toCurrency];
 };
 
@@ -105,6 +113,18 @@ export const formatCurrency = (
     case 'GBP':
       formattedValue = `£${numericValue.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`;
       break;
+    case 'JPY':
+      formattedValue = `${numericValue.toLocaleString('ja-JP', { maximumFractionDigits: 0 })} ¥`;
+      break;
+    case 'CHF':
+      formattedValue = `${numericValue.toLocaleString('de-CH', { maximumFractionDigits: 2 })} CHF`;
+      break;
+    case 'CAD':
+      formattedValue = `$${numericValue.toLocaleString('en-CA', { maximumFractionDigits: 2 })} CAD`;
+      break;
+    case 'AUD':
+      formattedValue = `$${numericValue.toLocaleString('en-AU', { maximumFractionDigits: 2 })} AUD`;
+      break;
     default:
       formattedValue = `${numericValue.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${currency}`;
   }
@@ -124,11 +144,17 @@ export const formatCurrency = (
       case 'GBP':
         origFormattedValue = `£${origNumericValue.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`;
         break;
+      case 'JPY':
+        origFormattedValue = `${origNumericValue.toLocaleString('ja-JP', { maximumFractionDigits: 0 })} ¥`;
+        break;
       default:
         origFormattedValue = `${origNumericValue.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${originalCurrency}`;
     }
     
-    return `${formattedValue} (umgerechnet aus ${origFormattedValue})`;
+    const exchangeRateInfo = originalCurrency && currency ? 
+      ` (Wechselkurs: 1 ${currency} ≈ ${(1/exchangeRates[originalCurrency]*exchangeRates[currency]).toFixed(2)} ${originalCurrency})` : '';
+    
+    return `${formattedValue} (umgerechnet aus ${origFormattedValue}${exchangeRateInfo})`;
   }
   
   return formattedValue;
@@ -137,11 +163,15 @@ export const formatCurrency = (
 /**
  * Check if we need to convert this value from its original currency
  * @param currency The currency code to check
+ * @param targetCurrency The target currency code
  * @returns True if conversion is needed
  */
-export const needsCurrencyConversion = (currency: string): boolean => {
+export const needsCurrencyConversion = (
+  currency: string, 
+  targetCurrency: string = 'EUR'
+): boolean => {
   if (!currency) return false;
-  return currency !== 'EUR';
+  return currency !== targetCurrency;
 };
 
 /**
@@ -166,4 +196,28 @@ export const getCurrencyName = (currencyCode: string): string => {
   };
   
   return currencyNames[currencyCode] || currencyCode;
+};
+
+/**
+ * Get the currency symbol
+ * @param currencyCode The ISO currency code
+ * @returns Currency symbol
+ */
+export const getCurrencySymbol = (currencyCode: string): string => {
+  const symbols: Record<string, string> = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'KRW': '₩',
+    'CNY': '¥',
+    'HKD': 'HK$',
+    'CHF': 'CHF',
+    'CAD': 'C$',
+    'AUD': 'A$',
+    'MXN': 'MX$',
+    'SGD': 'S$'
+  };
+  
+  return symbols[currencyCode] || currencyCode;
 };

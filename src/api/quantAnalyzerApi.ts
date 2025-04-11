@@ -1,4 +1,6 @@
+
 import axios from 'axios';
+import { convertCurrency } from '@/utils/currencyConverter';
 
 // Financial Modeling Prep API Key
 const FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
@@ -148,6 +150,12 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       const pastEps = safeValue(incomeStatements[2].eps);
       
       if (currentEps !== null && pastEps !== null && pastEps !== 0) {
+        // Store original EPS values in originalValues
+        originalValues.eps = {
+          current: currentEps,
+          past: pastEps
+        };
+        
         epsGrowth = ((currentEps - pastEps) / Math.abs(pastEps)) * 100;
         epsGrowthPass = epsGrowth > 0;
       }
@@ -162,6 +170,12 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       const pastRevenue = safeValue(incomeStatements[2].revenue);
       
       if (currentRevenue !== null && pastRevenue !== null && pastRevenue !== 0) {
+        // Store original revenue values in originalValues
+        originalValues.revenue = {
+          current: currentRevenue,
+          past: pastRevenue
+        };
+        
         revenueGrowth = ((currentRevenue - pastRevenue) / pastRevenue) * 100;
         revenueGrowthPass = revenueGrowth > 0;
       }
@@ -269,7 +283,7 @@ export const analyzeExchange = async (exchange: string, limit: number = 500) => 
 };
 
 // Exportieren der CSV-Datei
-export const exportToCsv = (results: QuantAnalysisResult[]) => {
+export const exportToCsv = (results: QuantAnalysisResult[], targetCurrency: string = 'EUR') => {
   const headers = [
     'Symbol', 'Name', 'Exchange', 'Sector', 'Buffett Score',
     'ROE (%)', 'ROIC (%)', 'Net Margin (%)', 'EPS Growth (%)', 'Revenue Growth (%)',
@@ -277,25 +291,36 @@ export const exportToCsv = (results: QuantAnalysisResult[]) => {
     'Price', 'Currency'
   ];
   
-  const rows = results.map(result => [
-    result.symbol,
-    result.name,
-    result.exchange,
-    result.sector,
-    result.buffettScore,
-    result.criteria.roe.value !== null ? result.criteria.roe.value.toFixed(2) : 'N/A',
-    result.criteria.roic.value !== null ? result.criteria.roic.value.toFixed(2) : 'N/A',
-    result.criteria.netMargin.value !== null ? result.criteria.netMargin.value.toFixed(2) : 'N/A',
-    result.criteria.epsGrowth.value !== null ? result.criteria.epsGrowth.value.toFixed(2) : 'N/A',
-    result.criteria.revenueGrowth.value !== null ? result.criteria.revenueGrowth.value.toFixed(2) : 'N/A',
-    result.criteria.interestCoverage.value !== null ? result.criteria.interestCoverage.value.toFixed(2) : 'N/A',
-    result.criteria.debtRatio.value !== null ? result.criteria.debtRatio.value.toFixed(2) : 'N/A',
-    result.criteria.pe.value !== null ? result.criteria.pe.value.toFixed(2) : 'N/A',
-    result.criteria.pb.value !== null ? result.criteria.pb.value.toFixed(2) : 'N/A',
-    result.criteria.dividendYield.value !== null ? result.criteria.dividendYield.value.toFixed(2) : 'N/A',
-    result.price.toFixed(2),
-    result.currency
-  ]);
+  const rows = results.map(result => {
+    // Convert price to target currency if needed
+    let price = result.price;
+    let displayCurrency = result.currency;
+    
+    if (result.currency !== targetCurrency) {
+      price = convertCurrency(result.price, result.currency, targetCurrency);
+      displayCurrency = targetCurrency;
+    }
+    
+    return [
+      result.symbol,
+      result.name,
+      result.exchange,
+      result.sector,
+      result.buffettScore,
+      result.criteria.roe.value !== null ? result.criteria.roe.value.toFixed(2) : 'N/A',
+      result.criteria.roic.value !== null ? result.criteria.roic.value.toFixed(2) : 'N/A',
+      result.criteria.netMargin.value !== null ? result.criteria.netMargin.value.toFixed(2) : 'N/A',
+      result.criteria.epsGrowth.value !== null ? result.criteria.epsGrowth.value.toFixed(2) : 'N/A',
+      result.criteria.revenueGrowth.value !== null ? result.criteria.revenueGrowth.value.toFixed(2) : 'N/A',
+      result.criteria.interestCoverage.value !== null ? result.criteria.interestCoverage.value.toFixed(2) : 'N/A',
+      result.criteria.debtRatio.value !== null ? result.criteria.debtRatio.value.toFixed(2) : 'N/A',
+      result.criteria.pe.value !== null ? result.criteria.pe.value.toFixed(2) : 'N/A',
+      result.criteria.pb.value !== null ? result.criteria.pb.value.toFixed(2) : 'N/A',
+      result.criteria.dividendYield.value !== null ? result.criteria.dividendYield.value.toFixed(2) : 'N/A',
+      price.toFixed(2),
+      displayCurrency
+    ];
+  });
   
   const csvContent = [
     headers.join(','),

@@ -16,7 +16,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { convertCurrency, formatCurrency, needsCurrencyConversion, getCurrencyName } from '@/utils/currencyConverter';
+import { 
+  convertCurrency, 
+  formatCurrency, 
+  needsCurrencyConversion, 
+  getCurrencyName,
+  getCurrencySymbol
+} from '@/utils/currencyConverter';
 
 interface FinancialMetric {
   name: string;
@@ -160,11 +166,16 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   let cleanedDisplayValue = displayValue;
   
   if (!isValueMissing) {
-    if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency)) {
+    if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency, currency)) {
       // Format correctly showing both converted and original value
       const numericValue = typeof displayValue === 'number' ? displayValue : 
                       typeof displayValue === 'string' ? parseFloat(displayValue) : 0;
-      cleanedDisplayValue = formatCurrency(numericValue, currency, true, originalValue, originalCurrency);
+      
+      if (name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum') || name.includes('%')) {
+        cleanedDisplayValue = `${numericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+      } else {
+        cleanedDisplayValue = formatCurrency(numericValue, currency, true, originalValue, originalCurrency);
+      }
     } else if (typeof displayValue === 'string') {
       cleanedDisplayValue = displayValue
         .replace(/USD USD/g, 'USD')
@@ -174,7 +185,7 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
     } else {
       const numericValue = typeof displayValue === 'number' ? displayValue : 0;
       
-      if (name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum')) {
+      if (name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum') || name.includes('%')) {
         cleanedDisplayValue = `${numericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
       } else {
         cleanedDisplayValue = formatCurrency(displayValue, currency);
@@ -239,22 +250,22 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
   if (!metrics) return null;
   
   const metricsArray = Array.isArray(metrics) ? metrics : [];
-  const showCurrencyWarning = currency && currency !== 'EUR' && needsCurrencyConversion(currency);
+  const hasConvertedData = metricsArray.some(metric => metric.originalCurrency && metric.originalCurrency !== currency);
   
   return (
     <div className="animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
       
-      {showCurrencyWarning && (
+      {hasConvertedData && (
         <Card className="p-4 mb-4 bg-yellow-50 border-yellow-200">
           <div className="flex items-start gap-2">
             <AlertTriangle className="text-yellow-500 h-5 w-5 mt-0.5" />
             <div>
               <h3 className="font-medium text-yellow-700">Währungshinweis</h3>
               <p className="text-yellow-600 text-sm">
-                Die Finanzdaten dieser Aktie werden in <strong>{currency}</strong> ({getCurrencyName(currency)}) angegeben und wurden automatisch in Euro umgerechnet.
-                Der angezeigte innere Wert basiert auf der realen Kaufkraft in Euro, nicht auf falsch interpretierten Zahlen.
-                Die Originalwerte in {currency} werden in Klammern angezeigt.
+                Die Finanzdaten dieser Aktie werden in einer anderen Währung als {getCurrencyName(currency)} angegeben und wurden automatisch in {getCurrencySymbol(currency)} umgerechnet.
+                Der angezeigte innere Wert basiert auf der realen Kaufkraft in {currency}, nicht auf falsch interpretierten Zahlen.
+                Die Originalwerte werden in Klammern angezeigt.
               </p>
             </div>
           </div>
@@ -300,9 +311,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             <TableHeader>
               <TableRow>
                 <TableHead>Jahr</TableHead>
-                <TableHead className="text-right">Umsatz (Mio. {currency !== 'EUR' ? 'EUR' : currency})</TableHead>
-                <TableHead className="text-right">Gewinn (Mio. {currency !== 'EUR' ? 'EUR' : currency})</TableHead>
-                <TableHead className="text-right">EPS ({currency !== 'EUR' ? 'EUR' : currency})</TableHead>
+                <TableHead className="text-right">Umsatz (Mio. {currency})</TableHead>
+                <TableHead className="text-right">Gewinn (Mio. {currency})</TableHead>
+                <TableHead className="text-right">EPS ({currency})</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -314,19 +325,25 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                 let earningsValue = earningsDataForYear?.value;
                 let epsValue = epsDataForYear?.value;
                 
-                const originalRevenueValue = item.originalValue || item.value;
-                const originalEarningsValue = earningsDataForYear?.originalValue || earningsDataForYear?.value;
-                const originalEpsValue = epsDataForYear?.originalValue || epsDataForYear?.value;
+                const originalRevenueValue = item.originalValue !== undefined ? item.originalValue : item.value;
+                const originalEarningsValue = earningsDataForYear?.originalValue !== undefined ? earningsDataForYear?.originalValue : earningsDataForYear?.value;
+                const originalEpsValue = epsDataForYear?.originalValue !== undefined ? epsDataForYear?.originalValue : epsDataForYear?.value;
                 
-                const showOriginal = currency !== 'EUR' && needsCurrencyConversion(currency);
+                const showOriginal = hasConvertedData && 
+                                  ((item.originalValue !== undefined && item.originalValue !== item.value) ||
+                                   (earningsDataForYear?.originalValue !== undefined && earningsDataForYear?.originalValue !== earningsDataForYear?.value) ||
+                                   (epsDataForYear?.originalValue !== undefined && epsDataForYear?.originalValue !== epsDataForYear?.value));
+                
+                // Get original currency from any of the items that have it
+                const anyOriginalCurrency = metricsArray.find(m => m.originalCurrency)?.originalCurrency;
                 
                 return (
                   <TableRow key={item.year || i}>
                     <TableCell>{item.year || 'N/A'}</TableCell>
                     <TableCell className="text-right">
                       {typeof revenueValue === 'number' && revenueValue !== 0 
-                        ? (showOriginal 
-                           ? `${revenueValue.toFixed(2)} (${originalRevenueValue.toFixed(2)} ${currency})` 
+                        ? (showOriginal && originalRevenueValue !== undefined
+                           ? `${revenueValue.toFixed(2)} (${originalRevenueValue.toFixed(2)} ${anyOriginalCurrency})` 
                            : revenueValue.toFixed(2))
                         : 'N/A'}
                     </TableCell>
@@ -334,8 +351,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                       {earningsValue && 
                       typeof earningsValue === 'number' && 
                       earningsValue !== 0
-                        ? (showOriginal 
-                           ? `${earningsValue.toFixed(2)} (${originalEarningsValue.toFixed(2)} ${currency})` 
+                        ? (showOriginal && originalEarningsValue !== undefined
+                           ? `${earningsValue.toFixed(2)} (${originalEarningsValue.toFixed(2)} ${anyOriginalCurrency})` 
                            : earningsValue.toFixed(2)) 
                         : 'N/A'}
                     </TableCell>
@@ -343,8 +360,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                       {epsValue && 
                       typeof epsValue === 'number' && 
                       epsValue !== 0
-                        ? (showOriginal 
-                           ? `${epsValue.toFixed(2)} (${originalEpsValue.toFixed(2)} ${currency})` 
+                        ? (showOriginal && originalEpsValue !== undefined
+                           ? `${epsValue.toFixed(2)} (${originalEpsValue.toFixed(2)} ${anyOriginalCurrency})` 
                            : epsValue.toFixed(2)) 
                         : 'N/A'}
                     </TableCell>
@@ -356,10 +373,10 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
           
           <div className="mt-4 text-sm text-buffett-subtext">
             <p>Hinweis: 'N/A' bedeutet, dass keine Daten verfügbar sind.</p>
-            {needsCurrencyConversion(currency) && (
+            {hasConvertedData && (
               <p className="mt-2 font-medium text-yellow-600">
-                Diese Werte wurden aus {currency} ({getCurrencyName(currency)}) in EUR umgerechnet, um eine korrekte Bewertung zu gewährleisten.
-                Die Originalwerte in {currency} werden in Klammern angezeigt.
+                Diese Werte wurden aus der Originalwährung in {currency} ({getCurrencyName(currency)}) umgerechnet, um eine korrekte Bewertung zu gewährleisten.
+                Die Originalwerte werden in Klammern angezeigt.
               </p>
             )}
             <p className="mt-2">
