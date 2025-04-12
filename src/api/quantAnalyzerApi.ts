@@ -119,6 +119,14 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     const stockCurrency = companyProfile.currency || 'USD';
     console.log(`Analyzing ${ticker} with currency: ${stockCurrency}`);
     
+    // Special logging for Korean stocks
+    if (stockCurrency === 'KRW') {
+      console.log(`🇰🇷 KOREAN STOCK DETECTED: ${ticker}`);
+      console.log(`Exchange rate used: 1 KRW = ${exchangeRates['KRW']} EUR`);
+      console.log(`Current price: ${quoteData?.price} KRW`);
+      console.log(`EPS value: ${metrics?.epsTTM || ratios?.epsTTM || 'N/A'} KRW`);
+    }
+    
     // Store original values before any currency conversion
     const originalValues = {
       roe: safeValue(ratios.returnOnEquityTTM) * 100,
@@ -127,7 +135,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       price: quoteData ? quoteData.price : 0,
       pe: safeValue(ratios.priceEarningsRatioTTM),
       pb: safeValue(ratios.priceToBookRatioTTM),
-      eps: null as (number | null | { current: number; past: number }),
+      eps: metrics?.epsTTM || ratios?.epsTTM || null,
       revenue: null as (number | null | { current: number; past: number })
     };
 

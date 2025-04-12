@@ -1,4 +1,3 @@
-
 /**
  * Currency conversion utility for financial data
  */
@@ -55,6 +54,7 @@ export const convertCurrency = (
   
   // Check if conversion is needed
   if (fromCurrency === toCurrency) {
+    console.log(`No conversion needed: ${numericValue} ${fromCurrency} (same currencies)`);
     return numericValue;
   }
   
@@ -64,9 +64,11 @@ export const convertCurrency = (
     return numericValue;
   }
   
-  // Add debug log for KRW conversion
+  // Enhanced logging for KRW conversions, which often cause issues
   if (fromCurrency === 'KRW') {
-    console.log(`KRW conversion: ${numericValue} KRW → ${numericValue * exchangeRates[fromCurrency]} EUR`);
+    console.log(`KRW conversion START: ${numericValue} KRW`);
+    console.log(`Exchange rate: 1 KRW = ${exchangeRates[fromCurrency]} EUR`);
+    console.log(`Calculation: ${numericValue} × ${exchangeRates[fromCurrency]} = ${numericValue * exchangeRates[fromCurrency]} EUR`);
   }
   
   // First convert to EUR (our base currency for conversion)
@@ -74,11 +76,22 @@ export const convertCurrency = (
   
   // If target is EUR, we're done
   if (toCurrency === 'EUR') {
+    console.log(`Conversion result: ${numericValue} ${fromCurrency} → ${valueInEUR.toFixed(4)} EUR`);
+    
+    // Sanity check for KRW to EUR conversion
+    if (fromCurrency === 'KRW' && valueInEUR > 1000) {
+      console.warn(`⚠️ POTENTIALLY INCORRECT CONVERSION: ${numericValue} KRW → ${valueInEUR.toFixed(2)} EUR`);
+      console.warn(`This value seems unusually high. For reference, 1,000,000 KRW ≈ 670 EUR`);
+    }
+    
     return valueInEUR;
   }
   
   // Otherwise convert from EUR to target currency
-  return valueInEUR / exchangeRates[toCurrency];
+  const result = valueInEUR / exchangeRates[toCurrency];
+  
+  console.log(`Conversion result: ${numericValue} ${fromCurrency} → ${valueInEUR.toFixed(4)} EUR → ${result.toFixed(4)} ${toCurrency}`);
+  return result;
 };
 
 /**
