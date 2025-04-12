@@ -78,7 +78,6 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('standard');
   const [stockCurrency, setStockCurrency] = useState<string>('EUR');
   const [targetCurrency, setTargetCurrency] = useState<string>('EUR');
-  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
@@ -281,14 +280,6 @@ const Index = () => {
       
       const stockCurrency = info?.currency || 'EUR';
       
-      if (rawMetricsData) {
-        console.log('Raw Metrics Currency:', stockCurrency);
-        if (rawMetricsData.freeCashFlow) {
-          console.log('Free Cash Flow:', rawMetricsData.freeCashFlow);
-          console.log('Free Cash Flow Currency:', stockCurrency);
-        }
-      }
-      
       const metricsData: FinancialMetricsData = {
         ...rawMetricsData,
         metrics: [
@@ -330,10 +321,6 @@ const Index = () => {
         title: "Analyse abgeschlossen",
         description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
       });
-      
-      if (stockCurrency !== 'EUR') {
-        setShowDebug(true);
-      }
     } catch (error) {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
@@ -455,6 +442,15 @@ const Index = () => {
         </div>
       ) : (
         <>
+          {stockInfo && (
+            <DebugApiData 
+              stockInfo={stockInfo}
+              buffettCriteria={buffettCriteria}
+              financialMetrics={financialMetrics}
+              overallRating={overallRating}
+            />
+          )}
+          
           {buffettCriteria && (
             <div className="mb-10">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -505,17 +501,6 @@ const Index = () => {
             </div>
           )}
         </>
-      )}
-      
-      {showDebug && (
-        <DebugApiData 
-          stockInfo={stockInfo}
-          buffettCriteria={buffettCriteria}
-          financialMetrics={financialMetrics}
-          overallRating={overallRating}
-          stockCurrency={stockCurrency}
-          targetCurrency={targetCurrency}
-        />
       )}
       
       <footer className="mt-12 pt-8 border-t border-gray-200 text-buffett-subtext text-sm text-center">

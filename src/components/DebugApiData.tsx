@@ -1,158 +1,89 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
-} from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { availableTargetCurrencies, exchangeRates } from '@/utils/currencyConverter';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DebugApiDataProps {
-  stockInfo: any | null;
-  buffettCriteria: any | null;
-  financialMetrics: any | null;
-  overallRating: any | null;
-  stockCurrency: string;
-  targetCurrency: string;
+  stockInfo?: any;
+  buffettCriteria?: any;
+  financialMetrics?: any;
+  overallRating?: any;
 }
 
 const DebugApiData: React.FC<DebugApiDataProps> = ({
   stockInfo,
   buffettCriteria,
   financialMetrics,
-  overallRating,
-  stockCurrency,
-  targetCurrency
+  overallRating
 }) => {
-  const [isVisible, setIsVisible] = React.useState(false);
-  
-  if (!stockInfo) {
-    return null;
-  }
-  
-  const renderJsonTree = (data: any) => {
-    return (
-      <pre className="bg-gray-100 p-4 rounded text-xs overflow-auto max-h-96">
-        {JSON.stringify(data, null, 2)}
-      </pre>
-    );
+  // Function to format JSON data
+  const formatData = (data: any) => {
+    if (!data) return 'No data available';
+    try {
+      return JSON.stringify(data, null, 2);
+    } catch (error) {
+      return `Error formatting data: ${error}`;
+    }
   };
-  
+
   return (
-    <Card className="mb-10 p-4 bg-gray-50">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">API Debug Data</h2>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => setIsVisible(!isVisible)}
-        >
-          {isVisible ? 'Hide Details' : 'Show Details'}
-        </Button>
+    <Card className="p-4 my-6 bg-gray-50 border-gray-200">
+      <h2 className="text-xl font-semibold mb-4">Debug: API Data</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h3 className="text-md font-semibold mb-2">Stock Info</h3>
+          <ScrollArea className="h-96 rounded bg-white p-2 border border-gray-200">
+            <pre className="text-xs">{formatData(stockInfo)}</pre>
+          </ScrollArea>
+        </div>
+        
+        <div>
+          <h3 className="text-md font-semibold mb-2">Buffett Criteria</h3>
+          <ScrollArea className="h-96 rounded bg-white p-2 border border-gray-200">
+            <pre className="text-xs">{formatData(buffettCriteria)}</pre>
+          </ScrollArea>
+        </div>
+        
+        <div>
+          <h3 className="text-md font-semibold mb-2">Financial Metrics</h3>
+          <ScrollArea className="h-96 rounded bg-white p-2 border border-gray-200">
+            <pre className="text-xs">{formatData(financialMetrics)}</pre>
+          </ScrollArea>
+        </div>
+        
+        <div>
+          <h3 className="text-md font-semibold mb-2">Overall Rating</h3>
+          <ScrollArea className="h-96 rounded bg-white p-2 border border-gray-200">
+            <pre className="text-xs">{formatData(overallRating)}</pre>
+          </ScrollArea>
+        </div>
+        
+        <div className="md:col-span-2">
+          <h3 className="text-md font-semibold mb-2">Raw API Exchange Rates</h3>
+          <ScrollArea className="h-48 rounded bg-white p-2 border border-gray-200">
+            <pre className="text-xs">{formatData(
+              {
+                "USD": 0.92, // 1 USD = 0.92 EUR
+                "EUR": 1.0,  // 1 EUR = 1 EUR
+                "GBP": 1.17, // 1 GBP = 1.17 EUR
+                "JPY": 0.0061, // 1 JPY = 0.0061 EUR
+                "KRW": 0.00067, // 1 KRW = 0.00067 EUR (approx. 1 EUR = 1490 KRW)
+                "CNY": 0.13, // 1 CNY = 0.13 EUR
+                "HKD": 0.12, // 1 HKD = 0.12 EUR
+                "CHF": 1.0, // 1 CHF = 1 EUR
+                "CAD": 0.68, // 1 CAD = 0.68 EUR
+                "AUD": 0.61 // 1 AUD = 0.61 EUR
+              }
+            )}</pre>
+          </ScrollArea>
+        </div>
       </div>
       
-      {isVisible && (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div className="p-2 border rounded">
-              <h3 className="text-md font-medium mb-2">Currency Information</h3>
-              <div className="space-y-2 text-sm">
-                <p><strong>Stock Currency:</strong> {stockCurrency}</p>
-                <p><strong>Target Currency:</strong> {targetCurrency}</p>
-                <p><strong>Original Price:</strong> {stockInfo.price} {stockCurrency}</p>
-                {overallRating && (
-                  <>
-                    <p><strong>Intrinsic Value:</strong> {overallRating.intrinsicValue} {overallRating.currency}</p>
-                    {overallRating.originalIntrinsicValue && (
-                      <p><strong>Original Intrinsic Value:</strong> {overallRating.originalIntrinsicValue} {overallRating.originalCurrency}</p>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-            
-            <div className="p-2 border rounded">
-              <h3 className="text-md font-medium mb-2">Exchange Rates</h3>
-              <div className="space-y-1 text-sm">
-                <p><strong>Available Currencies:</strong></p>
-                <ul className="list-disc pl-5 space-y-1">
-                  {availableTargetCurrencies.map(currency => (
-                    <li key={currency.code}>
-                      {currency.code} ({currency.name})
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-2"><strong>Current Exchange Rates (to EUR):</strong></p>
-                <ul className="list-disc pl-5 space-y-1">
-                  {Object.entries(exchangeRates).map(([code, rate]) => (
-                    <li key={code}>
-                      1 {code} = {rate} EUR
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-          
-          <Tabs defaultValue="stockInfo">
-            <TabsList className="mb-2">
-              <TabsTrigger value="stockInfo">Stock Info</TabsTrigger>
-              <TabsTrigger value="buffettCriteria">Buffett Criteria</TabsTrigger>
-              <TabsTrigger value="financialMetrics">Financial Metrics</TabsTrigger>
-              <TabsTrigger value="overallRating">Overall Rating</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="stockInfo">
-              {renderJsonTree(stockInfo)}
-            </TabsContent>
-            
-            <TabsContent value="buffettCriteria">
-              {buffettCriteria ? renderJsonTree(buffettCriteria) : <p>No data available</p>}
-            </TabsContent>
-            
-            <TabsContent value="financialMetrics">
-              {financialMetrics ? (
-                <Accordion type="single" collapsible>
-                  <AccordionItem value="metrics">
-                    <AccordionTrigger>Metrics</AccordionTrigger>
-                    <AccordionContent>
-                      {renderJsonTree(financialMetrics.metrics)}
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="historicalData">
-                    <AccordionTrigger>Historical Data</AccordionTrigger>
-                    <AccordionContent>
-                      {renderJsonTree(financialMetrics.historicalData)}
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="originalData">
-                    <AccordionTrigger>Original Raw Data</AccordionTrigger>
-                    <AccordionContent>
-                      {renderJsonTree(financialMetrics)}
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              ) : <p>No data available</p>}
-            </TabsContent>
-            
-            <TabsContent value="overallRating">
-              {overallRating ? renderJsonTree(overallRating) : <p>No data available</p>}
-            </TabsContent>
-          </Tabs>
-          
-          <div className="mt-4 p-2 bg-blue-50 rounded text-sm">
-            <p>
-              <strong>Note:</strong> This debug view displays raw data from the Financial Model Prep API 
-              and helps diagnose currency conversion issues. The currency displayed in the 
-              <code className="bg-blue-100 px-1 rounded">currency</code> field is what the API reports.
-            </p>
-          </div>
-        </>
-      )}
+      <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-sm">
+        <p><strong>Hinweis:</strong> Diese Debug-Ansicht zeigt die Rohdaten aus der Financial Modeling Prep API und die verwendeten Wechselkurse.</p>
+        <p>Alle in dieser Ansicht angezeigten Werte sind unformatiert und unbearbeitet, um Transparenz über die API-Daten zu bieten.</p>
+      </div>
     </Card>
   );
 };

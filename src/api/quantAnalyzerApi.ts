@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { convertCurrency, formatPercentage, isPercentageMetric } from '@/utils/currencyConverter';
 
@@ -9,14 +8,13 @@ const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 // Helper function for API requests
 const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
-    console.log(`Fetching data from FMP: ${endpoint}`, params);
     const response = await axios.get(`${BASE_URL}${endpoint}`, {
       params: {
         apikey: FMP_API_KEY,
         ...params
       }
     });
-    console.log(`FMP Response for ${endpoint}:`, response.data);
+    console.log(`API Response for ${endpoint}:`, response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching data from FMP:', error);
@@ -73,7 +71,6 @@ export interface QuantAnalysisResult {
     netMargin?: number | null;
     eps?: number | null | { current: number; past: number };
     revenue?: number | null | { current: number; past: number };
-    freeCashFlow?: number | null;
     pe?: number | null;
     pb?: number | null;
     price?: number | null;
@@ -97,16 +94,14 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       incomeStatements, 
       balanceSheets,
       keyMetrics,
-      quote,
-      cashFlowStatements  // Add cash flow statements
+      quote
     ] = await Promise.all([
       fetchFromFMP(`/ratios-ttm/${ticker}`),
       fetchFromFMP(`/profile/${ticker}`),
       fetchFromFMP(`/income-statement/${ticker}?limit=10`),
       fetchFromFMP(`/balance-sheet-statement/${ticker}?limit=5`),
       fetchFromFMP(`/key-metrics-ttm/${ticker}`),
-      fetchFromFMP(`/quote/${ticker}`),
-      fetchFromFMP(`/cash-flow-statement/${ticker}?limit=5`)  // Get cash flow data
+      fetchFromFMP(`/quote/${ticker}`)
     ]);
 
     // Check if we have enough data
@@ -119,21 +114,10 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     const ratios = ratiosTTM[0];
     const metrics = keyMetrics && keyMetrics.length > 0 ? keyMetrics[0] : null;
     const quoteData = quote && quote.length > 0 ? quote[0] : null;
-    const cashFlow = cashFlowStatements && cashFlowStatements.length > 0 ? cashFlowStatements[0] : null;
     
     // Extract currency info - crucial for correct currency handling
     const stockCurrency = companyProfile.currency || 'USD';
     console.log(`Analyzing ${ticker} with currency: ${stockCurrency}`);
-    
-    // Log cash flow data if available
-    if (cashFlow) {
-      console.log(`Cash Flow Data for ${ticker}:`, {
-        freeCashFlow: cashFlow.freeCashFlow,
-        operatingCashFlow: cashFlow.operatingCashFlow,
-        capitalExpenditure: cashFlow.capitalExpenditure,
-        currency: stockCurrency
-      });
-    }
     
     // Store original values before any currency conversion
     const originalValues = {
@@ -144,8 +128,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       pe: safeValue(ratios.priceEarningsRatioTTM),
       pb: safeValue(ratios.priceToBookRatioTTM),
       eps: null as (number | null | { current: number; past: number }),
-      revenue: null as (number | null | { current: number; past: number }),
-      freeCashFlow: cashFlow ? safeValue(cashFlow.freeCashFlow) : null
+      revenue: null as (number | null | { current: number; past: number })
     };
 
     // 1. ROE > 15% (ROE is a percentage value, no need for currency conversion)
@@ -240,7 +223,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       interestCoveragePass, debtRatioPass, pePass, pbPass, dividendYieldPass
     ].filter(Boolean).length;
 
-    return {
+    const result = {
       symbol: ticker,
       name: companyProfile.companyName,
       exchange: companyProfile.exchangeShortName,
@@ -262,6 +245,9 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       currency: stockCurrency, // Critical: use the actual stock currency from API
       originalValues
     };
+    
+    console.log(`Analysis result for ${ticker}:`, JSON.stringify(result, null, 2));
+    return result;
   } catch (error) {
     console.error(`Error analyzing ${ticker}:`, error);
     return null;
