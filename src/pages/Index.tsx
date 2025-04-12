@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -9,6 +8,7 @@ import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import Navigation from '@/components/Navigation';
 import CurrencySelector from '@/components/CurrencySelector';
+import DebugApiData from '@/components/DebugApiData';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
@@ -78,6 +78,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('standard');
   const [stockCurrency, setStockCurrency] = useState<string>('EUR');
   const [targetCurrency, setTargetCurrency] = useState<string>('EUR');
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
@@ -89,7 +90,6 @@ const Index = () => {
       setActiveTab('gpt');
     }
 
-    // Load saved target currency preference if exists
     const savedTargetCurrency = localStorage.getItem('target_currency');
     if (savedTargetCurrency) {
       setTargetCurrency(savedTargetCurrency);
@@ -119,11 +119,9 @@ const Index = () => {
     };
   }, []);
 
-  // Save target currency preference when it changes
   useEffect(() => {
     localStorage.setItem('target_currency', targetCurrency);
     
-    // If we already have stock data, recalculate with the new target currency
     if (stockInfo && financialMetrics) {
       updateCurrencyConversions(stockInfo.currency);
     }
@@ -136,7 +134,6 @@ const Index = () => {
   const updateCurrencyConversions = (sourceCurrency: string) => {
     if (!financialMetrics || !overallRating) return;
 
-    // Recalculate metrics with new target currency
     if (financialMetrics.metrics) {
       const convertedMetrics = convertFinancialMetrics(financialMetrics.metrics, sourceCurrency);
       setFinancialMetrics({
@@ -146,7 +143,6 @@ const Index = () => {
       });
     }
 
-    // Recalculate overall rating with new target currency
     if (overallRating) {
       const updatedRating = convertOverallRating(overallRating, sourceCurrency);
       setOverallRating(updatedRating);
@@ -224,24 +220,20 @@ const Index = () => {
     
     const updatedRating: OverallRatingData = { ...rating };
     
-    // Store original values if not already stored
     const originalIntrinsicValue = updatedRating.originalIntrinsicValue || updatedRating.intrinsicValue;
     const originalBestBuyPrice = updatedRating.originalBestBuyPrice || updatedRating.bestBuyPrice;
     const originalPrice = updatedRating.originalPrice || updatedRating.currentPrice;
     const originalCurrency = updatedRating.originalCurrency || currency;
     
-    // Convert values to target currency
     updatedRating.intrinsicValue = convertCurrency(originalIntrinsicValue, originalCurrency, targetCurrency);
     updatedRating.bestBuyPrice = convertCurrency(originalBestBuyPrice, originalCurrency, targetCurrency);
     updatedRating.currentPrice = convertCurrency(originalPrice, originalCurrency, targetCurrency);
     
-    // Store original values and currency for transparency
     updatedRating.originalIntrinsicValue = originalIntrinsicValue;
     updatedRating.originalBestBuyPrice = originalBestBuyPrice;
     updatedRating.originalPrice = originalPrice;
     updatedRating.originalCurrency = originalCurrency;
     
-    // Update display currency
     updatedRating.currency = targetCurrency;
     
     return updatedRating;
@@ -289,6 +281,14 @@ const Index = () => {
       
       const stockCurrency = info?.currency || 'EUR';
       
+      if (rawMetricsData) {
+        console.log('Raw Metrics Currency:', stockCurrency);
+        if (rawMetricsData.freeCashFlow) {
+          console.log('Free Cash Flow:', rawMetricsData.freeCashFlow);
+          console.log('Free Cash Flow Currency:', stockCurrency);
+        }
+      }
+      
       const metricsData: FinancialMetricsData = {
         ...rawMetricsData,
         metrics: [
@@ -330,6 +330,10 @@ const Index = () => {
         title: "Analyse abgeschlossen",
         description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
       });
+      
+      if (stockCurrency !== 'EUR') {
+        setShowDebug(true);
+      }
     } catch (error) {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
@@ -501,6 +505,17 @@ const Index = () => {
             </div>
           )}
         </>
+      )}
+      
+      {showDebug && (
+        <DebugApiData 
+          stockInfo={stockInfo}
+          buffettCriteria={buffettCriteria}
+          financialMetrics={financialMetrics}
+          overallRating={overallRating}
+          stockCurrency={stockCurrency}
+          targetCurrency={targetCurrency}
+        />
       )}
       
       <footer className="mt-12 pt-8 border-t border-gray-200 text-buffett-subtext text-sm text-center">

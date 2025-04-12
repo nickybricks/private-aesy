@@ -1,10 +1,11 @@
+
 /**
  * Currency conversion utility for financial data
  */
 
 // Exchange rates (ideally these would be fetched from an API)
 // In a production environment, these should be updated from an API like exchangerate.host or fixer.io
-const exchangeRates: Record<string, number> = {
+export const exchangeRates: Record<string, number> = {
   USD: 0.92, // 1 USD = 0.92 EUR
   EUR: 1.0,  // 1 EUR = 1 EUR
   GBP: 1.17, // 1 GBP = 1.17 EUR
@@ -281,16 +282,28 @@ export const isRealisticConversion = (
   
   // Special handling for KRW (Korean Won) conversions
   if (fromCurrency === 'KRW' && toCurrency === 'EUR') {
+    // Add detailed logging for KRW conversion
+    console.log(`KRW conversion check - Original: ${originalValue} KRW, Converted: ${convertedValue} EUR`);
+    
     if (convertedValue > 1000) {
       return {
         realistic: false,
         warning: `Ungewöhnlich hoher Wert (${convertedValue} ${toCurrency}) nach Umrechnung von ${originalValue} ${fromCurrency}. Möglicherweise fehlerhafte Währungsumrechnung. Koreanische Won haben einen niedrigen Wechselkurs (ca. 1 EUR = 1490 KRW).`
       };
     }
+    
+    // Check if the value is much smaller than expected (suggesting double conversion)
+    if (convertedValue < 0.0000001 && originalValue > 0) {
+      return {
+        realistic: false,
+        warning: `Ungewöhnlich niedriger Wert (${convertedValue} ${toCurrency}) nach Umrechnung von ${originalValue} ${fromCurrency}. Möglicherweise wurde der Wert mehrfach umgerechnet.`
+      };
+    }
   }
   
   // Detect potentially unrealistic EPS values
   if (convertedValue > 1000 && toCurrency === 'EUR') {
+    console.log(`High value detected - Original: ${originalValue} ${fromCurrency}, Converted: ${convertedValue} EUR`);
     return {
       realistic: false,
       warning: `Ungewöhnlich hoher Wert (${convertedValue} ${toCurrency}) nach Umrechnung von ${originalValue} ${fromCurrency}. Möglicherweise fehlerhafte Währungsumrechnung.`
