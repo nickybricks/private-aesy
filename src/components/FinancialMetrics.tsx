@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -22,7 +23,8 @@ import {
   needsCurrencyConversion, 
   getCurrencyName,
   getCurrencySymbol,
-  isPercentageMetric
+  isPercentageMetric,
+  isRealisticConversion
 } from '@/utils/currencyConverter';
 
 interface FinancialMetric {
@@ -167,6 +169,22 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   let cleanedDisplayValue = displayValue;
   const isPercentage = isPercentageMetric(name);
   
+  // Check if the converted value is potentially unrealistic
+  let conversionWarning = null;
+  
+  if (!isValueMissing && originalCurrency && originalValue && typeof value === 'number') {
+    const conversionCheck = isRealisticConversion(
+      typeof originalValue === 'number' ? originalValue : parseFloat(originalValue.toString()),
+      value,
+      originalCurrency,
+      currency
+    );
+    
+    if (!conversionCheck.realistic) {
+      conversionWarning = conversionCheck.warning;
+    }
+  }
+  
   if (!isValueMissing) {
     if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency, currency)) {
       // Format correctly showing both converted and original value
@@ -234,6 +252,13 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
           </span>
         )}
       </div>
+      
+      {conversionWarning && (
+        <div className="bg-orange-50 border border-orange-200 rounded p-2 mb-2 text-sm text-orange-800">
+          <AlertTriangle className="inline-block h-4 w-4 mr-1" />
+          {conversionWarning}
+        </div>
+      )}
       
       <div className="text-sm text-buffett-subtext mb-1">
         <span className="font-medium">Formel:</span> {formula}
@@ -346,31 +371,36 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                 // Get original currency from any of the items that have it
                 const anyOriginalCurrency = metricsArray.find(m => m.originalCurrency)?.originalCurrency;
                 
+                // Check if any value seems unrealistic
+                const revenueWarning = revenueValue > 1000000 && currency === 'EUR';
+                const earningsWarning = earningsValue && earningsValue > 100000 && currency === 'EUR';
+                const epsWarning = epsValue && epsValue > 1000 && currency === 'EUR';
+                
                 return (
                   <TableRow key={item.year || i}>
                     <TableCell>{item.year || 'N/A'}</TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
+                    <TableCell className={`text-right whitespace-nowrap ${revenueWarning ? 'text-orange-600 font-medium' : ''}`}>
                       {typeof revenueValue === 'number' && revenueValue !== 0 
                         ? (showOriginal && originalRevenueValue !== undefined
-                           ? `${revenueValue.toFixed(2)} ${currency} (${originalRevenueValue.toFixed(2)} ${anyOriginalCurrency}) 🔄` 
+                           ? `${revenueValue.toFixed(2)} ${currency} (urspr. ${originalRevenueValue.toFixed(2)} ${anyOriginalCurrency}) 🔄` 
                            : revenueValue.toFixed(2))
                         : 'N/A'}
                     </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
+                    <TableCell className={`text-right whitespace-nowrap ${earningsWarning ? 'text-orange-600 font-medium' : ''}`}>
                       {earningsValue && 
                       typeof earningsValue === 'number' && 
                       earningsValue !== 0
                         ? (showOriginal && originalEarningsValue !== undefined
-                           ? `${earningsValue.toFixed(2)} ${currency} (${originalEarningsValue.toFixed(2)} ${anyOriginalCurrency}) 🔄` 
+                           ? `${earningsValue.toFixed(2)} ${currency} (urspr. ${originalEarningsValue.toFixed(2)} ${anyOriginalCurrency}) 🔄` 
                            : earningsValue.toFixed(2)) 
                         : 'N/A'}
                     </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
+                    <TableCell className={`text-right whitespace-nowrap ${epsWarning ? 'text-orange-600 font-medium' : ''}`}>
                       {epsValue && 
                       typeof epsValue === 'number' && 
                       epsValue !== 0
                         ? (showOriginal && originalEpsValue !== undefined
-                           ? `${epsValue.toFixed(2)} ${currency} (${originalEpsValue.toFixed(2)} ${anyOriginalCurrency}) 🔄` 
+                           ? `${epsValue.toFixed(2)} ${currency} (urspr. ${originalEpsValue.toFixed(2)} ${anyOriginalCurrency}) 🔄` 
                            : epsValue.toFixed(2)) 
                         : 'N/A'}
                     </TableCell>

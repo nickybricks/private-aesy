@@ -10,7 +10,7 @@ const exchangeRates: Record<string, number> = {
   EUR: 1.0,  // 1 EUR = 1 EUR
   GBP: 1.17, // 1 GBP = 1.17 EUR
   JPY: 0.0061, // 1 JPY = 0.0061 EUR
-  KRW: 0.00067, // 1 KRW = 0.00067 EUR
+  KRW: 0.00067, // 1 KRW = 0.00067 EUR (approx. 1 EUR = 1490 KRW)
   CNY: 0.13, // 1 CNY = 0.13 EUR
   HKD: 0.12, // 1 HKD = 0.12 EUR
   CHF: 1.0, // 1 CHF = 1 EUR
@@ -148,16 +148,19 @@ export const formatCurrency = (
       case 'JPY':
         origFormattedValue = `${origNumericValue.toLocaleString('ja-JP', { maximumFractionDigits: 0 })} ¥`;
         break;
+      case 'KRW':
+        origFormattedValue = `${origNumericValue.toLocaleString('ko-KR', { maximumFractionDigits: 0 })} ₩`;
+        break;
       default:
         origFormattedValue = `${origNumericValue.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${originalCurrency}`;
     }
     
-    // Calculate and display exchange rate
-    const exchangeRateValue = exchangeRates[originalCurrency] / exchangeRates[currency];
+    // Calculate and display exchange rate - improved for clarity
+    const conversionRate = exchangeRates[currency] / exchangeRates[originalCurrency];
     const exchangeRateInfo = originalCurrency && currency ? 
-      ` (Wechselkurs: 1 ${originalCurrency} ≈ ${(exchangeRates[currency]/exchangeRates[originalCurrency]).toFixed(4)} ${currency})` : '';
+      ` (Wechselkurs: 1 ${originalCurrency} = ${(exchangeRates[currency]/exchangeRates[originalCurrency]).toFixed(4)} ${currency})` : '';
     
-    return `${formattedValue} (${origFormattedValue}${exchangeRateInfo})`;
+    return `${formattedValue} (ursprünglich ${origFormattedValue}${exchangeRateInfo})`;
   }
   
   return formattedValue;
@@ -248,9 +251,48 @@ export const getCurrencySymbol = (currencyCode: string): string => {
 export const isPercentageMetric = (metricName: string): boolean => {
   const percentageKeywords = [
     'rendite', 'yield', 'margin', 'marge', 'wachstum', 'growth', 
-    'roe', 'roi', 'roic', 'ratio', '%', 'quote', 'deckungsgrad'
+    'roe', 'roi', 'roic', 'ratio', '%', 'quote', 'deckungsgrad', 
+    'eigenkapitalrendite', 'kapitalrendite', 'schuldenquote'
   ];
   
   const name = metricName.toLowerCase();
   return percentageKeywords.some(keyword => name.includes(keyword));
+};
+
+/**
+ * Verify if a currency conversion result looks realistic
+ * Could be used to warn users about potentially incorrect conversion results
+ * @param originalValue The original value
+ * @param convertedValue The converted value
+ * @param conversionFactor The conversion factor used
+ * @returns True if the conversion seems realistic
+ */
+export const isRealisticConversion = (
+  originalValue: number,
+  convertedValue: number,
+  fromCurrency: string,
+  toCurrency: string
+): { realistic: boolean; warning?: string } => {
+  // Skip check if we're not converting
+  if (fromCurrency === toCurrency) {
+    return { realistic: true };
+  }
+  
+  // Detect potentially unrealistic EPS values
+  if (convertedValue > 1000 && toCurrency === 'EUR') {
+    return {
+      realistic: false,
+      warning: `Ungewöhnlich hoher Wert (${convertedValue} ${toCurrency}) nach Umrechnung von ${originalValue} ${fromCurrency}. Möglicherweise fehlerhafte Währungsumrechnung.`
+    };
+  }
+  
+  // Detect potentially unrealistic intrinsic value
+  if (convertedValue > 10000 && toCurrency === 'EUR') {
+    return {
+      realistic: false,
+      warning: `Sehr hoher Wert (${convertedValue} ${toCurrency}) nach Umrechnung von ${originalValue} ${fromCurrency}. Dies könnte auf fehlerhafte Daten hindeuten.`
+    };
+  }
+  
+  return { realistic: true };
 };

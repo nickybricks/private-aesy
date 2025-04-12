@@ -115,7 +115,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     const metrics = keyMetrics && keyMetrics.length > 0 ? keyMetrics[0] : null;
     const quoteData = quote && quote.length > 0 ? quote[0] : null;
     
-    // Extract currency info
+    // Extract currency info - crucial for correct currency handling
     const stockCurrency = companyProfile.currency || 'USD';
     console.log(`Analyzing ${ticker} with currency: ${stockCurrency}`);
     
@@ -131,15 +131,15 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       revenue: null as (number | null | { current: number; past: number })
     };
 
-    // 1. ROE > 15%
+    // 1. ROE > 15% (ROE is a percentage value, no need for currency conversion)
     const roe = safeValue(ratios.returnOnEquityTTM) * 100;
     const roePass = roe !== null && roe > 15;
 
-    // 2. ROIC > 10%
+    // 2. ROIC > 10% (ROIC is a percentage value, no need for currency conversion)
     const roic = metrics ? safeValue(metrics.roicTTM) * 100 : null;
     const roicPass = roic !== null && roic > 10;
 
-    // 3. Net margin > 10%
+    // 3. Net margin > 10% (Net margin is a percentage value, no need for currency conversion)
     const netMargin = safeValue(ratios.netProfitMarginTTM) * 100;
     const netMarginPass = netMargin !== null && netMargin > 10;
 
@@ -242,7 +242,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
         dividendYield: { value: dividendYield, pass: dividendYieldPass }
       },
       price: quoteData ? quoteData.price : 0,
-      currency: stockCurrency,
+      currency: stockCurrency, // Critical: use the actual stock currency from API
       originalValues
     };
   } catch (error) {
