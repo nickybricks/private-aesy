@@ -1,4 +1,3 @@
-
 /**
  * Currency conversion utility for financial data
  */
@@ -117,6 +116,9 @@ export const formatCurrency = (
     case 'JPY':
       formattedValue = `${numericValue.toLocaleString('ja-JP', { maximumFractionDigits: 0 })} ¥`;
       break;
+    case 'KRW':
+      formattedValue = `${numericValue.toLocaleString('ko-KR', { maximumFractionDigits: 0 })} ₩`;
+      break;
     case 'CHF':
       formattedValue = `${numericValue.toLocaleString('de-CH', { maximumFractionDigits: 2 })} CHF`;
       break;
@@ -156,9 +158,8 @@ export const formatCurrency = (
     }
     
     // Calculate and display exchange rate - improved for clarity
-    const conversionRate = exchangeRates[currency] / exchangeRates[originalCurrency];
     const exchangeRateInfo = originalCurrency && currency ? 
-      ` (Wechselkurs: 1 ${originalCurrency} = ${(exchangeRates[currency]/exchangeRates[originalCurrency]).toFixed(4)} ${currency})` : '';
+      ` (Wechselkurs: 1 ${originalCurrency} = ${(exchangeRates[originalCurrency]/exchangeRates[currency]).toFixed(4)} ${currency})` : '';
     
     return `${formattedValue} (ursprünglich ${origFormattedValue}${exchangeRateInfo})`;
   }
@@ -276,6 +277,16 @@ export const isRealisticConversion = (
   // Skip check if we're not converting
   if (fromCurrency === toCurrency) {
     return { realistic: true };
+  }
+  
+  // Special handling for KRW (Korean Won) conversions
+  if (fromCurrency === 'KRW' && toCurrency === 'EUR') {
+    if (convertedValue > 1000) {
+      return {
+        realistic: false,
+        warning: `Ungewöhnlich hoher Wert (${convertedValue} ${toCurrency}) nach Umrechnung von ${originalValue} ${fromCurrency}. Möglicherweise fehlerhafte Währungsumrechnung. Koreanische Won haben einen niedrigen Wechselkurs (ca. 1 EUR = 1490 KRW).`
+      };
+    }
   }
   
   // Detect potentially unrealistic EPS values

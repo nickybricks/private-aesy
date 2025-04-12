@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -210,6 +209,21 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
       } else {
         cleanedDisplayValue = formatCurrency(numericValue, currency);
       }
+    }
+  }
+  
+  // Special handling for Korean Won to prevent format issues
+  if (originalCurrency === 'KRW' && !isPercentage && !isValueMissing) {
+    const numericValue = typeof displayValue === 'number' ? displayValue : 
+                    typeof displayValue === 'string' ? parseFloat(displayValue) : 0;
+    const numericOriginalValue = typeof originalValue === 'number' ? originalValue : 
+                             typeof originalValue === 'string' ? parseFloat(originalValue.toString()) : 0;
+                             
+    cleanedDisplayValue = formatCurrency(numericValue, currency, true, numericOriginalValue, 'KRW');
+    
+    // Add extra warning for KRW values that seem suspiciously high
+    if (numericValue > 1000 && currency === 'EUR') {
+      conversionWarning = `Auffällig hoher Wert (${numericValue.toFixed(2)} EUR) für ${name}. Möglicherweise ist die Währungsumrechnung von KRW (₩) fehlerhaft. Der Wechselkurs von KRW zu EUR ist etwa 0.00067 (1 EUR ≈ 1490 KRW).`;
     }
   }
   

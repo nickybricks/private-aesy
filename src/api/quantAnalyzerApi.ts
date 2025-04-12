@@ -73,7 +73,6 @@ export interface QuantAnalysisResult {
     pe?: number | null;
     pb?: number | null;
     price?: number | null;
-    // Add other relevant fields
   };
 }
 
