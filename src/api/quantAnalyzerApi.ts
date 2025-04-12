@@ -14,7 +14,6 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
         ...params
       }
     });
-    console.log(`API Response for ${endpoint}:`, response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching data from FMP:', error);
@@ -223,7 +222,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       interestCoveragePass, debtRatioPass, pePass, pbPass, dividendYieldPass
     ].filter(Boolean).length;
 
-    const result = {
+    return {
       symbol: ticker,
       name: companyProfile.companyName,
       exchange: companyProfile.exchangeShortName,
@@ -245,9 +244,6 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       currency: stockCurrency, // Critical: use the actual stock currency from API
       originalValues
     };
-    
-    console.log(`Analysis result for ${ticker}:`, JSON.stringify(result, null, 2));
-    return result;
   } catch (error) {
     console.error(`Error analyzing ${ticker}:`, error);
     return null;

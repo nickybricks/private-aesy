@@ -1,4 +1,3 @@
-
 /**
  * Currency conversion utility for financial data
  */
@@ -62,11 +61,6 @@ export const convertCurrency = (
   if (!exchangeRates[fromCurrency] || !exchangeRates[toCurrency]) {
     console.warn(`Exchange rate not found for ${fromCurrency} to ${toCurrency}. Using original value.`);
     return numericValue;
-  }
-  
-  // Add debug log for KRW conversion
-  if (fromCurrency === 'KRW') {
-    console.log(`KRW conversion: ${numericValue} KRW → ${numericValue * exchangeRates[fromCurrency]} EUR`);
   }
   
   // First convert to EUR (our base currency for conversion)

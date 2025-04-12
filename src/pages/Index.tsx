@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -8,7 +9,6 @@ import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import Navigation from '@/components/Navigation';
 import CurrencySelector from '@/components/CurrencySelector';
-import DebugApiData from '@/components/DebugApiData';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
@@ -89,6 +89,7 @@ const Index = () => {
       setActiveTab('gpt');
     }
 
+    // Load saved target currency preference if exists
     const savedTargetCurrency = localStorage.getItem('target_currency');
     if (savedTargetCurrency) {
       setTargetCurrency(savedTargetCurrency);
@@ -118,9 +119,11 @@ const Index = () => {
     };
   }, []);
 
+  // Save target currency preference when it changes
   useEffect(() => {
     localStorage.setItem('target_currency', targetCurrency);
     
+    // If we already have stock data, recalculate with the new target currency
     if (stockInfo && financialMetrics) {
       updateCurrencyConversions(stockInfo.currency);
     }
@@ -133,6 +136,7 @@ const Index = () => {
   const updateCurrencyConversions = (sourceCurrency: string) => {
     if (!financialMetrics || !overallRating) return;
 
+    // Recalculate metrics with new target currency
     if (financialMetrics.metrics) {
       const convertedMetrics = convertFinancialMetrics(financialMetrics.metrics, sourceCurrency);
       setFinancialMetrics({
@@ -142,6 +146,7 @@ const Index = () => {
       });
     }
 
+    // Recalculate overall rating with new target currency
     if (overallRating) {
       const updatedRating = convertOverallRating(overallRating, sourceCurrency);
       setOverallRating(updatedRating);
@@ -219,20 +224,24 @@ const Index = () => {
     
     const updatedRating: OverallRatingData = { ...rating };
     
+    // Store original values if not already stored
     const originalIntrinsicValue = updatedRating.originalIntrinsicValue || updatedRating.intrinsicValue;
     const originalBestBuyPrice = updatedRating.originalBestBuyPrice || updatedRating.bestBuyPrice;
     const originalPrice = updatedRating.originalPrice || updatedRating.currentPrice;
     const originalCurrency = updatedRating.originalCurrency || currency;
     
+    // Convert values to target currency
     updatedRating.intrinsicValue = convertCurrency(originalIntrinsicValue, originalCurrency, targetCurrency);
     updatedRating.bestBuyPrice = convertCurrency(originalBestBuyPrice, originalCurrency, targetCurrency);
     updatedRating.currentPrice = convertCurrency(originalPrice, originalCurrency, targetCurrency);
     
+    // Store original values and currency for transparency
     updatedRating.originalIntrinsicValue = originalIntrinsicValue;
     updatedRating.originalBestBuyPrice = originalBestBuyPrice;
     updatedRating.originalPrice = originalPrice;
     updatedRating.originalCurrency = originalCurrency;
     
+    // Update display currency
     updatedRating.currency = targetCurrency;
     
     return updatedRating;
@@ -442,15 +451,6 @@ const Index = () => {
         </div>
       ) : (
         <>
-          {stockInfo && (
-            <DebugApiData 
-              stockInfo={stockInfo}
-              buffettCriteria={buffettCriteria}
-              financialMetrics={financialMetrics}
-              overallRating={overallRating}
-            />
-          )}
-          
           {buffettCriteria && (
             <div className="mb-10">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
