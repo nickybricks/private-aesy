@@ -10,12 +10,14 @@ const ApiKeyInput = () => {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [isUsingDefault, setIsUsingDefault] = useState(true);
 
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
     if (savedKey) {
       setApiKey(savedKey);
       setIsSaved(true);
+      setIsUsingDefault(false);
     }
   }, []);
 
@@ -23,6 +25,7 @@ const ApiKeyInput = () => {
     if (apiKey.trim()) {
       localStorage.setItem('fmp_api_key', apiKey.trim());
       setIsSaved(true);
+      setIsUsingDefault(false);
       toast({
         title: 'API-Key gespeichert',
         description: 'Ihr API-Key wurde erfolgreich gespeichert und wird für alle zukünftigen Anfragen verwendet.',
@@ -40,9 +43,10 @@ const ApiKeyInput = () => {
     localStorage.removeItem('fmp_api_key');
     setApiKey('');
     setIsSaved(false);
+    setIsUsingDefault(true);
     toast({
-      title: 'API-Key entfernt',
-      description: 'Ihr API-Key wurde entfernt.',
+      title: 'Eigener API-Key entfernt',
+      description: 'Der Standard-API-Key wird jetzt verwendet.',
     });
   };
 
@@ -51,26 +55,36 @@ const ApiKeyInput = () => {
       <CardHeader>
         <CardTitle>API-Key konfigurieren</CardTitle>
         <CardDescription>
-          Das Buffett Benchmark Tool benötigt einen gültigen API-Key, um Finanzdaten abzurufen.
+          Das Buffett Benchmark Tool verwendet bereits einen Standard-API-Key für Financial Modeling Prep.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {isUsingDefault && !isSaved && (
+            <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4 rounded">
+              <p className="font-medium text-green-800">Standard-API-Key aktiv</p>
+              <p className="text-sm text-green-700">
+                Ein funktionierender API-Key ist bereits konfiguriert. Sie können optional Ihren eigenen API-Key eingeben, 
+                wenn Sie mehr API-Anfragen benötigen.
+              </p>
+            </div>
+          )}
+          
           <div>
             <label htmlFor="api-key" className="text-sm font-medium mb-2 block">
-              Financial Modeling Prep API-Key
+              Eigener Financial Modeling Prep API-Key (optional)
             </label>
             <Input
               id="api-key"
               type="text"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Ihren API-Key hier eingeben"
+              placeholder="Ihren API-Key hier eingeben (optional)"
               className="w-full"
             />
           </div>
           <div className="text-sm text-buffett-subtext border p-4 rounded-md bg-gray-50">
-            <h4 className="font-medium mb-2">So erhalten Sie einen API-Key:</h4>
+            <h4 className="font-medium mb-2">So erhalten Sie einen eigenen API-Key:</h4>
             <ol className="list-decimal ml-5 space-y-1">
               <li>Besuchen Sie <a href="https://financialmodelingprep.com/register" target="_blank" rel="noopener noreferrer" className="text-buffett-blue hover:underline">financialmodelingprep.com/register</a></li>
               <li>Erstellen Sie ein kostenloses Konto</li>
@@ -84,11 +98,11 @@ const ApiKeyInput = () => {
       <CardFooter className="flex justify-between">
         {isSaved && (
           <Button variant="outline" onClick={handleRemoveApiKey}>
-            API-Key entfernen
+            Eigenen API-Key entfernen
           </Button>
         )}
-        <Button onClick={handleSaveApiKey}>
-          API-Key speichern
+        <Button onClick={handleSaveApiKey} disabled={!apiKey.trim()}>
+          {isSaved ? 'API-Key aktualisieren' : 'API-Key speichern'}
         </Button>
       </CardFooter>
     </Card>

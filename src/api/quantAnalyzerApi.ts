@@ -1,16 +1,20 @@
 
 import axios from 'axios';
 
-// Financial Modeling Prep API Key
-const FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
+// Financial Modeling Prep API Key (default)
+const DEFAULT_FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
-// Helper function for API requests
+// Helper function for API requests that uses either the stored key or the default
 const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
+    // Try to get API key from localStorage, fall back to default if not found
+    const storedApiKey = localStorage.getItem('fmp_api_key');
+    const apiKeyToUse = storedApiKey || DEFAULT_FMP_API_KEY;
+    
     const response = await axios.get(`${BASE_URL}${endpoint}`, {
       params: {
-        apikey: FMP_API_KEY,
+        apikey: apiKeyToUse,
         ...params
       }
     });
