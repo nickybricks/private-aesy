@@ -5,6 +5,20 @@ import { convertCurrency, formatPercentage, isPercentageMetric } from '@/utils/c
 const FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
+// Exchange rates to EUR (fixed values for consistent conversion)
+const exchangeRates = {
+  "USD": 0.92, // 1 USD = 0.92 EUR
+  "EUR": 1.0,  // 1 EUR = 1 EUR
+  "GBP": 1.17, // 1 GBP = 1.17 EUR
+  "JPY": 0.0061, // 1 JPY = 0.0061 EUR
+  "KRW": 0.00067, // 1 KRW = 0.00067 EUR (approx. 1 EUR = 1490 KRW)
+  "CNY": 0.13, // 1 CNY = 0.13 EUR
+  "HKD": 0.12, // 1 HKD = 0.12 EUR
+  "CHF": 1.0, // 1 CHF = 1 EUR
+  "CAD": 0.68, // 1 CAD = 0.68 EUR
+  "AUD": 0.61 // 1 AUD = 0.61 EUR
+};
+
 // Helper function for API requests
 const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {

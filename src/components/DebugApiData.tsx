@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ExternalLink, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { ExternalLink, ChevronDown, ChevronUp, AlertTriangle, FileJson, CreditCard, BarChart4, BadgeDollarSign, DollarSign } from 'lucide-react';
 
 interface DebugApiDataProps {
   stockInfo?: any;
@@ -46,10 +46,26 @@ const DebugApiData: React.FC<DebugApiDataProps> = ({
   const rawMetrics = financialMetrics?.metrics || [];
   const epsMetric = rawMetrics.find((m: any) => m.name.includes('EPS') || m.name.includes('Gewinn pro Aktie'));
 
+  // Extract key data from API responses
+  const extractKeyRatios = () => {
+    if (!buffettCriteria) return [];
+    
+    return [
+      { label: 'Price to Earnings (P/E)', value: buffettCriteria?.criteria?.pe?.value?.toFixed(2) || 'N/A' },
+      { label: 'Price to Book (P/B)', value: buffettCriteria?.criteria?.pb?.value?.toFixed(2) || 'N/A' },
+      { label: 'Return on Equity (ROE)', value: buffettCriteria?.criteria?.roe?.value?.toFixed(2) + '%' || 'N/A' },
+      { label: 'Return on Invested Capital (ROIC)', value: buffettCriteria?.criteria?.roic?.value?.toFixed(2) + '%' || 'N/A' },
+      { label: 'Net Margin', value: buffettCriteria?.criteria?.netMargin?.value?.toFixed(2) + '%' || 'N/A' },
+      { label: 'Debt Ratio', value: buffettCriteria?.criteria?.debtRatio?.value?.toFixed(2) + '%' || 'N/A' },
+      { label: 'Dividend Yield', value: buffettCriteria?.criteria?.dividendYield?.value?.toFixed(2) + '%' || 'N/A' },
+    ];
+  };
+
   return (
     <Card className={`p-4 my-6 ${isExpanded ? 'bg-gray-50' : 'bg-yellow-50'} border-gray-200 transition-all`}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <FileJson className="h-5 w-5 text-amber-600" />
           Debug: API Data {isKoreanStock && <span className="text-orange-500 text-sm ml-2">(Korean Stock - KRW)</span>}
         </h2>
         <Button 
@@ -91,11 +107,30 @@ const DebugApiData: React.FC<DebugApiDataProps> = ({
           
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-4">
-              <TabsTrigger value="stockInfo">Stock Info</TabsTrigger>
-              <TabsTrigger value="buffettCriteria">Buffett Criteria</TabsTrigger>
-              <TabsTrigger value="financialMetrics">Financial Metrics</TabsTrigger>
-              <TabsTrigger value="overallRating">Overall Rating</TabsTrigger>
-              <TabsTrigger value="exchangeRates">Exchange Rates</TabsTrigger>
+              <TabsTrigger value="stockInfo" className="flex items-center gap-1">
+                <BadgeDollarSign className="h-4 w-4" />
+                Stock Info
+              </TabsTrigger>
+              <TabsTrigger value="buffettCriteria" className="flex items-center gap-1">
+                <BarChart4 className="h-4 w-4" />
+                Buffett Criteria
+              </TabsTrigger>
+              <TabsTrigger value="financialMetrics" className="flex items-center gap-1">
+                <CreditCard className="h-4 w-4" />
+                Financial Metrics
+              </TabsTrigger>
+              <TabsTrigger value="overallRating" className="flex items-center gap-1">
+                <BarChart4 className="h-4 w-4" />
+                Overall Rating
+              </TabsTrigger>
+              <TabsTrigger value="exchangeRates" className="flex items-center gap-1">
+                <DollarSign className="h-4 w-4" />
+                Exchange Rates
+              </TabsTrigger>
+              <TabsTrigger value="allData" className="flex items-center gap-1">
+                <FileJson className="h-4 w-4" />
+                All Raw Data
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="stockInfo">
@@ -125,10 +160,21 @@ const DebugApiData: React.FC<DebugApiDataProps> = ({
             </TabsContent>
             
             <TabsContent value="buffettCriteria">
-              <h3 className="text-md font-semibold mb-2">Buffett Criteria Raw Data:</h3>
-              <ScrollArea className="h-96 rounded bg-white p-2 border border-gray-200">
-                <pre className="text-xs">{formatData(buffettCriteria)}</pre>
-              </ScrollArea>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                  {extractKeyRatios().map((ratio, index) => (
+                    <div key={index} className="p-3 bg-white rounded border border-gray-200">
+                      <p className="font-medium">{ratio.label}</p>
+                      <p>{ratio.value}</p>
+                    </div>
+                  ))}
+                </div>
+                
+                <h3 className="text-md font-semibold">Buffett Criteria Raw Data:</h3>
+                <ScrollArea className="h-96 rounded bg-white p-2 border border-gray-200">
+                  <pre className="text-xs">{formatData(buffettCriteria)}</pre>
+                </ScrollArea>
+              </div>
             </TabsContent>
             
             <TabsContent value="financialMetrics">
@@ -195,6 +241,32 @@ const DebugApiData: React.FC<DebugApiDataProps> = ({
                   Example: 10,000 KRW ≈ 6.7 EUR<br/>
                   Example: 1,000,000 KRW ≈ 670 EUR
                 </p>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="allData">
+              <div className="space-y-4">
+                <h3 className="text-md font-semibold">All Raw API Data Combined:</h3>
+                <ScrollArea className="h-screen max-h-[800px] rounded bg-white p-2 border border-gray-200">
+                  <pre className="text-xs">{formatData({
+                    stockInfo,
+                    buffettCriteria,
+                    financialMetrics,
+                    overallRating,
+                    exchangeRates: {
+                      "USD": 0.92,
+                      "EUR": 1.0,
+                      "GBP": 1.17,
+                      "JPY": 0.0061,
+                      "KRW": 0.00067,
+                      "CNY": 0.13,
+                      "HKD": 0.12,
+                      "CHF": 1.0,
+                      "CAD": 0.68,
+                      "AUD": 0.61
+                    }
+                  })}</pre>
+                </ScrollArea>
               </div>
             </TabsContent>
           </Tabs>
