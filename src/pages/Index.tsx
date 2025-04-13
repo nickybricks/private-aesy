@@ -7,21 +7,15 @@ import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import Navigation from '@/components/Navigation';
-import CurrencySelector from '@/components/CurrencySelector';
-import DebugApiData from '@/components/DebugApiData';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  convertCurrency, 
-  needsCurrencyConversion, 
-  getCurrencyName, 
-  availableTargetCurrencies 
-} from '@/utils/currencyConverter';
+import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
 
+// Define types for our data structures
 interface FinancialMetricsData {
   eps?: any;
   roe?: any;
@@ -77,7 +71,6 @@ const Index = () => {
   const [gptAvailable, setGptAvailable] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
   const [stockCurrency, setStockCurrency] = useState<string>('EUR');
-  const [targetCurrency, setTargetCurrency] = useState<string>('EUR');
 
   useEffect(() => {
     const savedKey = localStorage.getItem('fmp_api_key');
@@ -87,11 +80,6 @@ const Index = () => {
     
     if (hasOpenAiApiKey()) {
       setActiveTab('gpt');
-    }
-
-    const savedTargetCurrency = localStorage.getItem('target_currency');
-    if (savedTargetCurrency) {
-      setTargetCurrency(savedTargetCurrency);
     }
   }, []);
 
@@ -118,40 +106,10 @@ const Index = () => {
     };
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('target_currency', targetCurrency);
-    
-    if (stockInfo && financialMetrics) {
-      updateCurrencyConversions(stockInfo.currency);
-    }
-  }, [targetCurrency]);
-
-  const handleCurrencyChange = (newCurrency: string) => {
-    setTargetCurrency(newCurrency);
-  };
-
-  const updateCurrencyConversions = (sourceCurrency: string) => {
-    if (!financialMetrics || !overallRating) return;
-
-    if (financialMetrics.metrics) {
-      const convertedMetrics = convertFinancialMetrics(financialMetrics.metrics, sourceCurrency);
-      setFinancialMetrics({
-        ...financialMetrics,
-        metrics: convertedMetrics,
-        historicalData: convertHistoricalData(financialMetrics.historicalData, sourceCurrency)
-      });
-    }
-
-    if (overallRating) {
-      const updatedRating = convertOverallRating(overallRating, sourceCurrency);
-      setOverallRating(updatedRating);
-    }
-  };
-
   const convertFinancialMetrics = (metrics: any, currency: string) => {
     if (!metrics || !currency) return metrics;
     
-    if (!needsCurrencyConversion(currency, targetCurrency)) return metrics;
+    if (!needsCurrencyConversion(currency)) return metrics;
     
     if (Array.isArray(metrics)) {
       return metrics.map(metric => {
@@ -166,16 +124,15 @@ const Index = () => {
           return metric;
         }
         
-        const originalValue = metric.originalValue || metric.value;
-        const originalCurrency = metric.originalCurrency || currency;
+        const originalValue = metric.value;
         
-        const convertedValue = convertCurrency(originalValue, originalCurrency, targetCurrency);
+        const convertedValue = convertCurrency(metric.value, currency, 'EUR');
         
         return {
           ...metric,
           value: convertedValue,
           originalValue: originalValue,
-          originalCurrency: originalCurrency
+          originalCurrency: currency
         };
       });
     }
@@ -184,58 +141,25 @@ const Index = () => {
   };
 
   const convertHistoricalData = (historicalData: any, currency: string) => {
-    if (!historicalData || !currency || !needsCurrencyConversion(currency, targetCurrency)) return historicalData;
+    if (!historicalData || !currency || !needsCurrencyConversion(currency)) return historicalData;
     
     return {
-      revenue: historicalData.revenue ? historicalData.revenue.map((item: any) => {
-        const originalValue = item.originalValue || item.value;
-        return {
-          ...item,
-          originalValue: originalValue,
-          value: convertCurrency(originalValue, currency, targetCurrency)
-        };
-      }) : [],
-      earnings: historicalData.earnings ? historicalData.earnings.map((item: any) => {
-        const originalValue = item.originalValue || item.value;
-        return {
-          ...item,
-          originalValue: originalValue,
-          value: convertCurrency(originalValue, currency, targetCurrency)
-        };
-      }) : [],
-      eps: historicalData.eps ? historicalData.eps.map((item: any) => {
-        const originalValue = item.originalValue || item.value;
-        return {
-          ...item,
-          originalValue: originalValue,
-          value: convertCurrency(originalValue, currency, targetCurrency)
-        };
-      }) : []
+      revenue: historicalData.revenue ? historicalData.revenue.map((item: any) => ({
+        ...item,
+        originalValue: item.value,
+        value: convertCurrency(item.value, currency, 'EUR')
+      })) : [],
+      earnings: historicalData.earnings ? historicalData.earnings.map((item: any) => ({
+        ...item,
+        originalValue: item.value,
+        value: convertCurrency(item.value, currency, 'EUR')
+      })) : [],
+      eps: historicalData.eps ? historicalData.eps.map((item: any) => ({
+        ...item,
+        originalValue: item.value,
+        value: convertCurrency(item.value, currency, 'EUR')
+      })) : []
     };
-  };
-
-  const convertOverallRating = (rating: OverallRatingData, currency: string): OverallRatingData => {
-    if (!rating || !needsCurrencyConversion(currency, targetCurrency)) return rating;
-    
-    const updatedRating: OverallRatingData = { ...rating };
-    
-    const originalIntrinsicValue = updatedRating.originalIntrinsicValue || updatedRating.intrinsicValue;
-    const originalBestBuyPrice = updatedRating.originalBestBuyPrice || updatedRating.bestBuyPrice;
-    const originalPrice = updatedRating.originalPrice || updatedRating.currentPrice;
-    const originalCurrency = updatedRating.originalCurrency || currency;
-    
-    updatedRating.intrinsicValue = convertCurrency(originalIntrinsicValue, originalCurrency, targetCurrency);
-    updatedRating.bestBuyPrice = convertCurrency(originalBestBuyPrice, originalCurrency, targetCurrency);
-    updatedRating.currentPrice = convertCurrency(originalPrice, originalCurrency, targetCurrency);
-    
-    updatedRating.originalIntrinsicValue = originalIntrinsicValue;
-    updatedRating.originalBestBuyPrice = originalBestBuyPrice;
-    updatedRating.originalPrice = originalPrice;
-    updatedRating.originalCurrency = originalCurrency;
-    
-    updatedRating.currency = targetCurrency;
-    
-    return updatedRating;
   };
 
   const handleSearch = async (ticker: string) => {
@@ -307,8 +231,27 @@ const Index = () => {
         }
       }
       
-      if (rating && needsCurrencyConversion(stockCurrency, targetCurrency)) {
-        const updatedRating = convertOverallRating(rating, stockCurrency);
+      if (rating && needsCurrencyConversion(stockCurrency)) {
+        const updatedRating: OverallRatingData = { ...rating };
+        
+        if (updatedRating.intrinsicValue) {
+          updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
+          updatedRating.intrinsicValue = convertCurrency(updatedRating.intrinsicValue, stockCurrency, 'EUR');
+        }
+        if (updatedRating.bestBuyPrice) {
+          updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
+          updatedRating.bestBuyPrice = convertCurrency(updatedRating.bestBuyPrice, stockCurrency, 'EUR');
+        }
+        if (updatedRating.currentPrice) {
+          updatedRating.originalPrice = updatedRating.currentPrice;
+          updatedRating.currentPrice = convertCurrency(updatedRating.currentPrice, stockCurrency, 'EUR');
+        }
+        
+        if (updatedRating.currency !== 'EUR') {
+          updatedRating.originalCurrency = updatedRating.currency;
+          updatedRating.currency = 'EUR';
+        }
+        
         setOverallRating(updatedRating);
       } else {
         setOverallRating(rating);
@@ -389,23 +332,20 @@ const Index = () => {
           </Alert>
         </div>
       )}
-
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
-        <CurrencySelector selectedCurrency={targetCurrency} onCurrencyChange={handleCurrencyChange} />
-      </div>
       
-      {stockInfo && stockInfo.currency && needsCurrencyConversion(stockInfo.currency, targetCurrency) && (
+      {stockInfo && stockInfo.currency && needsCurrencyConversion(stockInfo.currency) && (
         <Alert className="mb-4 bg-yellow-50 border-yellow-200">
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
           <AlertTitle className="text-yellow-700">Währungsumrechnung aktiviert</AlertTitle>
           <AlertDescription className="text-yellow-600">
-            Die Daten dieser Aktie werden in <strong>{stockInfo.currency}</strong> ({getCurrencyName(stockInfo.currency)}) angegeben. 
-            Für eine korrekte Analyse werden alle finanziellen Kennzahlen automatisch in <strong>{targetCurrency}</strong> umgerechnet.
+            Die Daten dieser Aktie werden in <strong>{stockInfo.currency}</strong> angegeben. 
+            Für eine korrekte Analyse werden alle finanziellen Kennzahlen automatisch in EUR umgerechnet.
             Die Originalwerte werden zur Transparenz ebenfalls angezeigt.
           </AlertDescription>
         </Alert>
       )}
+      
+      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
       
       {error && (
         <Alert variant="destructive" className="mb-6">
@@ -442,15 +382,6 @@ const Index = () => {
         </div>
       ) : (
         <>
-          {stockInfo && (
-            <DebugApiData 
-              stockInfo={stockInfo}
-              buffettCriteria={buffettCriteria}
-              financialMetrics={financialMetrics}
-              overallRating={overallRating}
-            />
-          )}
-          
           {buffettCriteria && (
             <div className="mb-10">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -485,7 +416,7 @@ const Index = () => {
               <FinancialMetrics 
                 metrics={financialMetrics.metrics} 
                 historicalData={financialMetrics.historicalData} 
-                currency={targetCurrency}
+                currency={stockCurrency}
               />
             </div>
           )}
@@ -495,7 +426,7 @@ const Index = () => {
               <OverallRating 
                 rating={{
                   ...overallRating,
-                  originalCurrency: needsCurrencyConversion(stockCurrency, targetCurrency) ? stockCurrency : undefined
+                  originalCurrency: needsCurrencyConversion(stockCurrency) ? stockCurrency : undefined
                 } as OverallRatingData} 
               />
             </div>
