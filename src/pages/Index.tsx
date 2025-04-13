@@ -5,7 +5,6 @@ import BuffettCriteria from '@/components/BuffettCriteria';
 import BuffettCriteriaGPT from '@/components/BuffettCriteriaGPT';
 import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
-import ApiKeyInput from '@/components/ApiKeyInput';
 import Navigation from '@/components/Navigation';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
@@ -15,7 +14,6 @@ import { InfoIcon, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
 
-// Define types for our data structures
 interface FinancialMetricsData {
   eps?: any;
   roe?: any;
@@ -277,10 +275,6 @@ const Index = () => {
       </header>
       
       <Navigation />
-      
-      <div className="mb-8 animate-fade-in">
-        <ApiKeyInput />
-      </div>
       
       {!gptAvailable && (
         <div className="mb-8 animate-fade-in">
