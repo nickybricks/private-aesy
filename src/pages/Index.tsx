@@ -67,43 +67,16 @@ const Index = () => {
   const [financialMetrics, setFinancialMetrics] = useState<FinancialMetricsData | null>(null);
   const [overallRating, setOverallRating] = useState<OverallRatingData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [hasApiKey, setHasApiKey] = useState(false);
   const [gptAvailable, setGptAvailable] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
   const [stockCurrency, setStockCurrency] = useState<string>('EUR');
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('fmp_api_key');
-    setHasApiKey(!!savedKey);
-    
     setGptAvailable(hasOpenAiApiKey());
     
     if (hasOpenAiApiKey()) {
       setActiveTab('gpt');
     }
-  }, []);
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const savedKey = localStorage.getItem('fmp_api_key');
-      setHasApiKey(!!savedKey);
-      setGptAvailable(hasOpenAiApiKey());
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function(key, value) {
-      originalSetItem.apply(this, [key, value]);
-      if (key === 'fmp_api_key') {
-        setHasApiKey(!!value);
-      }
-    };
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      localStorage.setItem = originalSetItem;
-    };
   }, []);
 
   const convertFinancialMetrics = (metrics: any, currency: string) => {
@@ -305,20 +278,9 @@ const Index = () => {
       
       <Navigation />
       
-      {!hasApiKey && (
-        <div className="mb-8 animate-fade-in">
-          <Alert className="mb-4">
-            <InfoIcon className="h-4 w-4" />
-            <AlertTitle>API-Key erforderlich</AlertTitle>
-            <AlertDescription>
-              Um das Buffett Benchmark Tool nutzen zu können, benötigen Sie einen API-Key von Financial Modeling Prep.
-              Bitte konfigurieren Sie Ihren API-Key unten.
-            </AlertDescription>
-          </Alert>
-          
-          <ApiKeyInput />
-        </div>
-      )}
+      <div className="mb-8 animate-fade-in">
+        <ApiKeyInput />
+      </div>
       
       {!gptAvailable && (
         <div className="mb-8 animate-fade-in">
@@ -345,7 +307,7 @@ const Index = () => {
         </Alert>
       )}
       
-      <StockSearch onSearch={handleSearch} isLoading={isLoading} disabled={!hasApiKey} />
+      <StockSearch onSearch={handleSearch} isLoading={isLoading} />
       
       {error && (
         <Alert variant="destructive" className="mb-6">
