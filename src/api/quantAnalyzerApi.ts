@@ -16,7 +16,7 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error fetching data from FMP:', error);
+    console.error('Error fetching data:', error);
     throw new Error(`Fehler beim Abrufen von Daten. Bitte versuchen Sie es später erneut.`);
   }
 };
