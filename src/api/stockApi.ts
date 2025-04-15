@@ -971,7 +971,39 @@ export const getFinancialMetrics = async (ticker: string) => {
       }
     }
 
-    // Weitere Finanzkennzahlen könnten hier berechnet werden
+    // Prepare historical data
+    const historicalData = {
+      revenue: [],
+      earnings: [],
+      eps: []
+    };
+    
+    // Add historical data if income statements are available
+    if (incomeStatements && incomeStatements.length > 1) {
+      // Last 5 years of revenue data
+      historicalData.revenue = incomeStatements
+        .slice(0, Math.min(5, incomeStatements.length))
+        .map(statement => ({
+          year: new Date(statement.date).getFullYear(),
+          value: statement.revenue || 0
+        }));
+      
+      // Last 5 years of earnings data
+      historicalData.earnings = incomeStatements
+        .slice(0, Math.min(5, incomeStatements.length))
+        .map(statement => ({
+          year: new Date(statement.date).getFullYear(),
+          value: statement.netIncome || 0
+        }));
+      
+      // Last 5 years of EPS data
+      historicalData.eps = incomeStatements
+        .slice(0, Math.min(5, incomeStatements.length))
+        .map(statement => ({
+          year: new Date(statement.date).getFullYear(),
+          value: statement.eps || 0
+        }));
+    }
 
     return {
       // Rendite-Kennzahlen
@@ -984,7 +1016,8 @@ export const getFinancialMetrics = async (ticker: string) => {
       debtToAssets,
       interestCoverage,
       
-      // Weitere Kennzahlen können hinzugefügt werden...
+      // Historical data
+      historicalData,
     };
   } catch (error) {
     console.error('Error fetching financial metrics:', error);
