@@ -1,23 +1,61 @@
+
 /**
- * Currency conversion utility for financial data
+ * Currency conversion utility for financial data using live exchange rates
  */
 
-// Exchange rates (ideally these would be fetched from an API)
-// In a production environment, these should be updated from an API like exchangerate.host or fixer.io
-const exchangeRates: Record<string, number> = {
-  USD: 0.92, // 1 USD = 0.92 EUR
-  EUR: 1.0,  // 1 EUR = 1 EUR
-  GBP: 1.17, // 1 GBP = 1.17 EUR
-  JPY: 0.0061, // 1 JPY = 0.0061 EUR
-  KRW: 0.00067, // 1 KRW = 0.00067 EUR
-  CNY: 0.13, // 1 CNY = 0.13 EUR
-  HKD: 0.12, // 1 HKD = 0.12 EUR
-  CHF: 1.0, // 1 CHF = 1 EUR
-  CAD: 0.68, // 1 CAD = 0.68 EUR
-  AUD: 0.61, // 1 AUD = 0.61 EUR
-  MXN: 0.05, // 1 MXN = 0.05 EUR
-  SGD: 0.68, // 1 SGD = 0.68 EUR
-  // Add more currencies as needed
+// Cache for exchange rates to avoid too many API calls
+interface ExchangeRateCache {
+  rates: Record<string, number>;
+  lastUpdated: number;
+  baseCurrency: string;
+}
+
+let rateCache: ExchangeRateCache | null = null;
+const CACHE_DURATION = 1000 * 60 * 60; // 1 hour cache
+
+// Fetch live exchange rates from exchangerate.host
+const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<string, number>> => {
+  try {
+    if (rateCache && 
+        rateCache.baseCurrency === baseCurrency && 
+        (Date.now() - rateCache.lastUpdated) < CACHE_DURATION) {
+      console.log('Using cached exchange rates');
+      return rateCache.rates;
+    }
+
+    console.log('Fetching fresh exchange rates');
+    const response = await fetch(`https://api.exchangerate.host/latest?base=${baseCurrency}`);
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error('Failed to fetch exchange rates');
+    }
+
+    rateCache = {
+      rates: data.rates,
+      lastUpdated: Date.now(),
+      baseCurrency
+    };
+
+    return data.rates;
+  } catch (error) {
+    console.error('Error fetching exchange rates:', error);
+    // Fallback to static rates if API fails
+    return {
+      USD: 0.92,
+      EUR: 1.0,
+      GBP: 1.17,
+      JPY: 0.0061,
+      KRW: 0.00067,
+      CNY: 0.13,
+      HKD: 0.12,
+      CHF: 1.0,
+      CAD: 0.68,
+      AUD: 0.61,
+      MXN: 0.05,
+      SGD: 0.68
+    };
+  }
 };
 
 /**
@@ -27,11 +65,11 @@ const exchangeRates: Record<string, number> = {
  * @param toCurrency The target currency code
  * @returns The converted value
  */
-export const convertCurrency = (
+export const convertCurrency = async (
   value: number | string,
   fromCurrency: string = 'USD',
   toCurrency: string = 'EUR'
-): number => {
+): Promise<number> => {
   // Handle non-numeric or invalid inputs
   if (value === null || value === undefined || value === '' || 
       (typeof value === 'string' && value.toLowerCase().includes('n/a'))) {
@@ -45,23 +83,25 @@ export const convertCurrency = (
   if (fromCurrency === toCurrency) {
     return numericValue;
   }
-  
-  // Check if we have the exchange rates
-  if (!exchangeRates[fromCurrency] || !exchangeRates[toCurrency]) {
-    console.warn(`Exchange rate not found for ${fromCurrency} to ${toCurrency}. Using original value.`);
-    return numericValue;
+
+  try {
+    const rates = await fetchExchangeRates('USD');
+    
+    // Convert to USD first (as base currency)
+    const valueInUSD = fromCurrency === 'USD' ? 
+      numericValue : 
+      numericValue / rates[fromCurrency];
+    
+    // Convert from USD to target currency
+    const convertedValue = toCurrency === 'USD' ? 
+      valueInUSD : 
+      valueInUSD * rates[toCurrency];
+    
+    return convertedValue;
+  } catch (error) {
+    console.error('Error converting currency:', error);
+    return numericValue; // Return original value if conversion fails
   }
-  
-  // Convert to EUR first (as our base currency)
-  const valueInEUR = numericValue * exchangeRates[fromCurrency];
-  
-  // If target is EUR, return the EUR value
-  if (toCurrency === 'EUR') {
-    return valueInEUR;
-  }
-  
-  // Otherwise convert from EUR to target currency
-  return valueInEUR / exchangeRates[toCurrency];
 };
 
 /**
@@ -139,3 +179,4 @@ export const formatCurrency = (
 export const needsCurrencyConversion = (currency: string): boolean => {
   return currency !== 'EUR';
 };
+

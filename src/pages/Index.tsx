@@ -77,13 +77,13 @@ const Index = () => {
     }
   }, []);
 
-  const convertFinancialMetrics = (metrics: any, currency: string) => {
+  const convertFinancialMetrics = async (metrics: any, currency: string) => {
     if (!metrics || !currency) return metrics;
     
     if (!needsCurrencyConversion(currency)) return metrics;
     
     if (Array.isArray(metrics)) {
-      return metrics.map(metric => {
+      const convertedMetrics = await Promise.all(metrics.map(async metric => {
         if (
           typeof metric.value !== 'number' || 
           isNaN(metric.value) || 
@@ -96,8 +96,7 @@ const Index = () => {
         }
         
         const originalValue = metric.value;
-        
-        const convertedValue = convertCurrency(metric.value, currency, 'EUR');
+        const convertedValue = await convertCurrency(metric.value, currency, 'EUR');
         
         return {
           ...metric,
@@ -105,32 +104,36 @@ const Index = () => {
           originalValue: originalValue,
           originalCurrency: currency
         };
-      });
+      }));
+
+      return convertedMetrics;
     }
     
     return metrics;
   };
 
-  const convertHistoricalData = (historicalData: any, currency: string) => {
+  const convertHistoricalData = async (historicalData: any, currency: string) => {
     if (!historicalData || !currency || !needsCurrencyConversion(currency)) return historicalData;
     
-    return {
-      revenue: historicalData.revenue ? historicalData.revenue.map((item: any) => ({
+    const convertedData = {
+      revenue: historicalData.revenue ? await Promise.all(historicalData.revenue.map(async (item: any) => ({
         ...item,
         originalValue: item.value,
-        value: convertCurrency(item.value, currency, 'EUR')
-      })) : [],
-      earnings: historicalData.earnings ? historicalData.earnings.map((item: any) => ({
+        value: await convertCurrency(item.value, currency, 'EUR')
+      }))) : [],
+      earnings: historicalData.earnings ? await Promise.all(historicalData.earnings.map(async (item: any) => ({
         ...item,
         originalValue: item.value,
-        value: convertCurrency(item.value, currency, 'EUR')
-      })) : [],
-      eps: historicalData.eps ? historicalData.eps.map((item: any) => ({
+        value: await convertCurrency(item.value, currency, 'EUR')
+      }))) : [],
+      eps: historicalData.eps ? await Promise.all(historicalData.eps.map(async (item: any) => ({
         ...item,
         originalValue: item.value,
-        value: convertCurrency(item.value, currency, 'EUR')
-      })) : []
+        value: await convertCurrency(item.value, currency, 'EUR')
+      }))) : []
     };
+
+    return convertedData;
   };
 
   const handleSearch = async (ticker: string) => {
@@ -194,11 +197,11 @@ const Index = () => {
       
       if (metricsData) {
         if (metricsData.metrics) {
-          metricsData.metrics = convertFinancialMetrics(metricsData.metrics, stockCurrency);
+          metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, stockCurrency);
         }
         
         if (metricsData.historicalData) {
-          metricsData.historicalData = convertHistoricalData(metricsData.historicalData, stockCurrency);
+          metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, stockCurrency);
         }
       }
       
@@ -207,15 +210,15 @@ const Index = () => {
         
         if (updatedRating.intrinsicValue) {
           updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
-          updatedRating.intrinsicValue = convertCurrency(updatedRating.intrinsicValue, stockCurrency, 'EUR');
+          updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, stockCurrency, 'EUR');
         }
         if (updatedRating.bestBuyPrice) {
           updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
-          updatedRating.bestBuyPrice = convertCurrency(updatedRating.bestBuyPrice, stockCurrency, 'EUR');
+          updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, stockCurrency, 'EUR');
         }
         if (updatedRating.currentPrice) {
           updatedRating.originalPrice = updatedRating.currentPrice;
-          updatedRating.currentPrice = convertCurrency(updatedRating.currentPrice, stockCurrency, 'EUR');
+          updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, stockCurrency, 'EUR');
         }
         
         if (updatedRating.currency !== 'EUR') {
