@@ -26,6 +26,7 @@ interface FinancialMetric {
   status: 'pass' | 'warning' | 'fail';
   originalValue?: number | string;
   originalCurrency?: string;
+  isRatio?: boolean;
 }
 
 interface FinancialMetricsProps {
@@ -145,7 +146,7 @@ const MetricStatus: React.FC<{ status: 'pass' | 'warning' | 'fail' | 'positive' 
 };
 
 const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ metric, currency }) => {
-  const { name, value, formula, explanation, threshold, status, originalValue, originalCurrency } = metric;
+  const { name, value, formula, explanation, threshold, status, originalValue, originalCurrency, isRatio } = metric;
   
   const isValueMissing = value === 'N/A' || 
                          (typeof value === 'string' && (value.includes('N/A') || value === '0.00' || value === '0.00%')) ||
@@ -159,22 +160,25 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   let cleanedDisplayValue = displayValue;
   
   if (!isValueMissing) {
-    if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency)) {
+    if (isRatio || name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum')) {
+      const numValue = typeof displayValue === 'number' ? displayValue : 
+                       typeof displayValue === 'string' && !isNaN(parseFloat(displayValue)) ? 
+                       parseFloat(displayValue) : 0;
+      
+      cleanedDisplayValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+    } 
+    else if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency)) {
       cleanedDisplayValue = formatCurrency(value, currency, true, originalValue, originalCurrency);
-    } else if (typeof displayValue === 'string') {
+    } 
+    else if (typeof displayValue === 'string') {
       cleanedDisplayValue = displayValue
         .replace(/USD USD/g, 'USD')
         .replace(/EUR EUR/g, 'EUR')
         .replace(/€ €/g, '€')
         .replace(/\$ \$/g, '$');
-    } else {
-      const numValue = typeof displayValue === 'number' ? displayValue : 0;
-      
-      if (name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum')) {
-        cleanedDisplayValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
-      } else {
-        cleanedDisplayValue = formatCurrency(displayValue, currency);
-      }
+    } 
+    else {
+      cleanedDisplayValue = formatCurrency(displayValue, currency);
     }
   }
   
@@ -234,7 +238,20 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData, currency = 'EUR' }) => {
   if (!metrics) return null;
   
-  const metricsArray = Array.isArray(metrics) ? metrics : [];
+  const metricsArray = Array.isArray(metrics) ? metrics.map(metric => {
+    const isRatio = metric.name.includes('ROE') || 
+                    metric.name.includes('ROIC') || 
+                    metric.name.includes('Marge') || 
+                    metric.name.includes('Rendite') || 
+                    metric.name.includes('Wachstum') ||
+                    metric.name.includes('zu EBITDA') ||
+                    metric.name.includes('Deckungsgrad');
+    
+    return {
+      ...metric,
+      isRatio
+    };
+  }) : [];
   
   return (
     <div className="animate-fade-in">
