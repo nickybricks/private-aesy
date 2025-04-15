@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   CheckCircle, 
@@ -399,7 +400,7 @@ const MarginOfSafetyExplanation: React.FC = () => (
         </ul>
         <div className="mt-2 pt-2 border-t border-gray-200">
           <p className="text-xs">
-            <span className="font-medium">Größere Sicherheitsmarge ({">"}30%):</span> Ideal für volatile oder zyklische Aktien
+            <span className="font-medium">Größere Sicherheitsmarge (&gt;30%):</span> Ideal für volatile oder zyklische Aktien
           </p>
           <p className="text-xs">
             <span className="font-medium">Geringere Marge (10-20%):</span> Akzeptabel bei sehr stabilen Unternehmen
@@ -435,7 +436,7 @@ const RatingExplanation: React.FC<{ rating: 'buy' | 'watch' | 'avoid' }> = ({ ra
               <li>Meist einer dieser Gründe:</li>
               <ul className="list-disc pl-4 mt-1">
                 <li>Zu teuer (über innerem Wert)</li>
-                <li>Zu geringe Qualität ({"<"}60% Buffett-Score)</li>
+                <li>Zu geringe Qualität (&lt;60% Buffett-Score)</li>
                 <li>Zu hohes Risiko/Unsicherheit</li>
               </ul>
             </ul>
@@ -459,7 +460,7 @@ const RatingExplanation: React.FC<{ rating: 'buy' | 'watch' | 'avoid' }> = ({ ra
             </p>
             <ul className="text-xs list-disc pl-4">
               <li>Hohe Qualität (≥75% Buffett-Score)</li>
-              <li>Deutliche Unterbewertung ({">"}20% MoS)</li>
+              <li>Deutliche Unterbewertung (&gt;20% MoS)</li>
               <li>Stabiles Geschäftsmodell</li>
               <li>Gute langfristige Perspektiven</li>
             </ul>
@@ -650,3 +651,122 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
             <div className="text-2xl font-bold mb-2"
                  style={{
                    color: marginOfSafety.value >= 30 ? '#10b981' :
+                          marginOfSafety.value >= 10 ? '#f59e0b' :
+                          marginOfSafety.value >= 0 ? '#f59e0b' : '#ef4444'
+                 }}>
+              {marginOfSafety.value.toFixed(1)}%
+            </div>
+            <div className="text-sm text-gray-600">
+              {getMarginOfSafetyDescription(marginOfSafety.value)}
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-2">
+                <MarginOfSafetyExplanation />
+                <span className="text-sm font-medium">Buffett-Standard: {targetMarginOfSafety}% Sicherheitsmarge</span>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {bestBuyPrice !== undefined && (
+          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign size={18} className="text-buffett-blue" />
+              <h4 className="font-semibold">Idealer Kaufpreis</h4>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                      <Info size={14} className="text-gray-500" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <BuffettBuyPriceTooltip 
+                      intrinsicValue={intrinsicValue}
+                      bestBuyPrice={bestBuyPrice}
+                      targetMarginOfSafety={targetMarginOfSafety}
+                      currency={currency}
+                    />
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            
+            <div className="flex items-baseline gap-2 mb-1">
+              <div className="text-2xl font-bold text-buffett-blue">{bestBuyPrice.toFixed(2)} {currency}</div>
+              {currentPrice !== undefined && (
+                <div className={`text-sm ${priceDifference && priceDifference < 0 ? 'text-buffett-green' : 'text-buffett-red'}`}>
+                  {currentPrice.toFixed(2)} {currency}
+                  {priceDifference !== undefined && (
+                    <span>
+                      {' '}
+                      ({priceDifference > 0 ? '+' : ''}{priceDifference.toFixed(2)} {currency} / 
+                      {priceDifferencePercent && (priceDifferencePercent > 0 ? '+' : '')}{priceDifferencePercent?.toFixed(1)}%)
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="text-sm text-gray-600 mb-3">
+              Maximaler Kaufpreis für attraktives Investment
+            </div>
+            
+            {intrinsicValue !== undefined && (
+              <div className="flex items-center mt-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <Calculator size={14} className="text-gray-500" />
+                  <span className="text-gray-600">Innerer Wert (DCF): {intrinsicValue.toFixed(2)} {currency}</span>
+                  <DCFExplanationTooltip />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm mb-6">
+        <h3 className="font-semibold mb-1">Zusammenfassung</h3>
+        <p className="text-buffett-subtext mb-4">{recommendation}</p>
+        
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div>
+            <h4 className="font-semibold text-buffett-green mb-2 flex items-center gap-2">
+              <CheckCircle size={16} className="text-buffett-green" />
+              Stärken
+            </h4>
+            <ul className="list-disc pl-5 space-y-1">
+              {strengths.map((strength, index) => (
+                <li key={index} className="text-sm text-gray-700">{strength}</li>
+              ))}
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-buffett-red mb-2 flex items-center gap-2">
+              <XCircle size={16} className="text-buffett-red" />
+              Schwächen
+            </h4>
+            <ul className="list-disc pl-5 space-y-1">
+              {weaknesses.map((weakness, index) => (
+                <li key={index} className="text-sm text-gray-700">{weakness}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="flex items-center gap-2">
+            <BarChart3 size={16} className="text-buffett-blue" />
+            <span className="font-medium">Entscheidender Faktor:</span>
+            <span>{decisionFactor}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default OverallRating;
