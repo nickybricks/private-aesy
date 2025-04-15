@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -160,12 +161,24 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   let cleanedDisplayValue = displayValue;
   
   if (!isValueMissing) {
-    if (isRatio || name.includes('Rendite') || name.includes('Marge') || name.includes('Wachstum')) {
+    if (isRatio) {
       const numValue = typeof displayValue === 'number' ? displayValue : 
                        typeof displayValue === 'string' && !isNaN(parseFloat(displayValue)) ? 
                        parseFloat(displayValue) : 0;
       
-      cleanedDisplayValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+      // For percentage metrics
+      if (name.includes('Rendite') || 
+          name.includes('Marge') || 
+          name.includes('ROE') || 
+          name.includes('ROIC') || 
+          name.includes('Wachstum') ||
+          name.includes('quote')) {
+        cleanedDisplayValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+      } 
+      // For ratio metrics (like Zinsdeckungsgrad) - just show the number without units
+      else {
+        cleanedDisplayValue = numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+      }
     } 
     else if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency)) {
       cleanedDisplayValue = formatCurrency(value, currency, true, originalValue, originalCurrency);
@@ -239,12 +252,16 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
   if (!metrics) return null;
   
   const metricsArray = Array.isArray(metrics) ? metrics.map(metric => {
+    // Identify all types of ratio metrics
     const isRatio = metric.name.includes('ROE') || 
                     metric.name.includes('ROIC') || 
                     metric.name.includes('Marge') || 
                     metric.name.includes('Rendite') || 
                     metric.name.includes('Wachstum') ||
                     metric.name.includes('zu EBITDA') ||
+                    metric.name.includes('zu Vermögen') ||
+                    metric.name.includes('Schulden') ||
+                    metric.name.includes('Zinsdeckungsgrad') ||
                     metric.name.includes('Deckungsgrad');
     
     return {
