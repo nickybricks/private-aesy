@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   CheckCircle, 
@@ -347,6 +346,130 @@ const BuffettScoreChart: React.FC<{ score: number }> = ({ score }) => {
   );
 };
 
+const DCFExplanationTooltip: React.FC = () => (
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+          <HelpCircle size={14} className="text-gray-500" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-sm p-4">
+        <h4 className="font-semibold mb-1">Discounted Cash Flow (DCF) - Was ist das?</h4>
+        <p className="text-sm">
+          DCF ist eine Bewertungsmethode, die den heutigen Wert aller zukünftigen Cashflows berechnet:
+        </p>
+        <ul className="text-xs list-disc pl-4 mt-2">
+          <li>Zukunftsprognose: Schätzung der Free Cashflows für 5-10 Jahre</li>
+          <li>Abzinsung: Berücksichtigt den Zeitwert des Geldes (meist 8-12%)</li>
+          <li>Endwert (Terminal Value): Ewiges Wachstum nach Jahr 10 (meist 2-3%)</li>
+          <li>Summe: Alle diskontierten Cashflows = Innerer Wert pro Aktie</li>
+        </ul>
+        <div className="mt-2 pt-2 border-t border-gray-200">
+          <p className="text-xs font-medium">Unsere Standardannahmen:</p>
+          <ul className="text-xs list-disc pl-4">
+            <li>8% Abzinsungsrate (konservativ)</li>
+            <li>3% ewiges Wachstum</li>
+            <li>5-10 Jahre Prognosezeitraum</li>
+          </ul>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+);
+
+const MarginOfSafetyExplanation: React.FC = () => (
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+          <HelpCircle size={14} className="text-gray-500" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-sm p-4">
+        <h4 className="font-semibold mb-1">Margin of Safety - Warum 20%?</h4>
+        <p className="text-sm">
+          Die Sicherheitsmarge von 20% folgt Buffetts und Grahams Prinzip des defensiven Investierens:
+        </p>
+        <ul className="text-xs list-disc pl-4 mt-2">
+          <li>Schutz vor Bewertungsfehlern: DCF-Annahmen könnten zu optimistisch sein</li>
+          <li>Puffer für unerwartete Ereignisse: Rezessionen, Krisen, etc.</li>
+          <li>Bessere Renditen: Kauf unter Wert = mehr Aufwärtspotenzial</li>
+          <li>Risikominimierung: Selbst bei Problemen ist Verlustrisiko geringer</li>
+        </ul>
+        <div className="mt-2 pt-2 border-t border-gray-200">
+          <p className="text-xs">
+            <span className="font-medium">Größere Sicherheitsmarge (>30%):</span> Ideal für volatile oder zyklische Aktien
+          </p>
+          <p className="text-xs">
+            <span className="font-medium">Geringere Marge (10-20%):</span> Akzeptabel bei sehr stabilen Unternehmen
+          </p>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+);
+
+const RatingExplanation: React.FC<{ rating: 'buy' | 'watch' | 'avoid' }> = ({ rating }) => (
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+          <HelpCircle size={14} className="text-gray-500" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-sm p-4">
+        <h4 className="font-semibold mb-1">
+          {rating === 'buy' ? 'Kaufen' : 
+           rating === 'watch' ? 'Beobachten' : 
+           'Vermeiden'} - Was bedeutet das?
+        </h4>
+        {rating === 'avoid' ? (
+          <>
+            <p className="text-sm mb-2">
+              "Vermeiden" bedeutet nicht automatisch "verkaufen", sondern:
+            </p>
+            <ul className="text-xs list-disc pl-4">
+              <li>Kein Neueinstieg zum aktuellen Preis</li>
+              <li>Bei Besitz: Fundamentalanalyse prüfen</li>
+              <li>Meist einer dieser Gründe:</li>
+              <ul className="list-disc pl-4 mt-1">
+                <li>Zu teuer (über innerem Wert)</li>
+                <li>Zu geringe Qualität (&lt;60% Buffett-Score)</li>
+                <li>Zu hohes Risiko/Unsicherheit</li>
+              </ul>
+            </ul>
+          </>
+        ) : rating === 'watch' ? (
+          <>
+            <p className="text-sm mb-2">
+              "Beobachten" ist eine neutrale Empfehlung:
+            </p>
+            <ul className="text-xs list-disc pl-4">
+              <li>Qualität gut, aber Preis zu hoch</li>
+              <li>Oder: Mittlere Qualität (60-74%), aber unterbewertet</li>
+              <li>Watchlist-Kandidat für späteren Einstieg</li>
+              <li>Weitere Analyse der Fundamentaldaten empfohlen</li>
+            </ul>
+          </>
+        ) : (
+          <>
+            <p className="text-sm mb-2">
+              "Kaufen" bedeutet eine starke Empfehlung:
+            </p>
+            <ul className="text-xs list-disc pl-4">
+              <li>Hohe Qualität (≥75% Buffett-Score)</li>
+              <li>Deutliche Unterbewertung (>20% MoS)</li>
+              <li>Stabiles Geschäftsmodell</li>
+              <li>Gute langfristige Perspektiven</li>
+            </ul>
+          </>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+);
+
 const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   if (!rating) return null;
   
@@ -445,7 +568,10 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   
   return (
     <div className="buffett-card animate-fade-in">
-      <h2 className="text-2xl font-semibold mb-6">Gesamtbewertung</h2>
+      <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+        Gesamtbewertung
+        <RatingExplanation rating={overall} />
+      </h2>
       
       <div className={`rounded-xl p-6 border ${ratingColor} mb-6`}>
         <div className="flex items-center gap-4">
@@ -568,6 +694,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           <div className="flex items-center gap-2 mb-4">
             <Calculator size={20} className="text-buffett-blue" />
             <h3 className="text-lg font-semibold">Bewertungsanalyse</h3>
+            <DCFExplanationTooltip />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -599,23 +726,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
             <div className="border-r border-gray-100 pr-4">
               <div className="text-sm text-gray-600 mb-1 flex items-center gap-1">
                 Ziel-Margin of Safety:
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
-                        <Info size={14} className="text-gray-500" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <MarginOfSafetyTooltip 
-                        targetMarginOfSafety={targetMarginOfSafety}
-                        intrinsicValue={intrinsicValue}
-                        currentPrice={currentPrice}
-                        currency={currency}
-                      />
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <MarginOfSafetyExplanation />
               </div>
               <div className="text-xl font-bold">{targetMarginOfSafety}%</div>
               <div className="text-xs text-gray-500 mt-1">
