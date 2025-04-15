@@ -30,6 +30,8 @@ interface FinancialMetricsData {
     status: "pass" | "warning" | "fail";
     originalValue?: any;
     originalCurrency?: string;
+    isPercentage: boolean;
+    isMultiplier: boolean;
   }>;
   historicalData?: {
     revenue: any[];
@@ -181,14 +183,68 @@ const Index = () => {
       const metricsData: FinancialMetricsData = {
         ...rawMetricsData,
         metrics: [
-          { name: 'Gewinn pro Aktie (EPS)', value: rawMetricsData.eps, formula: 'Nettogewinn / Anzahl Aktien', explanation: 'Zeigt den Unternehmensgewinn pro Aktie', threshold: '> 0, wachsend', status: rawMetricsData.eps > 0 ? 'positive' as 'pass' : 'negative' as 'fail' },
-          { name: 'Eigenkapitalrendite (ROE)', value: rawMetricsData.roe * 100, formula: 'Nettogewinn / Eigenkapital', explanation: 'Zeigt die Effizienz des eingesetzten Kapitals', threshold: '> 15%', status: rawMetricsData.roe * 100 > 15 ? 'positive' as 'pass' : 'warning' },
-          { name: 'Nettomarge', value: rawMetricsData.netMargin * 100, formula: 'Nettogewinn / Umsatz', explanation: 'Zeigt die Profitabilität', threshold: '> 10%', status: rawMetricsData.netMargin * 100 > 10 ? 'positive' as 'pass' : 'warning' },
-          { name: 'Kapitalrendite (ROIC)', value: rawMetricsData.roic * 100, formula: 'NOPAT / Investiertes Kapital', explanation: 'Zeigt die Effizienz aller Investments', threshold: '> 10%', status: rawMetricsData.roic * 100 > 10 ? 'positive' as 'pass' : 'warning' },
-          { name: 'Schulden zu Vermögen', value: rawMetricsData.debtToAssets * 100, formula: 'Gesamtschulden / Gesamtvermögen', explanation: 'Zeigt die Verschuldungsquote', threshold: '< 50%', status: rawMetricsData.debtToAssets * 100 < 50 ? 'positive' as 'pass' : 'warning' },
-          { name: 'Zinsdeckungsgrad', value: rawMetricsData.interestCoverage, formula: 'EBIT / Zinsaufwand', explanation: 'Zeigt die Fähigkeit, Zinsen zu decken', threshold: '> 5', status: rawMetricsData.interestCoverage > 5 ? 'positive' as 'pass' : 'warning' },
+          { 
+            name: 'Gewinn pro Aktie (EPS)', 
+            value: rawMetricsData.eps, 
+            formula: 'Nettogewinn / Anzahl Aktien', 
+            explanation: 'Zeigt den Unternehmensgewinn pro Aktie', 
+            threshold: '> 0, wachsend', 
+            status: rawMetricsData.eps > 0 ? 'positive' as 'pass' : 'negative' as 'fail',
+            isPercentage: false,
+            isMultiplier: false
+          },
+          { 
+            name: 'Eigenkapitalrendite (ROE)', 
+            value: rawMetricsData.roe * 100, 
+            formula: 'Nettogewinn / Eigenkapital', 
+            explanation: 'Zeigt die Effizienz des eingesetzten Kapitals', 
+            threshold: '> 15%', 
+            status: rawMetricsData.roe * 100 > 15 ? 'positive' as 'pass' : 'warning',
+            isPercentage: true,
+            isMultiplier: false
+          },
+          { 
+            name: 'Nettomarge', 
+            value: rawMetricsData.netMargin * 100, 
+            formula: 'Nettogewinn / Umsatz', 
+            explanation: 'Zeigt die Profitabilität', 
+            threshold: '> 10%', 
+            status: rawMetricsData.netMargin * 100 > 10 ? 'positive' as 'pass' : 'warning',
+            isPercentage: true,
+            isMultiplier: false
+          },
+          { 
+            name: 'Kapitalrendite (ROIC)', 
+            value: rawMetricsData.roic * 100, 
+            formula: 'NOPAT / Investiertes Kapital', 
+            explanation: 'Zeigt die Effizienz aller Investments', 
+            threshold: '> 10%', 
+            status: rawMetricsData.roic * 100 > 10 ? 'positive' as 'pass' : 'warning',
+            isPercentage: true,
+            isMultiplier: false
+          },
+          { 
+            name: 'Schulden zu Vermögen', 
+            value: rawMetricsData.debtToAssets * 100, 
+            formula: 'Gesamtschulden / Gesamtvermögen', 
+            explanation: 'Zeigt die Verschuldungsquote', 
+            threshold: '< 50%', 
+            status: rawMetricsData.debtToAssets * 100 < 50 ? 'positive' as 'pass' : 'warning',
+            isPercentage: true,
+            isMultiplier: false
+          },
+          { 
+            name: 'Zinsdeckungsgrad', 
+            value: rawMetricsData.interestCoverage, 
+            formula: 'EBIT / Zinsaufwand', 
+            explanation: 'Zeigt die Fähigkeit, Zinsen zu decken', 
+            threshold: '> 5', 
+            status: rawMetricsData.interestCoverage > 5 ? 'positive' as 'pass' : 'warning',
+            isPercentage: false,
+            isMultiplier: true
+          },
         ],
-        historicalData: {
+        historicalData: rawMetricsData.historicalData || {
           revenue: [],
           earnings: [],
           eps: []

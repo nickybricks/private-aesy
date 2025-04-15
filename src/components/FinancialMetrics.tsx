@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -27,7 +26,8 @@ interface FinancialMetric {
   status: 'pass' | 'warning' | 'fail';
   originalValue?: number | string;
   originalCurrency?: string;
-  isRatio?: boolean;
+  isPercentage?: boolean;
+  isMultiplier?: boolean;
 }
 
 interface FinancialMetricsProps {
@@ -147,7 +147,7 @@ const MetricStatus: React.FC<{ status: 'pass' | 'warning' | 'fail' | 'positive' 
 };
 
 const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ metric, currency }) => {
-  const { name, value, formula, explanation, threshold, status, originalValue, originalCurrency, isRatio } = metric;
+  const { name, value, formula, explanation, threshold, status, originalValue, originalCurrency, isPercentage, isMultiplier } = metric;
   
   const isValueMissing = value === 'N/A' || 
                          (typeof value === 'string' && (value.includes('N/A') || value === '0.00' || value === '0.00%')) ||
@@ -161,42 +161,34 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   let cleanedDisplayValue = displayValue;
   
   if (!isValueMissing) {
-    if (isRatio) {
-      const numValue = typeof displayValue === 'number' ? displayValue : 
-                       typeof displayValue === 'string' && !isNaN(parseFloat(displayValue)) ? 
-                       parseFloat(displayValue) : 0;
-      
-      // For percentage metrics
-      if (name.includes('Rendite') || 
-          name.includes('Marge') || 
-          name.includes('ROE') || 
-          name.includes('ROIC') || 
-          name.includes('Wachstum') ||
-          name.includes('quote') ||
-          name.includes('Schulden zu Vermögen')) {
-        cleanedDisplayValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
-      } 
-      // For ratio metrics (like Zinsdeckungsgrad) - show with -fach suffix
-      else if (name.includes('Zinsdeckungsgrad') || name.includes('Deckungsgrad')) {
-        cleanedDisplayValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}-fach`;
-      }
-      // For other ratio metrics - just show the number without units
-      else {
-        cleanedDisplayValue = numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 });
-      }
-    } 
-    else if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency)) {
-      cleanedDisplayValue = formatCurrency(value, currency, true, originalValue, originalCurrency);
-    } 
-    else if (typeof displayValue === 'string') {
-      cleanedDisplayValue = displayValue
-        .replace(/USD USD/g, 'USD')
-        .replace(/EUR EUR/g, 'EUR')
-        .replace(/€ €/g, '€')
-        .replace(/\$ \$/g, '$');
-    } 
-    else {
-      cleanedDisplayValue = formatCurrency(displayValue, currency);
+    if (metric.isPercentage) {
+      cleanedDisplayValue = typeof displayValue === 'number' 
+        ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} %`
+        : displayValue;
+    } else if (metric.isMultiplier) {
+      cleanedDisplayValue = typeof displayValue === 'number'
+        ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}x`
+        : displayValue;
+    } else if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency)) {
+      cleanedDisplayValue = formatCurrency(
+        value, 
+        currency, 
+        true, 
+        originalValue, 
+        originalCurrency,
+        metric.isPercentage,
+        metric.isMultiplier
+      );
+    } else {
+      cleanedDisplayValue = formatCurrency(
+        displayValue, 
+        currency,
+        false,
+        undefined,
+        undefined,
+        metric.isPercentage,
+        metric.isMultiplier
+      );
     }
   }
   

@@ -1,4 +1,3 @@
-
 /**
  * Currency conversion utility for financial data using live exchange rates
  */
@@ -111,14 +110,18 @@ export const convertCurrency = async (
  * @param showOriginal Whether to show the original value (for transparency)
  * @param originalValue The original value before conversion
  * @param originalCurrency The original currency before conversion
- * @returns Formatted currency string
+ * @param isPercentage Whether this is a percentage value
+ * @param isMultiplier Whether this is a multiplier value
+ * @returns Formatted string
  */
 export const formatCurrency = (
   value: number | string,
   currency: string = 'EUR',
   showOriginal: boolean = false,
   originalValue?: number | string,
-  originalCurrency?: string
+  originalCurrency?: string,
+  isPercentage: boolean = false,
+  isMultiplier: boolean = false
 ): string => {
   // Handle non-numeric or invalid inputs
   if (value === null || value === undefined || value === '' || 
@@ -129,40 +132,82 @@ export const formatCurrency = (
   // Convert string to number if needed
   const numericValue = typeof value === 'string' ? parseFloat(value) : value;
   
-  // Format with currency symbol
+  // Format based on type
   let formattedValue = '';
   
-  switch (currency) {
-    case 'EUR':
-      formattedValue = `${numericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} €`;
-      break;
-    case 'USD':
-      formattedValue = `$${numericValue.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
-      break;
-    case 'GBP':
-      formattedValue = `£${numericValue.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`;
-      break;
-    default:
-      formattedValue = `${numericValue.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${currency}`;
+  if (isPercentage) {
+    // Format as percentage with German locale (comma as decimal separator)
+    formattedValue = `${numericValue.toLocaleString('de-DE', { 
+      maximumFractionDigits: 2 
+    })} %`;
+  } else if (isMultiplier) {
+    // Format as multiplier with German locale and 'x' suffix
+    formattedValue = `${numericValue.toLocaleString('de-DE', { 
+      maximumFractionDigits: 2 
+    })}x`;
+  } else {
+    // Format as currency
+    switch (currency) {
+      case 'EUR':
+        formattedValue = `${numericValue.toLocaleString('de-DE', { 
+          maximumFractionDigits: 2 
+        })} €`;
+        break;
+      case 'USD':
+        formattedValue = `$${numericValue.toLocaleString('en-US', { 
+          maximumFractionDigits: 2 
+        })}`;
+        break;
+      case 'GBP':
+        formattedValue = `£${numericValue.toLocaleString('en-GB', { 
+          maximumFractionDigits: 2 
+        })}`;
+        break;
+      default:
+        formattedValue = `${numericValue.toLocaleString('en-US', { 
+          maximumFractionDigits: 2 
+        })} ${currency}`;
+    }
   }
   
   // Add original value if requested and available
-  if (showOriginal && originalValue !== undefined && originalCurrency !== undefined && originalCurrency !== currency) {
-    const origNumericValue = typeof originalValue === 'string' ? parseFloat(originalValue) : originalValue;
+  if (showOriginal && originalValue !== undefined && originalCurrency !== undefined && 
+      originalCurrency !== currency) {
+    const origNumericValue = typeof originalValue === 'string' ? 
+      parseFloat(originalValue) : originalValue;
     
     let origFormattedValue = '';
-    switch (originalCurrency) {
-      case 'EUR':
-        origFormattedValue = `${origNumericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} €`;
-        break;
-      case 'USD':
-        origFormattedValue = `$${origNumericValue.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
-        break;
-      case 'GBP':
-        origFormattedValue = `£${origNumericValue.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`;
-        break;
-      default:
-        origFormattedValue = `${origNumericValue.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${originalCurrency}`;
+    
+    if (isPercentage) {
+      origFormattedValue = `${origNumericValue.toLocaleString('de-DE', { 
+        maximumFractionDigits: 2 
+      })} %`;
+    } else if (isMultiplier) {
+      origFormattedValue = `${origNumericValue.toLocaleString('de-DE', { 
+        maximumFractionDigits: 2 
+      })}x`;
+    } else {
+      switch (originalCurrency) {
+        case 'EUR':
+          origFormattedValue = `${origNumericValue.toLocaleString('de-DE', { 
+            maximumFractionDigits: 2 
+          })} €`;
+          break;
+        case 'USD':
+          origFormattedValue = `$${origNumericValue.toLocaleString('en-US', { 
+            maximumFractionDigits: 2 
+          })}`;
+          break;
+        case 'GBP':
+          origFormattedValue = `£${origNumericValue.toLocaleString('en-GB', { 
+            maximumFractionDigits: 2 
+          })}`;
+          break;
+        default:
+          origFormattedValue = `${origNumericValue.toLocaleString('en-US', { 
+            maximumFractionDigits: 2 
+          })} ${originalCurrency}`;
+      }
     }
     
     return `${formattedValue} (umgerechnet aus ${origFormattedValue})`;
@@ -179,4 +224,3 @@ export const formatCurrency = (
 export const needsCurrencyConversion = (currency: string): boolean => {
   return currency !== 'EUR';
 };
-
