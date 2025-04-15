@@ -89,10 +89,8 @@ const Index = () => {
         if (
           typeof metric.value !== 'number' || 
           isNaN(metric.value) || 
-          metric.name.includes('Ratio') || 
-          metric.name.includes('Rate') ||
-          metric.name.includes('Marge') ||
-          metric.name.includes('%')
+          metric.isPercentage ||
+          metric.isMultiplier
         ) {
           return metric;
         }

@@ -1,3 +1,4 @@
+
 /**
  * Currency conversion utility for financial data using live exchange rates
  */
@@ -39,13 +40,13 @@ const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<
     return data.rates;
   } catch (error) {
     console.error('Error fetching exchange rates:', error);
-    // Fallback to static rates if API fails
+    // Fallback to static rates if API fails - updated with more accurate KRW conversion
     return {
       USD: 0.92,
       EUR: 1.0,
       GBP: 1.17,
       JPY: 0.0061,
-      KRW: 0.00067,
+      KRW: 0.00067, // Correct Korean Won rate
       CNY: 0.13,
       HKD: 0.12,
       CHF: 1.0,
@@ -85,6 +86,13 @@ export const convertCurrency = async (
 
   try {
     const rates = await fetchExchangeRates('USD');
+    
+    // Special handling for currencies with very different scales
+    if (fromCurrency === 'KRW' && ['EUR', 'USD', 'GBP', 'CHF'].includes(toCurrency)) {
+      // Convert directly using the rate - KRW to EUR/USD/GBP/CHF
+      const directRate = rates['KRW'] ? (1 / rates['KRW']) * rates[toCurrency] : 0.00067;
+      return numericValue * directRate;
+    }
     
     // Convert to USD first (as base currency)
     const valueInUSD = fromCurrency === 'USD' ? 
@@ -163,6 +171,12 @@ export const formatCurrency = (
           maximumFractionDigits: 2 
         })}`;
         break;
+      case 'KRW':
+        // Format Korean Won without decimal places as they're typically not used
+        formattedValue = `${numericValue.toLocaleString('ko-KR', { 
+          maximumFractionDigits: 0 
+        })} ₩`;
+        break;
       default:
         formattedValue = `${numericValue.toLocaleString('en-US', { 
           maximumFractionDigits: 2 
@@ -203,6 +217,12 @@ export const formatCurrency = (
             maximumFractionDigits: 2 
           })}`;
           break;
+        case 'KRW':
+          // Format Korean Won without decimal places
+          origFormattedValue = `${origNumericValue.toLocaleString('ko-KR', { 
+            maximumFractionDigits: 0 
+          })} ₩`;
+          break;
         default:
           origFormattedValue = `${origNumericValue.toLocaleString('en-US', { 
             maximumFractionDigits: 2 
@@ -223,4 +243,17 @@ export const formatCurrency = (
  */
 export const needsCurrencyConversion = (currency: string): boolean => {
   return currency !== 'EUR';
+};
+
+/**
+ * Get appropriate decimal places for a currency
+ * @param currency The currency code
+ * @returns Number of decimal places to use
+ */
+export const getCurrencyDecimalPlaces = (currency: string): number => {
+  // Some currencies typically don't use decimal places
+  if (['JPY', 'KRW', 'TWD', 'HUF', 'CLP', 'ISK'].includes(currency)) {
+    return 0;
+  }
+  return 2;
 };

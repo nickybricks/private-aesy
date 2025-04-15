@@ -15,7 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { convertCurrency, formatCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
+import { convertCurrency, formatCurrency, needsCurrencyConversion, getCurrencyDecimalPlaces } from '@/utils/currencyConverter';
 
 interface FinancialMetric {
   name: string;
@@ -268,6 +268,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
     };
   }) : [];
   
+  // Determine decimal places for this currency
+  const decimalPlaces = getCurrencyDecimalPlaces(currency);
+  
   return (
     <div className="animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
@@ -345,6 +348,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                 const originalEpsValue = epsDataForYear?.originalValue || epsDataForYear?.value;
                 
                 const showOriginal = currency !== 'EUR' && needsCurrencyConversion(currency);
+                const decimals = getCurrencyDecimalPlaces(currency);
                 
                 return (
                   <TableRow key={item.year || i}>
@@ -352,8 +356,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                     <TableCell className="text-right">
                       {typeof revenueValue === 'number' && revenueValue !== 0 
                         ? (showOriginal 
-                           ? `${revenueValue.toFixed(2)} (${originalRevenueValue.toFixed(2)} ${currency})` 
-                           : revenueValue.toFixed(2))
+                           ? `${revenueValue.toFixed(decimals)} (${originalRevenueValue.toFixed(decimals)} ${currency})` 
+                           : revenueValue.toFixed(decimals))
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
@@ -361,8 +365,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                       typeof earningsValue === 'number' && 
                       earningsValue !== 0
                         ? (showOriginal 
-                           ? `${earningsValue.toFixed(2)} (${originalEarningsValue.toFixed(2)} ${currency})` 
-                           : earningsValue.toFixed(2)) 
+                           ? `${earningsValue.toFixed(decimals)} (${originalEarningsValue.toFixed(decimals)} ${currency})` 
+                           : earningsValue.toFixed(decimals)) 
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
@@ -370,8 +374,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                       typeof epsValue === 'number' && 
                       epsValue !== 0
                         ? (showOriginal 
-                           ? `${epsValue.toFixed(2)} (${originalEpsValue.toFixed(2)} ${currency})` 
-                           : epsValue.toFixed(2)) 
+                           ? `${epsValue.toFixed(decimals)} (${originalEpsValue.toFixed(decimals)} ${currency})` 
+                           : epsValue.toFixed(decimals)) 
                         : 'N/A'}
                     </TableCell>
                   </TableRow>
@@ -385,6 +389,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             {needsCurrencyConversion(currency) && (
               <p className="mt-2 font-medium text-buffett-subtext">
                 Diese Werte wurden aus {currency} in EUR umgerechnet, um eine bessere Vergleichbarkeit zu gewährleisten.
+                {currency === 'KRW' && " Beachten Sie, dass der koreanische Won eine sehr andere Größenordnung als der Euro hat (ca. 1 EUR = 1,500 KRW)."}
               </p>
             )}
             <p className="mt-2">
