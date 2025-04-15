@@ -172,10 +172,15 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
           name.includes('ROE') || 
           name.includes('ROIC') || 
           name.includes('Wachstum') ||
-          name.includes('quote')) {
+          name.includes('quote') ||
+          name.includes('Schulden zu Vermögen')) {
         cleanedDisplayValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
       } 
-      // For ratio metrics (like Zinsdeckungsgrad) - just show the number without units
+      // For ratio metrics (like Zinsdeckungsgrad) - show with -fach suffix
+      else if (name.includes('Zinsdeckungsgrad') || name.includes('Deckungsgrad')) {
+        cleanedDisplayValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}-fach`;
+      }
+      // For other ratio metrics - just show the number without units
       else {
         cleanedDisplayValue = numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 });
       }
@@ -262,7 +267,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                     metric.name.includes('zu Vermögen') ||
                     metric.name.includes('Schulden') ||
                     metric.name.includes('Zinsdeckungsgrad') ||
-                    metric.name.includes('Deckungsgrad');
+                    metric.name.includes('Deckungsgrad') ||
+                    metric.name.includes('quote');
     
     return {
       ...metric,
