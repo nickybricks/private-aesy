@@ -80,14 +80,43 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
     }
   }
   
-  // Derive score for turnaround criterion
+  // Improved scoring logic for turnaround criterion
   if (criterion.title === '11. Keine Turnarounds') {
-    if (analysis.includes('kein turnaround') || analysis.includes('keine umstrukturierung')) {
+    // Count positive, negative, and warning signals in the analysis
+    const positiveSignals = [
+      'kein turnaround', 'keine umstrukturierung', 'keine restrukturierung', 
+      'kein umbau', 'stabil', 'keine umbruchsphase', 'solide', 
+      'keine grundlegende änderung', 'keine neuausrichtung'
+    ];
+    
+    const warningSignals = [
+      'leichte umstrukturierung', 'moderate änderungen', 'teilweise umstrukturierung',
+      'kleinere anpassungen', 'geringfügige umstellung'
+    ];
+    
+    const negativeSignals = [
+      'klarer turnaround', 'umfassende umstrukturierung', 'komplette neuausrichtung',
+      'grundlegende umstellung', 'signifikante umstrukturierung', 'massiver umbau'
+    ];
+    
+    // Count matches for each signal type
+    const positiveCount = positiveSignals.filter(signal => analysis.includes(signal)).length;
+    const warningCount = warningSignals.filter(signal => analysis.includes(signal)).length;
+    const negativeCount = negativeSignals.filter(signal => analysis.includes(signal)).length;
+    
+    // Assign score based on the semantic analysis
+    if (positiveCount > 0 && warningCount === 0 && negativeCount === 0) {
+      // Clear indication of no turnaround
       return 3;
-    } else if (analysis.includes('leichte umstrukturierung') || analysis.includes('moderate änderungen')) {
+    } else if (warningCount === 1 && negativeCount === 0) {
+      // One warning signal
       return 1;
-    } else if (analysis.includes('klarer turnaround') || analysis.includes('umfassende umstrukturierung')) {
+    } else if (warningCount >= 2 || negativeCount >= 1) {
+      // Multiple warnings or clear negatives
       return 0;
+    } else if (positiveCount > 0) {
+      // Default to full score if any positive signals and no clear negatives
+      return 3;
     }
   }
   
