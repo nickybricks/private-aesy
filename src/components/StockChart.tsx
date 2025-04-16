@@ -128,6 +128,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         cutoffDate.setFullYear(now.getFullYear() - 5);
         break;
       case 'MAX':
+        // Für "Allzeit" alle verfügbaren Daten zurückgeben ohne Filter
         return historicalData;
       default:
         return historicalData;
