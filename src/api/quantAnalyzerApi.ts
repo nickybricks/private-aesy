@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 
@@ -7,6 +6,7 @@ const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 // Helper function for API requests
 const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
+    // Always use the hardcoded API key
     const response = await axios.get(`${BASE_URL}${endpoint}`, {
       params: {
         apikey: DEFAULT_FMP_API_KEY,

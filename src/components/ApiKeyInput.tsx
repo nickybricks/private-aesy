@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// This is the explicit API key that should be used throughout the application
 export const DEFAULT_FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
 
 const ApiKeyInput: React.FC = () => {
@@ -25,8 +26,7 @@ const ApiKeyInput: React.FC = () => {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="max-w-xs">
-                    Der integrierte API-Schlüssel ermöglicht den Zugriff auf Finanzdaten ohne zusätzliche Konfiguration.
-                    Bei hohem Datenverkehr können Ratenbegrenzungen auftreten.
+                    Der API-Schlüssel für Financial Modeling Prep ist: {DEFAULT_FMP_API_KEY}
                   </p>
                 </TooltipContent>
               </Tooltip>
