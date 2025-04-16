@@ -1,6 +1,10 @@
-import React from 'react';
-import { TrendingUp, TrendingDown, DollarSign, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+
+import React, { useState, useEffect } from 'react';
+import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, RefreshCcw, Edit2, ArrowRight } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface StockHeaderProps {
   stockInfo: {
@@ -31,24 +35,112 @@ const formatMarketCap = (marketCap: number | null): string => {
 };
 
 const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
-  if (!stockInfo) return null;
+  const [showWarning, setShowWarning] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (stockInfo) {
+      // Show loading state briefly for better UX
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+        // Only show warning after loading if data is incomplete
+        if (hasIncompleteData) {
+          setShowWarning(true);
+        }
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [stockInfo]);
+
+  if (!stockInfo) {
+    return (
+      <div className="buffett-card mb-6 animate-fade-in">
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Keine Daten verfügbar</AlertTitle>
+          <AlertDescription>
+            Leider konnten keine ausreichenden Daten für dieses Symbol geladen werden.
+            <div className="flex gap-2 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={() => window.location.reload()}
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Neu versuchen
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={() => navigate('/')}
+              >
+                <Edit2 className="h-4 w-4" />
+                Symbol anpassen
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const { name, ticker, price, change, changePercent, currency, marketCap } = stockInfo;
   const isPositive = change !== null && change >= 0;
   const hasIncompleteData = price === null || change === null || changePercent === null || marketCap === null;
+
+  const alternativeSymbol = ticker.endsWith('.DE') ? ticker.replace('.DE', '') : null;
 
   // Log warning for incomplete data
   if (hasIncompleteData) {
     console.warn("Fehlende Werte bei Symbol:", ticker, stockInfo);
   }
 
+  if (isLoading) {
+    return (
+      <div className="buffett-card mb-6 animate-pulse">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="buffett-card mb-6 animate-slide-up">
-      {hasIncompleteData && (
+      {showWarning && hasIncompleteData && (
         <Alert className="mb-4 bg-yellow-50 border-yellow-200">
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
           <AlertDescription className="text-yellow-700">
-            Für dieses Symbol liegen unvollständige Daten vor. Einige Kennzahlen und Bewertungen könnten fehlen oder ungenau sein.
+            <p>
+              Die Analyse konnte nicht abgeschlossen werden, da für {ticker} nur eingeschränkte 
+              Daten vorliegen (z.B. Marktkapitalisierung, EPS oder Cashflow fehlen).
+            </p>
+            {alternativeSymbol && (
+              <div className="mt-2">
+                <p className="mb-2">
+                  Bitte probiere alternativ {alternativeSymbol} (US-Börse) aus oder prüfe ein anderes Unternehmen.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={() => navigate(`/?symbol=${alternativeSymbol}`)}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  {alternativeSymbol} (NASDAQ) analysieren statt {ticker}
+                </Button>
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}
