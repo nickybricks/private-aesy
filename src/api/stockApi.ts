@@ -1,10 +1,9 @@
-
 // Import necessary modules
 import axios from 'axios';
 
 // Base API setup
 const API_BASE_URL = 'https://financialmodelingprep.com/api/v3';
-const API_KEY = import.meta.env.VITE_FMP_API_KEY || 'demo';
+const API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
 
 // API fetch functions
 const fetchStockQuote = async (ticker: string) => {
@@ -446,5 +445,3 @@ export const getOverallRating = async (ticker: string) => {
     throw error;
   }
 };
-
-// ... keep existing code (other API functions)
