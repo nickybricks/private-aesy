@@ -25,10 +25,16 @@ const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<
 
     console.log('Fetching fresh exchange rates for', baseCurrency);
     const response = await fetch(`https://open.er-api.com/v6/latest/${baseCurrency}`);
+    
+    if (!response.ok) {
+      throw new Error(`Exchange rate API error: ${response.status} ${response.statusText}`);
+    }
+    
     const data = await response.json();
 
     if (!data.rates) {
-      throw new Error('Failed to fetch exchange rates');
+      console.error('Exchange rate API error:', data);
+      throw new Error('Failed to fetch exchange rates: No rates in response');
     }
 
     rateCache = {
@@ -40,7 +46,8 @@ const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<
     return data.rates;
   } catch (error) {
     console.error('Error fetching exchange rates:', error);
-    throw new Error('Failed to fetch exchange rates');
+    // Return a fallback rate of 1 for all currencies when API fails
+    return { USD: 1, EUR: 1, JPY: 110, GBP: 0.8, CAD: 1.3, CHF: 0.9, AUD: 1.3 };
   }
 };
 
@@ -60,7 +67,14 @@ export const convertCurrency = async (
   }
   
   // Convert string to number if needed
-  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  let numericValue: number;
+  try {
+    numericValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+    if (isNaN(numericValue)) return 0;
+  } catch (e) {
+    console.error('Error converting value to number:', e, value);
+    return 0;
+  }
   
   // Check if conversion is needed
   if (fromCurrency === toCurrency) {
@@ -69,6 +83,13 @@ export const convertCurrency = async (
 
   try {
     const rates = await fetchExchangeRates(fromCurrency);
+    
+    // If we don't have a rate for the target currency, return the original value
+    if (!rates[toCurrency]) {
+      console.warn(`No exchange rate available for ${fromCurrency} to ${toCurrency}`);
+      return numericValue;
+    }
+    
     const convertedValue = numericValue * rates[toCurrency];
     return convertedValue;
   } catch (error) {
@@ -176,4 +197,3 @@ export const needsCurrencyConversion = (currency: string): boolean => {
 export const getCurrencyDecimalPlaces = (currency: string): number => {
   return 2; // Use 2 decimal places for all currencies
 };
-

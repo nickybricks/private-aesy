@@ -35,12 +35,16 @@ interface OverallRatingProps {
       value: number;
       status: 'pass' | 'warning' | 'fail';
     };
-    bestBuyPrice?: number;
+    bestBuyPrice?: number | null;
     // New fields for price analysis
-    currentPrice?: number;
+    currentPrice?: number | null;
     currency?: string;
-    intrinsicValue?: number;
+    intrinsicValue?: number | null;
     targetMarginOfSafety?: number;
+    originalCurrency?: string;
+    originalPrice?: number | null;
+    originalIntrinsicValue?: number | null;
+    originalBestBuyPrice?: number | null;
   } | null;
 }
 
@@ -108,9 +112,18 @@ const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
 
 // Diese Funktion erstellt den detaillierten Tooltip für die DCF-Berechnung
 const IntrinsicValueTooltip: React.FC<{
-  intrinsicValue: number;
+  intrinsicValue: number | null | undefined;
   currency: string;
 }> = ({ intrinsicValue, currency }) => {
+  if (!intrinsicValue || isNaN(Number(intrinsicValue))) {
+    return (
+      <div className="space-y-2">
+        <h4 className="font-semibold">DCF-Berechnung nicht möglich</h4>
+        <p>Für dieses Wertpapier liegen nicht genügend Daten vor, um eine DCF-Berechnung durchzuführen.</p>
+      </div>
+    );
+  }
+  
   // Beispielwerte für die DCF-Berechnung basierend auf dem intrinsischen Wert
   const yearlyFCF = intrinsicValue * 0.025; // Geschätzt als 2,5% des intrinsischen Wertes
   const growthRate1 = 15; // 15% Wachstum in Jahren 1-5
@@ -165,15 +178,30 @@ const IntrinsicValueTooltip: React.FC<{
 // Diese Funktion erstellt den detaillierten Tooltip für die MoS-Erklärung
 const MarginOfSafetyTooltip: React.FC<{
   targetMarginOfSafety: number;
-  intrinsicValue?: number;
-  currentPrice?: number;
+  intrinsicValue?: number | null;
+  currentPrice?: number | null;
   currency?: string;
 }> = ({ targetMarginOfSafety, intrinsicValue, currentPrice, currency }) => {
   // Berechnen wir ein konkretes Beispiel mit realen Zahlen, falls verfügbar
-  const hasRealData = intrinsicValue && currentPrice && currency;
-  const actualMarginValue = hasRealData ? intrinsicValue * (targetMarginOfSafety / 100) : 20;
-  const safePrice = hasRealData ? intrinsicValue - actualMarginValue : 80;
-  const actualMargin = hasRealData ? ((intrinsicValue - currentPrice) / intrinsicValue) * 100 : -25;
+  const hasRealData = intrinsicValue !== null && 
+                     intrinsicValue !== undefined && 
+                     !isNaN(Number(intrinsicValue)) && 
+                     currentPrice !== null && 
+                     currentPrice !== undefined && 
+                     !isNaN(Number(currentPrice)) && 
+                     currency;
+                     
+  const actualMarginValue = hasRealData && intrinsicValue 
+    ? intrinsicValue * (targetMarginOfSafety / 100) 
+    : 20;
+    
+  const safePrice = hasRealData && intrinsicValue 
+    ? intrinsicValue - (actualMarginValue as number) 
+    : 80;
+    
+  const actualMargin = hasRealData && intrinsicValue && currentPrice 
+    ? ((intrinsicValue - currentPrice) / intrinsicValue) * 100 
+    : -25;
   
   return (
     <div className="space-y-2">
@@ -189,7 +217,7 @@ const MarginOfSafetyTooltip: React.FC<{
       <div className="border-t border-gray-200 pt-2 mt-2">
         <h5 className="font-medium mb-1">Berechnung der Margin of Safety:</h5>
         
-        {hasRealData ? (
+        {hasRealData && intrinsicValue !== null && currentPrice !== null ? (
           <div className="space-y-1">
             <p><span className="font-medium">Innerer Wert:</span> {intrinsicValue.toFixed(2)} {currency}</p>
             <p><span className="font-medium">Sicherheitsmarge ({targetMarginOfSafety}%):</span> {actualMarginValue.toFixed(2)} {currency}</p>
@@ -215,11 +243,20 @@ const MarginOfSafetyTooltip: React.FC<{
 
 // Diese Funktion erstellt den detaillierten Tooltip für die Buffett-Kaufpreis Erklärung
 const BuffettBuyPriceTooltip: React.FC<{
-  intrinsicValue: number | undefined;
-  bestBuyPrice: number;
+  intrinsicValue: number | null | undefined;
+  bestBuyPrice: number | null;
   targetMarginOfSafety: number;
   currency: string;
 }> = ({ intrinsicValue, bestBuyPrice, targetMarginOfSafety, currency }) => {
+  if (bestBuyPrice === null || bestBuyPrice === undefined || isNaN(Number(bestBuyPrice))) {
+    return (
+      <div className="space-y-2">
+        <h4 className="font-semibold">Buffett-Kaufpreis nicht verfügbar</h4>
+        <p>Für dieses Wertpapier liegen nicht genügend Daten vor, um einen Buffett-Kaufpreis zu berechnen.</p>
+      </div>
+    );
+  }
+  
   return (
     <div className="space-y-2">
       <h4 className="font-semibold">Der Buffett-Kaufpreis</h4>
@@ -230,7 +267,7 @@ const BuffettBuyPriceTooltip: React.FC<{
         <div className="text-sm">
           <div className="flex items-center mb-1">
             <div className="font-medium w-1/2">Innerer Wert:</div>
-            <div>{intrinsicValue ? `${intrinsicValue.toFixed(2)} ${currency}` : 'Berechnet aus DCF-Modell'}</div>
+            <div>{intrinsicValue && !isNaN(Number(intrinsicValue)) ? `${Number(intrinsicValue).toFixed(2)} ${currency}` : 'Berechnet aus DCF-Modell'}</div>
           </div>
           <div className="flex items-center mb-1">
             <div className="font-medium w-1/2">Margin of Safety:</div>
@@ -238,7 +275,7 @@ const BuffettBuyPriceTooltip: React.FC<{
           </div>
           <div className="flex items-center mb-1">
             <div className="font-medium w-1/2">Berechnung:</div>
-            <div>{intrinsicValue ? `${intrinsicValue.toFixed(2)} ${currency} × (1 - ${targetMarginOfSafety}%)` : 'Innerer Wert × (1 - Margin of Safety)'}</div>
+            <div>{intrinsicValue && !isNaN(Number(intrinsicValue)) ? `${Number(intrinsicValue).toFixed(2)} ${currency} × (1 - ${targetMarginOfSafety}%)` : 'Innerer Wert × (1 - Margin of Safety)'}</div>
           </div>
           <div className="flex items-center font-medium text-buffett-blue">
             <div className="w-1/2">Buffett-Kaufpreis:</div>
@@ -486,8 +523,25 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     currentPrice,
     currency = '€',
     intrinsicValue,
-    targetMarginOfSafety = 20
+    targetMarginOfSafety = 20,
+    originalCurrency,
+    originalPrice,
+    originalIntrinsicValue,
+    originalBestBuyPrice
   } = rating;
+  
+  // Check for missing data
+  const hasMissingPriceData = currentPrice === null || 
+                             currentPrice === undefined || 
+                             bestBuyPrice === null || 
+                             bestBuyPrice === undefined || 
+                             intrinsicValue === null || 
+                             intrinsicValue === undefined;
+  
+  if (hasMissingPriceData) {
+    console.warn("Fehlende Preisinformationen für Wertanalyse:", 
+      { currentPrice, bestBuyPrice, intrinsicValue });
+  }
   
   // Override the marginOfSafety status based on the actual value
   if (marginOfSafety) {
@@ -528,11 +582,23 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     avoid: 'bg-buffett-red bg-opacity-10 border-buffett-red'
   }[overall];
 
-  const priceDifference = currentPrice && bestBuyPrice 
+  // Safely calculate price difference
+  const priceDifference = (currentPrice !== null && 
+                          currentPrice !== undefined && 
+                          !isNaN(Number(currentPrice)) && 
+                          bestBuyPrice !== null && 
+                          bestBuyPrice !== undefined && 
+                          !isNaN(Number(bestBuyPrice))) 
     ? currentPrice - bestBuyPrice 
     : undefined;
   
-  const priceDifferencePercent = currentPrice && bestBuyPrice && bestBuyPrice > 0
+  const priceDifferencePercent = (currentPrice !== null && 
+                                 currentPrice !== undefined && 
+                                 !isNaN(Number(currentPrice)) && 
+                                 bestBuyPrice !== null && 
+                                 bestBuyPrice !== undefined && 
+                                 !isNaN(Number(bestBuyPrice)) && 
+                                 bestBuyPrice > 0)
     ? ((currentPrice - bestBuyPrice) / bestBuyPrice) * 100
     : undefined;
 
@@ -569,6 +635,17 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   
   return (
     <div className="buffett-card animate-fade-in">
+      {hasMissingPriceData && (
+        <div className="mb-6">
+          <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
+            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <AlertDescription className="text-yellow-700">
+              Für dieses Symbol liegen unvollständige Preisdaten vor. Die Bewertung basiert auf verfügbaren Daten und könnte ungenau sein.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+      
       <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
         Gesamtbewertung
         <RatingExplanation rating={overall} />
@@ -669,7 +746,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           </div>
         )}
         
-        {bestBuyPrice !== undefined && (
+        {(bestBuyPrice !== undefined && bestBuyPrice !== null) && (
           <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign size={18} className="text-buffett-blue" />
@@ -695,15 +772,17 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
             </div>
             
             <div className="flex items-baseline gap-2 mb-1">
-              <div className="text-2xl font-bold text-buffett-blue">{bestBuyPrice.toFixed(2)} {currency}</div>
-              {currentPrice !== undefined && (
+              <div className="text-2xl font-bold text-buffett-blue">
+                {!isNaN(Number(bestBuyPrice)) ? `${Number(bestBuyPrice).toFixed(2)} ${currency}` : 'N/A'}
+              </div>
+              {currentPrice !== null && currentPrice !== undefined && !isNaN(Number(currentPrice)) && (
                 <div className={`text-sm ${priceDifference && priceDifference < 0 ? 'text-buffett-green' : 'text-buffett-red'}`}>
                   {currentPrice.toFixed(2)} {currency}
-                  {priceDifference !== undefined && (
+                  {priceDifference !== undefined && priceDifferencePercent !== undefined && (
                     <span>
                       {' '}
                       ({priceDifference > 0 ? '+' : ''}{priceDifference.toFixed(2)} {currency} / 
-                      {priceDifferencePercent && (priceDifferencePercent > 0 ? '+' : '')}{priceDifferencePercent?.toFixed(1)}%)
+                      {priceDifferencePercent > 0 ? '+' : ''}{priceDifferencePercent.toFixed(1)}%)
                     </span>
                   )}
                 </div>
@@ -714,13 +793,19 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
               Maximaler Kaufpreis für attraktives Investment
             </div>
             
-            {intrinsicValue !== undefined && (
+            {intrinsicValue !== undefined && intrinsicValue !== null && !isNaN(Number(intrinsicValue)) && (
               <div className="flex items-center mt-2 text-sm">
                 <div className="flex items-center gap-2">
                   <Calculator size={14} className="text-gray-500" />
                   <span className="text-gray-600">Innerer Wert (DCF): {intrinsicValue.toFixed(2)} {currency}</span>
                   <DCFExplanationTooltip />
                 </div>
+              </div>
+            )}
+            
+            {originalCurrency && originalCurrency !== currency && originalBestBuyPrice !== null && originalBestBuyPrice !== undefined && (
+              <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500">
+                Ursprünglicher Preis: {originalBestBuyPrice.toFixed(2)} {originalCurrency}
               </div>
             )}
           </div>
