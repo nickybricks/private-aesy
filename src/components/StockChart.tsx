@@ -57,7 +57,13 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         // Verwende entweder den API-Schlüssel aus den Umgebungsvariablen oder den Standard-Schlüssel
         const apiKey = import.meta.env.VITE_FMP_API_KEY || DEFAULT_FMP_API_KEY;
         
-        console.log(`Fetching historical data for ${symbol}`);
+        console.log(`Fetching historical data for ${symbol} with API key: ${apiKey ? 'Available' : 'Not available'}`);
+        
+        if (!apiKey) {
+          console.error('API key is missing or invalid');
+          throw new Error('API-Schlüssel fehlt oder ist ungültig');
+        }
+        
         const response = await fetch(
           `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${apiKey}`
         );
