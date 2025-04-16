@@ -52,16 +52,23 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       setError(null);
       try {
         const apiKey = import.meta.env.VITE_FMP_API_KEY;
+        if (!apiKey) {
+          throw new Error('API-Schlüssel fehlt');
+        }
+
+        console.log(`Fetching historical data for ${symbol}`);
         const response = await fetch(
           `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${apiKey}`
         );
         
         if (!response.ok) {
+          console.error(`API response not ok: ${response.status}`);
           throw new Error('Fehler beim Laden der historischen Daten');
         }
 
         const data = await response.json();
-        if (!data.historical || !Array.isArray(data.historical)) {
+        if (!data.historical || !Array.isArray(data.historical) || data.historical.length === 0) {
+          console.error('No historical data available', data);
           throw new Error('Keine historischen Daten verfügbar');
         }
 
@@ -164,9 +171,9 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       <div className="w-full h-[400px]">
         <ChartContainer
           config={{
-            line1: { theme: { light: 'hsl(221, 83%, 53%)' } },
-            line2: { theme: { light: 'hsl(142, 76%, 36%)' } },
-            area: { theme: { light: 'hsl(221, 83%, 95%)' } },
+            line1: { theme: { light: 'hsl(221, 83%, 53%)', dark: 'hsl(221, 83%, 70%)' } },
+            line2: { theme: { light: 'hsl(142, 76%, 36%)', dark: 'hsl(142, 76%, 50%)' } },
+            area: { theme: { light: 'hsl(221, 83%, 95%)', dark: 'hsl(221, 83%, 30%)' } },
           }}
         >
           <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -183,7 +190,12 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
             />
             <YAxis
               domain={['auto', 'auto']}
-              tickFormatter={(value) => `${value.toFixed(2)} ${currency}`}
+              tickFormatter={(value) => {
+                if (typeof value === 'number') {
+                  return `${value.toFixed(2)} ${currency}`;
+                }
+                return `${value} ${currency}`;
+              }}
             />
             <Tooltip
               content={({ active, payload }) => {
@@ -194,7 +206,9 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                         {format(new Date(payload[0].payload.date), 'dd. MMMM yyyy', { locale: de })}
                       </p>
                       <p className="text-sm font-semibold">
-                        Kurs: {payload[0].value?.toFixed(2)} {currency}
+                        Kurs: {typeof payload[0].value === 'number' 
+                          ? payload[0].value.toFixed(2) 
+                          : payload[0].value} {currency}
                       </p>
                       {intrinsicValue && (
                         <p className="text-sm text-green-700">
