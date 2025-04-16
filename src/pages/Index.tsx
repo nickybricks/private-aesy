@@ -70,6 +70,7 @@ const Index = () => {
   const [gptAvailable, setGptAvailable] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
   const [stockCurrency, setStockCurrency] = useState<string>('EUR');
+  const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
 
   useEffect(() => {
     setGptAvailable(hasOpenAiApiKey());
@@ -78,6 +79,18 @@ const Index = () => {
       setActiveTab('gpt');
     }
   }, []);
+
+  useEffect(() => {
+    if (stockInfo) {
+      const criticalMissing = 
+        stockInfo.price === null || 
+        stockInfo.price === 0 || 
+        stockInfo.marketCap === null || 
+        stockInfo.marketCap === 0;
+      
+      setHasCriticalDataMissing(criticalMissing);
+    }
+  }, [stockInfo]);
 
   const convertFinancialMetrics = async (metrics: any, currency: string) => {
     if (!metrics || !currency) return metrics;
@@ -144,6 +157,7 @@ const Index = () => {
       setBuffettCriteria(null);
       setFinancialMetrics(null);
       setOverallRating(null);
+      setHasCriticalDataMissing(false);
       
       const info = await fetchStockInfo(ticker);
       console.log('Stock Info:', JSON.stringify(info, null, 2));
@@ -157,141 +171,157 @@ const Index = () => {
         console.log('No currency information available, defaulting to EUR');
       }
       
-      toast({
-        title: "Analyse läuft",
-        description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
-      });
+      const criticalDataMissing = 
+        info.price === null || 
+        info.price === 0 || 
+        info.marketCap === null || 
+        info.marketCap === 0;
       
-      if (gptAvailable) {
-        setActiveTab('gpt');
-      }
+      setHasCriticalDataMissing(criticalDataMissing);
       
-      const [criteria, rawMetricsData, rating] = await Promise.all([
-        analyzeBuffettCriteria(ticker),
-        getFinancialMetrics(ticker),
-        getOverallRating(ticker)
-      ]);
-      
-      console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
-      console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
-      console.log('Overall Rating:', JSON.stringify(rating, null, 2));
-      
-      const stockCurrency = info?.currency || 'EUR';
-      
-      const metricsData: FinancialMetricsData = {
-        ...rawMetricsData,
-        metrics: [
-          { 
-            name: 'Gewinn pro Aktie (EPS)', 
-            value: rawMetricsData.eps, 
-            formula: 'Nettogewinn / Anzahl Aktien', 
-            explanation: 'Zeigt den Unternehmensgewinn pro Aktie', 
-            threshold: '> 0, wachsend', 
-            status: rawMetricsData.eps > 0 ? 'positive' as 'pass' : 'negative' as 'fail',
-            isPercentage: false,
-            isMultiplier: false
-          },
-          { 
-            name: 'Eigenkapitalrendite (ROE)', 
-            value: rawMetricsData.roe * 100, 
-            formula: 'Nettogewinn / Eigenkapital', 
-            explanation: 'Zeigt die Effizienz des eingesetzten Kapitals', 
-            threshold: '> 15%', 
-            status: rawMetricsData.roe * 100 > 15 ? 'positive' as 'pass' : 'warning',
-            isPercentage: true,
-            isMultiplier: false
-          },
-          { 
-            name: 'Nettomarge', 
-            value: rawMetricsData.netMargin * 100, 
-            formula: 'Nettogewinn / Umsatz', 
-            explanation: 'Zeigt die Profitabilität', 
-            threshold: '> 10%', 
-            status: rawMetricsData.netMargin * 100 > 10 ? 'positive' as 'pass' : 'warning',
-            isPercentage: true,
-            isMultiplier: false
-          },
-          { 
-            name: 'Kapitalrendite (ROIC)', 
-            value: rawMetricsData.roic * 100, 
-            formula: 'NOPAT / Investiertes Kapital', 
-            explanation: 'Zeigt die Effizienz aller Investments', 
-            threshold: '> 10%', 
-            status: rawMetricsData.roic * 100 > 10 ? 'positive' as 'pass' : 'warning',
-            isPercentage: true,
-            isMultiplier: false
-          },
-          { 
-            name: 'Schulden zu Vermögen', 
-            value: rawMetricsData.debtToAssets * 100, 
-            formula: 'Gesamtschulden / Gesamtvermögen', 
-            explanation: 'Zeigt die Verschuldungsquote', 
-            threshold: '< 50%', 
-            status: rawMetricsData.debtToAssets * 100 < 50 ? 'positive' as 'pass' : 'warning',
-            isPercentage: true,
-            isMultiplier: false
-          },
-          { 
-            name: 'Zinsdeckungsgrad', 
-            value: rawMetricsData.interestCoverage, 
-            formula: 'EBIT / Zinsaufwand', 
-            explanation: 'Zeigt die Fähigkeit, Zinsen zu decken', 
-            threshold: '> 5', 
-            status: rawMetricsData.interestCoverage > 5 ? 'positive' as 'pass' : 'warning',
-            isPercentage: false,
-            isMultiplier: true
-          },
-        ],
-        historicalData: rawMetricsData.historicalData || {
-          revenue: [],
-          earnings: [],
-          eps: []
-        }
-      };
-      
-      if (metricsData) {
-        if (metricsData.metrics) {
-          metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, stockCurrency);
+      if (!criticalDataMissing) {
+        toast({
+          title: "Analyse läuft",
+          description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
+        });
+        
+        if (gptAvailable) {
+          setActiveTab('gpt');
         }
         
-        if (metricsData.historicalData) {
-          metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, stockCurrency);
-        }
-      }
-      
-      if (rating && needsCurrencyConversion(stockCurrency)) {
-        const updatedRating: OverallRatingData = { ...rating };
+        const [criteria, rawMetricsData, rating] = await Promise.all([
+          analyzeBuffettCriteria(ticker),
+          getFinancialMetrics(ticker),
+          getOverallRating(ticker)
+        ]);
         
-        if (updatedRating.intrinsicValue) {
-          updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
-          updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, stockCurrency, 'EUR');
-        }
-        if (updatedRating.bestBuyPrice) {
-          updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
-          updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, stockCurrency, 'EUR');
-        }
-        if (updatedRating.currentPrice) {
-          updatedRating.originalPrice = updatedRating.currentPrice;
-          updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, stockCurrency, 'EUR');
+        console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
+        console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
+        console.log('Overall Rating:', JSON.stringify(rating, null, 2));
+        
+        const stockCurrency = info?.currency || 'EUR';
+        
+        const metricsData: FinancialMetricsData = {
+          ...rawMetricsData,
+          metrics: [
+            { 
+              name: 'Gewinn pro Aktie (EPS)', 
+              value: rawMetricsData.eps, 
+              formula: 'Nettogewinn / Anzahl Aktien', 
+              explanation: 'Zeigt den Unternehmensgewinn pro Aktie', 
+              threshold: '> 0, wachsend', 
+              status: rawMetricsData.eps > 0 ? 'positive' as 'pass' : 'negative' as 'fail',
+              isPercentage: false,
+              isMultiplier: false
+            },
+            { 
+              name: 'Eigenkapitalrendite (ROE)', 
+              value: rawMetricsData.roe * 100, 
+              formula: 'Nettogewinn / Eigenkapital', 
+              explanation: 'Zeigt die Effizienz des eingesetzten Kapitals', 
+              threshold: '> 15%', 
+              status: rawMetricsData.roe * 100 > 15 ? 'positive' as 'pass' : 'warning',
+              isPercentage: true,
+              isMultiplier: false
+            },
+            { 
+              name: 'Nettomarge', 
+              value: rawMetricsData.netMargin * 100, 
+              formula: 'Nettogewinn / Umsatz', 
+              explanation: 'Zeigt die Profitabilität', 
+              threshold: '> 10%', 
+              status: rawMetricsData.netMargin * 100 > 10 ? 'positive' as 'pass' : 'warning',
+              isPercentage: true,
+              isMultiplier: false
+            },
+            { 
+              name: 'Kapitalrendite (ROIC)', 
+              value: rawMetricsData.roic * 100, 
+              formula: 'NOPAT / Investiertes Kapital', 
+              explanation: 'Zeigt die Effizienz aller Investments', 
+              threshold: '> 10%', 
+              status: rawMetricsData.roic * 100 > 10 ? 'positive' as 'pass' : 'warning',
+              isPercentage: true,
+              isMultiplier: false
+            },
+            { 
+              name: 'Schulden zu Vermögen', 
+              value: rawMetricsData.debtToAssets * 100, 
+              formula: 'Gesamtschulden / Gesamtvermögen', 
+              explanation: 'Zeigt die Verschuldungsquote', 
+              threshold: '< 50%', 
+              status: rawMetricsData.debtToAssets * 100 < 50 ? 'positive' as 'pass' : 'warning',
+              isPercentage: true,
+              isMultiplier: false
+            },
+            { 
+              name: 'Zinsdeckungsgrad', 
+              value: rawMetricsData.interestCoverage, 
+              formula: 'EBIT / Zinsaufwand', 
+              explanation: 'Zeigt die Fähigkeit, Zinsen zu decken', 
+              threshold: '> 5', 
+              status: rawMetricsData.interestCoverage > 5 ? 'positive' as 'pass' : 'warning',
+              isPercentage: false,
+              isMultiplier: true
+            },
+          ],
+          historicalData: rawMetricsData.historicalData || {
+            revenue: [],
+            earnings: [],
+            eps: []
+          }
+        };
+        
+        if (metricsData) {
+          if (metricsData.metrics) {
+            metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, stockCurrency);
+          }
+          
+          if (metricsData.historicalData) {
+            metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, stockCurrency);
+          }
         }
         
-        if (updatedRating.currency !== 'EUR') {
-          updatedRating.originalCurrency = updatedRating.currency;
-          updatedRating.currency = 'EUR';
+        if (rating && needsCurrencyConversion(stockCurrency)) {
+          const updatedRating: OverallRatingData = { ...rating };
+          
+          if (updatedRating.intrinsicValue) {
+            updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
+            updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, stockCurrency, 'EUR');
+          }
+          if (updatedRating.bestBuyPrice) {
+            updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
+            updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, stockCurrency, 'EUR');
+          }
+          if (updatedRating.currentPrice) {
+            updatedRating.originalPrice = updatedRating.currentPrice;
+            updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, stockCurrency, 'EUR');
+          }
+          
+          if (updatedRating.currency !== 'EUR') {
+            updatedRating.originalCurrency = updatedRating.currency;
+            updatedRating.currency = 'EUR';
+          }
+          
+          setOverallRating(updatedRating);
+        } else {
+          setOverallRating(rating);
         }
         
-        setOverallRating(updatedRating);
+        setBuffettCriteria(criteria);
+        setFinancialMetrics(metricsData);
+        
+        toast({
+          title: "Analyse abgeschlossen",
+          description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
+        });
       } else {
-        setOverallRating(rating);
+        toast({
+          title: "Analyse nicht möglich",
+          description: `Für ${info.name} liegen nicht ausreichend Daten für eine Buffett-Analyse vor.`,
+          variant: "destructive",
+        });
       }
-      
-      setBuffettCriteria(criteria);
-      setFinancialMetrics(metricsData);
-      
-      toast({
-        title: "Analyse abgeschlossen",
-        description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
-      });
     } catch (error) {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
@@ -395,7 +425,7 @@ const Index = () => {
         </div>
       ) : (
         <>
-          {buffettCriteria && (
+          {!hasCriticalDataMissing && buffettCriteria && (
             <div className="mb-10">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-4">
@@ -424,7 +454,7 @@ const Index = () => {
             </div>
           )}
           
-          {financialMetrics && (
+          {!hasCriticalDataMissing && financialMetrics && (
             <div className="mb-10">
               <FinancialMetrics 
                 metrics={financialMetrics.metrics} 
@@ -434,7 +464,7 @@ const Index = () => {
             </div>
           )}
           
-          {overallRating && (
+          {!hasCriticalDataMissing && overallRating && (
             <div className="mb-10">
               <OverallRating 
                 rating={{
@@ -442,6 +472,24 @@ const Index = () => {
                   originalCurrency: needsCurrencyConversion(stockCurrency) ? stockCurrency : undefined
                 } as OverallRatingData} 
               />
+            </div>
+          )}
+          
+          {hasCriticalDataMissing && stockInfo && (
+            <div className="mb-10">
+              <Alert className="bg-red-50 border-red-200">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                <AlertTitle className="text-red-700">Buffett-Analyse nicht möglich</AlertTitle>
+                <AlertDescription className="text-red-600">
+                  <p className="mb-3">
+                    Für {stockInfo.ticker} liegen aktuell nicht genügend Daten für eine vollständige Bewertung vor.
+                    Die Buffett-Analyse benötigt mindestens einen aktuellen Kurs und Marktkapitalisierung.
+                  </p>
+                  <p>
+                    Bitte wählen Sie ein anderes Symbol mit vollständigeren Daten, um eine aussagekräftige Analyse nach Warren Buffetts Kriterien zu erhalten.
+                  </p>
+                </AlertDescription>
+              </Alert>
             </div>
           )}
         </>

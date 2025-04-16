@@ -90,6 +90,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   const { name, ticker, price, change, changePercent, currency, marketCap } = stockInfo;
   const isPositive = change !== null && change >= 0;
   const hasIncompleteData = price === null || change === null || changePercent === null || marketCap === null;
+  const hasCriticalDataMissing = price === null || price === 0 || marketCap === null || marketCap === 0;
 
   const alternativeSymbol = ticker.endsWith('.DE') ? ticker.replace('.DE', '') : null;
 
@@ -111,6 +112,53 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
             <Skeleton className="h-4 w-48" />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Critical data missing - prevent analysis
+  if (hasCriticalDataMissing) {
+    return (
+      <div className="buffett-card mb-6 animate-fade-in">
+        <Alert className="bg-red-50 border-red-200">
+          <AlertTriangle className="h-4 w-4 text-red-500" />
+          <AlertTitle className="text-red-700">Analyse nicht möglich</AlertTitle>
+          <AlertDescription className="text-red-600">
+            <p>
+              Für {ticker} liegen aktuell nicht genügend Daten für eine vollständige Bewertung vor.
+              Die Buffett-Analyse benötigt mindestens einen aktuellen Kurs und Marktkapitalisierung.
+            </p>
+            {alternativeSymbol && (
+              <div className="mt-2">
+                <p className="mb-2">
+                  Bitte probiere alternativ {alternativeSymbol} (US-Börse) aus oder wähle ein anderes Symbol.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={() => navigate(`/?symbol=${alternativeSymbol}`)}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  {alternativeSymbol} (NASDAQ) analysieren statt {ticker}
+                </Button>
+              </div>
+            )}
+            {!alternativeSymbol && (
+              <div className="mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={() => navigate('/')}
+                >
+                  <Edit2 className="h-4 w-4" />
+                  Anderes Symbol wählen
+                </Button>
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
