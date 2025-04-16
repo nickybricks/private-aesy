@@ -125,9 +125,6 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
             </p>
             {alternativeSymbol && (
               <div className="mt-2">
-                <p className="mb-2">
-                  Bitte probiere alternativ {alternativeSymbol} (US-Börse) aus oder wähle ein anderes Symbol.
-                </p>
                 <Button
                   variant="outline"
                   size="sm"
@@ -136,19 +133,6 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
                 >
                   <ArrowRight className="h-4 w-4" />
                   {alternativeSymbol} (NASDAQ) analysieren statt {ticker}
-                </Button>
-              </div>
-            )}
-            {!alternativeSymbol && (
-              <div className="mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                  onClick={() => navigate('/')}
-                >
-                  <Edit2 className="h-4 w-4" />
-                  Anderes Symbol wählen
                 </Button>
               </div>
             )}
