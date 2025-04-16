@@ -16,6 +16,9 @@ import { ChartContainer } from '@/components/ui/chart';
 import { Button } from '@/components/ui/button';
 import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
 
+// Default API key für den Fall, dass keine Umgebungsvariable gefunden wird
+const DEFAULT_FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
+
 interface StockChartProps {
   symbol: string;
   currency: string;
@@ -51,11 +54,9 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       setIsLoading(true);
       setError(null);
       try {
-        const apiKey = import.meta.env.VITE_FMP_API_KEY;
-        if (!apiKey) {
-          throw new Error('API-Schlüssel fehlt');
-        }
-
+        // Verwende entweder den API-Schlüssel aus den Umgebungsvariablen oder den Standard-Schlüssel
+        const apiKey = import.meta.env.VITE_FMP_API_KEY || DEFAULT_FMP_API_KEY;
+        
         console.log(`Fetching historical data for ${symbol}`);
         const response = await fetch(
           `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${apiKey}`
