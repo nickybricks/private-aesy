@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Financial Modeling Prep API Key (default)

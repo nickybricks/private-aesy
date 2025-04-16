@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Area,
@@ -53,18 +52,10 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       setIsLoading(true);
       setError(null);
       try {
-        // Get API key from localStorage or use default
-        const apiKey = localStorage.getItem('fmp_api_key') || DEFAULT_FMP_API_KEY;
-        
-        console.log(`Fetching historical data for ${symbol} with API key: ${apiKey ? 'Available' : 'Not available'}`);
-        
-        if (!apiKey) {
-          console.error('API key is missing or invalid');
-          throw new Error('API-Schlüssel fehlt oder ist ungültig');
-        }
+        console.log(`Fetching historical data for ${symbol}`);
         
         const response = await fetch(
-          `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${apiKey}`
+          `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${DEFAULT_FMP_API_KEY}`
         );
         
         if (!response.ok) {
@@ -129,7 +120,6 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         cutoffDate.setFullYear(now.getFullYear() - 5);
         break;
       case 'MAX':
-        // Für "Allzeit" alle verfügbaren Daten zurückgeben ohne Filter
         return historicalData;
       default:
         return historicalData;
