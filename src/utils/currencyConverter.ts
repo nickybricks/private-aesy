@@ -1,4 +1,3 @@
-
 /**
  * Currency conversion utility using Exchange Rate API
  */
@@ -19,7 +18,7 @@ const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<
     if (rateCache && 
         rateCache.baseCurrency === baseCurrency && 
         (Date.now() - rateCache.lastUpdated) < CACHE_DURATION) {
-      console.log('Using cached exchange rates');
+      console.log('Using cached exchange rates for', baseCurrency);
       return rateCache.rates;
     }
 
@@ -37,6 +36,7 @@ const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<
       throw new Error('Failed to fetch exchange rates: No rates in response');
     }
 
+    // Store in cache
     rateCache = {
       rates: data.rates,
       lastUpdated: Date.now(),
@@ -46,14 +46,12 @@ const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<
     return data.rates;
   } catch (error) {
     console.error('Error fetching exchange rates:', error);
-    // Return a fallback rate of 1 for all currencies when API fails
-    return { USD: 1, EUR: 1, JPY: 110, GBP: 0.8, CAD: 1.3, CHF: 0.9, AUD: 1.3, KRW: 1450 };
+    throw new Error(`Failed to fetch exchange rates for ${baseCurrency}`);
   }
 };
 
 /**
  * Convert a monetary value from source currency to target currency
- * Safely handles null or undefined values
  */
 export const convertCurrency = async (
   value: number | string | null | undefined,
@@ -77,7 +75,6 @@ export const convertCurrency = async (
   }
   
   // Special handling for KRW and other high-value currencies
-  // This ensures the scale is maintained properly
   if (fromCurrency === 'KRW') {
     console.log(`Converting KRW value: ${numericValue}`);
   }
@@ -90,10 +87,9 @@ export const convertCurrency = async (
   try {
     const rates = await fetchExchangeRates(fromCurrency);
     
-    // If we don't have a rate for the target currency, return the original value
     if (!rates[toCurrency]) {
-      console.warn(`No exchange rate available for ${fromCurrency} to ${toCurrency}`);
-      return numericValue;
+      console.error(`No exchange rate available for ${fromCurrency} to ${toCurrency}`);
+      throw new Error(`No exchange rate available for ${fromCurrency} to ${toCurrency}`);
     }
     
     const convertedValue = numericValue * rates[toCurrency];
@@ -101,7 +97,7 @@ export const convertCurrency = async (
     return convertedValue;
   } catch (error) {
     console.error('Error converting currency:', error);
-    return numericValue; // Return original value if conversion fails
+    throw error; // Propagate the error to handle it in the components
   }
 };
 
