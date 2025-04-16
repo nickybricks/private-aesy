@@ -13,6 +13,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
+import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 
 interface StockSearchProps {
   onSearch: (ticker: string) => void;
@@ -180,17 +181,11 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     }
     
     try {
-      const apiKey = localStorage.getItem('fmp_api_key');
-      if (!apiKey) {
-        console.log("No API key found for ISIN search");
-        return;
-      }
-      
       setIsSearching(true);
       
       try {
         console.log("Searching for ISIN via search-ticker endpoint:", possibleIsin);
-        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search-ticker?isin=${possibleIsin}&apikey=${apiKey}`);
+        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search-ticker?isin=${possibleIsin}&apikey=${DEFAULT_FMP_API_KEY}`);
         
         if (response.data && Array.isArray(response.data) && response.data.length > 0 && response.data[0]?.symbol) {
           const result = response.data[0];
@@ -219,7 +214,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       try {
         console.log("Searching for ISIN via direct ISIN endpoint:", possibleIsin);
-        const directResponse = await axios.get(`https://financialmodelingprep.com/api/v3/isin/${possibleIsin}?apikey=${apiKey}`);
+        const directResponse = await axios.get(`https://financialmodelingprep.com/api/v3/isin/${possibleIsin}?apikey=${DEFAULT_FMP_API_KEY}`);
         
         if (directResponse.data && Array.isArray(directResponse.data) && directResponse.data.length > 0 && directResponse.data[0]?.symbol) {
           const result = directResponse.data[0];
@@ -421,20 +416,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       setIsSearching(true);
       
       try {
-        const apiKey = localStorage.getItem('fmp_api_key');
-        if (!apiKey) {
-          const filteredResults = fallbackStocks.filter(stock => 
-            stock.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-            stock.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-          setSuggestions(filteredResults);
-          
-          const correction = getFuzzyMatches(searchQuery, filteredResults);
-          setSuggestedCorrection(correction);
-          return;
-        }
-        
-        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=25&apikey=${apiKey}`);
+        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=25&apikey=${DEFAULT_FMP_API_KEY}`);
         
         if (response.data && Array.isArray(response.data)) {
           const stocksOnly = response.data.filter((item: any) => {
