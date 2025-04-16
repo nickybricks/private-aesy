@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -20,7 +19,8 @@ import {
   formatCurrency, 
   shouldConvertCurrency,
   getCurrencyDecimalPlaces,
-  formatScaledNumber
+  formatScaledNumber,
+  needsCurrencyConversion
 } from '@/utils/currencyConverter';
 
 interface FinancialMetric {
@@ -36,12 +36,19 @@ interface FinancialMetric {
   isMultiplier?: boolean;
 }
 
+interface HistoricalDataItem {
+  year: string;
+  value: number;
+  originalValue?: number;
+  originalCurrency?: string;
+}
+
 interface FinancialMetricsProps {
   metrics: FinancialMetric[] | null;
   historicalData: {
-    revenue: { year: string; value: number; originalValue?: number }[];
-    earnings: { year: string; value: number; originalValue?: number }[];
-    eps: { year: string; value: number; originalValue?: number }[];
+    revenue: HistoricalDataItem[];
+    earnings: HistoricalDataItem[];
+    eps: HistoricalDataItem[];
   } | null;
   currency?: string;
 }
@@ -255,7 +262,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
   if (!metrics) return null;
   
   const metricsArray = Array.isArray(metrics) ? metrics.map(metric => {
-    // Identify all types of ratio metrics
     const isRatio = metric.name.includes('ROE') || 
                     metric.name.includes('ROIC') || 
                     metric.name.includes('Marge') || 
@@ -274,10 +280,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
     };
   }) : [];
   
-  // Determine decimal places for this currency
   const decimalPlaces = getCurrencyDecimalPlaces(currency);
   
-  // Check if any metric has been converted (has originalCurrency)
   const hasConvertedMetrics = metricsArray.some(
     metric => metric.originalCurrency && metric.originalCurrency !== currency
   );

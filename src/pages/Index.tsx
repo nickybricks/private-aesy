@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -18,6 +19,13 @@ import {
   needsCurrencyConversion 
 } from '@/utils/currencyConverter';
 
+interface HistoricalDataItem {
+  year: string;
+  value: number;
+  originalValue?: number;
+  originalCurrency?: string;
+}
+
 interface FinancialMetricsData {
   eps?: any;
   roe?: any;
@@ -25,6 +33,7 @@ interface FinancialMetricsData {
   roic?: any;
   debtToAssets?: any;
   interestCoverage?: any;
+  reportedCurrency?: string;
   metrics?: Array<{
     name: string;
     value: any;
@@ -38,9 +47,9 @@ interface FinancialMetricsData {
     isMultiplier: boolean;
   }>;
   historicalData?: {
-    revenue: any[];
-    earnings: any[];
-    eps: any[];
+    revenue: HistoricalDataItem[];
+    earnings: HistoricalDataItem[];
+    eps: HistoricalDataItem[];
   };
 }
 
