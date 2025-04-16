@@ -11,6 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { convertCurrency, needsCurrencyConversion, getExchangeRate, shouldConvertCurrency } from '@/utils/currencyConverter';
+import StockChart from './StockChart';
 
 interface StockHeaderProps {
   stockInfo: {
@@ -21,6 +22,7 @@ interface StockHeaderProps {
     changePercent: number | null;
     currency: string;
     marketCap: number | null;
+    intrinsicValue: number | null;
   } | null;
 }
 
@@ -128,7 +130,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
     );
   }
 
-  const { name, ticker, price, change, changePercent, currency, marketCap } = stockInfo;
+  const { name, ticker, price, change, changePercent, currency, marketCap, intrinsicValue } = stockInfo;
   const isPositive = change !== null && change >= 0;
   
   const alternativeSymbol = hasCriticalDataMissing && ticker.endsWith('.DE') ? ticker.replace('.DE', '') : null;
@@ -181,7 +183,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   }
 
   return (
-    <div className="buffett-card mb-6 animate-slide-up">
+    <div className="buffett-card mb-6 animate-slide-up space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold">{name}</h1>
@@ -220,7 +222,15 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         </div>
       </div>
       
-      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center">
+      <div className="mt-4 pt-4 border-t border-gray-100">
+        <StockChart 
+          symbol={ticker} 
+          currency={currency} 
+          intrinsicValue={stockInfo.intrinsicValue}
+        />
+      </div>
+      
+      <div className="pt-4 border-t border-gray-100 flex items-center">
         <DollarSign size={16} className="mr-2 text-buffett-subtext" />
         <span className="text-buffett-subtext">
           Marktkapitalisierung: {formatMarketCap(marketCap, currency)}
