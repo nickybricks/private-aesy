@@ -122,7 +122,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
     if (!historicalData.length) return [];
     
     const now = new Date();
-    const cutoffDate = new Date();
+    let cutoffDate = new Date();
     
     switch (selectedRange) {
       case '1Y':
@@ -131,6 +131,9 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       case '5Y':
         cutoffDate.setFullYear(now.getFullYear() - 5);
         break;
+      case 'MAX':
+        // Return all data for "Allzeit" option
+        return historicalData;
       default:
         return historicalData;
     }
@@ -175,7 +178,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         ))}
       </div>
       
-      <div className="w-full h-[400px]">
+      <div className="w-full h-[400px] overflow-hidden">
         <ChartContainer
           config={{
             line1: { theme: { light: 'hsl(221, 83%, 53%)', dark: 'hsl(221, 83%, 70%)' } },
@@ -183,68 +186,72 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
             area: { theme: { light: 'hsl(221, 83%, 95%)', dark: 'hsl(221, 83%, 30%)' } },
           }}
         >
-          <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="date"
-              tickFormatter={(date) => format(new Date(date), 'dd.MM.yy', { locale: de })}
-            />
-            <YAxis
-              domain={['auto', 'auto']}
-              tickFormatter={(value) => {
-                if (typeof value === 'number') {
-                  return `${value.toFixed(2)} ${currency}`;
-                }
-                return `${value} ${currency}`;
-              }}
-            />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (active && payload && payload.length > 0) {
-                  return (
-                    <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
-                      <p className="text-sm text-gray-600">
-                        {format(new Date(payload[0].payload.date), 'dd. MMMM yyyy', { locale: de })}
-                      </p>
-                      <p className="text-sm font-semibold">
-                        Kurs: {typeof payload[0].value === 'number' 
-                          ? payload[0].value.toFixed(2) 
-                          : payload[0].value} {currency}
-                      </p>
-                      {intrinsicValue && (
-                        <p className="text-sm text-green-700">
-                          Innerer Wert: {intrinsicValue.toFixed(2)} {currency}
-                        </p>
-                      )}
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Area
-              type="monotone"
-              dataKey="price"
-              stroke="hsl(221, 83%, 53%)"
-              fillOpacity={1}
-              fill="url(#colorPrice)"
-            />
-            {intrinsicValue && (
-              <Line
-                type="monotone"
-                dataKey="intrinsicValue"
-                stroke="hsl(142, 76%, 36%)"
-                strokeWidth={2}
-                strokeDasharray="5 5"
+          <ResponsiveContainer width="100%" height={380}>
+            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+              <defs>
+                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="date"
+                tickFormatter={(date) => format(new Date(date), 'dd.MM.yy', { locale: de })}
+                height={50}
+                tickMargin={10}
               />
-            )}
-          </ComposedChart>
+              <YAxis
+                domain={['auto', 'auto']}
+                tickFormatter={(value) => {
+                  if (typeof value === 'number') {
+                    return `${value.toFixed(2)} ${currency}`;
+                  }
+                  return `${value} ${currency}`;
+                }}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length > 0) {
+                    return (
+                      <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
+                        <p className="text-sm text-gray-600">
+                          {format(new Date(payload[0].payload.date), 'dd. MMMM yyyy', { locale: de })}
+                        </p>
+                        <p className="text-sm font-semibold">
+                          Kurs: {typeof payload[0].value === 'number' 
+                            ? payload[0].value.toFixed(2) 
+                            : payload[0].value} {currency}
+                        </p>
+                        {intrinsicValue && (
+                          <p className="text-sm text-green-700">
+                            Innerer Wert: {intrinsicValue.toFixed(2)} {currency}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="price"
+                stroke="hsl(221, 83%, 53%)"
+                fillOpacity={1}
+                fill="url(#colorPrice)"
+              />
+              {intrinsicValue && (
+                <Line
+                  type="monotone"
+                  dataKey="intrinsicValue"
+                  stroke="hsl(142, 76%, 36%)"
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                />
+              )}
+            </ComposedChart>
+          </ResponsiveContainer>
         </ChartContainer>
       </div>
     </div>
