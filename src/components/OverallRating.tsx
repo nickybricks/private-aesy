@@ -13,6 +13,7 @@ import {
   Info,
   PieChart
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert'; // Add this import
 import {
   Tooltip,
   TooltipContent,
