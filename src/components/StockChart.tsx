@@ -178,7 +178,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         ))}
       </div>
       
-      <div className="w-full h-[400px] overflow-hidden">
+      <div className="w-full h-[350px] overflow-hidden">
         <ChartContainer
           config={{
             line1: { theme: { light: 'hsl(221, 83%, 53%)', dark: 'hsl(221, 83%, 70%)' } },
@@ -186,8 +186,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
             area: { theme: { light: 'hsl(221, 83%, 95%)', dark: 'hsl(221, 83%, 30%)' } },
           }}
         >
-          <ResponsiveContainer width="100%" height={380}>
-            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+          <ResponsiveContainer width="100%" height={330}>
+            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
@@ -198,8 +198,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
               <XAxis
                 dataKey="date"
                 tickFormatter={(date) => format(new Date(date), 'dd.MM.yy', { locale: de })}
-                height={50}
-                tickMargin={10}
+                height={40}
+                tickMargin={14}
               />
               <YAxis
                 domain={['auto', 'auto']}
