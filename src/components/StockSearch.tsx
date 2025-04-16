@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -130,7 +129,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const [isinResults, setIsinResults] = useState<StockSuggestion | null>(null);
   const { toast } = useToast();
 
-  // Memoized ISIN check and handler
   const checkAndHandleIsin = useCallback((value: string) => {
     if (isinPattern.test(value)) {
       console.log("ISIN pattern detected in input/query:", value);
@@ -145,7 +143,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       setOpen(true);
     }
     
-    // Check if the searchQuery is an ISIN
     if (checkAndHandleIsin(searchQuery)) {
       console.log("ISIN pattern detected in searchQuery effect:", searchQuery);
     } else {
@@ -156,7 +153,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const handleIsinSearch = async (possibleIsin: string) => {
     console.log("Starting ISIN search for:", possibleIsin);
     
-    // First check our local database of common German ISINs
     if (commonGermanIsins[possibleIsin]) {
       const symbol = commonGermanIsins[possibleIsin];
       console.log("Found ISIN in local database:", possibleIsin, "=>", symbol);
@@ -376,10 +372,18 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const getFuzzyMatches = (query: string, stocks: StockSuggestion[]) => {
     if (query.length < 4) return null;
     
+    const exactMatch = stocks.find(stock => 
+      stock.symbol.toLowerCase() === query.toLowerCase()
+    );
+    if (exactMatch) return null;
+    
     const queryLower = query.toLowerCase();
     
     for (const stock of stocks) {
       const nameLower = stock.name.toLowerCase();
+      const symbolLower = stock.symbol.toLowerCase();
+      
+      if (symbolLower === queryLower) continue;
       
       let matchCount = 0;
       let lastIndex = -1;
@@ -605,7 +609,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                     setTicker(newValue);
                     setSearchQuery(newValue);
                     
-                    // Explicitly check for ISIN pattern on every input change
                     checkAndHandleIsin(newValue);
                     
                     if (newValue.length >= 1) {
@@ -629,7 +632,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               align="start" 
               sideOffset={5}
               onInteractOutside={(e) => {
-                // Prevent closing when interacting with the popover content
                 if (isinResults) {
                   e.preventDefault();
                 }
@@ -643,7 +645,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                     setSearchQuery(value);
                     setTicker(value);
                     
-                    // Check for ISIN in command input
                     checkAndHandleIsin(value);
                   }}
                   autoFocus

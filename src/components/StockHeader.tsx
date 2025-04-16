@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -46,7 +45,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   return (
     <div className="buffett-card mb-6 animate-slide-up">
       {hasIncompleteData && (
-        <Alert variant="warning" className="mb-4 bg-yellow-50 border-yellow-200">
+        <Alert className="mb-4 bg-yellow-50 border-yellow-200">
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
           <AlertDescription className="text-yellow-700">
             Für dieses Symbol liegen unvollständige Daten vor. Einige Kennzahlen und Bewertungen könnten fehlen oder ungenau sein.
