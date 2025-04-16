@@ -971,6 +971,17 @@ export const getFinancialMetrics = async (ticker: string) => {
       }
     }
 
+    // Determine the reported currency from the income statement or quote data
+    let reportedCurrency = 'USD'; // Default to USD if no currency info available
+    
+    if (latestIncomeStatement && latestIncomeStatement.reportedCurrency) {
+      reportedCurrency = latestIncomeStatement.reportedCurrency;
+    } else if (quoteData && quoteData.currency) {
+      reportedCurrency = quoteData.currency;
+    }
+    
+    console.log(`Reported currency identified as: ${reportedCurrency}`);
+    
     // Prepare historical data
     const historicalData = {
       revenue: [],
@@ -985,7 +996,8 @@ export const getFinancialMetrics = async (ticker: string) => {
         .slice(0, Math.min(5, incomeStatements.length))
         .map(statement => ({
           year: new Date(statement.date).getFullYear(),
-          value: statement.revenue || 0
+          value: statement.revenue || 0,
+          originalCurrency: statement.reportedCurrency || reportedCurrency
         }));
       
       // Last 5 years of earnings data
@@ -993,7 +1005,8 @@ export const getFinancialMetrics = async (ticker: string) => {
         .slice(0, Math.min(5, incomeStatements.length))
         .map(statement => ({
           year: new Date(statement.date).getFullYear(),
-          value: statement.netIncome || 0
+          value: statement.netIncome || 0,
+          originalCurrency: statement.reportedCurrency || reportedCurrency
         }));
       
       // Last 5 years of EPS data
@@ -1001,7 +1014,8 @@ export const getFinancialMetrics = async (ticker: string) => {
         .slice(0, Math.min(5, incomeStatements.length))
         .map(statement => ({
           year: new Date(statement.date).getFullYear(),
-          value: statement.eps || 0
+          value: statement.eps || 0,
+          originalCurrency: statement.reportedCurrency || reportedCurrency
         }));
     }
 
@@ -1015,6 +1029,9 @@ export const getFinancialMetrics = async (ticker: string) => {
       // Schulden-Kennzahlen
       debtToAssets,
       interestCoverage,
+      
+      // Add the reported currency to the returned object
+      reportedCurrency,
       
       // Historical data
       historicalData,
