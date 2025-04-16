@@ -104,19 +104,24 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
     const warningCount = warningSignals.filter(signal => analysis.includes(signal)).length;
     const negativeCount = negativeSignals.filter(signal => analysis.includes(signal)).length;
     
-    // Assign score based on the semantic analysis
+    // *** UPDATED SCORING LOGIC FOR TURNAROUNDS ***
+    // 3 points: All positive signals (stable company, no turnaround)
+    // 2 points: Mostly positive with some warnings
+    // 1 point: Mix of positive, warnings and negative signals
+    // 0 points: Mostly warnings or clear negatives
+    
     if (positiveCount > 0 && warningCount === 0 && negativeCount === 0) {
       // Clear indication of no turnaround
       return 3;
-    } else if (warningCount === 1 && negativeCount === 0) {
-      // One warning signal
+    } else if (positiveCount > 0 && warningCount === 1 && negativeCount === 0) {
+      // Mostly stable with minor restructuring
+      return 2;
+    } else if (positiveCount > 0 && (warningCount > 0 || negativeCount === 1)) {
+      // Mix of stable elements with some restructuring
       return 1;
-    } else if (warningCount >= 2 || negativeCount >= 1) {
-      // Multiple warnings or clear negatives
+    } else {
+      // Multiple warnings or clear indication of turnaround
       return 0;
-    } else if (positiveCount > 0) {
-      // Default to full score if any positive signals and no clear negatives
-      return 3;
     }
   }
   
