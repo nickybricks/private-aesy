@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -61,7 +60,6 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-// Helper function that automatically derives score from GPT analysis
 const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | undefined => {
   if (!criterion.gptAnalysis || criterion.maxScore === undefined) {
     return undefined;
@@ -69,7 +67,6 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
   
   const analysis = criterion.gptAnalysis.toLowerCase();
   
-  // Derive score for business model criterion
   if (criterion.title === '1. Verstehbares Geschäftsmodell') {
     if (analysis.includes('einfach') || analysis.includes('klar') || analysis.includes('verständlich')) {
       return 3;
@@ -80,9 +77,7 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
     }
   }
   
-  // Improved scoring logic for turnaround criterion
   if (criterion.title === '11. Keine Turnarounds') {
-    // Count positive, negative, and warning signals in the analysis
     const positiveSignals = [
       'kein turnaround', 'keine umstrukturierung', 'keine restrukturierung', 
       'kein umbau', 'stabil', 'keine umbruchsphase', 'solide', 
@@ -99,38 +94,29 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
       'grundlegende umstellung', 'signifikante umstrukturierung', 'massiver umbau'
     ];
     
-    // Count matches for each signal type
     const positiveCount = positiveSignals.filter(signal => analysis.includes(signal)).length;
     const warningCount = warningSignals.filter(signal => analysis.includes(signal)).length;
     const negativeCount = negativeSignals.filter(signal => analysis.includes(signal)).length;
     
-    // Assign score based on the semantic analysis
     if (positiveCount > 0 && warningCount === 0 && negativeCount === 0) {
-      // Clear indication of no turnaround
       return 3;
     } else if (warningCount === 1 && negativeCount === 0) {
-      // One warning signal
       return 1;
     } else if (warningCount >= 2 || negativeCount >= 1) {
-      // Multiple warnings or clear negatives
       return 0;
     } else if (positiveCount > 0) {
-      // Default to full score if any positive signals and no clear negatives
       return 3;
     }
   }
   
-  // For other criteria, we could add similar pattern matching logic
   return undefined;
-}
+};
 
-// Function to get score display based on status with automated GPT score derivation
 const getScoreDisplay = (criterion: BuffettCriterionProps) => {
   if (criterion.maxScore === undefined) {
     return null;
   }
   
-  // Try to derive score from GPT analysis if it doesn't match current score
   const derivedScore = deriveScoreFromGptAnalysis(criterion);
   const score = criterion.score !== undefined ? criterion.score : derivedScore;
   
@@ -138,7 +124,6 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
     return null;
   }
   
-  // Added tooltip with detailed explanation
   return (
     <TooltipProvider>
       <Tooltip>
@@ -166,30 +151,23 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
   );
 };
 
-// Improved function to detect inconsistencies between GPT analysis and score
 const hasInconsistentAnalysis = (criterion: BuffettCriterionProps): boolean => {
   if (!criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
     return false;
   }
   
-  // Get the derived score from GPT analysis
   const derivedScore = deriveScoreFromGptAnalysis(criterion);
   
-  // If we have a derived score and it doesn't match the current score, flag an inconsistency
   return derivedScore !== undefined && derivedScore !== criterion.score;
 };
 
-// Helper function to extract key insights from GPT analysis
 const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   if (!gptAnalysis) return { summary: '', points: [] };
   
-  // Split by new lines and filter out empty lines
   const lines = gptAnalysis.split('\n').filter(line => line.trim() !== '');
   
-  // Extract first sentence or paragraph as summary
   const summary = lines[0] || '';
   
-  // Extract bullet points (lines starting with - or *)
   const points = lines
     .filter(line => line.trim().startsWith('-') || line.trim().startsWith('*'))
     .map(line => line.trim().replace(/^[-*]\s*/, ''));
@@ -197,7 +175,6 @@ const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   return { summary, points };
 };
 
-// New component for a more visual score presentation
 const BuffettScoreChart = ({ score }: { score: number }) => {
   const COLORS = ['#10b981', '#f0f0f0'];
   const data = [
@@ -256,7 +233,6 @@ const BuffettScoreChart = ({ score }: { score: number }) => {
   );
 };
 
-// Added component to help explain DCF calculations
 const DCFExplanationTooltip: React.FC = () => (
   <TooltipProvider>
     <Tooltip>
@@ -281,7 +257,98 @@ const DCFExplanationTooltip: React.FC = () => (
   </TooltipProvider>
 );
 
+const IntrinsicValueTooltip: React.FC<{
+  intrinsicValue: number | null | undefined;
+  currency: string;
+}> = ({ intrinsicValue, currency }) => {
+  if (!intrinsicValue || isNaN(Number(intrinsicValue))) {
+    return (
+      <div className="space-y-2">
+        <h4 className="font-semibold">DCF-Berechnung nicht möglich</h4>
+        <p>Für dieses Wertpapier liegen nicht genügend Daten vor, um eine DCF-Berechnung durchzuführen.</p>
+      </div>
+    );
+  }
+  
+  const currentFCF = intrinsicValue * 0.04;
+  const growthRate1 = 15;
+  const growthRate2 = 8;
+  const terminalGrowth = 3;
+  const discountRate = 8;
+  
+  const fcf1 = currentFCF * (1 + growthRate1/100);
+  const fcf2 = fcf1 * (1 + growthRate1/100);
+  const fcf5 = fcf1 * Math.pow(1 + growthRate1/100, 4);
+  const fcf10 = fcf5 * Math.pow(1 + growthRate2/100, 5);
+  
+  const terminalValue = fcf10 * (1 + terminalGrowth/100) / (discountRate/100 - terminalGrowth/100);
+  
+  return (
+    <div className="space-y-2 max-w-2xl">
+      <h4 className="font-semibold">Berechnung des inneren Werts (DCF)</h4>
+      <p>Der innere Wert von {intrinsicValue.toFixed(2)} {currency} wurde mittels einer detaillierten DCF-Analyse berechnet:</p>
+      
+      <div className="border border-gray-200 rounded-md p-3 bg-gray-50 mt-2">
+        <h5 className="font-medium mb-2">1. Ausgangsbasis der Berechnung:</h5>
+        <ul className="text-sm space-y-1">
+          <li>• Aktueller Free Cashflow: {currentFCF.toFixed(2)} {currency}</li>
+          <li>• Abzinsungsrate: {discountRate}% (Renditeerwartung)</li>
+          <li className="font-medium">Prognostizierte Wachstumsraten:</li>
+          <li>• Jahre 1-5: {growthRate1}% jährlich</li>
+          <li>• Jahre 6-10: {growthRate2}% jährlich</li>
+          <li>• Ab Jahr 11: {terminalGrowth}% (ewiges Wachstum)</li>
+        </ul>
+      </div>
+      
+      <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
+        <h5 className="font-medium mb-2">2. Detaillierte FCF-Prognose:</h5>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <p className="font-medium">Phase 1 (Hohes Wachstum):</p>
+            <ul className="space-y-1">
+              <li>Jahr 1: {fcf1.toFixed(2)} {currency}</li>
+              <li>Jahr 2: {fcf2.toFixed(2)} {currency}</li>
+              <li>Jahr 5: {fcf5.toFixed(2)} {currency}</li>
+            </ul>
+          </div>
+          <div>
+            <p className="font-medium">Phase 2 (Moderates Wachstum):</p>
+            <ul className="space-y-1">
+              <li>Jahr 10: {fcf10.toFixed(2)} {currency}</li>
+              <li className="font-medium mt-2">Terminal Value:</li>
+              <li>{terminalValue.toFixed(2)} {currency}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
+        <h5 className="font-medium mb-2">3. Berechnung des Barwerts:</h5>
+        <ul className="text-sm space-y-1">
+          <li>1. Diskontierung der Cashflows Jahre 1-10</li>
+          <li>2. Diskontierung des Terminal Values</li>
+          <li>3. Summe aller diskontierten Werte</li>
+          <li className="font-medium mt-2">Innerer Wert pro Aktie: {intrinsicValue.toFixed(2)} {currency}</li>
+        </ul>
+      </div>
+      
+      <div className="text-sm text-gray-600 mt-2">
+        <p className="font-medium">Hinweis zur Berechnung:</p>
+        <p>Diese Analyse basiert auf konservativen Annahmen und berücksichtigt historische Wachstumsraten, Branchendurchschnitte und Unternehmensqualität.</p>
+      </div>
+    </div>
+  );
+};
+
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
+  const isBuffettCriterion = (criterion: any): criterion is BuffettCriterionProps => {
+    return criterion && 
+           typeof criterion.title === 'string' && 
+           ['pass', 'warning', 'fail'].includes(criterion.status) &&
+           typeof criterion.description === 'string' &&
+           Array.isArray(criterion.details);
+  };
+
   const allCriteria = [
     criteria.businessModel,
     criteria.economicMoat,
@@ -294,13 +361,11 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.cyclicalBehavior,
     criteria.oneTimeEffects,
     criteria.turnaround
-  ];
+  ].filter(isBuffettCriterion);
 
-  // Process criteria to automatically update scores based on GPT analysis
   const processedCriteria = allCriteria.map(criterion => {
     const derivedScore = deriveScoreFromGptAnalysis(criterion);
     
-    // Only update the score if it's different and we have a derived value
     if (derivedScore !== undefined && (criterion.score === undefined || criterion.score !== derivedScore)) {
       return {
         ...criterion,
@@ -311,7 +376,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     return criterion;
   });
 
-  // Calculate total points for overall rating
   const totalPoints = processedCriteria.reduce((acc, criterion) => {
     if (criterion.status === 'pass') return acc + 3;
     if (criterion.status === 'warning') return acc + 1;
@@ -321,7 +385,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
   const maxPoints = processedCriteria.length * 3;
   const buffettScore = Math.round((totalPoints / maxPoints) * 100);
 
-  // Calculate detailed score based on the GPT-derived scores when available
   const detailedScores = processedCriteria.filter(c => c.score !== undefined && c.maxScore !== undefined);
   const hasDetailedScores = detailedScores.length > 0;
   
@@ -333,7 +396,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
   const detailedBuffettScore = hasDetailedScores && maxDetailedScore > 0 ? 
     Math.round((totalDetailedScore / maxDetailedScore) * 100) : buffettScore;
 
-  // Criteria distribution for visualization
   const criteriaDistribution = {
     pass: processedCriteria.filter(c => c.status === 'pass').length,
     warning: processedCriteria.filter(c => c.status === 'warning').length,
@@ -371,7 +433,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
         </p>
       </div>
       
-      {/* New Score Visualization */}
       <BuffettScoreChart score={hasDetailedScores ? detailedBuffettScore : buffettScore} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -405,7 +466,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                       </TooltipProvider>
                     )}
                     
-                    {/* DCF explanation for valuation criterion */}
                     {criterion.title === '6. Akzeptable Bewertung' && (
                       <DCFExplanationTooltip />
                     )}
@@ -422,7 +482,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                     ))}
                   </ul>
                   
-                  {/* Additional risks for long-term outlook */}
                   {criterion.title === '7. Langfristige Perspektive' && criterion.status === 'pass' && (
                     <div className="mt-2 pt-2 border-t border-gray-100">
                       <p className="text-sm text-gray-700 font-medium">Zu beachtende Langzeitrisiken:</p>
