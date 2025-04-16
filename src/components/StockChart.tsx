@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Area,
@@ -172,7 +173,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         ))}
       </div>
       
-      <div className="w-full h-[500px] overflow-hidden">
+      <div className="w-full h-[600px] overflow-hidden">
         <ChartContainer
           config={{
             line1: { theme: { light: 'hsl(221, 83%, 53%)', dark: 'hsl(221, 83%, 70%)' } },
@@ -180,8 +181,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
             area: { theme: { light: 'hsl(221, 83%, 95%)', dark: 'hsl(221, 83%, 30%)' } },
           }}
         >
-          <ResponsiveContainer width="100%" height={480}>
-            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 70 }}>
+          <ResponsiveContainer width="100%" height={580}>
+            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
@@ -192,8 +193,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
               <XAxis
                 dataKey="date"
                 tickFormatter={(date) => format(new Date(date), 'dd.MM.yy', { locale: de })}
-                height={60}
-                tickMargin={20}
+                height={70}
+                tickMargin={30}
               />
               <YAxis
                 domain={['auto', 'auto']}
