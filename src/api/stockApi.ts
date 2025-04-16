@@ -132,35 +132,35 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     // Buffett criteria
     return {
       understandableBusiness: {
-        status: "neutral",
+        status: "neutral" as "pass" | "warning" | "fail",
         reason: "Manuell zu bewerten: Ist das Geschäftsmodell verständlich und stabil?"
       },
       consistentOperatingHistory: {
-        status: incomeStatements.every(s => s.netIncome > 0) ? "pass" : "fail",
+        status: incomeStatements.every(s => s.netIncome > 0) ? "pass" as "pass" : "fail" as "fail",
         reason: incomeStatements.every(s => s.netIncome > 0) ? 
           "Das Unternehmen war in den letzten Jahren durchgehend profitabel." : 
           "Das Unternehmen hatte in den letzten Jahren Verluste."
       },
       favorableGrowthProspects: {
-        status: revenueGrowth > 0.25 ? "pass" : "warning",
+        status: revenueGrowth > 0.25 ? "pass" as "pass" : "warning" as "warning",
         reason: revenueGrowth > 0.25 ? 
           `Starkes Umsatzwachstum von ${(revenueGrowth * 100).toFixed(1)}% über 5 Jahre.` : 
           `Moderates Umsatzwachstum von ${(revenueGrowth * 100).toFixed(1)}% über 5 Jahre.`
       },
       goodROE: {
-        status: latest.returnOnEquity > 0.15 ? "pass" : "warning",
+        status: latest.returnOnEquity > 0.15 ? "pass" as "pass" : "warning" as "warning",
         reason: latest.returnOnEquity > 0.15 ? 
           `Hohe Eigenkapitalrendite von ${(latest.returnOnEquity * 100).toFixed(1)}%.` : 
           `Eigenkapitalrendite von ${(latest.returnOnEquity * 100).toFixed(1)}% ist unter Buffetts Zielwert von 15%.`
       },
       lowDebt: {
-        status: debt / assets < 0.5 ? "pass" : "fail",
+        status: debt / assets < 0.5 ? "pass" as "pass" : "fail" as "fail",
         reason: debt / assets < 0.5 ? 
           `Niedrige Verschuldung: ${((debt / assets) * 100).toFixed(1)}% der Bilanzsumme.` : 
           `Hohe Verschuldung: ${((debt / assets) * 100).toFixed(1)}% der Bilanzsumme.`
       },
       stableEarnings: {
-        status: earningsGrowth > 0 ? "pass" : "fail",
+        status: earningsGrowth > 0 ? "pass" as "pass" : "fail" as "fail",
         reason: earningsGrowth > 0 ? 
           `Gewinnwachstum von ${(earningsGrowth * 100).toFixed(1)}% über 5 Jahre.` : 
           `Rückläufige Gewinne über 5 Jahre (${(earningsGrowth * 100).toFixed(1)}%).`
@@ -388,6 +388,16 @@ export const getOverallRating = async (ticker: string) => {
     const bestBuyPrice = intrinsicValue * (1 - marginOfSafetyTarget);
     const currentMarginOfSafety = (intrinsicValue - currentPrice) / intrinsicValue;
     
+    // Determine margin of safety status correctly as a union type
+    let marginOfSafetyStatus: "pass" | "warning" | "fail";
+    if (currentMarginOfSafety > marginOfSafetyTarget) {
+      marginOfSafetyStatus = "pass";
+    } else if (currentMarginOfSafety > 0) {
+      marginOfSafetyStatus = "warning";
+    } else {
+      marginOfSafetyStatus = "fail";
+    }
+    
     // Prepare the rating object
     const rating = {
       overall: 
@@ -410,9 +420,7 @@ export const getOverallRating = async (ticker: string) => {
       
       marginOfSafety: {
         value: currentMarginOfSafety,
-        status: 
-          currentMarginOfSafety > marginOfSafetyTarget ? "pass" :
-          currentMarginOfSafety > 0 ? "warning" : "fail"
+        status: marginOfSafetyStatus
       },
       
       bestBuyPrice,
