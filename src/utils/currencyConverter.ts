@@ -271,3 +271,48 @@ export const formatScaledNumber = (value: number, currency?: string): string => 
   const decimals = currency === 'KRW' ? 0 : 2;
   return `${scaledValue.toLocaleString('de-DE', { maximumFractionDigits: decimals })}${unit}${currency ? ' ' + currency : ''}`;
 };
+
+/**
+ * Convert financial metric objects with proper currency conversion
+ * This utility handles collections of financial metrics including FCF
+ */
+export const convertFinancialMetricsCollection = async (
+  metrics: any[],
+  reportedCurrency: string,
+  stockPriceCurrency: string
+): Promise<any[]> => {
+  if (!metrics || !reportedCurrency || !stockPriceCurrency) return metrics;
+  
+  if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
+    console.log(`No conversion needed: both stock price and metrics are in ${stockPriceCurrency}`);
+    return metrics;
+  }
+  
+  const convertedMetrics = await Promise.all(metrics.map(async metric => {
+    if (
+      typeof metric.value !== 'number' || 
+      isNaN(metric.value) || 
+      metric.isPercentage ||
+      metric.isMultiplier
+    ) {
+      return metric;
+    }
+    
+    try {
+      const originalValue = metric.value;
+      const convertedValue = await convertCurrency(metric.value, reportedCurrency, stockPriceCurrency);
+      
+      return {
+        ...metric,
+        value: convertedValue,
+        originalValue: originalValue,
+        originalCurrency: reportedCurrency
+      };
+    } catch (error) {
+      console.error(`Error converting ${metric.name}:`, error);
+      return metric;
+    }
+  }));
+
+  return convertedMetrics;
+};
