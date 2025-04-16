@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Area,
@@ -16,7 +15,6 @@ import { ChartContainer } from '@/components/ui/chart';
 import { Button } from '@/components/ui/button';
 import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
 
-// Default API key für den Fall, dass keine Umgebungsvariable gefunden wird
 const DEFAULT_FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
 
 interface StockChartProps {
@@ -40,7 +38,7 @@ interface ChartData {
 const TIME_RANGES = [
   { label: '1 Jahr', value: '1Y' },
   { label: '5 Jahre', value: '5Y' },
-  { label: 'Allzeit', value: 'MAX' },
+  { label: 'Allzeit', value: 'MAX' }
 ] as const;
 
 const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValue }) => {
@@ -54,7 +52,6 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       setIsLoading(true);
       setError(null);
       try {
-        // Verwende entweder den API-Schlüssel aus den Umgebungsvariablen oder den Standard-Schlüssel
         const apiKey = import.meta.env.VITE_FMP_API_KEY || DEFAULT_FMP_API_KEY;
         
         console.log(`Fetching historical data for ${symbol} with API key: ${apiKey ? 'Available' : 'Not available'}`);
@@ -84,7 +81,6 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           close: item.close,
         }));
 
-        // Convert currency if needed
         if (needsCurrencyConversion(currency)) {
           const convertedData = await Promise.all(
             processedData.map(async (item) => ({
@@ -95,7 +91,6 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           processedData = convertedData;
         }
 
-        // Sort data by date and format
         const chartData: ChartData[] = processedData
           .map(item => ({
             date: new Date(item.date),
@@ -132,7 +127,6 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         cutoffDate.setFullYear(now.getFullYear() - 5);
         break;
       case 'MAX':
-        // Return all data for "Allzeit" option
         return historicalData;
       default:
         return historicalData;
@@ -178,7 +172,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         ))}
       </div>
       
-      <div className="w-full h-[350px] overflow-hidden">
+      <div className="w-full h-[450px] overflow-hidden">
         <ChartContainer
           config={{
             line1: { theme: { light: 'hsl(221, 83%, 53%)', dark: 'hsl(221, 83%, 70%)' } },
@@ -186,8 +180,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
             area: { theme: { light: 'hsl(221, 83%, 95%)', dark: 'hsl(221, 83%, 30%)' } },
           }}
         >
-          <ResponsiveContainer width="100%" height={330}>
-            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
+          <ResponsiveContainer width="100%" height={430}>
+            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 50 }}>
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
@@ -198,7 +192,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
               <XAxis
                 dataKey="date"
                 tickFormatter={(date) => format(new Date(date), 'dd.MM.yy', { locale: de })}
-                height={40}
+                height={50}
                 tickMargin={14}
               />
               <YAxis
