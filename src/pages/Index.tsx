@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -84,6 +85,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('standard');
   const [stockCurrency, setStockCurrency] = useState<string>('EUR');
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
+  const [showCurrencyConversionAlert, setShowCurrencyConversionAlert] = useState(false);
 
   useEffect(() => {
     setGptAvailable(hasOpenAiApiKey());
@@ -103,6 +105,13 @@ const Index = () => {
         stockInfo.marketCap === 0;
       
       setHasCriticalDataMissing(criticalMissing);
+      
+      // Only show currency conversion alert if currency needs conversion
+      if (stockInfo.currency && stockInfo.currency !== 'EUR') {
+        setShowCurrencyConversionAlert(true);
+      } else {
+        setShowCurrencyConversionAlert(false);
+      }
     }
   }, [stockInfo]);
 
@@ -442,7 +451,7 @@ const Index = () => {
         </div>
       )}
       
-      {stockInfo && stockInfo.currency && needsCurrencyConversion(stockInfo.currency) && (
+      {stockInfo && showCurrencyConversionAlert && stockInfo.currency && stockInfo.currency !== 'EUR' && (
         <Alert className="mb-4 bg-yellow-50 border-yellow-200">
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
           <AlertTitle className="text-yellow-700">Währungsumrechnung aktiviert</AlertTitle>
