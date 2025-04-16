@@ -12,7 +12,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
+import { 
+  convertCurrency, 
+  shouldConvertCurrency, 
+  needsCurrencyConversion 
+} from '@/utils/currencyConverter';
 
 interface FinancialMetricsData {
   eps?: any;
@@ -93,10 +97,13 @@ const Index = () => {
     }
   }, [stockInfo]);
 
-  const convertFinancialMetrics = async (metrics: any, currency: string) => {
-    if (!metrics || !currency) return metrics;
+  const convertFinancialMetrics = async (metrics: any, reportedCurrency: string, stockPriceCurrency: string) => {
+    if (!metrics || !reportedCurrency || !stockPriceCurrency) return metrics;
     
-    if (!needsCurrencyConversion(currency)) return metrics;
+    if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
+      console.log(`No conversion needed: both stock price and metrics are in ${stockPriceCurrency}`);
+      return metrics;
+    }
     
     if (Array.isArray(metrics)) {
       const convertedMetrics = await Promise.all(metrics.map(async metric => {
@@ -111,13 +118,13 @@ const Index = () => {
         
         try {
           const originalValue = metric.value;
-          const convertedValue = await convertCurrency(metric.value, currency, 'EUR');
+          const convertedValue = await convertCurrency(metric.value, reportedCurrency, stockPriceCurrency);
           
           return {
             ...metric,
             value: convertedValue,
             originalValue: originalValue,
-            originalCurrency: currency
+            originalCurrency: reportedCurrency
           };
         } catch (error) {
           console.error(`Error converting ${metric.name}:`, error);
@@ -131,25 +138,30 @@ const Index = () => {
     return metrics;
   };
 
-  const convertHistoricalData = async (historicalData: any, currency: string) => {
-    if (!historicalData || !currency || !needsCurrencyConversion(currency)) return historicalData;
+  const convertHistoricalData = async (historicalData: any, reportedCurrency: string, stockPriceCurrency: string) => {
+    if (!historicalData || !reportedCurrency || !stockPriceCurrency) return historicalData;
+    
+    if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
+      console.log(`No historical data conversion needed: both stock price and data are in ${stockPriceCurrency}`);
+      return historicalData;
+    }
     
     try {
       const convertedData = {
         revenue: historicalData.revenue ? await Promise.all(historicalData.revenue.map(async (item: any) => ({
           ...item,
           originalValue: item.value,
-          value: await convertCurrency(item.value, currency, 'EUR')
+          value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
         }))) : [],
         earnings: historicalData.earnings ? await Promise.all(historicalData.earnings.map(async (item: any) => ({
           ...item,
           originalValue: item.value,
-          value: await convertCurrency(item.value, currency, 'EUR')
+          value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
         }))) : [],
         eps: historicalData.eps ? await Promise.all(historicalData.eps.map(async (item: any) => ({
           ...item,
           originalValue: item.value,
-          value: await convertCurrency(item.value, currency, 'EUR')
+          value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
         }))) : []
       };
 
@@ -176,7 +188,7 @@ const Index = () => {
       
       if (info && info.currency) {
         setStockCurrency(info.currency);
-        console.log(`Stock currency: ${info.currency}`);
+        console.log(`Stock price currency: ${info.currency}`);
       } else {
         setStockCurrency('EUR');
         console.log('No currency information available, defaulting to EUR');
@@ -211,7 +223,10 @@ const Index = () => {
         console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
         console.log('Overall Rating:', JSON.stringify(rating, null, 2));
         
-        const stockCurrency = info?.currency || 'EUR';
+        const priceCurrency = info?.currency || 'EUR';
+        const reportedCurrency = rawMetricsData?.reportedCurrency || priceCurrency;
+        
+        console.log(`Price currency: ${priceCurrency}, Reported financial data currency: ${reportedCurrency}`);
         
         const metricsData: FinancialMetricsData = {
           ...rawMetricsData,
@@ -281,39 +296,47 @@ const Index = () => {
             revenue: [],
             earnings: [],
             eps: []
-          }
+          },
+          reportedCurrency: reportedCurrency
         };
         
         if (metricsData) {
           if (metricsData.metrics) {
-            metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, stockCurrency);
+            metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
           }
           
           if (metricsData.historicalData) {
-            metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, stockCurrency);
+            metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
           }
         }
         
-        if (rating && needsCurrencyConversion(stockCurrency)) {
+        if (rating) {
           try {
             const updatedRating: OverallRatingData = { ...rating };
+            const ratingCurrency = rating.currency || reportedCurrency;
             
-            if (updatedRating.intrinsicValue) {
-              updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
-              updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, stockCurrency, 'EUR');
-            }
-            if (updatedRating.bestBuyPrice) {
-              updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
-              updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, stockCurrency, 'EUR');
-            }
-            if (updatedRating.currentPrice) {
-              updatedRating.originalPrice = updatedRating.currentPrice;
-              updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, stockCurrency, 'EUR');
-            }
-            
-            if (updatedRating.currency !== 'EUR') {
-              updatedRating.originalCurrency = updatedRating.currency;
-              updatedRating.currency = 'EUR';
+            if (shouldConvertCurrency(priceCurrency, ratingCurrency)) {
+              console.log(`Converting rating values from ${ratingCurrency} to ${priceCurrency}`);
+              
+              if (updatedRating.intrinsicValue) {
+                updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
+                updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, ratingCurrency, priceCurrency);
+              }
+              if (updatedRating.bestBuyPrice) {
+                updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
+                updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, ratingCurrency, priceCurrency);
+              }
+              if (updatedRating.currentPrice) {
+                updatedRating.originalPrice = updatedRating.currentPrice;
+                updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, ratingCurrency, priceCurrency);
+              }
+              
+              if (ratingCurrency !== priceCurrency) {
+                updatedRating.originalCurrency = ratingCurrency;
+                updatedRating.currency = priceCurrency;
+              }
+            } else {
+              console.log(`No rating conversion needed: both stock price and rating are in ${priceCurrency}`);
             }
             
             setOverallRating(updatedRating);

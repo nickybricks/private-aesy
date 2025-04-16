@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { convertCurrency, needsCurrencyConversion, getExchangeRate } from '@/utils/currencyConverter';
+import { convertCurrency, needsCurrencyConversion, getExchangeRate, shouldConvertCurrency } from '@/utils/currencyConverter';
 
 interface StockHeaderProps {
   stockInfo: {
@@ -29,7 +29,6 @@ const formatMarketCap = (marketCap: number | null, currency: string = 'EUR'): st
     return 'N/A';
   }
   
-  // Scale large numbers appropriately
   let scaledValue: number;
   let unit: string;
   
@@ -57,6 +56,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const navigate = useNavigate();
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
+  const [showCurrencyNotice, setShowCurrencyNotice] = useState(false);
 
   useEffect(() => {
     if (stockInfo) {
@@ -64,7 +64,6 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         setIsLoading(false);
       }, 1500);
       
-      // Check if critical data is missing
       const criticalMissing = 
         stockInfo.price === null || 
         stockInfo.price === 0 || 
@@ -73,30 +72,23 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
       
       setHasCriticalDataMissing(criticalMissing);
       
-      // Convert currency if needed and if critical data is not missing
-      const convertCurrencyValues = async () => {
-        if (!criticalMissing && stockInfo.currency && needsCurrencyConversion(stockInfo.currency) && stockInfo.price) {
+      const loadExchangeRateInfo = async () => {
+        if (!criticalMissing && stockInfo.currency && stockInfo.currency !== 'EUR') {
           try {
-            const converted = await convertCurrency(stockInfo.price, stockInfo.currency, 'EUR');
-            setConvertedPrice(converted);
-            
-            // Get exchange rate directly from API to ensure accurate display
             const rateToEUR = await getExchangeRate(stockInfo.currency, 'EUR');
             if (rateToEUR) {
               setExchangeRate(rateToEUR);
-            }
-            
-            if (stockInfo.marketCap) {
-              const convertedMC = await convertCurrency(stockInfo.marketCap, stockInfo.currency, 'EUR');
-              setConvertedMarketCap(convertedMC);
+              setShowCurrencyNotice(true);
             }
           } catch (error) {
-            console.error('Currency conversion error:', error);
+            console.error('Error fetching exchange rate info:', error);
           }
+        } else {
+          setShowCurrencyNotice(false);
         }
       };
       
-      convertCurrencyValues();
+      loadExchangeRateInfo();
       
       return () => clearTimeout(timer);
     }
@@ -139,9 +131,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   const { name, ticker, price, change, changePercent, currency, marketCap } = stockInfo;
   const isPositive = change !== null && change >= 0;
   
-  // Check for alternative symbol only if we have critical data missing
   const alternativeSymbol = hasCriticalDataMissing && ticker.endsWith('.DE') ? ticker.replace('.DE', '') : null;
-  const needsCurrencyConv = currency && needsCurrencyConversion(currency);
 
   if (isLoading) {
     return (
@@ -190,34 +180,6 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
     );
   }
 
-  const formatPrice = (price: number | null, originalCurrency: string, convertedPrice: number | null, exchangeRate: number | null) => {
-    if (price === null) return `– ${originalCurrency}`;
-    
-    if (needsCurrencyConv && convertedPrice !== null) {
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="cursor-help underline decoration-dotted">
-                {convertedPrice.toFixed(2)} EUR
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="space-y-1 max-w-xs">
-                <p>Originalwährung: {originalCurrency === 'KRW' ? price.toLocaleString('de-DE', { maximumFractionDigits: 0 }) : price.toLocaleString('de-DE')} {originalCurrency}</p>
-                {exchangeRate && (
-                  <p className="text-xs text-gray-500">Wechselkurs: 1 {originalCurrency} = {exchangeRate.toFixed(6)} EUR</p>
-                )}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
-    
-    return `${price.toFixed(2)} ${originalCurrency}`;
-  };
-
   return (
     <div className="buffett-card mb-6 animate-slide-up">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -228,25 +190,21 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         
         <div className="mt-4 md:mt-0 flex flex-col items-end">
           <div className="text-3xl font-semibold">
-            {needsCurrencyConv ? (
-              <div className="flex items-center gap-1">
-                {formatPrice(price, currency, convertedPrice, exchangeRate)}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info size={16} className="text-gray-400 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">
-                        Originalkurs: {currency === 'KRW' ? price?.toLocaleString('de-DE', { maximumFractionDigits: 0 }) : price?.toLocaleString('de-DE')} {currency}
-                        {exchangeRate && (<><br />Wechselkurs: 1 {currency} = {exchangeRate.toFixed(6)} EUR</>)}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            ) : (
-              `${price !== null && !isNaN(price) ? price.toFixed(2) : '–'} ${currency}`
+            {price !== null && !isNaN(price) ? `${price.toFixed(2)} ${currency}` : `– ${currency}`}
+            
+            {currency !== 'EUR' && exchangeRate && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info size={16} className="text-gray-400 cursor-help ml-1" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">
+                      Wechselkurs: 1 {currency} = {exchangeRate.toFixed(6)} EUR
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
           <div className={`flex items-center ${isPositive ? 'text-buffett-green' : 'text-buffett-red'}`}>
@@ -265,33 +223,15 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
       <div className="mt-4 pt-4 border-t border-gray-100 flex items-center">
         <DollarSign size={16} className="mr-2 text-buffett-subtext" />
         <span className="text-buffett-subtext">
-          Marktkapitalisierung: {
-            needsCurrencyConv && convertedMarketCap !== null ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="underline decoration-dotted cursor-help">
-                      {formatMarketCap(convertedMarketCap, 'EUR')}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Originalwert: {formatMarketCap(marketCap, currency)}</p>
-                    {exchangeRate && (
-                      <p className="text-xs text-gray-500">Wechselkurs: 1 {currency} = {exchangeRate.toFixed(6)} EUR</p>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : formatMarketCap(marketCap, currency)
-          }
+          Marktkapitalisierung: {formatMarketCap(marketCap, currency)}
         </span>
       </div>
       
-      {needsCurrencyConv && (
+      {showCurrencyNotice && (
         <div className="mt-2 text-xs text-buffett-subtext flex items-center gap-1">
           <Info size={12} />
           <span>
-            Alle Werte wurden von {currency} in EUR umgerechnet für eine bessere Vergleichbarkeit.
+            Die Finanzkennzahlen wurden in {currency} umgerechnet, falls sie in einer anderen Währung berichtet wurden.
           </span>
         </div>
       )}

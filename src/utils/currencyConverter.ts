@@ -97,6 +97,18 @@ export const convertCurrency = async (
 };
 
 /**
+ * Determines if currency conversion is needed based on stock price currency and reported currency
+ * This is a new function to implement the specific business logic requested
+ */
+export const shouldConvertCurrency = (
+  stockPriceCurrency: string,
+  reportedCurrency: string
+): boolean => {
+  // Only convert if the reported currency is different from the stock price currency
+  return stockPriceCurrency !== reportedCurrency;
+};
+
+/**
  * Format a currency value for display
  * Safely handles null or undefined values
  */
