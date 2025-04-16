@@ -53,7 +53,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       setIsLoading(true);
       setError(null);
       try {
-        const apiKey = import.meta.env.VITE_FMP_API_KEY || DEFAULT_FMP_API_KEY;
+        // Get API key from localStorage or use default
+        const apiKey = localStorage.getItem('fmp_api_key') || DEFAULT_FMP_API_KEY;
         
         console.log(`Fetching historical data for ${symbol} with API key: ${apiKey ? 'Available' : 'Not available'}`);
         
@@ -183,7 +184,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           }}
         >
           <ResponsiveContainer width="100%" height={580}>
-            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
+            <ComposedChart data={getFilteredData()} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
