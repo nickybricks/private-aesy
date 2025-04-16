@@ -34,7 +34,6 @@ const formatMarketCap = (marketCap: number | null): string => {
 };
 
 const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
-  const [showWarning, setShowWarning] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -42,9 +41,6 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
     if (stockInfo) {
       const timer = setTimeout(() => {
         setIsLoading(false);
-        if (hasIncompleteData) {
-          setShowWarning(true);
-        }
       }, 1500);
       return () => clearTimeout(timer);
     }
@@ -86,14 +82,9 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
 
   const { name, ticker, price, change, changePercent, currency, marketCap } = stockInfo;
   const isPositive = change !== null && change >= 0;
-  const hasIncompleteData = price === null || change === null || changePercent === null || marketCap === null;
   const hasCriticalDataMissing = price === null || price === 0 || marketCap === null || marketCap === 0;
 
   const alternativeSymbol = ticker.endsWith('.DE') ? ticker.replace('.DE', '') : null;
-
-  if (hasIncompleteData) {
-    console.warn("Fehlende Werte bei Symbol:", ticker, stockInfo);
-  }
 
   if (isLoading) {
     return (
@@ -144,34 +135,6 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
 
   return (
     <div className="buffett-card mb-6 animate-slide-up">
-      {showWarning && hasIncompleteData && (
-        <Alert className="mb-4 bg-yellow-50 border-yellow-200">
-          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          <AlertDescription className="text-yellow-700">
-            <p>
-              Die Analyse konnte nicht abgeschlossen werden, da für {ticker} nur eingeschränkte 
-              Daten vorliegen (z.B. Marktkapitalisierung, EPS oder Cashflow fehlen).
-            </p>
-            {alternativeSymbol && (
-              <div className="mt-2">
-                <p className="mb-2">
-                  Bitte probiere alternativ {alternativeSymbol} (US-Börse) aus oder prüfe ein anderes Unternehmen.
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                  onClick={() => navigate(`/?symbol=${alternativeSymbol}`)}
-                >
-                  <ArrowRight className="h-4 w-4" />
-                  {alternativeSymbol} (NASDAQ) analysieren statt {ticker}
-                </Button>
-              </div>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-      
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold">{name}</h1>
