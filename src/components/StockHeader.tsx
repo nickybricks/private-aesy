@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, RefreshCcw, Edit2, ArrowRight, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -11,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
+import { convertCurrency, needsCurrencyConversion, getExchangeRate } from '@/utils/currencyConverter';
 
 interface StockHeaderProps {
   stockInfo: {
@@ -57,6 +56,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   const [convertedMarketCap, setConvertedMarketCap] = useState<number | null>(null);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const navigate = useNavigate();
+  const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
 
   useEffect(() => {
     if (stockInfo) {
@@ -64,18 +64,26 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         setIsLoading(false);
       }, 1500);
       
-      // Convert currency if needed
+      // Check if critical data is missing
+      const criticalMissing = 
+        stockInfo.price === null || 
+        stockInfo.price === 0 || 
+        stockInfo.marketCap === null || 
+        stockInfo.marketCap === 0;
+      
+      setHasCriticalDataMissing(criticalMissing);
+      
+      // Convert currency if needed and if critical data is not missing
       const convertCurrencyValues = async () => {
-        if (stockInfo.currency && needsCurrencyConversion(stockInfo.currency) && stockInfo.price) {
+        if (!criticalMissing && stockInfo.currency && needsCurrencyConversion(stockInfo.currency) && stockInfo.price) {
           try {
             const converted = await convertCurrency(stockInfo.price, stockInfo.currency, 'EUR');
             setConvertedPrice(converted);
             
-            // Get exchange rate
-            const response = await fetch(`https://open.er-api.com/v6/latest/${stockInfo.currency}`);
-            const data = await response.json();
-            if (data.rates && data.rates.EUR) {
-              setExchangeRate(data.rates.EUR);
+            // Get exchange rate directly from API to ensure accurate display
+            const rateToEUR = await getExchangeRate(stockInfo.currency, 'EUR');
+            if (rateToEUR) {
+              setExchangeRate(rateToEUR);
             }
             
             if (stockInfo.marketCap) {
@@ -130,9 +138,9 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
 
   const { name, ticker, price, change, changePercent, currency, marketCap } = stockInfo;
   const isPositive = change !== null && change >= 0;
-  const hasCriticalDataMissing = price === null || price === 0 || marketCap === null || marketCap === 0;
-
-  const alternativeSymbol = ticker.endsWith('.DE') ? ticker.replace('.DE', '') : null;
+  
+  // Check for alternative symbol only if we have critical data missing
+  const alternativeSymbol = hasCriticalDataMissing && ticker.endsWith('.DE') ? ticker.replace('.DE', '') : null;
   const needsCurrencyConv = currency && needsCurrencyConversion(currency);
 
   if (isLoading) {
@@ -196,9 +204,9 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
             </TooltipTrigger>
             <TooltipContent>
               <div className="space-y-1 max-w-xs">
-                <p>Originalwährung: {price.toLocaleString('de-DE')} {originalCurrency}</p>
+                <p>Originalwährung: {originalCurrency === 'KRW' ? price.toLocaleString('de-DE', { maximumFractionDigits: 0 }) : price.toLocaleString('de-DE')} {originalCurrency}</p>
                 {exchangeRate && (
-                  <p className="text-xs text-gray-500">Wechselkurs: 1 EUR ≈ {(1/exchangeRate).toFixed(2)} {originalCurrency}</p>
+                  <p className="text-xs text-gray-500">Wechselkurs: 1 {originalCurrency} = {exchangeRate.toFixed(6)} EUR</p>
                 )}
               </div>
             </TooltipContent>
@@ -230,8 +238,8 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
                     </TooltipTrigger>
                     <TooltipContent>
                       <p className="max-w-xs">
-                        Originalkurs: {price?.toLocaleString('de-DE')} {currency}
-                        {exchangeRate && (<><br />Wechselkurs: 1 EUR ≈ {(1/exchangeRate).toFixed(2)} {currency}</>)}
+                        Originalkurs: {currency === 'KRW' ? price?.toLocaleString('de-DE', { maximumFractionDigits: 0 }) : price?.toLocaleString('de-DE')} {currency}
+                        {exchangeRate && (<><br />Wechselkurs: 1 {currency} = {exchangeRate.toFixed(6)} EUR</>)}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -268,6 +276,9 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Originalwert: {formatMarketCap(marketCap, currency)}</p>
+                    {exchangeRate && (
+                      <p className="text-xs text-gray-500">Wechselkurs: 1 {currency} = {exchangeRate.toFixed(6)} EUR</p>
+                    )}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

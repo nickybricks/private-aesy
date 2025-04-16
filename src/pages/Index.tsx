@@ -83,6 +83,7 @@ const Index = () => {
   useEffect(() => {
     if (stockInfo) {
       const criticalMissing = 
+        !stockInfo || 
         stockInfo.price === null || 
         stockInfo.price === 0 || 
         stockInfo.marketCap === null || 
@@ -108,15 +109,20 @@ const Index = () => {
           return metric;
         }
         
-        const originalValue = metric.value;
-        const convertedValue = await convertCurrency(metric.value, currency, 'EUR');
-        
-        return {
-          ...metric,
-          value: convertedValue,
-          originalValue: originalValue,
-          originalCurrency: currency
-        };
+        try {
+          const originalValue = metric.value;
+          const convertedValue = await convertCurrency(metric.value, currency, 'EUR');
+          
+          return {
+            ...metric,
+            value: convertedValue,
+            originalValue: originalValue,
+            originalCurrency: currency
+          };
+        } catch (error) {
+          console.error(`Error converting ${metric.name}:`, error);
+          return metric;
+        }
       }));
 
       return convertedMetrics;
@@ -128,25 +134,30 @@ const Index = () => {
   const convertHistoricalData = async (historicalData: any, currency: string) => {
     if (!historicalData || !currency || !needsCurrencyConversion(currency)) return historicalData;
     
-    const convertedData = {
-      revenue: historicalData.revenue ? await Promise.all(historicalData.revenue.map(async (item: any) => ({
-        ...item,
-        originalValue: item.value,
-        value: await convertCurrency(item.value, currency, 'EUR')
-      }))) : [],
-      earnings: historicalData.earnings ? await Promise.all(historicalData.earnings.map(async (item: any) => ({
-        ...item,
-        originalValue: item.value,
-        value: await convertCurrency(item.value, currency, 'EUR')
-      }))) : [],
-      eps: historicalData.eps ? await Promise.all(historicalData.eps.map(async (item: any) => ({
-        ...item,
-        originalValue: item.value,
-        value: await convertCurrency(item.value, currency, 'EUR')
-      }))) : []
-    };
+    try {
+      const convertedData = {
+        revenue: historicalData.revenue ? await Promise.all(historicalData.revenue.map(async (item: any) => ({
+          ...item,
+          originalValue: item.value,
+          value: await convertCurrency(item.value, currency, 'EUR')
+        }))) : [],
+        earnings: historicalData.earnings ? await Promise.all(historicalData.earnings.map(async (item: any) => ({
+          ...item,
+          originalValue: item.value,
+          value: await convertCurrency(item.value, currency, 'EUR')
+        }))) : [],
+        eps: historicalData.eps ? await Promise.all(historicalData.eps.map(async (item: any) => ({
+          ...item,
+          originalValue: item.value,
+          value: await convertCurrency(item.value, currency, 'EUR')
+        }))) : []
+      };
 
-    return convertedData;
+      return convertedData;
+    } catch (error) {
+      console.error('Error converting historical data:', error);
+      return historicalData;
+    }
   };
 
   const handleSearch = async (ticker: string) => {
@@ -172,6 +183,7 @@ const Index = () => {
       }
       
       const criticalDataMissing = 
+        !info || 
         info.price === null || 
         info.price === 0 || 
         info.marketCap === null || 
@@ -283,27 +295,32 @@ const Index = () => {
         }
         
         if (rating && needsCurrencyConversion(stockCurrency)) {
-          const updatedRating: OverallRatingData = { ...rating };
-          
-          if (updatedRating.intrinsicValue) {
-            updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
-            updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, stockCurrency, 'EUR');
+          try {
+            const updatedRating: OverallRatingData = { ...rating };
+            
+            if (updatedRating.intrinsicValue) {
+              updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
+              updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, stockCurrency, 'EUR');
+            }
+            if (updatedRating.bestBuyPrice) {
+              updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
+              updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, stockCurrency, 'EUR');
+            }
+            if (updatedRating.currentPrice) {
+              updatedRating.originalPrice = updatedRating.currentPrice;
+              updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, stockCurrency, 'EUR');
+            }
+            
+            if (updatedRating.currency !== 'EUR') {
+              updatedRating.originalCurrency = updatedRating.currency;
+              updatedRating.currency = 'EUR';
+            }
+            
+            setOverallRating(updatedRating);
+          } catch (error) {
+            console.error('Error converting rating values:', error);
+            setOverallRating(rating);
           }
-          if (updatedRating.bestBuyPrice) {
-            updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
-            updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, stockCurrency, 'EUR');
-          }
-          if (updatedRating.currentPrice) {
-            updatedRating.originalPrice = updatedRating.currentPrice;
-            updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, stockCurrency, 'EUR');
-          }
-          
-          if (updatedRating.currency !== 'EUR') {
-            updatedRating.originalCurrency = updatedRating.currency;
-            updatedRating.currency = 'EUR';
-          }
-          
-          setOverallRating(updatedRating);
         } else {
           setOverallRating(rating);
         }

@@ -74,11 +74,6 @@ export const convertCurrency = async (
     return 0;
   }
   
-  // Special handling for KRW and other high-value currencies
-  if (fromCurrency === 'KRW') {
-    console.log(`Converting KRW value: ${numericValue}`);
-  }
-  
   // Check if conversion is needed
   if (fromCurrency === toCurrency) {
     return numericValue;
