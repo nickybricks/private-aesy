@@ -1,10 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, RefreshCcw, Edit2, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, RefreshCcw, Edit2, ArrowRight, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
 
 interface StockHeaderProps {
   stockInfo: {
@@ -18,24 +25,37 @@ interface StockHeaderProps {
   } | null;
 }
 
-const formatMarketCap = (marketCap: number | null): string => {
+const formatMarketCap = (marketCap: number | null, currency: string = 'EUR'): string => {
   if (marketCap === null || marketCap === undefined || isNaN(marketCap)) {
     return 'N/A';
   }
   
+  // Scale large numbers appropriately
+  let scaledValue: number;
+  let unit: string;
+  
   if (marketCap >= 1000000000000) {
-    return `${(marketCap / 1000000000000).toFixed(2)} Bio. ${marketCap > 0 ? '$' : ''}`;
+    scaledValue = marketCap / 1000000000000;
+    unit = "Bio.";
   } else if (marketCap >= 1000000000) {
-    return `${(marketCap / 1000000000).toFixed(2)} Mrd. ${marketCap > 0 ? '$' : ''}`;
+    scaledValue = marketCap / 1000000000;
+    unit = "Mrd.";
   } else if (marketCap >= 1000000) {
-    return `${(marketCap / 1000000).toFixed(2)} Mio. ${marketCap > 0 ? '$' : ''}`;
+    scaledValue = marketCap / 1000000;
+    unit = "Mio.";
   } else {
-    return `${marketCap.toFixed(2)} ${marketCap > 0 ? '$' : ''}`;
+    scaledValue = marketCap;
+    unit = "";
   }
+  
+  return `${scaledValue.toFixed(2)} ${unit} ${currency}`;
 };
 
 const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
+  const [convertedMarketCap, setConvertedMarketCap] = useState<number | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,6 +63,33 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
       const timer = setTimeout(() => {
         setIsLoading(false);
       }, 1500);
+      
+      // Convert currency if needed
+      const convertCurrencyValues = async () => {
+        if (stockInfo.currency && needsCurrencyConversion(stockInfo.currency) && stockInfo.price) {
+          try {
+            const converted = await convertCurrency(stockInfo.price, stockInfo.currency, 'EUR');
+            setConvertedPrice(converted);
+            
+            // Get exchange rate
+            const response = await fetch(`https://open.er-api.com/v6/latest/${stockInfo.currency}`);
+            const data = await response.json();
+            if (data.rates && data.rates.EUR) {
+              setExchangeRate(data.rates.EUR);
+            }
+            
+            if (stockInfo.marketCap) {
+              const convertedMC = await convertCurrency(stockInfo.marketCap, stockInfo.currency, 'EUR');
+              setConvertedMarketCap(convertedMC);
+            }
+          } catch (error) {
+            console.error('Currency conversion error:', error);
+          }
+        }
+      };
+      
+      convertCurrencyValues();
+      
       return () => clearTimeout(timer);
     }
   }, [stockInfo]);
@@ -86,6 +133,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   const hasCriticalDataMissing = price === null || price === 0 || marketCap === null || marketCap === 0;
 
   const alternativeSymbol = ticker.endsWith('.DE') ? ticker.replace('.DE', '') : null;
+  const needsCurrencyConv = currency && needsCurrencyConversion(currency);
 
   if (isLoading) {
     return (
@@ -134,6 +182,34 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
     );
   }
 
+  const formatPrice = (price: number | null, originalCurrency: string, convertedPrice: number | null, exchangeRate: number | null) => {
+    if (price === null) return `– ${originalCurrency}`;
+    
+    if (needsCurrencyConv && convertedPrice !== null) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help underline decoration-dotted">
+                {convertedPrice.toFixed(2)} EUR
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="space-y-1 max-w-xs">
+                <p>Originalwährung: {price.toLocaleString('de-DE')} {originalCurrency}</p>
+                {exchangeRate && (
+                  <p className="text-xs text-gray-500">Wechselkurs: 1 EUR ≈ {(1/exchangeRate).toFixed(2)} {originalCurrency}</p>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    
+    return `${price.toFixed(2)} ${originalCurrency}`;
+  };
+
   return (
     <div className="buffett-card mb-6 animate-slide-up">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -144,9 +220,26 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         
         <div className="mt-4 md:mt-0 flex flex-col items-end">
           <div className="text-3xl font-semibold">
-            {price !== null && !isNaN(price) 
-              ? `${price.toFixed(2)} ${currency}` 
-              : `– ${currency}`}
+            {needsCurrencyConv ? (
+              <div className="flex items-center gap-1">
+                {formatPrice(price, currency, convertedPrice, exchangeRate)}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info size={16} className="text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">
+                        Originalkurs: {price?.toLocaleString('de-DE')} {currency}
+                        {exchangeRate && (<><br />Wechselkurs: 1 EUR ≈ {(1/exchangeRate).toFixed(2)} {currency}</>)}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            ) : (
+              `${price !== null && !isNaN(price) ? price.toFixed(2) : '–'} ${currency}`
+            )}
           </div>
           <div className={`flex items-center ${isPositive ? 'text-buffett-green' : 'text-buffett-red'}`}>
             {change !== null && changePercent !== null ? (
@@ -164,9 +257,33 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
       <div className="mt-4 pt-4 border-t border-gray-100 flex items-center">
         <DollarSign size={16} className="mr-2 text-buffett-subtext" />
         <span className="text-buffett-subtext">
-          Marktkapitalisierung: {formatMarketCap(marketCap)}
+          Marktkapitalisierung: {
+            needsCurrencyConv && convertedMarketCap !== null ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="underline decoration-dotted cursor-help">
+                      {formatMarketCap(convertedMarketCap, 'EUR')}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Originalwert: {formatMarketCap(marketCap, currency)}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : formatMarketCap(marketCap, currency)
+          }
         </span>
       </div>
+      
+      {needsCurrencyConv && (
+        <div className="mt-2 text-xs text-buffett-subtext flex items-center gap-1">
+          <Info size={12} />
+          <span>
+            Alle Werte wurden von {currency} in EUR umgerechnet für eine bessere Vergleichbarkeit.
+          </span>
+        </div>
+      )}
     </div>
   );
 };

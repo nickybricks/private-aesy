@@ -47,7 +47,7 @@ const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<
   } catch (error) {
     console.error('Error fetching exchange rates:', error);
     // Return a fallback rate of 1 for all currencies when API fails
-    return { USD: 1, EUR: 1, JPY: 110, GBP: 0.8, CAD: 1.3, CHF: 0.9, AUD: 1.3 };
+    return { USD: 1, EUR: 1, JPY: 110, GBP: 0.8, CAD: 1.3, CHF: 0.9, AUD: 1.3, KRW: 1450 };
   }
 };
 
@@ -76,6 +76,12 @@ export const convertCurrency = async (
     return 0;
   }
   
+  // Special handling for KRW and other high-value currencies
+  // This ensures the scale is maintained properly
+  if (fromCurrency === 'KRW') {
+    console.log(`Converting KRW value: ${numericValue}`);
+  }
+  
   // Check if conversion is needed
   if (fromCurrency === toCurrency) {
     return numericValue;
@@ -91,6 +97,7 @@ export const convertCurrency = async (
     }
     
     const convertedValue = numericValue * rates[toCurrency];
+    console.log(`Converted ${numericValue} ${fromCurrency} to ${convertedValue.toFixed(2)} ${toCurrency} (rate: ${rates[toCurrency]})`);
     return convertedValue;
   } catch (error) {
     console.error('Error converting currency:', error);
@@ -142,13 +149,25 @@ export const formatCurrency = (
         maximumFractionDigits: 2 
       })}x`;
     } else {
-      // Format as currency using Intl.NumberFormat
-      const formatter = new Intl.NumberFormat('de-DE', {
-        style: 'currency',
-        currency: currency,
+      // Format large numbers with appropriate scaling
+      let scaledValue = numericValue;
+      let unit = '';
+      
+      if (Math.abs(numericValue) >= 1000000000000) {
+        scaledValue = numericValue / 1000000000000;
+        unit = ' Bio.';
+      } else if (Math.abs(numericValue) >= 1000000000) {
+        scaledValue = numericValue / 1000000000;
+        unit = ' Mrd.';
+      } else if (Math.abs(numericValue) >= 1000000) {
+        scaledValue = numericValue / 1000000;
+        unit = ' Mio.';
+      }
+      
+      // Format the currency
+      formattedValue = `${scaledValue.toLocaleString('de-DE', {
         maximumFractionDigits: 2
-      });
-      formattedValue = formatter.format(numericValue);
+      })}${unit} ${currency}`;
     }
   } catch (e) {
     console.error('Error formatting value:', e, numericValue);
@@ -164,17 +183,28 @@ export const formatCurrency = (
       origNumericValue = typeof originalValue === 'string' ? parseFloat(originalValue) : Number(originalValue);
       if (isNaN(origNumericValue)) throw new Error('Invalid original number');
       
+      let scaledOrigValue = origNumericValue;
+      let origUnit = '';
+      
+      // Scale original value appropriately
+      if (Math.abs(origNumericValue) >= 1000000000000) {
+        scaledOrigValue = origNumericValue / 1000000000000;
+        origUnit = ' Bio.';
+      } else if (Math.abs(origNumericValue) >= 1000000000) {
+        scaledOrigValue = origNumericValue / 1000000000;
+        origUnit = ' Mrd.';
+      } else if (Math.abs(origNumericValue) >= 1000000) {
+        scaledOrigValue = origNumericValue / 1000000;
+        origUnit = ' Mio.';
+      }
+      
       const origFormattedValue = isPercentage ? 
         `${origNumericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} %` :
         isMultiplier ?
         `${origNumericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}x` :
-        new Intl.NumberFormat('de-DE', {
-          style: 'currency',
-          currency: originalCurrency,
-          maximumFractionDigits: 2
-        }).format(origNumericValue);
+        `${scaledOrigValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}${origUnit} ${originalCurrency}`;
       
-      return `${formattedValue} (umgerechnet aus ${origFormattedValue})`;
+      return `${formattedValue} (${origFormattedValue})`;
     } catch (e) {
       console.error('Error formatting original value:', e, originalValue);
       return formattedValue;
@@ -195,5 +225,46 @@ export const needsCurrencyConversion = (currency: string): boolean => {
  * Get appropriate decimal places for any currency
  */
 export const getCurrencyDecimalPlaces = (currency: string): number => {
-  return 2; // Use 2 decimal places for all currencies
+  // For Korean Won, we typically don't show decimal places
+  if (currency === 'KRW') return 0;
+  return 2; // Use 2 decimal places for most currencies
+};
+
+/**
+ * Get the exchange rate between two currencies
+ */
+export const getExchangeRate = async (fromCurrency: string, toCurrency: string): Promise<number | null> => {
+  try {
+    const rates = await fetchExchangeRates(fromCurrency);
+    return rates[toCurrency] || null;
+  } catch (error) {
+    console.error('Error getting exchange rate:', error);
+    return null;
+  }
+};
+
+/**
+ * Format a number with the appropriate scale (millions, billions, etc.)
+ */
+export const formatScaledNumber = (value: number, currency?: string): string => {
+  if (isNaN(value) || value === null || value === undefined) {
+    return 'N/A';
+  }
+  
+  let scaledValue = value;
+  let unit = '';
+  
+  if (Math.abs(value) >= 1000000000000) {
+    scaledValue = value / 1000000000000;
+    unit = ' Bio.';
+  } else if (Math.abs(value) >= 1000000000) {
+    scaledValue = value / 1000000000;
+    unit = ' Mrd.';
+  } else if (Math.abs(value) >= 1000000) {
+    scaledValue = value / 1000000;
+    unit = ' Mio.';
+  }
+  
+  const decimals = currency === 'KRW' ? 0 : 2;
+  return `${scaledValue.toLocaleString('de-DE', { maximumFractionDigits: decimals })}${unit}${currency ? ' ' + currency : ''}`;
 };

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -15,7 +16,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { convertCurrency, formatCurrency, needsCurrencyConversion, getCurrencyDecimalPlaces } from '@/utils/currencyConverter';
+import { 
+  convertCurrency, 
+  formatCurrency, 
+  needsCurrencyConversion, 
+  getCurrencyDecimalPlaces,
+  formatScaledNumber
+} from '@/utils/currencyConverter';
 
 interface FinancialMetric {
   name: string;
@@ -284,6 +291,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
               <p className="text-yellow-600 text-sm">
                 Die Finanzdaten dieser Aktie werden in {currency} angegeben. Alle Werte wurden in EUR umgerechnet, 
                 um eine korrekte Analyse zu ermöglichen. Die Originalwerte in {currency} werden in Klammern angezeigt.
+                {currency === 'KRW' && " Beachten Sie, dass der koreanische Won eine sehr andere Größenordnung als der Euro hat (ca. 1 EUR = 1.450 KRW)."}
               </p>
             </div>
           </div>
@@ -329,9 +337,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             <TableHeader>
               <TableRow>
                 <TableHead>Jahr</TableHead>
-                <TableHead className="text-right">Umsatz (Mio. {currency})</TableHead>
-                <TableHead className="text-right">Gewinn (Mio. {currency})</TableHead>
-                <TableHead className="text-right">EPS ({currency})</TableHead>
+                <TableHead className="text-right">Umsatz</TableHead>
+                <TableHead className="text-right">Gewinn</TableHead>
+                <TableHead className="text-right">EPS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -348,7 +356,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                 const originalEpsValue = epsDataForYear?.originalValue || epsDataForYear?.value;
                 
                 const showOriginal = currency !== 'EUR' && needsCurrencyConversion(currency);
-                const decimals = getCurrencyDecimalPlaces(currency);
                 
                 return (
                   <TableRow key={item.year || i}>
@@ -356,8 +363,21 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                     <TableCell className="text-right">
                       {typeof revenueValue === 'number' && revenueValue !== 0 
                         ? (showOriginal 
-                           ? `${revenueValue.toFixed(decimals)} (${originalRevenueValue.toFixed(decimals)} ${currency})` 
-                           : revenueValue.toFixed(decimals))
+                           ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="underline decoration-dotted cursor-help">
+                                      {formatScaledNumber(revenueValue, 'EUR')}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Originalwert: {formatScaledNumber(originalRevenueValue, currency)}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )
+                           : formatScaledNumber(revenueValue, 'EUR'))
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
@@ -365,8 +385,21 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                       typeof earningsValue === 'number' && 
                       earningsValue !== 0
                         ? (showOriginal 
-                           ? `${earningsValue.toFixed(decimals)} (${originalEarningsValue.toFixed(decimals)} ${currency})` 
-                           : earningsValue.toFixed(decimals)) 
+                           ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="underline decoration-dotted cursor-help">
+                                      {formatScaledNumber(earningsValue, 'EUR')}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Originalwert: {formatScaledNumber(originalEarningsValue, currency)}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )
+                           : formatScaledNumber(earningsValue, 'EUR'))
                         : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
@@ -374,8 +407,23 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                       typeof epsValue === 'number' && 
                       epsValue !== 0
                         ? (showOriginal 
-                           ? `${epsValue.toFixed(decimals)} (${originalEpsValue.toFixed(decimals)} ${currency})` 
-                           : epsValue.toFixed(decimals)) 
+                           ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="underline decoration-dotted cursor-help">
+                                      {epsValue.toFixed(decimalPlaces)} EUR
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Originalwert: {originalEpsValue.toLocaleString('de-DE', {
+                                      maximumFractionDigits: getCurrencyDecimalPlaces(currency)
+                                    })} {currency}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )
+                           : `${epsValue.toFixed(decimalPlaces)} EUR`)
                         : 'N/A'}
                     </TableCell>
                   </TableRow>
@@ -389,7 +437,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             {needsCurrencyConversion(currency) && (
               <p className="mt-2 font-medium text-buffett-subtext">
                 Diese Werte wurden aus {currency} in EUR umgerechnet, um eine bessere Vergleichbarkeit zu gewährleisten.
-                {currency === 'KRW' && " Beachten Sie, dass der koreanische Won eine sehr andere Größenordnung als der Euro hat (ca. 1 EUR = 1,500 KRW)."}
+                {currency === 'KRW' && " Beachten Sie, dass der koreanische Won eine sehr andere Größenordnung als der Euro hat (ca. 1 EUR = 1.450 KRW)."}
               </p>
             )}
             <p className="mt-2">
