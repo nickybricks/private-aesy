@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   CheckCircle, 
@@ -13,7 +12,7 @@ import {
   Info,
   PieChart
 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert'; // Add this import
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Tooltip,
   TooltipContent,
@@ -638,7 +637,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     <div className="buffett-card animate-fade-in">
       {hasMissingPriceData && (
         <div className="mb-6">
-          <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
+          <Alert className="bg-yellow-50 border-yellow-200">
             <AlertTriangle className="h-4 w-4 text-yellow-500" />
             <AlertDescription className="text-yellow-700">
               Für dieses Symbol liegen unvollständige Preisdaten vor. Die Bewertung basiert auf verfügbaren Daten und könnte ungenau sein.
