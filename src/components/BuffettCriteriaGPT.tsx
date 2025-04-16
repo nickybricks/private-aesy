@@ -61,7 +61,7 @@ const getStatusBadge = (status: string) => {
 };
 
 const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | undefined => {
-  if (!criterion.gptAnalysis || criterion.maxScore === undefined) {
+  if (!criterion || !criterion.gptAnalysis || criterion.maxScore === undefined) {
     return undefined;
   }
   
@@ -113,7 +113,7 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
 };
 
 const getScoreDisplay = (criterion: BuffettCriterionProps) => {
-  if (criterion.maxScore === undefined) {
+  if (!criterion || criterion.maxScore === undefined) {
     return null;
   }
   
@@ -152,7 +152,7 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
 };
 
 const hasInconsistentAnalysis = (criterion: BuffettCriterionProps): boolean => {
-  if (!criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
+  if (!criterion || !criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
     return false;
   }
   
@@ -300,6 +300,11 @@ const DCFExplanationTooltip: React.FC = () => (
 );
 
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
+  if (!criteria) {
+    console.error("BuffettCriteriaGPT: criteria prop is undefined");
+    return <div>Error: No criteria data available</div>;
+  }
+
   const allCriteria = [
     criteria.businessModel,
     criteria.economicMoat,
@@ -312,9 +317,19 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.cyclicalBehavior,
     criteria.oneTimeEffects,
     criteria.turnaround
-  ];
+  ].filter(Boolean);
 
   const processedCriteria = allCriteria.map(criterion => {
+    if (!criterion) {
+      console.warn("Found undefined criterion in allCriteria");
+      return {
+        title: "Missing Data",
+        status: "fail" as 'fail',
+        description: "Data missing",
+        details: []
+      };
+    }
+    
     const derivedScore = deriveScoreFromGptAnalysis(criterion);
     
     if (derivedScore !== undefined && (criterion.score === undefined || criterion.score !== derivedScore)) {
@@ -388,6 +403,11 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {processedCriteria.map((criterion, index) => {
+          if (!criterion) {
+            console.warn(`Criterion at index ${index} is undefined`);
+            return null;
+          }
+          
           const { summary, points } = extractKeyInsights(criterion.gptAnalysis);
           const hasInconsistency = hasInconsistentAnalysis(criterion);
           
