@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -60,13 +61,15 @@ const getStatusBadge = (status: string) => {
   }
 };
 
+// Helper function that automatically derives score from GPT analysis
 const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | undefined => {
-  if (!criterion || !criterion.gptAnalysis || criterion.maxScore === undefined) {
+  if (!criterion.gptAnalysis || criterion.maxScore === undefined) {
     return undefined;
   }
   
   const analysis = criterion.gptAnalysis.toLowerCase();
   
+  // Derive score for business model criterion
   if (criterion.title === '1. Verstehbares Geschäftsmodell') {
     if (analysis.includes('einfach') || analysis.includes('klar') || analysis.includes('verständlich')) {
       return 3;
@@ -77,7 +80,9 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
     }
   }
   
+  // Improved scoring logic for turnaround criterion
   if (criterion.title === '11. Keine Turnarounds') {
+    // Count positive, negative, and warning signals in the analysis
     const positiveSignals = [
       'kein turnaround', 'keine umstrukturierung', 'keine restrukturierung', 
       'kein umbau', 'stabil', 'keine umbruchsphase', 'solide', 
@@ -94,29 +99,43 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
       'grundlegende umstellung', 'signifikante umstrukturierung', 'massiver umbau'
     ];
     
+    // Count matches for each signal type
     const positiveCount = positiveSignals.filter(signal => analysis.includes(signal)).length;
     const warningCount = warningSignals.filter(signal => analysis.includes(signal)).length;
     const negativeCount = negativeSignals.filter(signal => analysis.includes(signal)).length;
     
+    // *** UPDATED SCORING LOGIC FOR TURNAROUNDS ***
+    // 3 points: All positive signals (stable company, no turnaround)
+    // 2 points: Mostly positive with some warnings
+    // 1 point: Mix of positive, warnings and negative signals
+    // 0 points: Mostly warnings or clear negatives
+    
     if (positiveCount > 0 && warningCount === 0 && negativeCount === 0) {
+      // Clear indication of no turnaround
       return 3;
     } else if (positiveCount > 0 && warningCount === 1 && negativeCount === 0) {
+      // Mostly stable with minor restructuring
       return 2;
     } else if (positiveCount > 0 && (warningCount > 0 || negativeCount === 1)) {
+      // Mix of stable elements with some restructuring
       return 1;
     } else {
+      // Multiple warnings or clear indication of turnaround
       return 0;
     }
   }
   
+  // For other criteria, we could add similar pattern matching logic
   return undefined;
-};
+}
 
+// Function to get score display based on status with automated GPT score derivation
 const getScoreDisplay = (criterion: BuffettCriterionProps) => {
-  if (!criterion || criterion.maxScore === undefined) {
+  if (criterion.maxScore === undefined) {
     return null;
   }
   
+  // Try to derive score from GPT analysis if it doesn't match current score
   const derivedScore = deriveScoreFromGptAnalysis(criterion);
   const score = criterion.score !== undefined ? criterion.score : derivedScore;
   
@@ -124,6 +143,7 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
     return null;
   }
   
+  // Added tooltip with detailed explanation
   return (
     <TooltipProvider>
       <Tooltip>
@@ -151,23 +171,30 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
   );
 };
 
+// Improved function to detect inconsistencies between GPT analysis and score
 const hasInconsistentAnalysis = (criterion: BuffettCriterionProps): boolean => {
-  if (!criterion || !criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
+  if (!criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
     return false;
   }
   
+  // Get the derived score from GPT analysis
   const derivedScore = deriveScoreFromGptAnalysis(criterion);
   
+  // If we have a derived score and it doesn't match the current score, flag an inconsistency
   return derivedScore !== undefined && derivedScore !== criterion.score;
 };
 
+// Helper function to extract key insights from GPT analysis
 const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   if (!gptAnalysis) return { summary: '', points: [] };
   
+  // Split by new lines and filter out empty lines
   const lines = gptAnalysis.split('\n').filter(line => line.trim() !== '');
   
+  // Extract first sentence or paragraph as summary
   const summary = lines[0] || '';
   
+  // Extract bullet points (lines starting with - or *)
   const points = lines
     .filter(line => line.trim().startsWith('-') || line.trim().startsWith('*'))
     .map(line => line.trim().replace(/^[-*]\s*/, ''));
@@ -175,48 +202,7 @@ const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   return { summary, points };
 };
 
-const MetricTooltip = ({ title, calculation }: { title: string; calculation: string }) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Info className="inline-block h-4 w-4 ml-1 text-gray-400 cursor-help" />
-      </TooltipTrigger>
-      <TooltipContent className="max-w-xs bg-white p-3 shadow-lg">
-        <p className="font-semibold mb-1">{title}</p>
-        <p className="text-sm">{calculation}</p>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
-);
-
-const getMetricCalculation = (title: string): string => {
-  const calculations: Record<string, string> = {
-    "Bruttomarge": "Bruttogewinn ÷ Umsatz × 100",
-    "Nettomarge": "Reingewinn ÷ Umsatz × 100",
-    "ROE": "Jahresüberschuss ÷ Eigenkapital × 100",
-    "ROIC": "NOPAT (Operativer Gewinn nach Steuern) ÷ (Eigenkapital + verzinsliches Fremdkapital) × 100",
-    
-    "Operating Margin": "Operativer Gewinn ÷ Umsatz × 100",
-    "Gewinnmarge": "Nettogewinn ÷ Umsatz × 100",
-    "Eigenkapitalrendite": "Jahresüberschuss ÷ Eigenkapital × 100",
-    "Kapitalrendite": "NOPAT ÷ Investiertes Kapital × 100",
-    
-    "Verschuldungsgrad": "Gesamtverbindlichkeiten ÷ Eigenkapital × 100",
-    "Current Ratio": "Umlaufvermögen ÷ Kurzfristige Verbindlichkeiten",
-    "Quick Ratio": "(Umlaufvermögen - Vorräte) ÷ Kurzfristige Verbindlichkeiten",
-    "Zinsdeckungsgrad": "EBIT ÷ Zinsaufwand",
-    
-    "KGV": "Aktienkurs ÷ Gewinn pro Aktie",
-    "KBV": "Aktienkurs ÷ Buchwert pro Aktie",
-    "EV/EBITDA": "Enterprise Value ÷ EBITDA",
-    "PEG-Ratio": "KGV ÷ Erwartetes jährliches Gewinnwachstum",
-    "FCF-Rendite": "Freier Cashflow pro Aktie ÷ Aktienkurs × 100",
-    "DCF-Bewertung": "Summe der abgezinsten zukünftigen Free Cashflows"
-  };
-  
-  return calculations[title] || "";
-};
-
+// New component for a more visual score presentation
 const BuffettScoreChart = ({ score }: { score: number }) => {
   const COLORS = ['#10b981', '#f0f0f0'];
   const data = [
@@ -275,6 +261,7 @@ const BuffettScoreChart = ({ score }: { score: number }) => {
   );
 };
 
+// Added component to help explain DCF calculations
 const DCFExplanationTooltip: React.FC = () => (
   <TooltipProvider>
     <Tooltip>
@@ -300,11 +287,6 @@ const DCFExplanationTooltip: React.FC = () => (
 );
 
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
-  if (!criteria) {
-    console.error("BuffettCriteriaGPT: criteria prop is undefined");
-    return <div>Error: No criteria data available</div>;
-  }
-
   const allCriteria = [
     criteria.businessModel,
     criteria.economicMoat,
@@ -317,21 +299,13 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.cyclicalBehavior,
     criteria.oneTimeEffects,
     criteria.turnaround
-  ].filter(Boolean);
+  ];
 
+  // Process criteria to automatically update scores based on GPT analysis
   const processedCriteria = allCriteria.map(criterion => {
-    if (!criterion) {
-      console.warn("Found undefined criterion in allCriteria");
-      return {
-        title: "Missing Data",
-        status: "fail" as 'fail',
-        description: "Data missing",
-        details: []
-      };
-    }
-    
     const derivedScore = deriveScoreFromGptAnalysis(criterion);
     
+    // Only update the score if it's different and we have a derived value
     if (derivedScore !== undefined && (criterion.score === undefined || criterion.score !== derivedScore)) {
       return {
         ...criterion,
@@ -342,6 +316,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     return criterion;
   });
 
+  // Calculate total points for overall rating
   const totalPoints = processedCriteria.reduce((acc, criterion) => {
     if (criterion.status === 'pass') return acc + 3;
     if (criterion.status === 'warning') return acc + 1;
@@ -351,6 +326,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
   const maxPoints = processedCriteria.length * 3;
   const buffettScore = Math.round((totalPoints / maxPoints) * 100);
 
+  // Calculate detailed score based on the GPT-derived scores when available
   const detailedScores = processedCriteria.filter(c => c.score !== undefined && c.maxScore !== undefined);
   const hasDetailedScores = detailedScores.length > 0;
   
@@ -362,6 +338,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
   const detailedBuffettScore = hasDetailedScores && maxDetailedScore > 0 ? 
     Math.round((totalDetailedScore / maxDetailedScore) * 100) : buffettScore;
 
+  // Criteria distribution for visualization
   const criteriaDistribution = {
     pass: processedCriteria.filter(c => c.status === 'pass').length,
     warning: processedCriteria.filter(c => c.status === 'warning').length,
@@ -399,15 +376,11 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
         </p>
       </div>
       
+      {/* New Score Visualization */}
       <BuffettScoreChart score={hasDetailedScores ? detailedBuffettScore : buffettScore} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {processedCriteria.map((criterion, index) => {
-          if (!criterion) {
-            console.warn(`Criterion at index ${index} is undefined`);
-            return null;
-          }
-          
           const { summary, points } = extractKeyInsights(criterion.gptAnalysis);
           const hasInconsistency = hasInconsistentAnalysis(criterion);
           
@@ -416,12 +389,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center">
-                    <CardTitle className="text-lg">
-                      {criterion.title}
-                      {criterion.details.some(detail => getMetricCalculation(detail) !== "") && (
-                        <span className="ml-2 text-sm text-gray-500">(mit Kennzahlen)</span>
-                      )}
-                    </CardTitle>
+                    <CardTitle className="text-lg">{criterion.title}</CardTitle>
                     {getScoreDisplay(criterion)}
                     {hasInconsistency && (
                       <TooltipProvider>
@@ -431,11 +399,20 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                           </TooltipTrigger>
                           <TooltipContent>
                             <p className="text-xs max-w-xs">
-                              Mögliche Inkonsistenz zwischen GPT-Analyse und Bewertung
+                              Mögliche Inkonsistenz zwischen GPT-Analyse und Bewertung:
+                              {criterion.title === '1. Verstehbares Geschäftsmodell' && 
+                                ' Bei "moderater Komplexität" sollten 2/3 Punkte vergeben werden.'}
+                              {criterion.title === '11. Keine Turnarounds' && 
+                                ' Bei "leichter Umstrukturierung" sollte 1/3 Punkt vergeben werden.'}
                             </p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                    )}
+                    
+                    {/* DCF explanation for valuation criterion */}
+                    {criterion.title === '6. Akzeptable Bewertung' && (
+                      <DCFExplanationTooltip />
                     )}
                   </div>
                   {getStatusBadge(criterion.status)}
@@ -445,21 +422,22 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
               <CardContent>
                 <div className="space-y-1 text-sm">
                   <ul className="list-disc pl-5 space-y-1 mb-3">
-                    {criterion.details.map((detail, i) => {
-                      const calculation = getMetricCalculation(detail);
-                      return (
-                        <li key={i} className="text-gray-700">
-                          {detail}
-                          {calculation && (
-                            <MetricTooltip 
-                              title={`Berechnung: ${detail}`}
-                              calculation={calculation}
-                            />
-                          )}
-                        </li>
-                      );
-                    })}
+                    {criterion.details.map((detail, i) => (
+                      <li key={i} className="text-gray-700">{detail}</li>
+                    ))}
                   </ul>
+                  
+                  {/* Additional risks for long-term outlook */}
+                  {criterion.title === '7. Langfristige Perspektive' && criterion.status === 'pass' && (
+                    <div className="mt-2 pt-2 border-t border-gray-100">
+                      <p className="text-sm text-gray-700 font-medium">Zu beachtende Langzeitrisiken:</p>
+                      <ul className="list-disc pl-5 space-y-1 mt-1 text-sm text-gray-600">
+                        <li>Mögliche ESG-Regulierungen könnten Rüstungsunternehmen beeinflussen</li>
+                        <li>Politische Änderungen könnten Verteidigungsbudgets beeinflussen</li>
+                        <li>Technologischer Wandel könnte bestehende Produkte obsolet machen</li>
+                      </ul>
+                    </div>
+                  )}
                   
                   {criterion.gptAnalysis && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
