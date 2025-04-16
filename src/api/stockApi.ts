@@ -10,25 +10,17 @@ import {
   analyzeRationalBehavior,
   hasOpenAiApiKey
 } from './openaiApi';
+import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 
-// Financial Modeling Prep API Key - Fest im Code eingebaut
-const FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
-
-// Funktion, um den API-Key zu erhalten
-const getApiKey = () => {
-  return FMP_API_KEY;
-};
-
+// Base URL for the Financial Modeling Prep API
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
 // Hilfsfunktion, um API-Anfragen zu machen
 const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
-    const apiKey = getApiKey();
-    
     const response = await axios.get(`${BASE_URL}${endpoint}`, {
       params: {
-        apikey: apiKey,
+        apikey: DEFAULT_FMP_API_KEY,
         ...params
       }
     });

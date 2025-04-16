@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Area,
@@ -14,8 +15,7 @@ import { de } from 'date-fns/locale';
 import { ChartContainer } from '@/components/ui/chart';
 import { Button } from '@/components/ui/button';
 import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
-
-const DEFAULT_FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
+import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 
 interface StockChartProps {
   symbol: string;

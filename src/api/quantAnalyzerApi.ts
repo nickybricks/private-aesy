@@ -1,7 +1,7 @@
-import axios from 'axios';
 
-// Financial Modeling Prep API Key (default)
-const DEFAULT_FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
+import axios from 'axios';
+import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
+
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
 // Helper function for API requests
