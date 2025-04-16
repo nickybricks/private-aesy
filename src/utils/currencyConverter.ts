@@ -46,9 +46,10 @@ const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<
 
 /**
  * Convert a monetary value from source currency to target currency
+ * Safely handles null or undefined values
  */
 export const convertCurrency = async (
-  value: number | string,
+  value: number | string | null | undefined,
   fromCurrency: string = 'USD',
   toCurrency: string = 'EUR'
 ): Promise<number> => {
@@ -78,12 +79,13 @@ export const convertCurrency = async (
 
 /**
  * Format a currency value for display
+ * Safely handles null or undefined values
  */
 export const formatCurrency = (
-  value: number | string,
+  value: number | string | null | undefined,
   currency: string = 'EUR',
   showOriginal: boolean = false,
-  originalValue?: number | string,
+  originalValue?: number | string | null | undefined,
   originalCurrency?: string,
   isPercentage: boolean = false,
   isMultiplier: boolean = false
@@ -94,49 +96,68 @@ export const formatCurrency = (
     return 'N/A';
   }
   
-  // Convert string to number if needed
-  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  // Convert string to number if needed - ensure it's a number
+  let numericValue: number;
+  try {
+    numericValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+    if (isNaN(numericValue)) throw new Error('Invalid number');
+  } catch (e) {
+    console.error('Error converting value to number:', e, value);
+    return 'N/A';
+  }
   
   // Format based on type
   let formattedValue = '';
   
-  if (isPercentage) {
-    // Format as percentage with German locale
-    formattedValue = `${numericValue.toLocaleString('de-DE', { 
-      maximumFractionDigits: 2 
-    })} %`;
-  } else if (isMultiplier) {
-    // Format as multiplier with German locale
-    formattedValue = `${numericValue.toLocaleString('de-DE', { 
-      maximumFractionDigits: 2 
-    })}x`;
-  } else {
-    // Format as currency using Intl.NumberFormat
-    const formatter = new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: currency,
-      maximumFractionDigits: 2
-    });
-    formattedValue = formatter.format(numericValue);
+  try {
+    if (isPercentage) {
+      // Format as percentage with German locale
+      formattedValue = `${numericValue.toLocaleString('de-DE', { 
+        maximumFractionDigits: 2 
+      })} %`;
+    } else if (isMultiplier) {
+      // Format as multiplier with German locale
+      formattedValue = `${numericValue.toLocaleString('de-DE', { 
+        maximumFractionDigits: 2 
+      })}x`;
+    } else {
+      // Format as currency using Intl.NumberFormat
+      const formatter = new Intl.NumberFormat('de-DE', {
+        style: 'currency',
+        currency: currency,
+        maximumFractionDigits: 2
+      });
+      formattedValue = formatter.format(numericValue);
+    }
+  } catch (e) {
+    console.error('Error formatting value:', e, numericValue);
+    return `${numericValue} ${isPercentage ? '%' : isMultiplier ? 'x' : currency}`;
   }
   
   // Add original value if requested and available
-  if (showOriginal && originalValue !== undefined && originalCurrency !== undefined && 
+  if (showOriginal && originalValue !== undefined && originalValue !== null && originalCurrency !== undefined && 
       originalCurrency !== currency) {
-    const origNumericValue = typeof originalValue === 'string' ? 
-      parseFloat(originalValue) : originalValue;
     
-    const origFormatter = new Intl.NumberFormat('de-DE', {
-      style: isPercentage ? 'percent' : 'currency',
-      currency: originalCurrency,
-      maximumFractionDigits: 2
-    });
-    
-    const origFormattedValue = isPercentage ? 
-      `${origNumericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} %` :
-      origFormatter.format(origNumericValue);
-    
-    return `${formattedValue} (umgerechnet aus ${origFormattedValue})`;
+    let origNumericValue: number;
+    try {
+      origNumericValue = typeof originalValue === 'string' ? parseFloat(originalValue) : Number(originalValue);
+      if (isNaN(origNumericValue)) throw new Error('Invalid original number');
+      
+      const origFormattedValue = isPercentage ? 
+        `${origNumericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} %` :
+        isMultiplier ?
+        `${origNumericValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}x` :
+        new Intl.NumberFormat('de-DE', {
+          style: 'currency',
+          currency: originalCurrency,
+          maximumFractionDigits: 2
+        }).format(origNumericValue);
+      
+      return `${formattedValue} (umgerechnet aus ${origFormattedValue})`;
+    } catch (e) {
+      console.error('Error formatting original value:', e, originalValue);
+      return formattedValue;
+    }
   }
   
   return formattedValue;
@@ -155,3 +176,4 @@ export const needsCurrencyConversion = (currency: string): boolean => {
 export const getCurrencyDecimalPlaces = (currency: string): number => {
   return 2; // Use 2 decimal places for all currencies
 };
+
