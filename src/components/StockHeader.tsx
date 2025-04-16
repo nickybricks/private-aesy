@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, RefreshCcw, Edit2, ArrowRight } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -41,10 +40,8 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
 
   useEffect(() => {
     if (stockInfo) {
-      // Show loading state briefly for better UX
       const timer = setTimeout(() => {
         setIsLoading(false);
-        // Only show warning after loading if data is incomplete
         if (hasIncompleteData) {
           setShowWarning(true);
         }
@@ -94,7 +91,6 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
 
   const alternativeSymbol = ticker.endsWith('.DE') ? ticker.replace('.DE', '') : null;
 
-  // Log warning for incomplete data
   if (hasIncompleteData) {
     console.warn("Fehlende Werte bei Symbol:", ticker, stockInfo);
   }
@@ -116,7 +112,6 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
     );
   }
 
-  // Critical data missing - prevent analysis
   if (hasCriticalDataMissing) {
     return (
       <div className="buffett-card mb-6 animate-fade-in">
