@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 import {
@@ -12,11 +12,6 @@ import {
 const DEFAULT_FMP_API_KEY = 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y';
 
 const ApiKeyInput: React.FC = () => {
-  useEffect(() => {
-    // Always set the default API key in localStorage
-    localStorage.setItem('fmp_api_key', DEFAULT_FMP_API_KEY);
-  }, []);
-
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-2">
