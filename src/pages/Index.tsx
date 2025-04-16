@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -32,7 +33,6 @@ interface FinancialMetricsData {
   roic?: any;
   debtToAssets?: any;
   interestCoverage?: any;
-  fcf?: any;
   reportedCurrency?: string;
   metrics?: Array<{
     name: string;
@@ -300,18 +300,6 @@ const Index = () => {
               isPercentage: false,
               isMultiplier: true
             },
-            { 
-              name: 'Freier Cashflow', 
-              value: rawMetricsData.fcf, 
-              formula: 'Operativer Cashflow - Investitionen', 
-              explanation: 'Zeigt die Finanzkraft des Unternehmens', 
-              threshold: '> 0, stabil/wachsend', 
-              status: rawMetricsData.fcf > 0 ? 'positive' as 'pass' : 'negative' as 'fail',
-              isPercentage: false,
-              isMultiplier: false,
-              originalValue: rawMetricsData.fcf,
-              originalCurrency: reportedCurrency
-            }
           ],
           historicalData: rawMetricsData.historicalData || {
             revenue: [],
@@ -323,12 +311,7 @@ const Index = () => {
         
         if (metricsData) {
           if (metricsData.metrics) {
-            const { convertFinancialMetricsCollection } = await import('@/utils/currencyConverter');
-            metricsData.metrics = await convertFinancialMetricsCollection(
-              metricsData.metrics, 
-              reportedCurrency, 
-              priceCurrency
-            );
+            metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
           }
           
           if (metricsData.historicalData) {

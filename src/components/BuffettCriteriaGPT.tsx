@@ -63,8 +63,7 @@ const getStatusBadge = (status: string) => {
 
 // Helper function that automatically derives score from GPT analysis
 const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | undefined => {
-  // Guard clause to prevent accessing properties of undefined or null
-  if (!criterion || !criterion.gptAnalysis || criterion.maxScore === undefined) {
+  if (!criterion.gptAnalysis || criterion.maxScore === undefined) {
     return undefined;
   }
   
@@ -105,24 +104,19 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
     const warningCount = warningSignals.filter(signal => analysis.includes(signal)).length;
     const negativeCount = negativeSignals.filter(signal => analysis.includes(signal)).length;
     
-    // *** UPDATED SCORING LOGIC FOR TURNAROUNDS ***
-    // 3 points: All positive signals (stable company, no turnaround)
-    // 2 points: Mostly positive with some warnings
-    // 1 point: Mix of positive, warnings and negative signals
-    // 0 points: Mostly warnings or clear negatives
-    
+    // Assign score based on the semantic analysis
     if (positiveCount > 0 && warningCount === 0 && negativeCount === 0) {
       // Clear indication of no turnaround
       return 3;
-    } else if (positiveCount > 0 && warningCount === 1 && negativeCount === 0) {
-      // Mostly stable with minor restructuring
-      return 2;
-    } else if (positiveCount > 0 && (warningCount > 0 || negativeCount === 1)) {
-      // Mix of stable elements with some restructuring
+    } else if (warningCount === 1 && negativeCount === 0) {
+      // One warning signal
       return 1;
-    } else {
-      // Multiple warnings or clear indication of turnaround
+    } else if (warningCount >= 2 || negativeCount >= 1) {
+      // Multiple warnings or clear negatives
       return 0;
+    } else if (positiveCount > 0) {
+      // Default to full score if any positive signals and no clear negatives
+      return 3;
     }
   }
   
@@ -132,7 +126,7 @@ const deriveScoreFromGptAnalysis = (criterion: BuffettCriterionProps): number | 
 
 // Function to get score display based on status with automated GPT score derivation
 const getScoreDisplay = (criterion: BuffettCriterionProps) => {
-  if (!criterion || criterion.maxScore === undefined) {
+  if (criterion.maxScore === undefined) {
     return null;
   }
   
@@ -174,7 +168,7 @@ const getScoreDisplay = (criterion: BuffettCriterionProps) => {
 
 // Improved function to detect inconsistencies between GPT analysis and score
 const hasInconsistentAnalysis = (criterion: BuffettCriterionProps): boolean => {
-  if (!criterion || !criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
+  if (!criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
     return false;
   }
   
@@ -288,46 +282,22 @@ const DCFExplanationTooltip: React.FC = () => (
 );
 
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
-  // Add null check for criteria
-  if (!criteria) {
-    console.warn('BuffettCriteriaGPT: criteria is undefined or null');
-    return <div>Keine Kriterien verfügbar.</div>;
-  }
-
-  // Check if all expected criteria properties exist
-  const requiredCriteria = [
-    'businessModel', 'economicMoat', 'financialMetrics', 'financialStability',
-    'management', 'valuation', 'longTermOutlook', 'rationalBehavior',
-    'cyclicalBehavior', 'oneTimeEffects', 'turnaround'
-  ];
-  
-  const missingCriteria = requiredCriteria.filter(key => !criteria[key as keyof typeof criteria]);
-  if (missingCriteria.length > 0) {
-    console.warn(`BuffettCriteriaGPT: Missing criteria: ${missingCriteria.join(', ')}`);
-  }
-
-  // Safely extract criteria or provide fallbacks
   const allCriteria = [
-    criteria.businessModel || { title: '1. Verstehbares Geschäftsmodell', status: 'fail', description: 'Keine Daten', details: [], gptAnalysis: null },
-    criteria.economicMoat || { title: '2. Wirtschaftlicher Burggraben', status: 'fail', description: 'Keine Daten', details: [], gptAnalysis: null },
-    criteria.financialMetrics || { title: '3. Finanzielle Kennzahlen', status: 'fail', description: 'Keine Daten', details: [], gptAnalysis: null },
-    criteria.financialStability || { title: '4. Finanzielle Stabilität', status: 'fail', description: 'Keine Daten', details: [], gptAnalysis: null },
-    criteria.management || { title: '5. Management', status: 'fail', description: 'Keine Daten', details: [], gptAnalysis: null },
-    criteria.valuation || { title: '6. Akzeptable Bewertung', status: 'fail', description: 'Keine Daten', details: [], gptAnalysis: null },
-    criteria.longTermOutlook || { title: '7. Langfristige Perspektive', status: 'fail', description: 'Keine Daten', details: [], gptAnalysis: null },
-    criteria.rationalBehavior || { title: '8. Rationales Verhalten', status: 'fail', description: 'Keine Daten', details: [], gptAnalysis: null },
-    criteria.cyclicalBehavior || { title: '9. Zyklisches Verhalten', status: 'fail', description: 'Keine Daten', details: [], gptAnalysis: null },
-    criteria.oneTimeEffects || { title: '10. Einmaleffekte', status: 'fail', description: 'Keine Daten', details: [], gptAnalysis: null },
-    criteria.turnaround || { title: '11. Keine Turnarounds', status: 'fail', description: 'Keine Daten', details: [], gptAnalysis: null }
+    criteria.businessModel,
+    criteria.economicMoat,
+    criteria.financialMetrics,
+    criteria.financialStability,
+    criteria.management,
+    criteria.valuation,
+    criteria.longTermOutlook,
+    criteria.rationalBehavior,
+    criteria.cyclicalBehavior,
+    criteria.oneTimeEffects,
+    criteria.turnaround
   ];
 
   // Process criteria to automatically update scores based on GPT analysis
   const processedCriteria = allCriteria.map(criterion => {
-    if (!criterion) {
-      console.warn('BuffettCriteriaGPT: Found undefined criterion during processing');
-      return { title: 'Fehlerhafte Daten', status: 'fail', description: 'Keine Daten', details: [] };
-    }
-    
     const derivedScore = deriveScoreFromGptAnalysis(criterion);
     
     // Only update the score if it's different and we have a derived value
@@ -343,7 +313,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
 
   // Calculate total points for overall rating
   const totalPoints = processedCriteria.reduce((acc, criterion) => {
-    if (!criterion) return acc;
     if (criterion.status === 'pass') return acc + 3;
     if (criterion.status === 'warning') return acc + 1;
     return acc;
@@ -353,7 +322,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
   const buffettScore = Math.round((totalPoints / maxPoints) * 100);
 
   // Calculate detailed score based on the GPT-derived scores when available
-  const detailedScores = processedCriteria.filter(c => c && c.score !== undefined && c.maxScore !== undefined);
+  const detailedScores = processedCriteria.filter(c => c.score !== undefined && c.maxScore !== undefined);
   const hasDetailedScores = detailedScores.length > 0;
   
   const totalDetailedScore = hasDetailedScores ? 
@@ -366,9 +335,9 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
 
   // Criteria distribution for visualization
   const criteriaDistribution = {
-    pass: processedCriteria.filter(c => c && c.status === 'pass').length,
-    warning: processedCriteria.filter(c => c && c.status === 'warning').length,
-    fail: processedCriteria.filter(c => c && c.status === 'fail').length
+    pass: processedCriteria.filter(c => c.status === 'pass').length,
+    warning: processedCriteria.filter(c => c.status === 'warning').length,
+    fail: processedCriteria.filter(c => c.status === 'fail').length
   };
 
   return (
@@ -407,11 +376,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {processedCriteria.map((criterion, index) => {
-          if (!criterion) {
-            console.warn(`BuffettCriteriaGPT: Criterion at index ${index} is undefined`);
-            return null;
-          }
-          
           const { summary, points } = extractKeyInsights(criterion.gptAnalysis);
           const hasInconsistency = hasInconsistentAnalysis(criterion);
           
@@ -452,13 +416,11 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
               </CardHeader>
               <CardContent>
                 <div className="space-y-1 text-sm">
-                  {criterion.details && criterion.details.length > 0 && (
-                    <ul className="list-disc pl-5 space-y-1 mb-3">
-                      {criterion.details.map((detail, i) => (
-                        <li key={i} className="text-gray-700">{detail}</li>
-                      ))}
-                    </ul>
-                  )}
+                  <ul className="list-disc pl-5 space-y-1 mb-3">
+                    {criterion.details.map((detail, i) => (
+                      <li key={i} className="text-gray-700">{detail}</li>
+                    ))}
+                  </ul>
                   
                   {/* Additional risks for long-term outlook */}
                   {criterion.title === '7. Langfristige Perspektive' && criterion.status === 'pass' && (
