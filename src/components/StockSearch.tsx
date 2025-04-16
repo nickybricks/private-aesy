@@ -127,6 +127,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const [suggestions, setSuggestions] = useState<StockSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isinResults, setIsinResults] = useState<StockSuggestion | null>(null);
+  const [forceKeepOpen, setForceKeepOpen] = useState(false);
   const { toast } = useToast();
 
   const checkAndHandleIsin = useCallback((value: string) => {
@@ -505,6 +506,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       setShowAppleCorrection(false);
       onSearch(ticker.trim().toUpperCase());
       setOpen(false);
+      setForceKeepOpen(false);
     }
   };
 
@@ -519,6 +521,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     setTicker(stock.symbol);
     onSearch(stock.symbol);
     setOpen(false);
+    setForceKeepOpen(false);
   };
 
   const selectQuickAccessStock = (symbol: string) => {
@@ -540,9 +543,24 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       name: stock.name,
       symbol: stock.symbol,
       exchange: exchange,
-      currency: stock.currency || '',
+      currency: '',
     };
   };
+
+  const handleInputFocus = () => {
+    setForceKeepOpen(true);
+    setOpen(true);
+    
+    if (!searchQuery.trim()) {
+      setSuggestions(fallbackStocks.slice(0, 6));
+    }
+  };
+
+  useEffect(() => {
+    if (forceKeepOpen) {
+      setOpen(true);
+    }
+  }, [forceKeepOpen]);
 
   return (
     <div className="buffett-card mb-8 animate-fade-in">
@@ -598,7 +616,11 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       <form onSubmit={handleSubmit} className="flex gap-2">
         <div className="relative flex-1">
-          <Popover open={open} onOpenChange={setOpen}>
+          <Popover open={open} onOpenChange={(newState) => {
+            if (!forceKeepOpen || newState) {
+              setOpen(newState);
+            }
+          }}>
             <PopoverTrigger asChild>
               <div className="relative w-full">
                 <Input
@@ -613,13 +635,11 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                     
                     if (newValue.length >= 1) {
                       setOpen(true);
+                      setForceKeepOpen(true);
                     }
                   }}
-                  onFocus={() => {
-                    if (ticker.length >= 1 || isinResults) {
-                      setOpen(true);
-                    }
-                  }}
+                  onFocus={handleInputFocus}
+                  onClick={handleInputFocus}
                   placeholder="Aktienname, Symbol oder ISIN eingeben..."
                   className="apple-input pl-10"
                   disabled={disabled || isLoading}
@@ -628,13 +648,18 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               </div>
             </PopoverTrigger>
             <PopoverContent 
-              className="p-0 w-[300px] md:w-[400px]" 
+              className="p-0 w-[300px] md:w-[400px] z-50" 
               align="start" 
               sideOffset={5}
               onInteractOutside={(e) => {
                 if (isinResults) {
                   e.preventDefault();
+                } else {
+                  setForceKeepOpen(false);
                 }
+              }}
+              onEscapeKeyDown={() => {
+                setForceKeepOpen(false);
               }}
             >
               <Command>
@@ -647,6 +672,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                     
                     checkAndHandleIsin(value);
                   }}
+                  onFocus={() => setForceKeepOpen(true)}
                   autoFocus
                 />
                 <CommandList>
@@ -786,6 +812,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               onClick={() => {
                 selectQuickAccessStock(item.symbol);
                 setOpen(true);
+                setForceKeepOpen(true);
               }}
             >
               {item.symbol} ({item.name})
