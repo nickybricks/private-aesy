@@ -7,6 +7,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Progress } from '@/components/ui/progress';
 import { ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { ChevronDown } from "lucide-react";
 
 interface BuffettCriterionProps {
   title: string;
@@ -494,23 +496,26 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                   )}
                   
                   {criterion.gptAnalysis && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="flex items-center mb-2">
-                        <Bot size={16} className="mr-2 text-blue-500" />
-                        <span className="font-medium text-blue-700">GPT-Analyse:</span>
-                      </div>
-                      <div className="text-gray-700 gpt-analysis prose prose-sm max-w-none">
-                        <ReactMarkdown components={{
-                          strong: ({ node, ...props }) => <span className="font-bold" {...props} />,
-                          p: ({ node, ...props }) => <div className="mb-2" {...props} />,
-                          ul: ({ node, ...props }) => <ul className="list-disc pl-5 mt-1 mb-2" {...props} />,
-                          ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mt-1 mb-2" {...props} />,
-                          li: ({ node, ...props }) => <li className="mb-1" {...props} />
-                        }}>
-                          {criterion.gptAnalysis}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
+                    <Collapsible className="mt-3 pt-3 border-t border-gray-200">
+                      <CollapsibleTrigger className="flex items-center gap-2 mb-2 w-full">
+                        <Bot size={16} className="text-blue-500" />
+                        <span className="font-medium text-blue-700">GPT-Analyse</span>
+                        <ChevronDown className="h-4 w-4 text-blue-500 ml-auto transition-transform duration-200" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="text-gray-700 gpt-analysis prose prose-sm max-w-none">
+                          <ReactMarkdown components={{
+                            strong: ({ node, ...props }) => <span className="font-bold" {...props} />,
+                            p: ({ node, ...props }) => <div className="mb-2" {...props} />,
+                            ul: ({ node, ...props }) => <ul className="list-disc pl-5 mt-1 mb-2" {...props} />,
+                            ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mt-1 mb-2" {...props} />,
+                            li: ({ node, ...props }) => <li className="mb-1" {...props} />
+                          }}>
+                            {criterion.gptAnalysis}
+                          </ReactMarkdown>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   )}
                 </div>
               </CardContent>
