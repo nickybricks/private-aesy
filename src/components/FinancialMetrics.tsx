@@ -10,6 +10,12 @@ import {
 } from "@/components/ui/table";
 import { Check, AlertTriangle, X, Info, HelpCircle } from 'lucide-react';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -211,28 +217,26 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         <h3 className="text-lg font-medium">{name}</h3>
         
         {detailedExplanation && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
-                  <Info size={14} className="text-gray-600" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-sm p-4">
-                <div className="space-y-2">
-                  <h4 className="font-semibold">{name}</h4>
-                  <p>{detailedExplanation.whatItIs}</p>
-                  
-                  <div className="space-y-1 pt-2">
-                    <p><span className="font-medium">Berechnung:</span> {detailedExplanation.howCalculated}</p>
-                    <p><span className="font-medium">Warum wichtig:</span> {detailedExplanation.whyImportant}</p>
-                    <p><span className="font-medium">Buffett-Maßstab:</span> {detailedExplanation.buffettGuideline}</p>
-                    <p><span className="font-medium">Gute Werte:</span> {detailedExplanation.goodValue}</p>
-                  </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
+                <Info size={14} className="text-gray-600" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="max-w-sm p-4">
+              <div className="space-y-2">
+                <h4 className="font-semibold">{name}</h4>
+                <p>{detailedExplanation.whatItIs}</p>
+                
+                <div className="space-y-1 pt-2">
+                  <p><span className="font-medium">Berechnung:</span> {detailedExplanation.howCalculated}</p>
+                  <p><span className="font-medium">Warum wichtig:</span> {detailedExplanation.whyImportant}</p>
+                  <p><span className="font-medium">Buffett-Maßstab:</span> {detailedExplanation.buffettGuideline}</p>
+                  <p><span className="font-medium">Gute Werte:</span> {detailedExplanation.goodValue}</p>
                 </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
       </div>
       
@@ -317,28 +321,26 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Finanzielle Entwicklung (10 Jahre)</h3>
             
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
-                    <HelpCircle size={16} className="text-gray-600" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs p-3">
-                  <div className="space-y-2">
-                    <p className="font-medium">Warum diese Daten wichtig sind:</p>
-                    <p>Warren Buffett analysiert die finanzielle Entwicklung über mindestens 10 Jahre, 
-                       um langfristige Trends und die Beständigkeit des Geschäftsmodells zu bewerten.</p>
-                    <p className="mt-1">Besonders achtet er auf:</p>
-                    <ul className="list-disc pl-4 space-y-1 text-sm">
-                      <li>Stabiles Umsatzwachstum</li>
-                      <li>Steigende Gewinne</li>
-                      <li>Kontinuierlichen Anstieg des Gewinns pro Aktie</li>
-                    </ul>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
+                  <HelpCircle size={16} className="text-gray-600" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="max-w-xs p-3">
+                <div className="space-y-2">
+                  <p className="font-medium">Warum diese Daten wichtig sind:</p>
+                  <p>Warren Buffett analysiert die finanzielle Entwicklung über mindestens 10 Jahre, 
+                     um langfristige Trends und die Beständigkeit des Geschäftsmodells zu bewerten.</p>
+                  <p className="mt-1">Besonders achtet er auf:</p>
+                  <ul className="list-disc pl-4 space-y-1 text-sm">
+                    <li>Stabiles Umsatzwachstum</li>
+                    <li>Steigende Gewinne</li>
+                    <li>Kontinuierlichen Anstieg des Gewinns pro Aktie</li>
+                  </ul>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           
           <Table>
