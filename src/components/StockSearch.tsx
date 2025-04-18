@@ -769,17 +769,15 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       
       <div className="mt-4 text-sm text-buffett-subtext flex items-center">
         <p>Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung.</p>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info size={16} className="ml-2 cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs p-4">
-              <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
-              <p>Dieses Tool verwendet die Financial Modeling Prep API und OpenAI GPT für detaillierte Analysen.</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Info size={16} className="ml-2 cursor-pointer" />
+          </PopoverTrigger>
+          <PopoverContent className="max-w-xs p-4">
+            <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
+            <p>Dieses Tool verwendet die Financial Modeling Prep API und OpenAI GPT für detaillierte Analysen.</p>
+          </PopoverContent>
+        </Popover>
       </div>
       
       <div className="mt-6">

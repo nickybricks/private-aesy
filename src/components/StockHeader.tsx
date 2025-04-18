@@ -5,11 +5,10 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { convertCurrency, needsCurrencyConversion, getExchangeRate, shouldConvertCurrency } from '@/utils/currencyConverter';
 import StockChart from './StockChart';
 
@@ -195,18 +194,16 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
             {price !== null && !isNaN(price) ? `${price.toFixed(2)} ${currency}` : `– ${currency}`}
             
             {currency !== 'EUR' && exchangeRate && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info size={16} className="text-gray-400 cursor-help ml-1" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">
-                      Wechselkurs: 1 {currency} = {exchangeRate.toFixed(6)} EUR
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Info size={16} className="text-gray-400 cursor-pointer ml-1" />
+                </PopoverTrigger>
+                <PopoverContent>
+                  <p className="max-w-xs">
+                    Wechselkurs: 1 {currency} = {exchangeRate.toFixed(6)} EUR
+                  </p>
+                </PopoverContent>
+              </Popover>
             )}
           </div>
           <div className={`flex items-center ${isPositive ? 'text-buffett-green' : 'text-buffett-red'}`}>
