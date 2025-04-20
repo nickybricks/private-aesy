@@ -1,8 +1,7 @@
-
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { convertCurrency, shouldConvertCurrency } from '@/utils/currencyConverter';
-import { StockInfo } from '@/types/stock';
+import { StockInfo, MarginOfSafetyStatus, OverallRatingData } from '@/types/stock';
 
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
@@ -300,7 +299,7 @@ export const getFinancialMetrics = async (ticker: string) => {
 };
 
 // Get overall rating and valuation analysis
-export const getOverallRating = async (ticker: string) => {
+export const getOverallRating = async (ticker: string): Promise<OverallRatingData> => {
   try {
     // Get key data needed for overall rating
     const [quoteData, dcfData, keyMetrics, profile] = await Promise.all([
@@ -367,8 +366,8 @@ export const getOverallRating = async (ticker: string) => {
     // Best buy price (with desired margin of safety)
     const bestBuyPrice = intrinsicValue * (1 - (targetMarginOfSafety / 100));
     
-    // Determine margin of safety status
-    let mosStatus = "fail";
+    // Determine margin of safety status using the correct type
+    let mosStatus: MarginOfSafetyStatus = "fail";
     if (marginOfSafety >= targetMarginOfSafety) {
       mosStatus = "pass";
     } else if (marginOfSafety > 0) {
@@ -409,8 +408,8 @@ export const getOverallRating = async (ticker: string) => {
     if (metrics.dividendYieldTTM > 0.02 || metrics.cashPerShareTTM > currentPrice * 0.1) buffettScore += 1;
     
     // Identify strengths and weaknesses
-    const strengths = [];
-    const weaknesses = [];
+    const strengths: string[] = [];
+    const weaknesses: string[] = [];
     
     // Add main strengths
     if (metrics.roicTTM > 0.12) strengths.push("Hohe Kapitalrendite (ROIC)");
@@ -425,6 +424,16 @@ export const getOverallRating = async (ticker: string) => {
     if (metrics.debtToEquityTTM > 1) weaknesses.push("Hohe Verschuldung");
     if (metrics.freeCashFlowPerShareTTM < 0) weaknesses.push("Negativer Free Cash Flow");
     if (marginOfSafety < 0) weaknesses.push("Über dem geschätzten inneren Wert");
+    
+    // Determine overall rating based on buffett score
+    let overall: "buy" | "watch" | "avoid";
+    if (buffettScore >= 8 && marginOfSafety > 20) {
+      overall = "buy";
+    } else if (buffettScore >= 6 && marginOfSafety > 0) {
+      overall = "watch";
+    } else {
+      overall = "avoid";
+    }
     
     // Overall recommendation
     let recommendation = "";
@@ -451,7 +460,7 @@ export const getOverallRating = async (ticker: string) => {
     }
 
     return {
-      overall: buffettScore > 7 ? "Ausgezeichnet" : buffettScore > 5 ? "Gut" : buffettScore > 3 ? "Mittelmäßig" : "Schwach",
+      overall,
       buffettScore,
       summary,
       strengths,
