@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, RefreshCcw, Edit2, ArrowRight, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -48,19 +47,30 @@ const formatMarketCap = (marketCap: number | null, currency: string = 'EUR'): st
   return `${scaledValue.toFixed(2)} ${unit} ${currency}`;
 };
 
-// New function to check if a DCF value is unreasonably high compared to the stock price
 const isIntrinsicValueUnreasonable = (intrinsicValue: number | null, price: number | null, threshold = 20): boolean => {
   if (intrinsicValue === null || price === null || price === 0) return false;
-  return intrinsicValue / price > threshold; // If DCF is more than 20x the price, flag it
+  return intrinsicValue / price > threshold;
 };
 
-// New function to format the intrinsic value for display
+const normalizeIntrinsicValuePerShare = (
+  intrinsicValue: number | null, 
+  sharesOutstanding: number | null,
+  price: number | null
+): number | null => {
+  if (intrinsicValue === null) return null;
+  
+  if (isIntrinsicValueUnreasonable(intrinsicValue, price) && sharesOutstanding && sharesOutstanding > 0) {
+    return intrinsicValue / sharesOutstanding;
+  }
+  
+  return intrinsicValue;
+};
+
 const formatIntrinsicValue = (value: number | null, currency: string): string => {
   if (value === null || value === undefined || isNaN(value)) {
     return 'N/A';
   }
   
-  // Format with thousand separators and fixed decimals
   return `${value.toFixed(2)} ${currency}`;
 };
 
@@ -69,10 +79,12 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
   const [convertedMarketCap, setConvertedMarketCap] = useState<number | null>(null);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [normalizedIntrinsicValue, setNormalizedIntrinsicValue] = useState<number | null>(null);
   const navigate = useNavigate();
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
   const [showCurrencyNotice, setShowCurrencyNotice] = useState(false);
   const [dcfWarning, setDcfWarning] = useState(false);
+  const [dcfNormalized, setDcfNormalized] = useState(false);
 
   useEffect(() => {
     if (stockInfo) {
@@ -88,9 +100,26 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
       
       setHasCriticalDataMissing(criticalMissing);
       
-      // Check if the intrinsic value is unreasonably high compared to price
       if (stockInfo.intrinsicValue !== null && stockInfo.price !== null) {
-        setDcfWarning(isIntrinsicValueUnreasonable(stockInfo.intrinsicValue, stockInfo.price));
+        const isUnreasonable = isIntrinsicValueUnreasonable(stockInfo.intrinsicValue, stockInfo.price);
+        setDcfWarning(isUnreasonable);
+        
+        if (isUnreasonable && stockInfo.sharesOutstanding && stockInfo.sharesOutstanding > 0) {
+          const normalized = normalizeIntrinsicValuePerShare(
+            stockInfo.intrinsicValue,
+            stockInfo.sharesOutstanding,
+            stockInfo.price
+          );
+          setNormalizedIntrinsicValue(normalized);
+          setDcfNormalized(true);
+          
+          if (normalized !== null) {
+            setDcfWarning(isIntrinsicValueUnreasonable(normalized, stockInfo.price, 10));
+          }
+        } else {
+          setNormalizedIntrinsicValue(stockInfo.intrinsicValue);
+          setDcfNormalized(false);
+        }
       }
       
       const loadExchangeRateInfo = async () => {
@@ -201,6 +230,8 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
     );
   }
 
+  const displayIntrinsicValue = normalizedIntrinsicValue !== null ? normalizedIntrinsicValue : intrinsicValue;
+
   return (
     <div className="buffett-card mb-6 animate-slide-up space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -242,7 +273,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         <StockChart 
           symbol={ticker} 
           currency={currency} 
-          intrinsicValue={stockInfo.intrinsicValue}
+          intrinsicValue={displayIntrinsicValue}
         />
       </div>
       
@@ -256,12 +287,24 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
       {dcfWarning && (
         <Alert className="bg-yellow-50 border-yellow-200">
           <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          <AlertTitle className="text-yellow-700">Ungewöhnlich hoher intrinsischer Wert</AlertTitle>
+          <AlertTitle className="text-yellow-700">
+            {dcfNormalized ? "Hinweis zum intrinsischen Wert" : "Ungewöhnlich hoher intrinsischer Wert"}
+          </AlertTitle>
           <AlertDescription className="text-yellow-600">
             <p>
-              Der berechnete intrinsische Wert ({formatIntrinsicValue(intrinsicValue, currency)}) erscheint unverhältnismäßig 
-              hoch im Vergleich zum aktuellen Kurs ({price?.toFixed(2)} {currency}). 
-              Dies kann auf einen Berechnungsfehler oder außergewöhnliche Wachstumsannahmen hindeuten.
+              {dcfNormalized ? (
+                <>
+                  Der berechnete intrinsische Wert wurde automatisch durch die Anzahl ausstehender Aktien
+                  ({stockInfo.sharesOutstanding?.toLocaleString('de-DE')}) geteilt,
+                  da der ursprüngliche Wert unverhältnismäßig hoch erschien.
+                </>
+              ) : (
+                <>
+                  Der berechnete intrinsische Wert ({formatIntrinsicValue(intrinsicValue, currency)}) erscheint unverhältnismäßig 
+                  hoch im Vergleich zum aktuellen Kurs ({price?.toFixed(2)} {currency}). 
+                  Dies kann auf einen Berechnungsfehler oder außergewöhnliche Wachstumsannahmen hindeuten.
+                </>
+              )}
             </p>
             <p className="mt-2">
               Für eine genauere Analyse empfehlen wir, weitere Quellen zu konsultieren.
