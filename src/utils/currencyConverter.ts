@@ -1,3 +1,4 @@
+
 /**
  * Currency conversion utility using Exchange Rate API
  */
@@ -74,8 +75,9 @@ export const convertCurrency = async (
     return 0;
   }
   
-  // Check if conversion is needed
+  // Check if conversion is needed - if currencies are the same, just return original value
   if (fromCurrency === toCurrency) {
+    console.log(`No conversion needed: ${fromCurrency} = ${toCurrency}`);
     return numericValue;
   }
 

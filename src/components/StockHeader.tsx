@@ -1,14 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, RefreshCcw, Edit2, ArrowRight, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { ClickableTooltip } from './ClickableTooltip';
 import { convertCurrency, needsCurrencyConversion, getExchangeRate, shouldConvertCurrency } from '@/utils/currencyConverter';
 import StockChart from './StockChart';
 
@@ -194,16 +191,15 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
             {price !== null && !isNaN(price) ? `${price.toFixed(2)} ${currency}` : `– ${currency}`}
             
             {currency !== 'EUR' && exchangeRate && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Info size={16} className="text-gray-400 cursor-pointer ml-1" />
-                </PopoverTrigger>
-                <PopoverContent>
+              <ClickableTooltip
+                content={
                   <p className="max-w-xs">
                     Wechselkurs: 1 {currency} = {exchangeRate.toFixed(6)} EUR
                   </p>
-                </PopoverContent>
-              </Popover>
+                }
+              >
+                <Info size={16} className="text-gray-400 cursor-pointer ml-1" />
+              </ClickableTooltip>
             )}
           </div>
           <div className={`flex items-center ${isPositive ? 'text-buffett-green' : 'text-buffett-red'}`}>
@@ -234,14 +230,22 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         </span>
       </div>
       
-      {showCurrencyNotice && (
-        <div className="mt-2 text-xs text-buffett-subtext flex items-center gap-1">
-          <Info size={12} />
-          <span>
-            Die Finanzkennzahlen wurden in {currency} umgerechnet, falls sie in einer anderen Währung berichtet wurden.
-          </span>
+      <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+        <div className="flex items-start gap-2">
+          <Info size={18} className="text-buffett-blue mt-0.5" />
+          <div>
+            <h3 className="font-medium text-buffett-blue mb-1">Währungsinformation</h3>
+            <p className="text-sm">
+              <strong>Kurswährung: {currency}</strong>
+            </p>
+            <p className="text-sm mt-1">
+              Alle Finanzkennzahlen wurden – falls notwendig – in {currency} umgerechnet, 
+              um eine korrekte Analyse zu ermöglichen. Originalwerte in abweichenden Währungen 
+              werden in den Tooltips angezeigt.
+            </p>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

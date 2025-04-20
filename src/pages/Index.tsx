@@ -109,6 +109,7 @@ const Index = () => {
   const convertFinancialMetrics = async (metrics: any, reportedCurrency: string, stockPriceCurrency: string) => {
     if (!metrics || !reportedCurrency || !stockPriceCurrency) return metrics;
     
+    // Only convert metrics if the reported currency is different from the stock price currency
     if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
       console.log(`No conversion needed: both stock price and metrics are in ${stockPriceCurrency}`);
       return metrics;
@@ -150,6 +151,7 @@ const Index = () => {
   const convertHistoricalData = async (historicalData: any, reportedCurrency: string, stockPriceCurrency: string) => {
     if (!historicalData || !reportedCurrency || !stockPriceCurrency) return historicalData;
     
+    // Only convert if currencies are different
     if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
       console.log(`No historical data conversion needed: both stock price and data are in ${stockPriceCurrency}`);
       return historicalData;
@@ -160,16 +162,19 @@ const Index = () => {
         revenue: historicalData.revenue ? await Promise.all(historicalData.revenue.map(async (item: any) => ({
           ...item,
           originalValue: item.value,
+          originalCurrency: reportedCurrency,
           value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
         }))) : [],
         earnings: historicalData.earnings ? await Promise.all(historicalData.earnings.map(async (item: any) => ({
           ...item,
           originalValue: item.value,
+          originalCurrency: reportedCurrency,
           value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
         }))) : [],
         eps: historicalData.eps ? await Promise.all(historicalData.eps.map(async (item: any) => ({
           ...item,
           originalValue: item.value,
+          originalCurrency: reportedCurrency,
           value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
         }))) : []
       };
@@ -311,11 +316,17 @@ const Index = () => {
         
         if (metricsData) {
           if (metricsData.metrics) {
-            metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
+            // Only convert if currencies are different
+            if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
+              metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
+            }
           }
           
           if (metricsData.historicalData) {
-            metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
+            // Only convert if currencies are different
+            if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
+              metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
+            }
           }
         }
         
@@ -324,6 +335,7 @@ const Index = () => {
             const updatedRating: OverallRatingData = { ...rating };
             const ratingCurrency = rating.currency || reportedCurrency;
             
+            // Only convert if the rating currency is different from the stock price currency
             if (shouldConvertCurrency(priceCurrency, ratingCurrency)) {
               console.log(`Converting rating values from ${ratingCurrency} to ${priceCurrency}`);
               

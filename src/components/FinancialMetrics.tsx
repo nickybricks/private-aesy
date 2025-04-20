@@ -14,13 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { ClickableTooltip } from './ClickableTooltip';
 import { 
   formatCurrency, 
   shouldConvertCurrency,
@@ -188,7 +182,7 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
       cleanedDisplayValue = typeof displayValue === 'number'
         ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}x`
         : displayValue;
-    } else if (originalCurrency && originalValue && needsCurrencyConversion(originalCurrency)) {
+    } else if (originalCurrency && originalValue && shouldConvertCurrency(currency, originalCurrency)) {
       cleanedDisplayValue = formatCurrency(
         value, 
         currency, 
@@ -287,7 +281,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
   const decimalPlaces = getCurrencyDecimalPlaces(currency);
   
   const hasConvertedMetrics = metricsArray.some(
-    metric => metric.originalCurrency && metric.originalCurrency !== currency
+    metric => metric.originalCurrency && shouldConvertCurrency(currency, metric.originalCurrency)
   );
   
   return (
@@ -365,27 +359,31 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                 const originalEarningsValue = earningsDataForYear?.originalValue || earningsDataForYear?.value;
                 const originalEpsValue = epsDataForYear?.originalValue || epsDataForYear?.value;
                 
-                const showOriginal = item.originalValue && item.originalValue !== item.value;
+                const showOriginalRevenue = item.originalValue && item.originalCurrency && 
+                                           shouldConvertCurrency(currency, item.originalCurrency);
+                                           
+                const showOriginalEarnings = earningsDataForYear?.originalValue && 
+                                            earningsDataForYear.originalCurrency && 
+                                            shouldConvertCurrency(currency, earningsDataForYear.originalCurrency);
+                                            
+                const showOriginalEps = epsDataForYear?.originalValue && 
+                                       epsDataForYear.originalCurrency && 
+                                       shouldConvertCurrency(currency, epsDataForYear.originalCurrency);
                 
                 return (
                   <TableRow key={item.year || i}>
                     <TableCell>{item.year || 'N/A'}</TableCell>
                     <TableCell className="text-right">
                       {typeof revenueValue === 'number' && revenueValue !== 0 
-                        ? (showOriginal 
+                        ? (showOriginalRevenue 
                            ? (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="underline decoration-dotted cursor-help">
-                                      {formatScaledNumber(revenueValue, currency)}
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Originalwert: {formatScaledNumber(originalRevenueValue, item.originalCurrency || currency)}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <ClickableTooltip
+                                content={`Originalwert: ${formatScaledNumber(originalRevenueValue, item.originalCurrency || currency)}`}
+                              >
+                                <span className="underline decoration-dotted cursor-help">
+                                  {formatScaledNumber(revenueValue, currency)}
+                                </span>
+                              </ClickableTooltip>
                             )
                            : formatScaledNumber(revenueValue, currency))
                         : 'N/A'}
@@ -394,20 +392,15 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                       {earningsValue && 
                       typeof earningsValue === 'number' && 
                       earningsValue !== 0
-                        ? (earningsDataForYear?.originalValue && earningsDataForYear.originalValue !== earningsValue
+                        ? (showOriginalEarnings
                            ? (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="underline decoration-dotted cursor-help">
-                                      {formatScaledNumber(earningsValue, currency)}
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Originalwert: {formatScaledNumber(originalEarningsValue, earningsDataForYear.originalCurrency || currency)}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <ClickableTooltip
+                                content={`Originalwert: ${formatScaledNumber(originalEarningsValue, earningsDataForYear.originalCurrency || currency)}`}
+                              >
+                                <span className="underline decoration-dotted cursor-help">
+                                  {formatScaledNumber(earningsValue, currency)}
+                                </span>
+                              </ClickableTooltip>
                             )
                            : formatScaledNumber(earningsValue, currency))
                         : 'N/A'}
@@ -416,22 +409,17 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                       {epsValue && 
                       typeof epsValue === 'number' && 
                       epsValue !== 0
-                        ? (epsDataForYear?.originalValue && epsDataForYear.originalValue !== epsValue
+                        ? (showOriginalEps
                            ? (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="underline decoration-dotted cursor-help">
-                                      {epsValue.toFixed(decimalPlaces)} {currency}
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Originalwert: {originalEpsValue.toLocaleString('de-DE', {
-                                      maximumFractionDigits: getCurrencyDecimalPlaces(epsDataForYear.originalCurrency || currency)
-                                    })} {epsDataForYear.originalCurrency || currency}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <ClickableTooltip
+                                content={`Originalwert: ${originalEpsValue.toLocaleString('de-DE', {
+                                  maximumFractionDigits: getCurrencyDecimalPlaces(epsDataForYear.originalCurrency || currency)
+                                })} ${epsDataForYear.originalCurrency || currency}`}
+                              >
+                                <span className="underline decoration-dotted cursor-help">
+                                  {epsValue.toFixed(decimalPlaces)} {currency}
+                                </span>
+                              </ClickableTooltip>
                             )
                            : `${epsValue.toFixed(decimalPlaces)} ${currency}`)
                         : 'N/A'}
