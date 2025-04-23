@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -53,24 +54,21 @@ interface FinancialMetricsData {
 }
 
 interface OverallRatingData {
-  overall: "buy" | "watch" | "avoid";
-  summary: string;
-  strengths: string[];
-  weaknesses: string[];
-  recommendation: string;
+  overall: any;
+  summary: any;
+  strengths: any[];
+  weaknesses: any[];
+  recommendation: any;
   buffettScore: number;
-  marginOfSafety: { 
-    value: number; 
-    status: "pass" | "warning" | "fail"; 
-  };
-  bestBuyPrice: number | null;
-  currentPrice: number | null;
-  currency: string;
-  intrinsicValue: number | null;
+  marginOfSafety: { value: number; status: "pass" | "warning" | "fail"; };
+  bestBuyPrice: number;
+  currentPrice: any;
+  currency: any;
+  intrinsicValue: any;
   targetMarginOfSafety: number;
-  originalIntrinsicValue?: number | null;
-  originalBestBuyPrice?: number | null;
-  originalPrice?: number | null;
+  originalIntrinsicValue?: number;
+  originalBestBuyPrice?: number;
+  originalPrice?: number;
   originalCurrency?: string;
 }
 
@@ -111,6 +109,7 @@ const Index = () => {
   const convertFinancialMetrics = async (metrics: any, reportedCurrency: string, stockPriceCurrency: string) => {
     if (!metrics || !reportedCurrency || !stockPriceCurrency) return metrics;
     
+    // Only convert metrics if the reported currency is different from the stock price currency
     if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
       console.log(`No conversion needed: both stock price and metrics are in ${stockPriceCurrency}`);
       return metrics;
@@ -152,6 +151,7 @@ const Index = () => {
   const convertHistoricalData = async (historicalData: any, reportedCurrency: string, stockPriceCurrency: string) => {
     if (!historicalData || !reportedCurrency || !stockPriceCurrency) return historicalData;
     
+    // Only convert if currencies are different
     if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
       console.log(`No historical data conversion needed: both stock price and data are in ${stockPriceCurrency}`);
       return historicalData;
@@ -316,12 +316,14 @@ const Index = () => {
         
         if (metricsData) {
           if (metricsData.metrics) {
+            // Only convert if currencies are different
             if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
               metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
             }
           }
           
           if (metricsData.historicalData) {
+            // Only convert if currencies are different
             if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
               metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
             }
@@ -333,6 +335,7 @@ const Index = () => {
             const updatedRating: OverallRatingData = { ...rating };
             const ratingCurrency = rating.currency || reportedCurrency;
             
+            // Only convert if the rating currency is different from the stock price currency
             if (shouldConvertCurrency(priceCurrency, ratingCurrency)) {
               console.log(`Converting rating values from ${ratingCurrency} to ${priceCurrency}`);
               
@@ -360,10 +363,10 @@ const Index = () => {
             setOverallRating(updatedRating);
           } catch (error) {
             console.error('Error converting rating values:', error);
-            setOverallRating(rating as OverallRatingData);
+            setOverallRating(rating);
           }
         } else {
-          setOverallRating(rating as OverallRatingData);
+          setOverallRating(rating);
         }
         
         setBuffettCriteria(criteria);
