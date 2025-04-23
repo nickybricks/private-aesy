@@ -105,7 +105,6 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         setDcfWarning(isUnreasonable);
         
         if (isUnreasonable && stockInfo.sharesOutstanding && stockInfo.sharesOutstanding > 0) {
-          console.log('Normalizing high intrinsic value using shares outstanding');
           const normalized = normalizeIntrinsicValuePerShare(
             stockInfo.intrinsicValue,
             stockInfo.sharesOutstanding,
