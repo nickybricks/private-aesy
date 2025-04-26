@@ -9,4 +9,6 @@ export interface StockInfo {
   marketCap: number | null;
   intrinsicValue?: number | null;
   sharesOutstanding?: number | null;
+  originalIntrinsicValue?: number | null;
+  originalCurrency?: string;
 }

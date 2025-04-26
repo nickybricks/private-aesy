@@ -65,9 +65,9 @@ interface OverallRatingData {
   currency: any;
   intrinsicValue: any;
   targetMarginOfSafety: number;
-  originalIntrinsicValue?: number;
-  originalBestBuyPrice?: number;
-  originalPrice?: number;
+  originalIntrinsicValue?: number | null;
+  originalBestBuyPrice?: number | null;
+  originalPrice?: number | null;
   originalCurrency?: string;
 }
 
