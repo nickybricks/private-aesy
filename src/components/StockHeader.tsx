@@ -52,9 +52,8 @@ const isIntrinsicValueUnreasonable = (intrinsicValue: number | null, price: numb
   
   const ratio = intrinsicValue / price;
   
-  const adjustedThreshold = currency === 'KRW' ? threshold * 100 : threshold;
-  
-  return ratio > adjustedThreshold;
+  // Use stockInfo.currency here instead of an undefined currency variable
+  return ratio > threshold;
 };
 
 const normalizeIntrinsicValuePerShare = (
