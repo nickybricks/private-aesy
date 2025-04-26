@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -109,7 +108,6 @@ const Index = () => {
   const convertFinancialMetrics = async (metrics: any, reportedCurrency: string, stockPriceCurrency: string) => {
     if (!metrics || !reportedCurrency || !stockPriceCurrency) return metrics;
     
-    // Only convert metrics if the reported currency is different from the stock price currency
     if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
       console.log(`No conversion needed: both stock price and metrics are in ${stockPriceCurrency}`);
       return metrics;
@@ -151,7 +149,6 @@ const Index = () => {
   const convertHistoricalData = async (historicalData: any, reportedCurrency: string, stockPriceCurrency: string) => {
     if (!historicalData || !reportedCurrency || !stockPriceCurrency) return historicalData;
     
-    // Only convert if currencies are different
     if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
       console.log(`No historical data conversion needed: both stock price and data are in ${stockPriceCurrency}`);
       return historicalData;
@@ -316,14 +313,12 @@ const Index = () => {
         
         if (metricsData) {
           if (metricsData.metrics) {
-            // Only convert if currencies are different
             if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
               metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
             }
           }
           
           if (metricsData.historicalData) {
-            // Only convert if currencies are different
             if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
               metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
             }
@@ -332,24 +327,61 @@ const Index = () => {
         
         if (rating) {
           try {
-            const updatedRating: OverallRatingData = { ...rating };
+            const updatedRating = { ...rating };
             const ratingCurrency = rating.currency || reportedCurrency;
             
-            // Only convert if the rating currency is different from the stock price currency
+            console.log(`Rating original currency: ${ratingCurrency}, Target currency: ${priceCurrency}`);
+            console.log(`Original intrinsic value: ${updatedRating.intrinsicValue} ${ratingCurrency}`);
+            
             if (shouldConvertCurrency(priceCurrency, ratingCurrency)) {
               console.log(`Converting rating values from ${ratingCurrency} to ${priceCurrency}`);
               
-              if (updatedRating.intrinsicValue) {
+              if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined) {
                 updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
-                updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, ratingCurrency, priceCurrency);
+                
+                updatedRating.intrinsicValue = await convertCurrency(
+                  updatedRating.intrinsicValue, 
+                  ratingCurrency, 
+                  priceCurrency
+                );
+                
+                console.log(`Converted intrinsic value: ${updatedRating.intrinsicValue} ${priceCurrency}`);
               }
-              if (updatedRating.bestBuyPrice) {
-                updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
-                updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, ratingCurrency, priceCurrency);
+              
+              if (updatedRating.intrinsicValue !== null && 
+                  updatedRating.intrinsicValue !== undefined && 
+                  updatedRating.targetMarginOfSafety !== undefined) {
+                  
+                if (updatedRating.bestBuyPrice !== null && updatedRating.bestBuyPrice !== undefined) {
+                  updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
+                }
+                
+                updatedRating.bestBuyPrice = updatedRating.intrinsicValue * 
+                  (1 - (updatedRating.targetMarginOfSafety / 100));
+                
+                console.log(`Recalculated best buy price: ${updatedRating.bestBuyPrice} ${priceCurrency}`);
               }
-              if (updatedRating.currentPrice) {
-                updatedRating.originalPrice = updatedRating.currentPrice;
-                updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, ratingCurrency, priceCurrency);
+              
+              if (updatedRating.intrinsicValue !== null && 
+                  updatedRating.intrinsicValue !== undefined && 
+                  updatedRating.currentPrice !== null && 
+                  updatedRating.currentPrice !== undefined) {
+                
+                if (updatedRating.currentPrice) {
+                  updatedRating.originalPrice = updatedRating.currentPrice;
+                  
+                  console.log(`Current price already in ${priceCurrency}: ${updatedRating.currentPrice}`);
+                }
+                
+                if (updatedRating.intrinsicValue > 0) {
+                  updatedRating.marginOfSafety = {
+                    value: ((updatedRating.intrinsicValue - updatedRating.currentPrice) / 
+                      updatedRating.intrinsicValue) * 100,
+                    status: updatedRating.marginOfSafety?.status || 'fail'
+                  };
+                  
+                  console.log(`Recalculated margin of safety: ${updatedRating.marginOfSafety.value}%`);
+                }
               }
               
               if (ratingCurrency !== priceCurrency) {
@@ -358,6 +390,11 @@ const Index = () => {
               }
             } else {
               console.log(`No rating conversion needed: both stock price and rating are in ${priceCurrency}`);
+            }
+            
+            if (info && info.price !== null && info.price !== undefined) {
+              updatedRating.currentPrice = info.price;
+              console.log(`Using stock price from info: ${updatedRating.currentPrice} ${priceCurrency}`);
             }
             
             setOverallRating(updatedRating);

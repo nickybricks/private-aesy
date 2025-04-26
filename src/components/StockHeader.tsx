@@ -49,17 +49,24 @@ const formatMarketCap = (marketCap: number | null, currency: string = 'EUR'): st
 
 const isIntrinsicValueUnreasonable = (intrinsicValue: number | null, price: number | null, threshold = 20): boolean => {
   if (intrinsicValue === null || price === null || price === 0) return false;
-  return intrinsicValue / price > threshold;
+  
+  const ratio = intrinsicValue / price;
+  
+  const adjustedThreshold = currency === 'KRW' ? threshold * 100 : threshold;
+  
+  return ratio > adjustedThreshold;
 };
 
 const normalizeIntrinsicValuePerShare = (
   intrinsicValue: number | null, 
   sharesOutstanding: number | null,
-  price: number | null
+  price: number | null,
+  currency: string = 'EUR'
 ): number | null => {
   if (intrinsicValue === null) return null;
   
-  if (isIntrinsicValueUnreasonable(intrinsicValue, price) && sharesOutstanding && sharesOutstanding > 0) {
+  if (isIntrinsicValueUnreasonable(intrinsicValue, price, currency === 'KRW' ? 2000 : 20) && 
+      sharesOutstanding && sharesOutstanding > 0) {
     return intrinsicValue / sharesOutstanding;
   }
   
@@ -101,20 +108,25 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
       setHasCriticalDataMissing(criticalMissing);
       
       if (stockInfo.intrinsicValue !== null && stockInfo.price !== null) {
-        const isUnreasonable = isIntrinsicValueUnreasonable(stockInfo.intrinsicValue, stockInfo.price);
+        const currencyAdjustedThreshold = stockInfo.currency === 'KRW' ? 2000 : 20;
+        const isUnreasonable = isIntrinsicValueUnreasonable(stockInfo.intrinsicValue, stockInfo.price, currencyAdjustedThreshold);
+        
         setDcfWarning(isUnreasonable);
         
         if (isUnreasonable && stockInfo.sharesOutstanding && stockInfo.sharesOutstanding > 0) {
           const normalized = normalizeIntrinsicValuePerShare(
             stockInfo.intrinsicValue,
             stockInfo.sharesOutstanding,
-            stockInfo.price
+            stockInfo.price,
+            stockInfo.currency
           );
+          
           setNormalizedIntrinsicValue(normalized);
           setDcfNormalized(true);
           
           if (normalized !== null) {
-            setDcfWarning(isIntrinsicValueUnreasonable(normalized, stockInfo.price, 10));
+            const normalizedThreshold = stockInfo.currency === 'KRW' ? 1000 : 10;
+            setDcfWarning(isIntrinsicValueUnreasonable(normalized, stockInfo.price, normalizedThreshold));
           }
         } else {
           setNormalizedIntrinsicValue(stockInfo.intrinsicValue);
@@ -230,7 +242,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
     );
   }
 
-  const displayIntrinsicValue = normalizedIntrinsicValue !== null ? normalizedIntrinsicValue : intrinsicValue;
+  const displayIntrinsicValue = normalizedIntrinsicValue !== null ? normalizedIntrinsicValue : stockInfo?.intrinsicValue || null;
 
   return (
     <div className="buffett-card mb-6 animate-slide-up space-y-6">
@@ -295,7 +307,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
               {dcfNormalized ? (
                 <>
                   Der berechnete intrinsische Wert wurde automatisch durch die Anzahl ausstehender Aktien
-                  ({stockInfo.sharesOutstanding?.toLocaleString('de-DE')}) geteilt,
+                  ({stockInfo?.sharesOutstanding?.toLocaleString('de-DE')}) geteilt,
                   da der ursprüngliche Wert unverhältnismäßig hoch erschien.
                 </>
               ) : (

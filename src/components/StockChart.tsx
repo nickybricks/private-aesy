@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   ComposedChart,
   Line,
+  ReferenceLine
 } from 'recharts';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -20,7 +21,7 @@ import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 interface StockChartProps {
   symbol: string;
   currency: string;
-  intrinsicValue?: number;
+  intrinsicValue?: number | null;
 }
 
 interface HistoricalDataPoint {
@@ -32,7 +33,7 @@ interface HistoricalDataPoint {
 interface ChartData {
   date: Date;
   price: number;
-  intrinsicValue?: number;
+  intrinsicValue?: number | null;
 }
 
 const TIME_RANGES = [
@@ -84,14 +85,17 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           processedData = convertedData;
         }
 
+        // Create an array of intrinsic values that match the length of processedData
+        // This ensures that the intrinsic value is displayed as a horizontal line
         const chartData: ChartData[] = processedData
           .map(item => ({
             date: new Date(item.date),
             price: item.close,
-            intrinsicValue: intrinsicValue,
+            intrinsicValue: intrinsicValue && !isNaN(Number(intrinsicValue)) ? Number(intrinsicValue) : null,
           }))
           .sort((a, b) => a.date.getTime() - b.date.getTime());
-
+        
+        console.log(`Chart data prepared with intrinsic value: ${intrinsicValue}`);
         setHistoricalData(chartData);
       } catch (err) {
         console.error('Error fetching historical data:', err);
@@ -150,6 +154,11 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
   }
 
   const filteredData = getFilteredData();
+  
+  // Only include intrinsic value line if it's a valid number
+  const showIntrinsicLine = intrinsicValue !== null && 
+                           intrinsicValue !== undefined && 
+                           !isNaN(Number(intrinsicValue));
 
   return (
     <div className="w-full space-y-4">
@@ -174,7 +183,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           }}
         >
           <ResponsiveContainer width="100%" height={580}>
-            <ComposedChart data={getFilteredData()} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
+            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
@@ -210,9 +219,9 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                             ? payload[0].value.toFixed(2) 
                             : payload[0].value} {currency}
                         </p>
-                        {intrinsicValue && (
+                        {showIntrinsicLine && (
                           <p className="text-sm text-green-700">
-                            Innerer Wert: {intrinsicValue.toFixed(2)} {currency}
+                            Innerer Wert: {Number(intrinsicValue).toFixed(2)} {currency}
                           </p>
                         )}
                       </div>
@@ -228,13 +237,17 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                 fillOpacity={1}
                 fill="url(#colorPrice)"
               />
-              {intrinsicValue && (
-                <Line
-                  type="monotone"
-                  dataKey="intrinsicValue"
+              {showIntrinsicLine && (
+                <ReferenceLine
+                  y={Number(intrinsicValue)}
                   stroke="hsl(142, 76%, 36%)"
                   strokeWidth={2}
                   strokeDasharray="5 5"
+                  label={{
+                    value: `Innerer Wert: ${Number(intrinsicValue).toFixed(2)} ${currency}`,
+                    fill: 'hsl(142, 76%, 36%)',
+                    position: 'insideBottomRight'
+                  }}
                 />
               )}
             </ComposedChart>
