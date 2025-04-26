@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StockInfo } from '@/types/stock';
 import { 
   convertCurrency, 
   shouldConvertCurrency, 
@@ -74,7 +75,7 @@ interface OverallRatingData {
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [stockInfo, setStockInfo] = useState(null);
+  const [stockInfo, setStockInfo] = useState<StockInfo | null>(null);
   const [buffettCriteria, setBuffettCriteria] = useState(null);
   const [financialMetrics, setFinancialMetrics] = useState<FinancialMetricsData | null>(null);
   const [overallRating, setOverallRating] = useState<OverallRatingData | null>(null);
