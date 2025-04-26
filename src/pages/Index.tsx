@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -109,7 +108,6 @@ const Index = () => {
   const convertFinancialMetrics = async (metrics: any, reportedCurrency: string, stockPriceCurrency: string) => {
     if (!metrics || !reportedCurrency || !stockPriceCurrency) return metrics;
     
-    // Only convert metrics if the reported currency is different from the stock price currency
     if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
       console.log(`No conversion needed: both stock price and metrics are in ${stockPriceCurrency}`);
       return metrics;
@@ -151,7 +149,6 @@ const Index = () => {
   const convertHistoricalData = async (historicalData: any, reportedCurrency: string, stockPriceCurrency: string) => {
     if (!historicalData || !reportedCurrency || !stockPriceCurrency) return historicalData;
     
-    // Only convert if currencies are different
     if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
       console.log(`No historical data conversion needed: both stock price and data are in ${stockPriceCurrency}`);
       return historicalData;
@@ -316,14 +313,12 @@ const Index = () => {
         
         if (metricsData) {
           if (metricsData.metrics) {
-            // Only convert if currencies are different
             if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
               metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
             }
           }
           
           if (metricsData.historicalData) {
-            // Only convert if currencies are different
             if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
               metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
             }
@@ -335,19 +330,21 @@ const Index = () => {
             const updatedRating: OverallRatingData = { ...rating };
             const ratingCurrency = rating.currency || reportedCurrency;
             
-            // Only convert if the rating currency is different from the stock price currency
             if (shouldConvertCurrency(priceCurrency, ratingCurrency)) {
               console.log(`Converting rating values from ${ratingCurrency} to ${priceCurrency}`);
               
-              if (updatedRating.intrinsicValue) {
+              if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined) {
                 updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
                 updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, ratingCurrency, priceCurrency);
+                console.log(`Converted intrinsic value from ${updatedRating.originalIntrinsicValue} ${ratingCurrency} to ${updatedRating.intrinsicValue} ${priceCurrency}`);
               }
-              if (updatedRating.bestBuyPrice) {
+              
+              if (updatedRating.bestBuyPrice !== null && updatedRating.bestBuyPrice !== undefined) {
                 updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
                 updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, ratingCurrency, priceCurrency);
               }
-              if (updatedRating.currentPrice) {
+              
+              if (updatedRating.currentPrice !== null && updatedRating.currentPrice !== undefined) {
                 updatedRating.originalPrice = updatedRating.currentPrice;
                 updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, ratingCurrency, priceCurrency);
               }
@@ -355,6 +352,13 @@ const Index = () => {
               if (ratingCurrency !== priceCurrency) {
                 updatedRating.originalCurrency = ratingCurrency;
                 updatedRating.currency = priceCurrency;
+              }
+
+              if (info.intrinsicValue !== null && info.intrinsicValue !== undefined && 
+                  updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined) {
+                const updatedInfo = { ...info };
+                updatedInfo.intrinsicValue = updatedRating.intrinsicValue;
+                setStockInfo(updatedInfo);
               }
             } else {
               console.log(`No rating conversion needed: both stock price and rating are in ${priceCurrency}`);

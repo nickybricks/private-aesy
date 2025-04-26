@@ -78,6 +78,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
   const [convertedMarketCap, setConvertedMarketCap] = useState<number | null>(null);
+  const [convertedIntrinsicValue, setConvertedIntrinsicValue] = useState<number | null>(null);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [normalizedIntrinsicValue, setNormalizedIntrinsicValue] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -129,6 +130,11 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
             if (rateToEUR) {
               setExchangeRate(rateToEUR);
               setShowCurrencyNotice(true);
+
+              if (stockInfo.intrinsicValue !== null) {
+                const convertedValue = await convertCurrency(stockInfo.intrinsicValue, stockInfo.currency, 'EUR');
+                setConvertedIntrinsicValue(convertedValue);
+              }
             }
           } catch (error) {
             console.error('Error fetching exchange rate info:', error);
@@ -230,7 +236,14 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
     );
   }
 
-  const displayIntrinsicValue = normalizedIntrinsicValue !== null ? normalizedIntrinsicValue : intrinsicValue;
+  const displayIntrinsicValue = 
+    convertedIntrinsicValue !== null && currency !== 'EUR' ? 
+      convertedIntrinsicValue : 
+      normalizedIntrinsicValue !== null ? 
+        normalizedIntrinsicValue : 
+        intrinsicValue;
+
+  const displayCurrency = convertedIntrinsicValue !== null && currency !== 'EUR' ? 'EUR' : currency;
 
   return (
     <div className="buffett-card mb-6 animate-slide-up space-y-6">
@@ -274,6 +287,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
           symbol={ticker} 
           currency={currency} 
           intrinsicValue={displayIntrinsicValue}
+          displayCurrency={displayCurrency} 
         />
       </div>
       
@@ -320,6 +334,9 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
             <h3 className="font-medium text-buffett-blue mb-1">Währungsinformation</h3>
             <p className="text-sm">
               <strong>Kurswährung: {currency}</strong>
+              {convertedIntrinsicValue !== null && currency !== 'EUR' && (
+                <> (Intrinsischer Wert in EUR: {convertedIntrinsicValue.toFixed(2)} €)</>
+              )}
             </p>
             <p className="text-sm mt-1">
               Alle Finanzkennzahlen wurden – falls notwendig – in {currency} umgerechnet, 
