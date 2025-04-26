@@ -1175,7 +1175,7 @@ export const getOverallRating = async (ticker: string) => {
       weaknesses.push('Bedenken bezüglich der Qualität oder Aktionärsfreundlichkeit des Managements');
     }
     
-    // Get earnings per share from criteria and handle currency conversion
+    // Get earnings per share from criteria
     const eps = criteria.financialMetrics && 
                 criteria.financialMetrics.details && 
                 criteria.financialMetrics.details.length > 3 ? 
@@ -1183,8 +1183,7 @@ export const getOverallRating = async (ticker: string) => {
     
     // Get financial metrics to determine the reported currency
     const financialMetrics = await getFinancialMetrics(ticker);
-    const originalCurrency = financialMetrics && financialMetrics.reportedCurrency ? 
-                           financialMetrics.reportedCurrency : currency;
+    const originalCurrency = financialMetrics?.reportedCurrency || currency;
 
     // Convert EPS if currencies are different
     let convertedEps = eps;
@@ -1199,9 +1198,12 @@ export const getOverallRating = async (ticker: string) => {
       }
     }
 
-    // Calculate intrinsic value using converted EPS
+    // Calculate intrinsic value
     let intrinsicValue;
     const targetMarginOfSafety = 20; // Default target Margin of Safety (%)
+
+    const isOvervalued = criteria.valuation.status === 'fail';
+    const hasGoodMoat = criteria.economicMoat.status === 'pass';
 
     if (convertedEps && currentPrice) {
       // Simple intrinsic value calculation using a justified P/E ratio
