@@ -11,6 +11,7 @@ import {
   hasOpenAiApiKey
 } from './openaiApi';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
+import { convertCurrency } from '@/utils/currencyConverter';
 
 // Base URL for the Financial Modeling Prep API
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
@@ -1036,13 +1037,10 @@ export const getFinancialMetrics = async (ticker: string) => {
 
 // Hilfsfunktion zur Berechnung einer Gesamtbewertung
 export const getOverallRating = async (ticker: string) => {
-  // Diese Funktion soll eine Gesamtbewertung der Aktie liefern
-  // Basierend auf den Ergebnissen der analyzeBuffettCriteria-Funktion
-  
   try {
     const criteria = await analyzeBuffettCriteria(ticker);
     
-    // Get stock quote information including the current price
+    // Get stock quote information including the current price and currency
     const standardizedTicker = ticker.trim().toUpperCase();
     const quoteData = await fetchFromFMP(`/quote/${standardizedTicker}`);
     const stockQuote = quoteData && quoteData.length > 0 ? quoteData[0] : null;
@@ -1177,37 +1175,65 @@ export const getOverallRating = async (ticker: string) => {
       weaknesses.push('Bedenken bezüglich der Qualität oder Aktionärsfreundlichkeit des Managements');
     }
     
-    // Calculate intrinsic value based on financial metrics
-    // This is a simplified approach - a full DCF would be more accurate
-    let intrinsicValue;
-    let targetMarginOfSafety = 20; // Default target Margin of Safety (%)
-    
-    // Get earnings per share from criteria if available
+    // Get earnings per share from criteria and handle currency conversion
     const eps = criteria.financialMetrics && 
                 criteria.financialMetrics.details && 
                 criteria.financialMetrics.details.length > 3 ? 
                 parseFloat(criteria.financialMetrics.details[3].split(":")[1]) : null;
-    
-    if (eps && currentPrice) {
+
+    // Get original currency from financial metrics if available
+    const originalCurrency = criteria.financialMetrics && 
+                           criteria.financialMetrics.reportedCurrency ? 
+                           criteria.financialMetrics.reportedCurrency : currency;
+
+    // Convert EPS if currencies are different
+    let convertedEps = eps;
+    if (eps !== null && originalCurrency !== currency) {
+      try {
+        convertedEps = await convertCurrency(eps, originalCurrency, currency);
+        console.log(`Converted EPS from ${originalCurrency} to ${currency}: ${eps} -> ${convertedEps}`);
+      } catch (error) {
+        console.error('Error converting EPS currency:', error);
+        // Fallback to original EPS if conversion fails
+        convertedEps = eps;
+      }
+    }
+
+    // Calculate intrinsic value using converted EPS
+    let intrinsicValue;
+    const targetMarginOfSafety = 20; // Default target Margin of Safety (%)
+
+    if (convertedEps && currentPrice) {
       // Simple intrinsic value calculation using a justified P/E ratio
-      // For demonstration purposes - can be improved with a proper DCF model
       const justifiedPE = hasGoodMoat ? 18 : 15; // Higher P/E for companies with moat
-      intrinsicValue = eps * justifiedPE;
+      intrinsicValue = convertedEps * justifiedPE;
+      console.log(`Calculated intrinsic value: ${intrinsicValue} ${currency} (using justified P/E of ${justifiedPE})`);
     } else if (currentPrice) {
       // Fallback if no EPS data - estimate using current price and valuation status
       if (criteria.valuation.status === 'pass') {
-        intrinsicValue = currentPrice * 1.1; // 10% higher than current if undervalued
+        intrinsicValue = currentPrice * 1.1;
       } else if (criteria.valuation.status === 'warning') {
-        intrinsicValue = currentPrice; // Fair value
+        intrinsicValue = currentPrice;
       } else {
-        intrinsicValue = currentPrice * 0.8; // 20% lower if overvalued
+        intrinsicValue = currentPrice * 0.8;
       }
     }
-    
+
+    // Calculate original intrinsic value before conversion
+    let originalIntrinsicValue = null;
+    if (eps !== null && originalCurrency !== currency) {
+      const justifiedPE = hasGoodMoat ? 18 : 15;
+      originalIntrinsicValue = eps * justifiedPE;
+    }
+
     // Calculate best buy price with target margin of safety
     const bestBuyPrice = intrinsicValue ? 
       intrinsicValue * (1 - targetMarginOfSafety / 100) : 
       undefined;
+    
+    const originalBestBuyPrice = originalIntrinsicValue ? 
+      originalIntrinsicValue * (1 - targetMarginOfSafety / 100) : 
+      null;
     
     // Calculate current margin of safety
     let marginOfSafety = {
@@ -1279,10 +1305,10 @@ Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen
       currency,
       intrinsicValue,
       targetMarginOfSafety,
-      originalIntrinsicValue: null,
-      originalBestBuyPrice: null,
-      originalPrice: null,
-      originalCurrency: null
+      originalIntrinsicValue,
+      originalBestBuyPrice,
+      originalPrice: eps,
+      originalCurrency
     };
   } catch (error) {
     console.error('Error generating overall rating:', error);
