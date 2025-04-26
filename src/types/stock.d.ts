@@ -11,4 +11,5 @@ export interface StockInfo {
   sharesOutstanding?: number | null;
   originalIntrinsicValue?: number | null;
   originalCurrency?: string;
+  reportedCurrency?: string; // Added this property
 }

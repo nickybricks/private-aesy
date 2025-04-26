@@ -1180,11 +1180,11 @@ export const getOverallRating = async (ticker: string) => {
                 criteria.financialMetrics.details && 
                 criteria.financialMetrics.details.length > 3 ? 
                 parseFloat(criteria.financialMetrics.details[3].split(":")[1]) : null;
-
-    // Get original currency from financial metrics if available
-    const originalCurrency = criteria.financialMetrics && 
-                           criteria.financialMetrics.reportedCurrency ? 
-                           criteria.financialMetrics.reportedCurrency : currency;
+    
+    // Get financial metrics to determine the reported currency
+    const financialMetrics = await getFinancialMetrics(ticker);
+    const originalCurrency = financialMetrics && financialMetrics.reportedCurrency ? 
+                           financialMetrics.reportedCurrency : currency;
 
     // Convert EPS if currencies are different
     let convertedEps = eps;
