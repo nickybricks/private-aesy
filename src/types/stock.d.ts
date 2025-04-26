@@ -7,6 +7,5 @@ export interface StockInfo {
   changePercent: number | null;
   currency: string;
   marketCap: number | null;
-  intrinsicValue?: number | null;
-  sharesOutstanding?: number | null;
+  intrinsicValue?: number;
 }

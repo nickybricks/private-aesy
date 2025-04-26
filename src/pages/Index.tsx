@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -12,7 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { StockInfo } from '@/types/stock';
 import { 
   convertCurrency, 
   shouldConvertCurrency, 
@@ -75,7 +75,7 @@ interface OverallRatingData {
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [stockInfo, setStockInfo] = useState<StockInfo | null>(null);
+  const [stockInfo, setStockInfo] = useState(null);
   const [buffettCriteria, setBuffettCriteria] = useState(null);
   const [financialMetrics, setFinancialMetrics] = useState<FinancialMetricsData | null>(null);
   const [overallRating, setOverallRating] = useState<OverallRatingData | null>(null);
@@ -109,6 +109,7 @@ const Index = () => {
   const convertFinancialMetrics = async (metrics: any, reportedCurrency: string, stockPriceCurrency: string) => {
     if (!metrics || !reportedCurrency || !stockPriceCurrency) return metrics;
     
+    // Only convert metrics if the reported currency is different from the stock price currency
     if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
       console.log(`No conversion needed: both stock price and metrics are in ${stockPriceCurrency}`);
       return metrics;
@@ -150,6 +151,7 @@ const Index = () => {
   const convertHistoricalData = async (historicalData: any, reportedCurrency: string, stockPriceCurrency: string) => {
     if (!historicalData || !reportedCurrency || !stockPriceCurrency) return historicalData;
     
+    // Only convert if currencies are different
     if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
       console.log(`No historical data conversion needed: both stock price and data are in ${stockPriceCurrency}`);
       return historicalData;
@@ -314,12 +316,14 @@ const Index = () => {
         
         if (metricsData) {
           if (metricsData.metrics) {
+            // Only convert if currencies are different
             if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
               metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
             }
           }
           
           if (metricsData.historicalData) {
+            // Only convert if currencies are different
             if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
               metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
             }
@@ -331,13 +335,26 @@ const Index = () => {
             const updatedRating: OverallRatingData = { ...rating };
             const ratingCurrency = rating.currency || reportedCurrency;
             
+            // Only convert if the rating currency is different from the stock price currency
             if (shouldConvertCurrency(priceCurrency, ratingCurrency)) {
               console.log(`Converting rating values from ${ratingCurrency} to ${priceCurrency}`);
               
-              if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined) {
-                const updatedInfo: StockInfo = { ...info };
-                updatedInfo.intrinsicValue = updatedRating.intrinsicValue;
-                setStockInfo(updatedInfo);
+              if (updatedRating.intrinsicValue) {
+                updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
+                updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, ratingCurrency, priceCurrency);
+              }
+              if (updatedRating.bestBuyPrice) {
+                updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
+                updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, ratingCurrency, priceCurrency);
+              }
+              if (updatedRating.currentPrice) {
+                updatedRating.originalPrice = updatedRating.currentPrice;
+                updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, ratingCurrency, priceCurrency);
+              }
+              
+              if (ratingCurrency !== priceCurrency) {
+                updatedRating.originalCurrency = ratingCurrency;
+                updatedRating.currency = priceCurrency;
               }
             } else {
               console.log(`No rating conversion needed: both stock price and rating are in ${priceCurrency}`);

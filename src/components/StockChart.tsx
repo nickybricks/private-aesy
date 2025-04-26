@@ -20,8 +20,7 @@ import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 interface StockChartProps {
   symbol: string;
   currency: string;
-  intrinsicValue?: number | null;
-  displayCurrency?: string;
+  intrinsicValue?: number;
 }
 
 interface HistoricalDataPoint {
@@ -33,7 +32,7 @@ interface HistoricalDataPoint {
 interface ChartData {
   date: Date;
   price: number;
-  intrinsicValue?: number | null;
+  intrinsicValue?: number;
 }
 
 const TIME_RANGES = [
@@ -42,12 +41,7 @@ const TIME_RANGES = [
   { label: 'Allzeit', value: 'MAX' }
 ] as const;
 
-const StockChart: React.FC<StockChartProps> = ({ 
-  symbol, 
-  currency, 
-  intrinsicValue,
-  displayCurrency = currency
-}) => {
+const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValue }) => {
   const [historicalData, setHistoricalData] = useState<ChartData[]>([]);
   const [selectedRange, setSelectedRange] = useState<typeof TIME_RANGES[number]['value']>('1Y');
   const [isLoading, setIsLoading] = useState(true);
@@ -80,7 +74,7 @@ const StockChart: React.FC<StockChartProps> = ({
           close: item.close,
         }));
 
-        if (needsCurrencyConversion(currency) && displayCurrency === 'EUR') {
+        if (needsCurrencyConversion(currency)) {
           const convertedData = await Promise.all(
             processedData.map(async (item) => ({
               ...item,
@@ -110,7 +104,7 @@ const StockChart: React.FC<StockChartProps> = ({
     if (symbol) {
       fetchHistoricalData();
     }
-  }, [symbol, currency, intrinsicValue, displayCurrency]);
+  }, [symbol, currency, intrinsicValue]);
 
   const getFilteredData = () => {
     if (!historicalData.length) return [];
@@ -156,19 +150,6 @@ const StockChart: React.FC<StockChartProps> = ({
   }
 
   const filteredData = getFilteredData();
-  const chartCurrency = displayCurrency || currency;
-  
-  // Berechne min/max für die Y-Achse um sicherzustellen, dass der Kursverlauf sichtbar ist
-  const prices = filteredData.map(item => item.price);
-  const minPrice = Math.min(...prices) * 0.9; // 10% Spielraum nach unten
-  const maxPrice = Math.max(...prices) * 1.1; // 10% Spielraum nach oben
-  
-  // Wenn der intrinsische Wert außerhalb dieses Bereichs liegt, passen wir die Grenzen an
-  const yDomain = [minPrice, maxPrice];
-  if (intrinsicValue !== null && intrinsicValue !== undefined) {
-    if (intrinsicValue < minPrice) yDomain[0] = intrinsicValue * 0.9;
-    if (intrinsicValue > maxPrice) yDomain[1] = intrinsicValue * 1.1;
-  }
 
   return (
     <div className="w-full space-y-4">
@@ -193,7 +174,7 @@ const StockChart: React.FC<StockChartProps> = ({
           }}
         >
           <ResponsiveContainer width="100%" height={580}>
-            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
+            <ComposedChart data={getFilteredData()} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
@@ -208,12 +189,12 @@ const StockChart: React.FC<StockChartProps> = ({
                 tickMargin={30}
               />
               <YAxis
-                domain={yDomain}
+                domain={['auto', 'auto']}
                 tickFormatter={(value) => {
                   if (typeof value === 'number') {
-                    return `${value.toFixed(2)} ${chartCurrency}`;
+                    return `${value.toFixed(2)} ${currency}`;
                   }
-                  return `${value} ${chartCurrency}`;
+                  return `${value} ${currency}`;
                 }}
               />
               <Tooltip
@@ -227,11 +208,11 @@ const StockChart: React.FC<StockChartProps> = ({
                         <p className="text-sm font-semibold">
                           Kurs: {typeof payload[0].value === 'number' 
                             ? payload[0].value.toFixed(2) 
-                            : payload[0].value} {chartCurrency}
+                            : payload[0].value} {currency}
                         </p>
-                        {intrinsicValue !== null && intrinsicValue !== undefined && (
+                        {intrinsicValue && (
                           <p className="text-sm text-green-700">
-                            Innerer Wert: {intrinsicValue.toFixed(2)} {chartCurrency}
+                            Innerer Wert: {intrinsicValue.toFixed(2)} {currency}
                           </p>
                         )}
                       </div>
@@ -247,7 +228,7 @@ const StockChart: React.FC<StockChartProps> = ({
                 fillOpacity={1}
                 fill="url(#colorPrice)"
               />
-              {intrinsicValue !== null && intrinsicValue !== undefined && (
+              {intrinsicValue && (
                 <Line
                   type="monotone"
                   dataKey="intrinsicValue"
