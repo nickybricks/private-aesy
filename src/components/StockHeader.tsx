@@ -7,19 +7,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ClickableTooltip } from './ClickableTooltip';
 import { convertCurrency, needsCurrencyConversion, getExchangeRate, shouldConvertCurrency } from '@/utils/currencyConverter';
 import StockChart from './StockChart';
+import { StockInfo } from '@/types/stock';
 
 interface StockHeaderProps {
-  stockInfo: {
-    name: string;
-    ticker: string;
-    price: number | null;
-    change: number | null;
-    changePercent: number | null;
-    currency: string;
-    marketCap: number | null;
-    intrinsicValue: number | null;
-    sharesOutstanding?: number | null;
-  } | null;
+  stockInfo: StockInfo | null;
 }
 
 const formatMarketCap = (marketCap: number | null, currency: string = 'EUR'): string => {
