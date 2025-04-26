@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Area,
@@ -154,7 +155,20 @@ const StockChart: React.FC<StockChartProps> = ({
     );
   }
 
+  const filteredData = getFilteredData();
   const chartCurrency = displayCurrency || currency;
+  
+  // Berechne min/max für die Y-Achse um sicherzustellen, dass der Kursverlauf sichtbar ist
+  const prices = filteredData.map(item => item.price);
+  const minPrice = Math.min(...prices) * 0.9; // 10% Spielraum nach unten
+  const maxPrice = Math.max(...prices) * 1.1; // 10% Spielraum nach oben
+  
+  // Wenn der intrinsische Wert außerhalb dieses Bereichs liegt, passen wir die Grenzen an
+  const yDomain = [minPrice, maxPrice];
+  if (intrinsicValue !== null && intrinsicValue !== undefined) {
+    if (intrinsicValue < minPrice) yDomain[0] = intrinsicValue * 0.9;
+    if (intrinsicValue > maxPrice) yDomain[1] = intrinsicValue * 1.1;
+  }
 
   return (
     <div className="w-full space-y-4">
@@ -179,7 +193,7 @@ const StockChart: React.FC<StockChartProps> = ({
           }}
         >
           <ResponsiveContainer width="100%" height={580}>
-            <ComposedChart data={getFilteredData()} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
+            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
@@ -194,7 +208,7 @@ const StockChart: React.FC<StockChartProps> = ({
                 tickMargin={30}
               />
               <YAxis
-                domain={['auto', 'auto']}
+                domain={yDomain}
                 tickFormatter={(value) => {
                   if (typeof value === 'number') {
                     return `${value.toFixed(2)} ${chartCurrency}`;
