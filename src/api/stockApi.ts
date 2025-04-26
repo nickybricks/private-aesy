@@ -1278,7 +1278,11 @@ Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen
       currentPrice,
       currency,
       intrinsicValue,
-      targetMarginOfSafety
+      targetMarginOfSafety,
+      originalIntrinsicValue: null,
+      originalBestBuyPrice: null,
+      originalPrice: null,
+      originalCurrency: null
     };
   } catch (error) {
     console.error('Error generating overall rating:', error);
