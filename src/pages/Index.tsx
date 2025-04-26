@@ -354,9 +354,8 @@ const Index = () => {
                 updatedRating.currency = priceCurrency;
               }
 
-              if (info.intrinsicValue !== null && info.intrinsicValue !== undefined && 
-                  updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined) {
-                const updatedInfo = { ...info };
+              if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined) {
+                const updatedInfo = { ...info } as StockInfo;
                 updatedInfo.intrinsicValue = updatedRating.intrinsicValue;
                 setStockInfo(updatedInfo);
               }
