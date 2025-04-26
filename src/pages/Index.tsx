@@ -335,28 +335,7 @@ const Index = () => {
               console.log(`Converting rating values from ${ratingCurrency} to ${priceCurrency}`);
               
               if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined) {
-                updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
-                updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, ratingCurrency, priceCurrency);
-                console.log(`Converted intrinsic value from ${updatedRating.originalIntrinsicValue} ${ratingCurrency} to ${updatedRating.intrinsicValue} ${priceCurrency}`);
-              }
-              
-              if (updatedRating.bestBuyPrice !== null && updatedRating.bestBuyPrice !== undefined) {
-                updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
-                updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, ratingCurrency, priceCurrency);
-              }
-              
-              if (updatedRating.currentPrice !== null && updatedRating.currentPrice !== undefined) {
-                updatedRating.originalPrice = updatedRating.currentPrice;
-                updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, ratingCurrency, priceCurrency);
-              }
-              
-              if (ratingCurrency !== priceCurrency) {
-                updatedRating.originalCurrency = ratingCurrency;
-                updatedRating.currency = priceCurrency;
-              }
-
-              if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined) {
-                const updatedInfo = { ...info } as StockInfo;
+                const updatedInfo: StockInfo = { ...info };
                 updatedInfo.intrinsicValue = updatedRating.intrinsicValue;
                 setStockInfo(updatedInfo);
               }
