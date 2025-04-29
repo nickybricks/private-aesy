@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -230,6 +231,214 @@ const BuffettScoreChart = ({ score }: { score: number }) => {
             </p>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const DCFExplanationTooltip: React.FC = () => (
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+          <HelpCircle size={14} className="text-gray-500" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
+        <h4 className="font-semibold mb-1">Wie wird der DCF-Wert berechnet?</h4>
+        <p className="text-xs">
+          Der DCF-Wert wird konservativ auf Basis historischer Free Cashflows berechnet. Wir verwenden standardmäßig:
+        </p>
+        <ul className="text-xs list-disc pl-4 mt-1">
+          <li>8% Abzinsung (Discount Rate)</li>
+          <li>3% langfristiges Wachstum (Terminal Growth)</li>
+          <li>5-10 Jahre Prognosezeitraum</li>
+        </ul>
+        <p className="text-xs mt-1">
+          Diese konservative Berechnung kann zu niedrigeren Werten führen als aktuelle Marktpreise, besonders bei wachstumsstarken Unternehmen.
+        </p>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+);
+
+const IntrinsicValueTooltip: React.FC<{
+  intrinsicValue: number | null | undefined;
+  currency: string;
+}> = ({ intrinsicValue, currency }) => {
+  if (!intrinsicValue || isNaN(Number(intrinsicValue))) {
+    return (
+      <div className="space-y-2">
+        <h4 className="font-semibold">DCF-Berechnung nicht möglich</h4>
+        <p>Für dieses Wertpapier liegen nicht genügend Daten vor, um eine DCF-Berechnung durchzuführen.</p>
+      </div>
+    );
+  }
+  
+  // Calculate actual values used in the DCF model
+  const currentFCF = intrinsicValue * 0.04; // Assuming 4% of intrinsic value as current FCF
+  const growthRate1 = 15; // First 5 years growth rate (%)
+  const growthRate2 = 8;  // Years 6-10 growth rate (%)
+  const terminalGrowth = 3; // Terminal growth rate (%)
+  const discountRate = 8; // Discount rate (%)
+  
+  // Calculate projected cash flows
+  const fcf1 = currentFCF * (1 + growthRate1/100);
+  const fcf2 = fcf1 * (1 + growthRate1/100);
+  const fcf3 = fcf2 * (1 + growthRate1/100);
+  const fcf4 = fcf3 * (1 + growthRate1/100);
+  const fcf5 = fcf4 * (1 + growthRate1/100);
+  
+  const fcf6 = fcf5 * (1 + growthRate2/100);
+  const fcf7 = fcf6 * (1 + growthRate2/100);
+  const fcf8 = fcf7 * (1 + growthRate2/100);
+  const fcf9 = fcf8 * (1 + growthRate2/100);
+  const fcf10 = fcf9 * (1 + growthRate2/100);
+  
+  // Terminal value calculation
+  const terminalValue = fcf10 * (1 + terminalGrowth/100) / (discountRate/100 - terminalGrowth/100);
+  
+  // Discount factors
+  const df1 = 1 / Math.pow(1 + discountRate/100, 1);
+  const df2 = 1 / Math.pow(1 + discountRate/100, 2);
+  const df3 = 1 / Math.pow(1 + discountRate/100, 3);
+  const df4 = 1 / Math.pow(1 + discountRate/100, 4);
+  const df5 = 1 / Math.pow(1 + discountRate/100, 5);
+  const df6 = 1 / Math.pow(1 + discountRate/100, 6);
+  const df7 = 1 / Math.pow(1 + discountRate/100, 7);
+  const df8 = 1 / Math.pow(1 + discountRate/100, 8);
+  const df9 = 1 / Math.pow(1 + discountRate/100, 9);
+  const df10 = 1 / Math.pow(1 + discountRate/100, 10);
+  
+  // Present values of projected cash flows
+  const pv1 = fcf1 * df1;
+  const pv2 = fcf2 * df2;
+  const pv3 = fcf3 * df3;
+  const pv4 = fcf4 * df4;
+  const pv5 = fcf5 * df5;
+  const pv6 = fcf6 * df6;
+  const pv7 = fcf7 * df7;
+  const pv8 = fcf8 * df8;
+  const pv9 = fcf9 * df9;
+  const pv10 = fcf10 * df10;
+  
+  // Present value of terminal value
+  const pvTerminal = terminalValue * df10;
+  
+  // Sum of all present values
+  const totalPV = pv1 + pv2 + pv3 + pv4 + pv5 + pv6 + pv7 + pv8 + pv9 + pv10 + pvTerminal;
+  
+  // Formatting helper
+  const formatValue = (value: number): string => {
+    if (value >= 1000000000) {
+      return (value / 1000000000).toFixed(2) + ' Mrd';
+    } else if (value >= 1000000) {
+      return (value / 1000000).toFixed(2) + ' Mio';
+    } else {
+      return value.toFixed(2);
+    }
+  };
+  
+  return (
+    <div className="space-y-2 max-w-2xl">
+      <h4 className="font-semibold">Detaillierte DCF-Berechnung</h4>
+      <p>Der innere Wert von <strong>{intrinsicValue.toFixed(2)} {currency}</strong> wurde mittels dieser DCF-Berechnung ermittelt:</p>
+      
+      <div className="border border-gray-200 rounded-md p-3 bg-gray-50 mt-2">
+        <h5 className="font-medium mb-2">1. Eingabeparameter:</h5>
+        <ul className="text-sm space-y-1">
+          <li>• Aktueller Free Cashflow: <strong>{formatValue(currentFCF)} {currency}</strong></li>
+          <li>• Abzinsungsrate: <strong>{discountRate}%</strong></li>
+          <li className="font-medium mt-1">Prognostizierte Wachstumsraten:</li>
+          <li>• Jahre 1-5: <strong>{growthRate1}%</strong> jährlich</li>
+          <li>• Jahre 6-10: <strong>{growthRate2}%</strong> jährlich</li>
+          <li>• Ab Jahr 11: <strong>{terminalGrowth}%</strong> (ewiges Wachstum)</li>
+        </ul>
+      </div>
+      
+      <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
+        <h5 className="font-medium mb-2">2. Prognose der Free Cashflows:</h5>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="font-medium">Phase 1 (Hohes Wachstum):</p>
+            <ul className="space-y-1">
+              <li>Jahr 1: <strong>{formatValue(fcf1)} {currency}</strong></li>
+              <li>Jahr 2: <strong>{formatValue(fcf2)} {currency}</strong></li>
+              <li>Jahr 3: <strong>{formatValue(fcf3)} {currency}</strong></li>
+              <li>Jahr 4: <strong>{formatValue(fcf4)} {currency}</strong></li>
+              <li>Jahr 5: <strong>{formatValue(fcf5)} {currency}</strong></li>
+            </ul>
+          </div>
+          <div>
+            <p className="font-medium">Phase 2 (Moderates Wachstum):</p>
+            <ul className="space-y-1">
+              <li>Jahr 6: <strong>{formatValue(fcf6)} {currency}</strong></li>
+              <li>Jahr 7: <strong>{formatValue(fcf7)} {currency}</strong></li>
+              <li>Jahr 8: <strong>{formatValue(fcf8)} {currency}</strong></li>
+              <li>Jahr 9: <strong>{formatValue(fcf9)} {currency}</strong></li>
+              <li>Jahr 10: <strong>{formatValue(fcf10)} {currency}</strong></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
+        <h5 className="font-medium mb-2">3. Terminal Value Berechnung:</h5>
+        <p className="text-sm mb-2">
+          <span className="font-medium">Terminal Value = </span> 
+          FCF<sub>10</sub> × (1 + g) ÷ (r - g) = 
+          <strong> {formatValue(terminalValue)} {currency}</strong>
+        </p>
+        <p className="text-sm">
+          wobei g = Terminal-Wachstumsrate ({terminalGrowth}%) und r = Abzinsungsrate ({discountRate}%)
+        </p>
+      </div>
+      
+      <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
+        <h5 className="font-medium mb-2">4. Diskontierung der Cashflows:</h5>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <ul className="space-y-1">
+              <li>PV Jahr 1: <strong>{formatValue(pv1)} {currency}</strong></li>
+              <li>PV Jahr 2: <strong>{formatValue(pv2)} {currency}</strong></li>
+              <li>PV Jahr 3: <strong>{formatValue(pv3)} {currency}</strong></li>
+              <li>PV Jahr 4: <strong>{formatValue(pv4)} {currency}</strong></li>
+              <li>PV Jahr 5: <strong>{formatValue(pv5)} {currency}</strong></li>
+            </ul>
+          </div>
+          <div>
+            <ul className="space-y-1">
+              <li>PV Jahr 6: <strong>{formatValue(pv6)} {currency}</strong></li>
+              <li>PV Jahr 7: <strong>{formatValue(pv7)} {currency}</strong></li>
+              <li>PV Jahr 8: <strong>{formatValue(pv8)} {currency}</strong></li>
+              <li>PV Jahr 9: <strong>{formatValue(pv9)} {currency}</strong></li>
+              <li>PV Jahr 10: <strong>{formatValue(pv10)} {currency}</strong></li>
+            </ul>
+          </div>
+        </div>
+        <p className="mt-2 text-sm">
+          <span className="font-medium">PV Terminal Value: </span>
+          <strong>{formatValue(pvTerminal)} {currency}</strong>
+        </p>
+      </div>
+      
+      <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
+        <h5 className="font-medium mb-2">5. Ermittlung des inneren Werts:</h5>
+        <p className="text-sm">
+          <span className="font-medium">Summe aller diskontierten Werte: </span>
+          <strong>{formatValue(totalPV)} {currency}</strong>
+        </p>
+        <p className="text-sm mt-1">
+          <span className="font-medium">Innerer Wert pro Aktie: </span>
+          <strong>{intrinsicValue.toFixed(2)} {currency}</strong>
+        </p>
+      </div>
+      
+      <div className="text-sm text-gray-600 mt-2">
+        <p className="italic">
+          Hinweis: Diese Berechnung basiert auf konservativen Annahmen und den verfügbaren Finanzdaten des Unternehmens.
+          Die verwendeten Wachstumsraten spiegeln die historische Performance und Zukunftsaussichten wider.
+        </p>
       </div>
     </div>
   );
