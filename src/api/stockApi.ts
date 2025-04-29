@@ -1206,9 +1206,10 @@ export const getOverallRating = async (ticker: string) => {
     let intrinsicValue;
     const targetMarginOfSafety = 20; // Default target Margin of Safety (%)
 
-    // Use the already defined variables instead of redefining them
-    const isOvervalued = criteria.valuation.status === 'fail'; // Removed duplicate
-    const hasGoodMoat = criteria.economicMoat.status === 'pass'; // Removed duplicate
+    // Use the previously defined variables instead of redeclaring them
+    // Remove these duplicate declarations:
+    // const isOvervalued = criteria.valuation.status === 'fail';
+    // const hasGoodMoat = criteria.economicMoat.status === 'pass';
 
     if (convertedEps && currentPrice) {
       // Simple intrinsic value calculation using a justified P/E ratio
