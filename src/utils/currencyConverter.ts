@@ -1,4 +1,3 @@
-
 /**
  * Currency conversion utility using Exchange Rate API
  */
@@ -103,11 +102,11 @@ export const convertCurrency = async (
  * This is a new function to implement the specific business logic requested
  */
 export const shouldConvertCurrency = (
-  stockPriceCurrency: string,
-  reportedCurrency: string
+  reportedCurrency: string,
+  stockPriceCurrency: string
 ): boolean => {
   // Only convert if the reported currency is different from the stock price currency
-  return stockPriceCurrency !== reportedCurrency;
+  return reportedCurrency !== stockPriceCurrency;
 };
 
 /**

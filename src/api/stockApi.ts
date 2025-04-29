@@ -11,7 +11,7 @@ import {
   hasOpenAiApiKey
 } from './openaiApi';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
-import { convertCurrency } from '@/utils/currencyConverter';
+import { convertCurrency, shouldConvertCurrency } from '@/utils/currencyConverter';
 
 // Base URL for the Financial Modeling Prep API
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
@@ -796,6 +796,7 @@ export const getFinancialMetrics = async (ticker: string) => {
     console.log('Neueste Balance Sheet Daten:', JSON.stringify(latestBalanceSheet, null, 2));
     console.log('Neueste Key Metrics Daten:', JSON.stringify(latestMetrics, null, 2));
     console.log('Neueste Ratios Daten:', JSON.stringify(latestRatios, null, 2));
+    console.log('Quote Daten:', JSON.stringify(quoteData, null, 2));
     
     // Sichere Wert-Extraktionshilfsfunktion
     const safeValue = (value: any) => {
@@ -1183,19 +1184,22 @@ export const getOverallRating = async (ticker: string) => {
     
     // Get financial metrics to determine the reported currency
     const financialMetrics = await getFinancialMetrics(ticker);
-    const originalCurrency = financialMetrics?.reportedCurrency || currency;
+    const reportedCurrency = financialMetrics?.reportedCurrency || 'USD';
+    console.log(`EPS reported currency: ${reportedCurrency}, Stock price currency: ${currency}`);
 
     // Convert EPS if currencies are different
     let convertedEps = eps;
-    if (eps !== null && originalCurrency !== currency) {
+    if (eps !== null && shouldConvertCurrency(reportedCurrency, currency)) {
       try {
-        convertedEps = await convertCurrency(eps, originalCurrency, currency);
-        console.log(`Converted EPS from ${originalCurrency} to ${currency}: ${eps} -> ${convertedEps}`);
+        convertedEps = await convertCurrency(eps, reportedCurrency, currency);
+        console.log(`Converted EPS from ${reportedCurrency} to ${currency}: ${eps} -> ${convertedEps}`);
       } catch (error) {
         console.error('Error converting EPS currency:', error);
         // Fallback to original EPS if conversion fails
         convertedEps = eps;
       }
+    } else {
+      console.log(`No currency conversion needed for EPS: ${reportedCurrency} = ${currency}`);
     }
 
     // Calculate intrinsic value
@@ -1203,14 +1207,14 @@ export const getOverallRating = async (ticker: string) => {
     const targetMarginOfSafety = 20; // Default target Margin of Safety (%)
 
     // Use the already defined variables instead of redefining them
-    // const isOvervalued = criteria.valuation.status === 'fail'; // Removed duplicate
-    // const hasGoodMoat = criteria.economicMoat.status === 'pass'; // Removed duplicate
+    const isOvervalued = criteria.valuation.status === 'fail'; // Removed duplicate
+    const hasGoodMoat = criteria.economicMoat.status === 'pass'; // Removed duplicate
 
     if (convertedEps && currentPrice) {
       // Simple intrinsic value calculation using a justified P/E ratio
       const justifiedPE = hasGoodMoat ? 18 : 15; // Higher P/E for companies with moat
       intrinsicValue = convertedEps * justifiedPE;
-      console.log(`Calculated intrinsic value: ${intrinsicValue} ${currency} (using justified P/E of ${justifiedPE})`);
+      console.log(`Calculated intrinsic value: ${intrinsicValue} ${currency} (using justified P/E of ${justifiedPE}, converted EPS: ${convertedEps})`);
     } else if (currentPrice) {
       // Fallback if no EPS data - estimate using current price and valuation status
       if (criteria.valuation.status === 'pass') {
@@ -1220,13 +1224,15 @@ export const getOverallRating = async (ticker: string) => {
       } else {
         intrinsicValue = currentPrice * 0.8;
       }
+      console.log(`Fallback intrinsic value: ${intrinsicValue} ${currency} (based on current price: ${currentPrice})`);
     }
 
     // Calculate original intrinsic value before conversion
     let originalIntrinsicValue = null;
-    if (eps !== null && originalCurrency !== currency) {
+    if (eps !== null && reportedCurrency !== currency) {
       const justifiedPE = hasGoodMoat ? 18 : 15;
       originalIntrinsicValue = eps * justifiedPE;
+      console.log(`Original intrinsic value (before currency conversion): ${originalIntrinsicValue} ${reportedCurrency}`);
     }
 
     // Calculate best buy price with target margin of safety
@@ -1311,7 +1317,8 @@ Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen
       originalIntrinsicValue,
       originalBestBuyPrice,
       originalPrice: eps,
-      originalCurrency
+      originalCurrency: reportedCurrency, // Changed from originalCurrency to reportedCurrency
+      reportedCurrency // Added this property to be explicit
     };
   } catch (error) {
     console.error('Error generating overall rating:', error);

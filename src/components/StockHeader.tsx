@@ -19,6 +19,9 @@ interface StockHeaderProps {
     marketCap: number | null;
     intrinsicValue: number | null;
     sharesOutstanding?: number | null;
+    originalIntrinsicValue?: number | null;
+    originalCurrency?: string;
+    reportedCurrency?: string;
   } | null;
 }
 
@@ -189,7 +192,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
     );
   }
 
-  const { name, ticker, price, change, changePercent, currency, marketCap, intrinsicValue } = stockInfo;
+  const { name, ticker, price, change, changePercent, currency, marketCap, intrinsicValue, originalIntrinsicValue, originalCurrency, reportedCurrency } = stockInfo;
   const isPositive = change !== null && change >= 0;
   
   const alternativeSymbol = hasCriticalDataMissing && ticker.endsWith('.DE') ? ticker.replace('.DE', '') : null;
@@ -331,6 +334,9 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
             <h3 className="font-medium text-buffett-blue mb-1">Währungsinformation</h3>
             <p className="text-sm">
               <strong>Kurswährung: {currency}</strong>
+              {stockInfo?.reportedCurrency && stockInfo.reportedCurrency !== currency && (
+                <> (Berichtswährung: {stockInfo.reportedCurrency})</>
+              )}
             </p>
             <p className="text-sm mt-1">
               Alle Finanzkennzahlen wurden – falls notwendig – in {currency} umgerechnet, 
