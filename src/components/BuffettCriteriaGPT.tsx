@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -247,7 +246,7 @@ const DCFExplanationTooltip: React.FC = () => (
       <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
         <h4 className="font-semibold mb-1">Wie wird der DCF-Wert berechnet?</h4>
         <p className="text-xs">
-          Der DCF-Wert (Discounted Cash Flow) wird konservativ auf Basis historischer Free Cashflows berechnet. Wir verwenden standardmäßig:
+          Der DCF-Wert wird konservativ auf Basis historischer Free Cashflows berechnet. Wir verwenden standardmäßig:
         </p>
         <ul className="text-xs list-disc pl-4 mt-1">
           <li>8% Abzinsung (Discount Rate)</li>
