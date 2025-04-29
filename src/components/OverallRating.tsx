@@ -585,9 +585,9 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   // Safely calculate price difference
   const priceDifference = (currentPrice !== null && 
                           currentPrice !== undefined && 
-                          !isNaN(Number(currentPrice)) && 
                           bestBuyPrice !== null && 
                           bestBuyPrice !== undefined && 
+                          !isNaN(Number(currentPrice)) && 
                           !isNaN(Number(bestBuyPrice))) 
     ? currentPrice - bestBuyPrice 
     : undefined;
