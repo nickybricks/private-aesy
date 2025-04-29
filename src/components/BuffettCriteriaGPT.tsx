@@ -235,42 +235,28 @@ const BuffettScoreChart = ({ score }: { score: number }) => {
   );
 };
 
-const DCFExplanationTooltip: React.FC = () => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
-          <HelpCircle size={14} className="text-gray-500" />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
-        <h4 className="font-semibold mb-1">Wie wird der DCF-Wert berechnet?</h4>
-        <p className="text-xs">
-          Der DCF-Wert wird konservativ auf Basis historischer Free Cashflows berechnet. Wir verwenden standardmäßig:
-        </p>
-        <ul className="text-xs list-disc pl-4 mt-1">
-          <li>8% Abzinsung (Discount Rate)</li>
-          <li>3% langfristiges Wachstum (Terminal Growth)</li>
-          <li>5-10 Jahre Prognosezeitraum</li>
-        </ul>
-        <p className="text-xs mt-1">
-          Diese konservative Berechnung kann zu niedrigeren Werten führen als aktuelle Marktpreise, besonders bei wachstumsstarken Unternehmen.
-        </p>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
-);
-
-const IntrinsicValueTooltip: React.FC<{
-  intrinsicValue: number | null | undefined;
-  currency: string;
-}> = ({ intrinsicValue, currency }) => {
+// Detailed DCF calculation tooltip component
+const DCFExplanationTooltip: React.FC<{
+  intrinsicValue?: number | null;
+  currency?: string;
+}> = ({ intrinsicValue = 100, currency = '€' }) => {
   if (!intrinsicValue || isNaN(Number(intrinsicValue))) {
     return (
-      <div className="space-y-2">
-        <h4 className="font-semibold">DCF-Berechnung nicht möglich</h4>
-        <p>Für dieses Wertpapier liegen nicht genügend Daten vor, um eine DCF-Berechnung durchzuführen.</p>
-      </div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+              <HelpCircle size={14} className="text-gray-500" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
+            <h4 className="font-semibold mb-1">DCF-Berechnung nicht möglich</h4>
+            <p className="text-xs">
+              Für dieses Wertpapier liegen nicht genügend Daten vor, um eine detaillierte DCF-Berechnung darzustellen.
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
   
@@ -339,107 +325,111 @@ const IntrinsicValueTooltip: React.FC<{
   };
   
   return (
-    <div className="space-y-2 max-w-2xl">
-      <h4 className="font-semibold">Detaillierte DCF-Berechnung</h4>
-      <p>Der innere Wert von <strong>{intrinsicValue.toFixed(2)} {currency}</strong> wurde mittels dieser DCF-Berechnung ermittelt:</p>
-      
-      <div className="border border-gray-200 rounded-md p-3 bg-gray-50 mt-2">
-        <h5 className="font-medium mb-2">1. Eingabeparameter:</h5>
-        <ul className="text-sm space-y-1">
-          <li>• Aktueller Free Cashflow: <strong>{formatValue(currentFCF)} {currency}</strong></li>
-          <li>• Abzinsungsrate: <strong>{discountRate}%</strong></li>
-          <li className="font-medium mt-1">Prognostizierte Wachstumsraten:</li>
-          <li>• Jahre 1-5: <strong>{growthRate1}%</strong> jährlich</li>
-          <li>• Jahre 6-10: <strong>{growthRate2}%</strong> jährlich</li>
-          <li>• Ab Jahr 11: <strong>{terminalGrowth}%</strong> (ewiges Wachstum)</li>
-        </ul>
-      </div>
-      
-      <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
-        <h5 className="font-medium mb-2">2. Prognose der Free Cashflows:</h5>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="font-medium">Phase 1 (Hohes Wachstum):</p>
-            <ul className="space-y-1">
-              <li>Jahr 1: <strong>{formatValue(fcf1)} {currency}</strong></li>
-              <li>Jahr 2: <strong>{formatValue(fcf2)} {currency}</strong></li>
-              <li>Jahr 3: <strong>{formatValue(fcf3)} {currency}</strong></li>
-              <li>Jahr 4: <strong>{formatValue(fcf4)} {currency}</strong></li>
-              <li>Jahr 5: <strong>{formatValue(fcf5)} {currency}</strong></li>
-            </ul>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+            <HelpCircle size={14} className="text-gray-500" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
+          <div className="space-y-2 max-w-2xl">
+            <h4 className="font-semibold">Detaillierte DCF-Berechnung</h4>
+            <p>Der innere Wert von <strong>{intrinsicValue.toFixed(2)} {currency}</strong> wurde mittels dieser DCF-Berechnung ermittelt:</p>
+            
+            <div className="border border-gray-200 rounded-md p-3 bg-gray-50 mt-2">
+              <h5 className="font-medium mb-2">1. Eingabeparameter:</h5>
+              <ul className="text-xs space-y-1">
+                <li>• Aktueller Free Cashflow: <strong>{formatValue(currentFCF)} {currency}</strong></li>
+                <li>• Abzinsungsrate: <strong>{discountRate}%</strong></li>
+                <li className="font-medium mt-1">Prognostizierte Wachstumsraten:</li>
+                <li>• Jahre 1-5: <strong>{growthRate1}%</strong> jährlich</li>
+                <li>• Jahre 6-10: <strong>{growthRate2}%</strong> jährlich</li>
+                <li>• Ab Jahr 11: <strong>{terminalGrowth}%</strong> (ewiges Wachstum)</li>
+              </ul>
+            </div>
+            
+            <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
+              <h5 className="font-medium mb-2">2. Prognose der Free Cashflows:</h5>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <p className="font-medium">Phase 1 (Hohes Wachstum):</p>
+                  <ul className="space-y-1">
+                    <li>Jahr 1: <strong>{formatValue(fcf1)} {currency}</strong></li>
+                    <li>Jahr 2: <strong>{formatValue(fcf2)} {currency}</strong></li>
+                    <li>Jahr 3: <strong>{formatValue(fcf3)} {currency}</strong></li>
+                    <li>Jahr 4: <strong>{formatValue(fcf4)} {currency}</strong></li>
+                    <li>Jahr 5: <strong>{formatValue(fcf5)} {currency}</strong></li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium">Phase 2 (Moderates Wachstum):</p>
+                  <ul className="space-y-1">
+                    <li>Jahr 6: <strong>{formatValue(fcf6)} {currency}</strong></li>
+                    <li>Jahr 7: <strong>{formatValue(fcf7)} {currency}</strong></li>
+                    <li>Jahr 8: <strong>{formatValue(fcf8)} {currency}</strong></li>
+                    <li>Jahr 9: <strong>{formatValue(fcf9)} {currency}</strong></li>
+                    <li>Jahr 10: <strong>{formatValue(fcf10)} {currency}</strong></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div className="border border-gray-200 rounded-md p-3 bg-gray-50 text-xs">
+              <h5 className="font-medium mb-2">3. Terminal Value Berechnung:</h5>
+              <p className="mb-2">
+                <span className="font-medium">Terminal Value = </span> 
+                FCF<sub>10</sub> × (1 + g) ÷ (r - g) = 
+                <strong> {formatValue(terminalValue)} {currency}</strong>
+              </p>
+              <p>
+                wobei g = Terminal-Wachstumsrate ({terminalGrowth}%) und r = Abzinsungsrate ({discountRate}%)
+              </p>
+            </div>
+            
+            <div className="border border-gray-200 rounded-md p-3 bg-gray-50 text-xs">
+              <h5 className="font-medium mb-2">4. Diskontierung der Cashflows:</h5>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <ul className="space-y-1">
+                    <li>PV Jahr 1: <strong>{formatValue(pv1)} {currency}</strong></li>
+                    <li>PV Jahr 2: <strong>{formatValue(pv2)} {currency}</strong></li>
+                    <li>PV Jahr 3: <strong>{formatValue(pv3)} {currency}</strong></li>
+                    <li>PV Jahr 4: <strong>{formatValue(pv4)} {currency}</strong></li>
+                    <li>PV Jahr 5: <strong>{formatValue(pv5)} {currency}</strong></li>
+                  </ul>
+                </div>
+                <div>
+                  <ul className="space-y-1">
+                    <li>PV Jahr 6: <strong>{formatValue(pv6)} {currency}</strong></li>
+                    <li>PV Jahr 7: <strong>{formatValue(pv7)} {currency}</strong></li>
+                    <li>PV Jahr 8: <strong>{formatValue(pv8)} {currency}</strong></li>
+                    <li>PV Jahr 9: <strong>{formatValue(pv9)} {currency}</strong></li>
+                    <li>PV Jahr 10: <strong>{formatValue(pv10)} {currency}</strong></li>
+                  </ul>
+                </div>
+              </div>
+              <p className="mt-2">
+                <span className="font-medium">PV Terminal Value: </span>
+                <strong>{formatValue(pvTerminal)} {currency}</strong>
+              </p>
+            </div>
+            
+            <div className="border border-gray-200 rounded-md p-3 bg-gray-50 text-xs">
+              <h5 className="font-medium mb-2">5. Ermittlung des inneren Werts:</h5>
+              <p>
+                <span className="font-medium">Summe aller diskontierten Werte: </span>
+                <strong>{formatValue(totalPV)} {currency}</strong>
+              </p>
+              <p className="mt-1">
+                <span className="font-medium">Innerer Wert pro Aktie: </span>
+                <strong>{intrinsicValue.toFixed(2)} {currency}</strong>
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium">Phase 2 (Moderates Wachstum):</p>
-            <ul className="space-y-1">
-              <li>Jahr 6: <strong>{formatValue(fcf6)} {currency}</strong></li>
-              <li>Jahr 7: <strong>{formatValue(fcf7)} {currency}</strong></li>
-              <li>Jahr 8: <strong>{formatValue(fcf8)} {currency}</strong></li>
-              <li>Jahr 9: <strong>{formatValue(fcf9)} {currency}</strong></li>
-              <li>Jahr 10: <strong>{formatValue(fcf10)} {currency}</strong></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      
-      <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
-        <h5 className="font-medium mb-2">3. Terminal Value Berechnung:</h5>
-        <p className="text-sm mb-2">
-          <span className="font-medium">Terminal Value = </span> 
-          FCF<sub>10</sub> × (1 + g) ÷ (r - g) = 
-          <strong> {formatValue(terminalValue)} {currency}</strong>
-        </p>
-        <p className="text-sm">
-          wobei g = Terminal-Wachstumsrate ({terminalGrowth}%) und r = Abzinsungsrate ({discountRate}%)
-        </p>
-      </div>
-      
-      <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
-        <h5 className="font-medium mb-2">4. Diskontierung der Cashflows:</h5>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <ul className="space-y-1">
-              <li>PV Jahr 1: <strong>{formatValue(pv1)} {currency}</strong></li>
-              <li>PV Jahr 2: <strong>{formatValue(pv2)} {currency}</strong></li>
-              <li>PV Jahr 3: <strong>{formatValue(pv3)} {currency}</strong></li>
-              <li>PV Jahr 4: <strong>{formatValue(pv4)} {currency}</strong></li>
-              <li>PV Jahr 5: <strong>{formatValue(pv5)} {currency}</strong></li>
-            </ul>
-          </div>
-          <div>
-            <ul className="space-y-1">
-              <li>PV Jahr 6: <strong>{formatValue(pv6)} {currency}</strong></li>
-              <li>PV Jahr 7: <strong>{formatValue(pv7)} {currency}</strong></li>
-              <li>PV Jahr 8: <strong>{formatValue(pv8)} {currency}</strong></li>
-              <li>PV Jahr 9: <strong>{formatValue(pv9)} {currency}</strong></li>
-              <li>PV Jahr 10: <strong>{formatValue(pv10)} {currency}</strong></li>
-            </ul>
-          </div>
-        </div>
-        <p className="mt-2 text-sm">
-          <span className="font-medium">PV Terminal Value: </span>
-          <strong>{formatValue(pvTerminal)} {currency}</strong>
-        </p>
-      </div>
-      
-      <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
-        <h5 className="font-medium mb-2">5. Ermittlung des inneren Werts:</h5>
-        <p className="text-sm">
-          <span className="font-medium">Summe aller diskontierten Werte: </span>
-          <strong>{formatValue(totalPV)} {currency}</strong>
-        </p>
-        <p className="text-sm mt-1">
-          <span className="font-medium">Innerer Wert pro Aktie: </span>
-          <strong>{intrinsicValue.toFixed(2)} {currency}</strong>
-        </p>
-      </div>
-      
-      <div className="text-sm text-gray-600 mt-2">
-        <p className="italic">
-          Hinweis: Diese Berechnung basiert auf konservativen Annahmen und den verfügbaren Finanzdaten des Unternehmens.
-          Die verwendeten Wachstumsraten spiegeln die historische Performance und Zukunftsaussichten wider.
-        </p>
-      </div>
-    </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 
@@ -570,19 +560,10 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                     )}
                     
                     {criterion.title === '6. Akzeptable Bewertung' && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger className="inline-flex items-center ml-2">
-                            <Info className="h-3 w-3 text-gray-400" />
-                          </TooltipTrigger>
-                          <TooltipContent side="right" align="start" className="max-w-2xl w-[800px] p-4 bg-white border-gray-200 shadow-lg z-50">
-                            <IntrinsicValueTooltip 
-                              intrinsicValue={criteria.valuation.score === undefined ? null : criteria.valuation.score * 20} 
-                              currency="€"
-                            />
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <DCFExplanationTooltip 
+                        intrinsicValue={criterion.score === undefined ? null : criterion.score * 20} 
+                        currency="€"
+                      />
                     )}
                   </div>
                   {getStatusBadge(criterion.status)}
