@@ -239,10 +239,12 @@ const BuffettScoreChart = ({ score }: { score: number }) => {
 const DCFExplanationTooltip: React.FC = () => (
   <TooltipProvider>
     <Tooltip>
-      <TooltipTrigger className="inline-flex items-center ml-2 text-gray-400">
-        <HelpCircle size={16} />
+      <TooltipTrigger asChild>
+        <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+          <HelpCircle size={14} className="text-gray-500" />
+        </button>
       </TooltipTrigger>
-      <TooltipContent className="max-w-xs bg-white p-3 shadow-lg">
+      <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
         <h4 className="font-semibold mb-1">Wie wird der DCF-Wert berechnet?</h4>
         <p className="text-xs">
           Der DCF-Wert (Discounted Cash Flow) wird konservativ auf Basis historischer Free Cashflows berechnet. Wir verwenden standardmäßig:
@@ -569,7 +571,19 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                     )}
                     
                     {criterion.title === '6. Akzeptable Bewertung' && (
-                      <DCFExplanationTooltip />
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger className="inline-flex items-center ml-2">
+                            <Info className="h-3 w-3 text-gray-400" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" align="start" className="max-w-2xl w-[800px] p-4 bg-white border-gray-200 shadow-lg z-50">
+                            <IntrinsicValueTooltip 
+                              intrinsicValue={criteria.valuation.score === undefined ? null : criteria.valuation.score * 20} 
+                              currency="€"
+                            />
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                   {getStatusBadge(criterion.status)}
