@@ -114,7 +114,9 @@ const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
 const IntrinsicValueTooltip: React.FC<{
   intrinsicValue: number | null | undefined;
   currency: string;
-}> = ({ intrinsicValue, currency }) => {
+  originalCurrency?: string;
+  originalIntrinsicValue?: number | null;
+}> = ({ intrinsicValue, currency, originalCurrency, originalIntrinsicValue }) => {
   if (!intrinsicValue || isNaN(Number(intrinsicValue))) {
     return (
       <div className="space-y-2">
@@ -124,8 +126,13 @@ const IntrinsicValueTooltip: React.FC<{
     );
   }
   
+  // Determine which currency and value to use for calculations
+  const calculationCurrency = originalCurrency || currency;
+  const calculationValue = originalIntrinsicValue || intrinsicValue;
+  
   // Calculate actual values used in the DCF model
-  const currentFCF = intrinsicValue * 0.04; // Assuming 4% of intrinsic value as current FCF
+  // We use the original currency values for calculation, then present in the display currency
+  const currentFCF = calculationValue * 0.04; // Assuming 4% of intrinsic value as current FCF
   const growthRate1 = 15; // First 5 years growth rate (%)
   const growthRate2 = 8;  // Years 6-10 growth rate (%)
   const terminalGrowth = 3; // Terminal growth rate (%)
@@ -188,15 +195,21 @@ const IntrinsicValueTooltip: React.FC<{
     }
   };
   
+  // Display message about currency
+  const currencyMessage = originalCurrency && originalCurrency !== currency 
+    ? `(Berechnung in ${originalCurrency}, Anzeige in ${currency})` 
+    : '';
+  
   return (
     <div className="space-y-2 max-w-2xl">
       <h4 className="font-semibold">Detaillierte DCF-Berechnung</h4>
       <p>Der innere Wert von <strong>{intrinsicValue.toFixed(2)} {currency}</strong> wurde mittels dieser DCF-Berechnung ermittelt:</p>
+      {currencyMessage && <p className="text-sm text-gray-500">{currencyMessage}</p>}
       
       <div className="border border-gray-200 rounded-md p-3 bg-gray-50 mt-2">
         <h5 className="font-medium mb-2">1. Eingabeparameter:</h5>
         <ul className="text-sm space-y-1">
-          <li>• Aktueller Free Cashflow: <strong>{formatValue(currentFCF)} {currency}</strong></li>
+          <li>• Aktueller Free Cashflow: <strong>{formatValue(currentFCF)} {calculationCurrency}</strong></li>
           <li>• Abzinsungsrate: <strong>{discountRate}%</strong></li>
           <li className="font-medium mt-1">Prognostizierte Wachstumsraten:</li>
           <li>• Jahre 1-5: <strong>{growthRate1}%</strong> jährlich</li>
@@ -211,21 +224,21 @@ const IntrinsicValueTooltip: React.FC<{
           <div>
             <p className="font-medium">Phase 1 (Hohes Wachstum):</p>
             <ul className="space-y-1">
-              <li>Jahr 1: <strong>{formatValue(fcf1)} {currency}</strong></li>
-              <li>Jahr 2: <strong>{formatValue(fcf2)} {currency}</strong></li>
-              <li>Jahr 3: <strong>{formatValue(fcf3)} {currency}</strong></li>
-              <li>Jahr 4: <strong>{formatValue(fcf4)} {currency}</strong></li>
-              <li>Jahr 5: <strong>{formatValue(fcf5)} {currency}</strong></li>
+              <li>Jahr 1: <strong>{formatValue(fcf1)} {calculationCurrency}</strong></li>
+              <li>Jahr 2: <strong>{formatValue(fcf2)} {calculationCurrency}</strong></li>
+              <li>Jahr 3: <strong>{formatValue(fcf3)} {calculationCurrency}</strong></li>
+              <li>Jahr 4: <strong>{formatValue(fcf4)} {calculationCurrency}</strong></li>
+              <li>Jahr 5: <strong>{formatValue(fcf5)} {calculationCurrency}</strong></li>
             </ul>
           </div>
           <div>
             <p className="font-medium">Phase 2 (Moderates Wachstum):</p>
             <ul className="space-y-1">
-              <li>Jahr 6: <strong>{formatValue(fcf6)} {currency}</strong></li>
-              <li>Jahr 7: <strong>{formatValue(fcf7)} {currency}</strong></li>
-              <li>Jahr 8: <strong>{formatValue(fcf8)} {currency}</strong></li>
-              <li>Jahr 9: <strong>{formatValue(fcf9)} {currency}</strong></li>
-              <li>Jahr 10: <strong>{formatValue(fcf10)} {currency}</strong></li>
+              <li>Jahr 6: <strong>{formatValue(fcf6)} {calculationCurrency}</strong></li>
+              <li>Jahr 7: <strong>{formatValue(fcf7)} {calculationCurrency}</strong></li>
+              <li>Jahr 8: <strong>{formatValue(fcf8)} {calculationCurrency}</strong></li>
+              <li>Jahr 9: <strong>{formatValue(fcf9)} {calculationCurrency}</strong></li>
+              <li>Jahr 10: <strong>{formatValue(fcf10)} {calculationCurrency}</strong></li>
             </ul>
           </div>
         </div>
@@ -236,7 +249,7 @@ const IntrinsicValueTooltip: React.FC<{
         <p className="text-sm mb-2">
           <span className="font-medium">Terminal Value = </span> 
           FCF<sub>10</sub> × (1 + g) ÷ (r - g) = 
-          <strong> {formatValue(terminalValue)} {currency}</strong>
+          <strong> {formatValue(terminalValue)} {calculationCurrency}</strong>
         </p>
         <p className="text-sm">
           wobei g = Terminal-Wachstumsrate ({terminalGrowth}%) und r = Abzinsungsrate ({discountRate}%)
@@ -248,26 +261,26 @@ const IntrinsicValueTooltip: React.FC<{
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <ul className="space-y-1">
-              <li>PV Jahr 1: <strong>{formatValue(pv1)} {currency}</strong></li>
-              <li>PV Jahr 2: <strong>{formatValue(pv2)} {currency}</strong></li>
-              <li>PV Jahr 3: <strong>{formatValue(pv3)} {currency}</strong></li>
-              <li>PV Jahr 4: <strong>{formatValue(pv4)} {currency}</strong></li>
-              <li>PV Jahr 5: <strong>{formatValue(pv5)} {currency}</strong></li>
+              <li>PV Jahr 1: <strong>{formatValue(pv1)} {calculationCurrency}</strong></li>
+              <li>PV Jahr 2: <strong>{formatValue(pv2)} {calculationCurrency}</strong></li>
+              <li>PV Jahr 3: <strong>{formatValue(pv3)} {calculationCurrency}</strong></li>
+              <li>PV Jahr 4: <strong>{formatValue(pv4)} {calculationCurrency}</strong></li>
+              <li>PV Jahr 5: <strong>{formatValue(pv5)} {calculationCurrency}</strong></li>
             </ul>
           </div>
           <div>
             <ul className="space-y-1">
-              <li>PV Jahr 6: <strong>{formatValue(pv6)} {currency}</strong></li>
-              <li>PV Jahr 7: <strong>{formatValue(pv7)} {currency}</strong></li>
-              <li>PV Jahr 8: <strong>{formatValue(pv8)} {currency}</strong></li>
-              <li>PV Jahr 9: <strong>{formatValue(pv9)} {currency}</strong></li>
-              <li>PV Jahr 10: <strong>{formatValue(pv10)} {currency}</strong></li>
+              <li>PV Jahr 6: <strong>{formatValue(pv6)} {calculationCurrency}</strong></li>
+              <li>PV Jahr 7: <strong>{formatValue(pv7)} {calculationCurrency}</strong></li>
+              <li>PV Jahr 8: <strong>{formatValue(pv8)} {calculationCurrency}</strong></li>
+              <li>PV Jahr 9: <strong>{formatValue(pv9)} {calculationCurrency}</strong></li>
+              <li>PV Jahr 10: <strong>{formatValue(pv10)} {calculationCurrency}</strong></li>
             </ul>
           </div>
         </div>
         <p className="mt-2 text-sm">
           <span className="font-medium">PV Terminal Value: </span>
-          <strong>{formatValue(pvTerminal)} {currency}</strong>
+          <strong>{formatValue(pvTerminal)} {calculationCurrency}</strong>
         </p>
       </div>
       
@@ -275,11 +288,13 @@ const IntrinsicValueTooltip: React.FC<{
         <h5 className="font-medium mb-2">5. Ermittlung des inneren Werts:</h5>
         <p className="text-sm">
           <span className="font-medium">Summe aller diskontierten Werte: </span>
-          <strong>{formatValue(totalPV)} {currency}</strong>
+          <strong>{formatValue(totalPV)} {calculationCurrency}</strong>
         </p>
         <p className="text-sm mt-1">
           <span className="font-medium">Innerer Wert pro Aktie: </span>
-          <strong>{intrinsicValue.toFixed(2)} {currency}</strong>
+          <strong>{calculationCurrency === currency ? 
+            intrinsicValue.toFixed(2) : 
+            `${calculationValue?.toFixed(2)} ${calculationCurrency} ≈ ${intrinsicValue.toFixed(2)} ${currency}`}</strong>
         </p>
       </div>
       
@@ -924,7 +939,12 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                         </button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xl p-4">
-                        <IntrinsicValueTooltip intrinsicValue={intrinsicValue} currency={currency} />
+                        <IntrinsicValueTooltip 
+                          intrinsicValue={intrinsicValue} 
+                          currency={currency}
+                          originalCurrency={originalCurrency}
+                          originalIntrinsicValue={originalIntrinsicValue}
+                        />
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
