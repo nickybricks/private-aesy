@@ -633,4 +633,24 @@ const MarginOfSafetyExplanation: React.FC = () => (
           <li>Bessere Renditen: Kauf unter Wert = mehr Aufwärtspotenzial</li>
           <li>Risikominimierung: Selbst bei Problemen ist Verlustrisiko geringer</li>
         </ul>
-        <div className="
+        <div className="mt-2 pt-2 border-t border-gray-200">
+          <p className="text-xs font-medium">Benjamin Graham (Buffetts Mentor):</p>
+          <p className="text-xs italic mt-1">
+            "Der intelligente Investor kauft mit einer Sicherheitsmarge, um sich vor Fehlern oder Pech zu schützen."
+          </p>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+);
+
+export {
+  RatingIcon,
+  IntrinsicValueTooltip,
+  MarginOfSafetyTooltip,
+  BuffettBuyPriceTooltip,
+  ScoreBreakdownTooltip,
+  BuffettScoreChart,
+  DCFExplanationTooltip,
+  MarginOfSafetyExplanation,
+};
