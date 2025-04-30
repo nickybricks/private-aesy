@@ -916,7 +916,18 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                 <div className="flex items-center gap-2">
                   <Calculator size={14} className="text-gray-500" />
                   <span className="text-gray-600">Innerer Wert (DCF): {intrinsicValue.toFixed(2)} {currency}</span>
-                  <DCFExplanationTooltip />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                          <Info size={14} className="text-gray-500" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xl p-4">
+                        <IntrinsicValueTooltip intrinsicValue={intrinsicValue} currency={currency} />
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
             )}
