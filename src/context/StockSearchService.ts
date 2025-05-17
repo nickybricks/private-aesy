@@ -80,15 +80,16 @@ export const useStockSearch = () => {
       }
       
       // Initialize the rating with required properties
-      let updatedRating = rating ? {
-        ...rating,
-        originalIntrinsicValue: rating.originalIntrinsicValue || null,
-        originalBestBuyPrice: rating.originalBestBuyPrice || null,
-        originalPrice: rating.originalPrice || null,
-        reportedCurrency: reportedCurrency
-      } : null;
-      
-      if (updatedRating) {
+      let updatedRating = null;
+      if (rating) {
+        updatedRating = {
+          ...rating,
+          originalIntrinsicValue: rating.originalIntrinsicValue || null,
+          originalBestBuyPrice: rating.originalBestBuyPrice || null,
+          originalPrice: rating.originalPrice || null,
+          reportedCurrency: reportedCurrency // Explicitly assign the required property
+        };
+        
         const ratingCurrency = updatedRating.currency || reportedCurrency;
         updatedRating = await convertRatingValues(updatedRating, ratingCurrency, priceCurrency);
         

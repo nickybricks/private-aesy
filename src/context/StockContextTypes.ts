@@ -48,10 +48,10 @@ export interface OverallRatingData {
   currency: any;
   intrinsicValue: any;
   targetMarginOfSafety: number;
-  reportedCurrency?: string;
-  originalIntrinsicValue: number | null;  // Changed from optional to required
-  originalBestBuyPrice: number | null;    // Changed from optional to required
-  originalPrice: number | null;           // Changed from optional to required
+  reportedCurrency: string;  // Changed from optional to required
+  originalIntrinsicValue: number | null;
+  originalBestBuyPrice: number | null;
+  originalPrice: number | null;
   originalCurrency?: string;
 }
 

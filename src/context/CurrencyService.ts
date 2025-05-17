@@ -97,7 +97,8 @@ export const convertRatingValues = async (
       ...rating,
       originalIntrinsicValue: rating.originalIntrinsicValue || null,
       originalBestBuyPrice: rating.originalBestBuyPrice || null,
-      originalPrice: rating.originalPrice || null
+      originalPrice: rating.originalPrice || null,
+      reportedCurrency: rating.reportedCurrency // Ensure reportedCurrency is copied over
     };
     
     console.log(`Rating original currency: ${ratingCurrency}, Target currency: ${priceCurrency}`);
