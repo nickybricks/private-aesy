@@ -72,32 +72,6 @@ export const queryGPT = async (prompt: string): Promise<string> => {
   }
 };
 
-// Add the missing openAIAnalyze function that BuffettCriteriaGPT needs
-export const openAIAnalyze = async (criteria: any): Promise<string> => {
-  try {
-    // Create a detailed prompt based on the criteria
-    const prompt = `
-      Analyziere die folgenden Buffett-Kriterien für eine Aktie. Gib eine detaillierte Einschätzung ab:
-      
-      ${JSON.stringify(criteria, null, 2)}
-      
-      Erklärung nach Buffett-Prinzipien:
-      - Welche Stärken hat die Aktie?
-      - Welche Schwächen hat die Aktie?
-      - Wie stark ist der wirtschaftliche Burggraben?
-      - Ist das Geschäftsmodell langfristig nachhaltig?
-      - Wie ist die Bewertung im Verhältnis zum inneren Wert?
-      
-      Bitte strukturiere die Antwort in klare Abschnitte mit aussagekräftigen Stichpunkten.
-    `;
-    
-    return await queryGPT(prompt);
-  } catch (error) {
-    console.error('Error in openAIAnalyze:', error);
-    return "Die GPT-Analyse konnte nicht durchgeführt werden. Bitte überprüfen Sie Ihre API-Einstellungen und versuchen Sie es erneut.";
-  }
-};
-
 // Function to analyze business model using GPT
 export const analyzeBusinessModel = async (companyName: string, industry: string, description: string): Promise<string> => {
   const prompt = `
