@@ -127,17 +127,12 @@ const IntrinsicValueTooltip: React.FC<{
   }
   
   // Determine which currency and value to use for calculations
-  const calculationCurrency = originalCurrency || currency;
-  const calculationValue = originalIntrinsicValue !== null && originalIntrinsicValue !== undefined ? 
-                         originalIntrinsicValue : 
-                         intrinsicValue;
+  // Wir verwenden immer die aktuelle Kurswährung für unsere Berechnungen
+  const calculationCurrency = currency;
+  const calculationValue = intrinsicValue;
   
   // Calculate actual values used in the DCF model
-  // We use the original currency values for calculation
   const currentFCF = calculationValue * 0.04; // Assuming 4% of intrinsic value as current FCF
-  
-  // Display exchange rate message if currencies differ
-  const showExchangeInfo = originalCurrency && currency && originalCurrency !== currency;
   
   // Growth rates remain unchanged
   const growthRate1 = 15; // First 5 years growth rate (%)
@@ -145,7 +140,7 @@ const IntrinsicValueTooltip: React.FC<{
   const terminalGrowth = 3; // Terminal growth rate (%)
   const discountRate = 8; // Discount rate (%)
   
-  // Calculate projected cash flows - all in original currency
+  // Calculate projected cash flows - all in calculation currency
   const fcf1 = currentFCF * (1 + growthRate1/100);
   const fcf2 = fcf1 * (1 + growthRate1/100);
   const fcf3 = fcf2 * (1 + growthRate1/100);
@@ -158,7 +153,7 @@ const IntrinsicValueTooltip: React.FC<{
   const fcf9 = fcf8 * (1 + growthRate2/100);
   const fcf10 = fcf9 * (1 + growthRate2/100);
   
-  // Terminal value calculation - in original currency
+  // Terminal value calculation - in calculation currency
   const terminalValue = fcf10 * (1 + terminalGrowth/100) / (discountRate/100 - terminalGrowth/100);
   
   // Discount factors remain unchanged
@@ -173,7 +168,7 @@ const IntrinsicValueTooltip: React.FC<{
   const df9 = 1 / Math.pow(1 + discountRate/100, 9);
   const df10 = 1 / Math.pow(1 + discountRate/100, 10);
   
-  // Present values of projected cash flows - all in original currency
+  // Present values of projected cash flows - all in calculation currency
   const pv1 = fcf1 * df1;
   const pv2 = fcf2 * df2;
   const pv3 = fcf3 * df3;
@@ -185,18 +180,13 @@ const IntrinsicValueTooltip: React.FC<{
   const pv9 = fcf9 * df9;
   const pv10 = fcf10 * df10;
   
-  // Present value of terminal value - in original currency
+  // Present value of terminal value - in calculation currency
   const pvTerminal = terminalValue * df10;
   
-  // Sum of all present values - in original currency
+  // Sum of all present values - in calculation currency
   const totalPV = pv1 + pv2 + pv3 + pv4 + pv5 + pv6 + pv7 + pv8 + pv9 + pv10 + pvTerminal;
   
-  // Exchange rate calculation for display (only if currencies differ)
-  const exchangeRate = showExchangeInfo && originalIntrinsicValue && intrinsicValue 
-    ? intrinsicValue / originalIntrinsicValue 
-    : 1;
-  
-  // Formatting helper with currency conversion
+  // Formatting helper with currency
   const formatValue = (value: number): string => {
     // Scale the value appropriately
     let scaledValue = value;
@@ -214,64 +204,18 @@ const IntrinsicValueTooltip: React.FC<{
     }
     
     // Format with the appropriate currency
-    return `${scaledValue.toFixed(2)}${unit} ${calculationCurrency}`;
+    return `${scaledValue.toFixed(2)}${unit} ${currency}`;
   };
-  
-  // Function to format and display both original and converted values
-  const formatBothValues = (originalValue: number): string => {
-    if (!showExchangeInfo) {
-      return formatValue(originalValue);
-    }
-    
-    // Format the original value
-    let origScaledValue = originalValue;
-    let origUnit = '';
-    
-    if (Math.abs(originalValue) >= 1000000000000) {
-      origScaledValue = originalValue / 1000000000000;
-      origUnit = ' Bio';
-    } else if (Math.abs(originalValue) >= 1000000000) {
-      origScaledValue = originalValue / 1000000000;
-      origUnit = ' Mrd';
-    } else if (Math.abs(originalValue) >= 1000000) {
-      origScaledValue = originalValue / 1000000;
-      origUnit = ' Mio';
-    }
-    
-    // Format the converted value
-    const convertedValue = originalValue * (exchangeRate as number);
-    let convScaledValue = convertedValue;
-    let convUnit = '';
-    
-    if (Math.abs(convertedValue) >= 1000000000000) {
-      convScaledValue = convertedValue / 1000000000000;
-      convUnit = ' Bio';
-    } else if (Math.abs(convertedValue) >= 1000000000) {
-      convScaledValue = convertedValue / 1000000000;
-      convUnit = ' Mrd';
-    } else if (Math.abs(convertedValue) >= 1000000) {
-      convScaledValue = convertedValue / 1000000;
-      convUnit = ' Mio';
-    }
-    
-    return `${origScaledValue.toFixed(2)}${origUnit} ${originalCurrency} (≈ ${convScaledValue.toFixed(2)}${convUnit} ${currency})`;
-  };
-  
-  // Display message about currency
-  const currencyMessage = showExchangeInfo
-    ? `Alle Werte werden in ${originalCurrency} berechnet und zur Anzeige in ${currency} umgerechnet (Kurs: 1 ${originalCurrency} ≈ ${exchangeRate?.toFixed(8)} ${currency}).`
-    : '';
   
   return (
     <div className="space-y-2 max-w-2xl">
       <h4 className="font-semibold">Detaillierte DCF-Berechnung</h4>
       <p>Der innere Wert von <strong>{intrinsicValue.toFixed(2)} {currency}</strong> wurde mittels dieser DCF-Berechnung ermittelt:</p>
-      {currencyMessage && <p className="text-sm text-gray-500">{currencyMessage}</p>}
       
       <div className="border border-gray-200 rounded-md p-3 bg-gray-50 mt-2">
         <h5 className="font-medium mb-2">1. Eingabeparameter:</h5>
         <ul className="text-sm space-y-1">
-          <li>• Aktueller Free Cashflow: <strong>{showExchangeInfo ? formatBothValues(currentFCF) : formatValue(currentFCF)}</strong></li>
+          <li>• Aktueller Free Cashflow: <strong>{formatValue(currentFCF)}</strong></li>
           <li>• Abzinsungsrate: <strong>{discountRate}%</strong></li>
           <li className="font-medium mt-1">Prognostizierte Wachstumsraten:</li>
           <li>• Jahre 1-5: <strong>{growthRate1}%</strong> jährlich</li>
@@ -286,21 +230,21 @@ const IntrinsicValueTooltip: React.FC<{
           <div>
             <p className="font-medium">Phase 1 (Hohes Wachstum):</p>
             <ul className="space-y-1">
-              <li>Jahr 1: <strong>{showExchangeInfo ? formatBothValues(fcf1) : formatValue(fcf1)}</strong></li>
-              <li>Jahr 2: <strong>{showExchangeInfo ? formatBothValues(fcf2) : formatValue(fcf2)}</strong></li>
-              <li>Jahr 3: <strong>{showExchangeInfo ? formatBothValues(fcf3) : formatValue(fcf3)}</strong></li>
-              <li>Jahr 4: <strong>{showExchangeInfo ? formatBothValues(fcf4) : formatValue(fcf4)}</strong></li>
-              <li>Jahr 5: <strong>{showExchangeInfo ? formatBothValues(fcf5) : formatValue(fcf5)}</strong></li>
+              <li>Jahr 1: <strong>{formatValue(fcf1)}</strong></li>
+              <li>Jahr 2: <strong>{formatValue(fcf2)}</strong></li>
+              <li>Jahr 3: <strong>{formatValue(fcf3)}</strong></li>
+              <li>Jahr 4: <strong>{formatValue(fcf4)}</strong></li>
+              <li>Jahr 5: <strong>{formatValue(fcf5)}</strong></li>
             </ul>
           </div>
           <div>
             <p className="font-medium">Phase 2 (Moderates Wachstum):</p>
             <ul className="space-y-1">
-              <li>Jahr 6: <strong>{showExchangeInfo ? formatBothValues(fcf6) : formatValue(fcf6)}</strong></li>
-              <li>Jahr 7: <strong>{showExchangeInfo ? formatBothValues(fcf7) : formatValue(fcf7)}</strong></li>
-              <li>Jahr 8: <strong>{showExchangeInfo ? formatBothValues(fcf8) : formatValue(fcf8)}</strong></li>
-              <li>Jahr 9: <strong>{showExchangeInfo ? formatBothValues(fcf9) : formatValue(fcf9)}</strong></li>
-              <li>Jahr 10: <strong>{showExchangeInfo ? formatBothValues(fcf10) : formatValue(fcf10)}</strong></li>
+              <li>Jahr 6: <strong>{formatValue(fcf6)}</strong></li>
+              <li>Jahr 7: <strong>{formatValue(fcf7)}</strong></li>
+              <li>Jahr 8: <strong>{formatValue(fcf8)}</strong></li>
+              <li>Jahr 9: <strong>{formatValue(fcf9)}</strong></li>
+              <li>Jahr 10: <strong>{formatValue(fcf10)}</strong></li>
             </ul>
           </div>
         </div>
@@ -311,7 +255,7 @@ const IntrinsicValueTooltip: React.FC<{
         <p className="text-sm mb-2">
           <span className="font-medium">Terminal Value = </span> 
           FCF<sub>10</sub> × (1 + g) ÷ (r - g) = 
-          <strong> {showExchangeInfo ? formatBothValues(terminalValue) : formatValue(terminalValue)}</strong>
+          <strong> {formatValue(terminalValue)}</strong>
         </p>
         <p className="text-sm">
           wobei g = Terminal-Wachstumsrate ({terminalGrowth}%) und r = Abzinsungsrate ({discountRate}%)
@@ -323,26 +267,26 @@ const IntrinsicValueTooltip: React.FC<{
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <ul className="space-y-1">
-              <li>PV Jahr 1: <strong>{showExchangeInfo ? formatBothValues(pv1) : formatValue(pv1)}</strong></li>
-              <li>PV Jahr 2: <strong>{showExchangeInfo ? formatBothValues(pv2) : formatValue(pv2)}</strong></li>
-              <li>PV Jahr 3: <strong>{showExchangeInfo ? formatBothValues(pv3) : formatValue(pv3)}</strong></li>
-              <li>PV Jahr 4: <strong>{showExchangeInfo ? formatBothValues(pv4) : formatValue(pv4)}</strong></li>
-              <li>PV Jahr 5: <strong>{showExchangeInfo ? formatBothValues(pv5) : formatValue(pv5)}</strong></li>
+              <li>PV Jahr 1: <strong>{formatValue(pv1)}</strong></li>
+              <li>PV Jahr 2: <strong>{formatValue(pv2)}</strong></li>
+              <li>PV Jahr 3: <strong>{formatValue(pv3)}</strong></li>
+              <li>PV Jahr 4: <strong>{formatValue(pv4)}</strong></li>
+              <li>PV Jahr 5: <strong>{formatValue(pv5)}</strong></li>
             </ul>
           </div>
           <div>
             <ul className="space-y-1">
-              <li>PV Jahr 6: <strong>{showExchangeInfo ? formatBothValues(pv6) : formatValue(pv6)}</strong></li>
-              <li>PV Jahr 7: <strong>{showExchangeInfo ? formatBothValues(pv7) : formatValue(pv7)}</strong></li>
-              <li>PV Jahr 8: <strong>{showExchangeInfo ? formatBothValues(pv8) : formatValue(pv8)}</strong></li>
-              <li>PV Jahr 9: <strong>{showExchangeInfo ? formatBothValues(pv9) : formatValue(pv9)}</strong></li>
-              <li>PV Jahr 10: <strong>{showExchangeInfo ? formatBothValues(pv10) : formatValue(pv10)}</strong></li>
+              <li>PV Jahr 6: <strong>{formatValue(pv6)}</strong></li>
+              <li>PV Jahr 7: <strong>{formatValue(pv7)}</strong></li>
+              <li>PV Jahr 8: <strong>{formatValue(pv8)}</strong></li>
+              <li>PV Jahr 9: <strong>{formatValue(pv9)}</strong></li>
+              <li>PV Jahr 10: <strong>{formatValue(pv10)}</strong></li>
             </ul>
           </div>
         </div>
         <p className="mt-2 text-sm">
           <span className="font-medium">PV Terminal Value: </span>
-          <strong>{showExchangeInfo ? formatBothValues(pvTerminal) : formatValue(pvTerminal)}</strong>
+          <strong>{formatValue(pvTerminal)}</strong>
         </p>
       </div>
       
@@ -350,15 +294,11 @@ const IntrinsicValueTooltip: React.FC<{
         <h5 className="font-medium mb-2">5. Ermittlung des inneren Werts:</h5>
         <p className="text-sm">
           <span className="font-medium">Summe aller diskontierten Werte: </span>
-          <strong>{showExchangeInfo ? formatBothValues(totalPV) : formatValue(totalPV)}</strong>
+          <strong>{formatValue(totalPV)}</strong>
         </p>
         <p className="text-sm mt-1">
           <span className="font-medium">Innerer Wert pro Aktie: </span>
-          <strong>
-            {showExchangeInfo 
-              ? `${originalIntrinsicValue?.toFixed(2)} ${originalCurrency} ≈ ${intrinsicValue.toFixed(2)} ${currency}`
-              : `${intrinsicValue.toFixed(2)} ${currency}`}
-          </strong>
+          <strong>{intrinsicValue.toFixed(2)} {currency}</strong>
         </p>
       </div>
       
@@ -694,7 +634,7 @@ const RatingExplanation: React.FC<{ rating: 'buy' | 'watch' | 'avoid' }> = ({ ra
             </p>
             <ul className="text-xs list-disc pl-4">
               <li>Hohe Qualität (≥75% Buffett-Score)</li>
-              <li>Deutliche Unterbewertung (&gt;20% MoS)</li>
+              <li>Deutliche Unterbewertung (>20% MoS)</li>
               <li>Stabiles Geschäftsmodell</li>
               <li>Gute langfristige Perspektiven</li>
             </ul>
