@@ -8,11 +8,10 @@ import QuantAnalysisTable from '@/components/QuantAnalysisTable';
 import OverallRating from '@/components/OverallRating';
 import BuffettCriteriaGPT, { DCFData } from '@/components/BuffettCriteriaGPT';
 import ExchangeSelector from '@/components/ExchangeSelector';
-import { fetchStock, fetchStockHistory } from '@/api/stockApi';
-import { fetchQuantAnalysis } from '@/api/quantAnalyzerApi';
+import { fetchStockData, fetchStockPriceHistory } from '@/api/stockApi';
+import { analyzeStockByBuffettCriteria } from '@/api/quantAnalyzerApi';
 import { fetchDCFAdvancedData } from '@/api/dcfAnalysisApi';
 import { calculateBuffettDCF } from '@/utils/buffettDCFCalculation';
-import { getMockDCFData } from '@/utils/mockDCFData';
 
 // Updated Buffer criteria interface to include scores
 interface BuffettCriterion {
@@ -154,11 +153,11 @@ const Index = () => {
       
       const loadStockData = async () => {
         try {
-          const stockData = await fetchStock(selectedStock, exchange);
+          const stockData = await fetchStockData(selectedStock, exchange);
           setStock(stockData);
           
           if (stockData) {
-            const historyData = await fetchStockHistory(selectedStock);
+            const historyData = await fetchStockPriceHistory(selectedStock);
             setStockHistory(historyData);
             
             // Generate Buffett criteria based on stock data
@@ -166,7 +165,7 @@ const Index = () => {
             setBuffettCriteria(criteria);
             
             // Fetch quant analysis
-            const quantData = await fetchQuantAnalysis(selectedStock);
+            const quantData = await analyzeStockByBuffettCriteria(selectedStock);
             setQuantAnalysis(quantData);
             
             // Fetch DCF data
