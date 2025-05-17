@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   CheckCircle, 
@@ -634,7 +635,7 @@ const RatingExplanation: React.FC<{ rating: 'buy' | 'watch' | 'avoid' }> = ({ ra
             </p>
             <ul className="text-xs list-disc pl-4">
               <li>Hohe Qualität (≥75% Buffett-Score)</li>
-              <li>Deutliche Unterbewertung (>20% MoS)</li>
+              <li>Deutliche Unterbewertung (&gt;20% MoS)</li>
               <li>Stabiles Geschäftsmodell</li>
               <li>Gute langfristige Perspektiven</li>
             </ul>
