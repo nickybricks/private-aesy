@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
@@ -69,6 +68,15 @@ interface StockContextType {
   activeTab: string;
   stockCurrency: string;
   hasCriticalDataMissing: boolean;
+  dcfData?: {
+    ufcf: number[];
+    wacc: number;
+    presentTerminalValue: number;
+    netDebt: number;
+    dilutedSharesOutstanding: number;
+    currency: string;
+    intrinsicValue: number;
+  };
   setActiveTab: (tab: string) => void;
   handleSearch: (ticker: string) => Promise<void>;
 }
@@ -87,6 +95,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
   const [activeTab, setActiveTab] = useState('standard');
   const [stockCurrency, setStockCurrency] = useState<string>('USD');
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
+  const [dcfData, setDcfData] = useState<StockContextType['dcfData']>();
 
   useEffect(() => {
     setGptAvailable(hasOpenAiApiKey());
@@ -196,6 +205,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
       setFinancialMetrics(null);
       setOverallRating(null);
       setHasCriticalDataMissing(false);
+      setDcfData(undefined);
       
       const info = await fetchStockInfo(ticker);
       console.log('Stock Info:', JSON.stringify(info, null, 2));
@@ -413,6 +423,27 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
         setBuffettCriteria(criteria);
         setFinancialMetrics(metricsData);
         
+        // Set example DCF data based on the company valuation
+        if (rating && rating.intrinsicValue) {
+          const mockDcfData = {
+            ufcf: [
+              rating.intrinsicValue * 0.04 * 1.15, // Year 1 FCF with growth
+              rating.intrinsicValue * 0.04 * 1.15 * 1.15, // Year 2
+              rating.intrinsicValue * 0.04 * 1.15 * 1.15 * 1.15, // Year 3
+              rating.intrinsicValue * 0.04 * 1.15 * 1.15 * 1.15 * 1.15, // Year 4
+              rating.intrinsicValue * 0.04 * 1.15 * 1.15 * 1.15 * 1.15 * 1.15, // Year 5
+            ],
+            wacc: 8.5, // Example WACC
+            presentTerminalValue: rating.intrinsicValue * 0.75, // Example terminal value (75% of intrinsic)
+            netDebt: rating.intrinsicValue * 0.2, // Example net debt (20% of intrinsic)
+            dilutedSharesOutstanding: 1000000, // Example outstanding shares
+            currency: rating.currency || priceCurrency,
+            intrinsicValue: rating.intrinsicValue
+          };
+          
+          setDcfData(mockDcfData);
+        }
+        
         toast({
           title: "Analyse abgeschlossen",
           description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
@@ -466,6 +497,7 @@ export function StockProvider({ children }: { children: React.ReactNode }) {
       activeTab,
       stockCurrency,
       hasCriticalDataMissing,
+      dcfData,
       setActiveTab,
       handleSearch
     }}>
