@@ -87,7 +87,8 @@ export const useStockSearch = () => {
           originalIntrinsicValue: rating.originalIntrinsicValue || null,
           originalBestBuyPrice: rating.originalBestBuyPrice || null,
           originalPrice: rating.originalPrice || null,
-          reportedCurrency: reportedCurrency // Explicitly assign the required property
+          reportedCurrency: reportedCurrency, // Explicitly assign the required property
+          dcfData: rating.dcfData || undefined // Extract DCF data from the API response if it exists
         };
         
         const ratingCurrency = updatedRating.currency || reportedCurrency;
@@ -99,8 +100,8 @@ export const useStockSearch = () => {
         }
       }
       
-      // Use the DCF data from the API directly
-      const dcfData = rating?.dcfData || null;
+      // Extract DCF data directly from the rating object
+      const dcfData = updatedRating?.dcfData || null;
       
       toast({
         title: "Analyse abgeschlossen",

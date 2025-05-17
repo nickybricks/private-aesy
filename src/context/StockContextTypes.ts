@@ -53,6 +53,7 @@ export interface OverallRatingData {
   originalBestBuyPrice: number | null;
   originalPrice: number | null;
   originalCurrency?: string;
+  dcfData?: DCFData;  // Add dcfData property to OverallRatingData
 }
 
 export interface DCFData {
