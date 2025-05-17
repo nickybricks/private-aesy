@@ -84,9 +84,11 @@ export const useStockSearch = () => {
       let extractedDcfData = null;
       
       if (rating) {
-        // Check if dcfData exists in the API response and extract it
-        if (rating.dcfData) {
-          extractedDcfData = rating.dcfData;
+        // Check if dcfData exists in the API response as a custom property
+        // Use type assertion to access the potentially undefined property
+        const ratingAny = rating as any;
+        if (ratingAny && typeof ratingAny === 'object' && 'dcfData' in ratingAny) {
+          extractedDcfData = ratingAny.dcfData;
           console.log('DCF Data found:', JSON.stringify(extractedDcfData, null, 2));
         }
         
