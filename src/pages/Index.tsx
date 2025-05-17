@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -5,7 +6,6 @@ import BuffettCriteria from '@/components/BuffettCriteria';
 import BuffettCriteriaGPT from '@/components/BuffettCriteriaGPT';
 import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
-import BuffettDCFAnalysis from '@/components/BuffettDCFAnalysis'; // New component
 import Navigation from '@/components/Navigation';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
@@ -18,10 +18,6 @@ import {
   shouldConvertCurrency, 
   needsCurrencyConversion 
 } from '@/utils/currencyConverter';
-import { 
-  calculateBuffettIntrinsicValue, 
-  DCFInputData 
-} from '@/utils/buffettIntrinsicValue';
 
 interface HistoricalDataItem {
   year: string;
@@ -76,15 +72,6 @@ interface OverallRatingData {
   originalCurrency?: string;
 }
 
-// Add new interface for DCF data
-interface DCFData {
-  ufcf?: number[];
-  wacc?: number;
-  presentTerminalValue?: number;
-  netDebt?: number;
-  dilutedSharesOutstanding?: number;
-}
-
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -95,10 +82,8 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [gptAvailable, setGptAvailable] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
-  const [stockCurrency, setStockCurrency] = useState<string>('USD');
+  const [stockCurrency, setStockCurrency] = useState<string>('USD'); // Changed default from EUR to USD
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
-  const [dcfData, setDcfData] = useState<DCFData | null>(null); // New state for DCF data
-  const [intrinsicValueCalcResult, setIntrinsicValueCalcResult] = useState<any>(null); // New state for calculation result
 
   useEffect(() => {
     setGptAvailable(hasOpenAiApiKey());
@@ -120,17 +105,6 @@ const Index = () => {
       setHasCriticalDataMissing(criticalMissing);
     }
   }, [stockInfo]);
-
-  // Add new effect hook for calculating intrinsic value whenever dcfData changes
-  useEffect(() => {
-    if (dcfData) {
-      const calcResult = calculateBuffettIntrinsicValue(dcfData as DCFInputData);
-      setIntrinsicValueCalcResult(calcResult);
-      
-      // Log the calculation result for debugging
-      console.log("Intrinsic Value Calculation Result:", calcResult);
-    }
-  }, [dcfData]);
 
   const convertFinancialMetrics = async (metrics: any, reportedCurrency: string, stockPriceCurrency: string) => {
     if (!metrics || !reportedCurrency || !stockPriceCurrency) return metrics;
@@ -219,8 +193,6 @@ const Index = () => {
       setFinancialMetrics(null);
       setOverallRating(null);
       setHasCriticalDataMissing(false);
-      setDcfData(null); // Reset DCF data
-      setIntrinsicValueCalcResult(null); // Reset calculation result
       
       const info = await fetchStockInfo(ticker);
       console.log('Stock Info:', JSON.stringify(info, null, 2));
@@ -230,6 +202,7 @@ const Index = () => {
         setStockCurrency(info.currency);
         console.log(`Stock price currency: ${info.currency}`);
       } else {
+        // Default to USD instead of EUR if no currency information is available
         setStockCurrency('USD');
         console.log('No currency information available, defaulting to USD');
       }
@@ -253,7 +226,6 @@ const Index = () => {
           setActiveTab('gpt');
         }
         
-        // Fetch all the data, including DCF data (mock for now)
         const [criteria, rawMetricsData, rating] = await Promise.all([
           analyzeBuffettCriteria(ticker),
           getFinancialMetrics(ticker),
@@ -264,30 +236,7 @@ const Index = () => {
         console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
         console.log('Overall Rating:', JSON.stringify(rating, null, 2));
         
-        // Create mock DCF data for demonstration purposes
-        // In a real application, this would come from your API
-        // Using hardcoded sample data instead of trying to access properties that don't exist
-        const baseCashFlow = 1500000000; // Base value for cash flow in appropriate currency
-        
-        const mockDcfData: DCFData = {
-          ufcf: [
-            baseCashFlow,                  // Year 1
-            baseCashFlow * 1.15,           // Year 2
-            baseCashFlow * 1.15 * 1.15,    // Year 3
-            baseCashFlow * 1.15 * 1.15 * 1.15,  // Year 4
-            baseCashFlow * 1.15 * 1.15 * 1.15 * 1.15  // Year 5
-          ],
-          wacc: 9.5,
-          presentTerminalValue: baseCashFlow * 15, // Simplified terminal value
-          netDebt: baseCashFlow * 3, // Mock value for net debt
-          dilutedSharesOutstanding: 1000000000 // Mock value for shares outstanding
-        };
-        
-        // Set the DCF data - would be from API in real implementation
-        setDcfData(mockDcfData);
-        
-        // Continue with existing code for processing other data...
-        const priceCurrency = info?.currency || 'USD';
+        const priceCurrency = info?.currency || 'USD'; // Default to USD instead of EUR
         const reportedCurrency = rawMetricsData?.reportedCurrency || priceCurrency;
         
         console.log(`Price currency: ${priceCurrency}, Reported financial data currency: ${reportedCurrency}`);
@@ -588,12 +537,7 @@ const Index = () => {
                 </TabsContent>
                 <TabsContent value="gpt">
                   {gptAvailable ? (
-                    <BuffettCriteriaGPT 
-                      criteria={buffettCriteria} 
-                      stockPrice={stockInfo?.price} 
-                      currency={stockCurrency}
-                      dcfData={dcfData}
-                    />
+                    <BuffettCriteriaGPT criteria={buffettCriteria} />
                   ) : (
                     <Alert>
                       <InfoIcon className="h-4 w-4" />
@@ -605,18 +549,6 @@ const Index = () => {
                   )}
                 </TabsContent>
               </Tabs>
-            </div>
-          )}
-          
-          {/* Add the new DCF Analysis component */}
-          {!hasCriticalDataMissing && intrinsicValueCalcResult && stockInfo && (
-            <div className="mb-10">
-              <BuffettDCFAnalysis 
-                dcfResult={intrinsicValueCalcResult} 
-                currentPrice={stockInfo.price} 
-                currency={stockCurrency}
-                marginOfSafety={20}
-              />
             </div>
           )}
           
