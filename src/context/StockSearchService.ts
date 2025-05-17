@@ -3,7 +3,7 @@ import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverall
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { shouldConvertCurrency } from '@/utils/currencyConverter';
-import { processFinancialMetrics, generateMockDCFData } from './StockDataProcessor';
+import { processFinancialMetrics } from './StockDataProcessor';
 import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
 
 export const useStockSearch = () => {
@@ -99,8 +99,8 @@ export const useStockSearch = () => {
         }
       }
       
-      // Generate DCF data
-      const dcfData = generateMockDCFData(updatedRating, priceCurrency);
+      // Use the DCF data from the API directly
+      const dcfData = rating?.dcfData || null;
       
       toast({
         title: "Analyse abgeschlossen",

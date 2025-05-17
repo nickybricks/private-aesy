@@ -18,7 +18,7 @@ export function StockProvider({ children }: StockProviderProps) {
   const [activeTab, setActiveTab] = useState('standard');
   const [stockCurrency, setStockCurrency] = useState<string>('USD');
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
-  const [dcfData, setDcfData] = useState<DCFData | undefined>();
+  const [dcfData, setDcfData] = useState<DCFData | undefined>(undefined);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();

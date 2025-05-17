@@ -25,7 +25,7 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
             <CardTitle className="text-lg">{criterion.title}</CardTitle>
             <BuffettScoreDisplay criterion={criterion} />
             
-            {criterion.title === '6. Akzeptable Bewertung' && (
+            {criterion.title === '6. Akzeptable Bewertung' && criterion.dcfData && (
               <DCFExplanationTooltip dcfData={criterion.dcfData} />
             )}
           </div>
