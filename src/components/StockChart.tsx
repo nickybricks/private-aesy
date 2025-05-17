@@ -75,7 +75,9 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           close: item.close,
         }));
 
-        if (needsCurrencyConversion(currency)) {
+        // Fix here: Pass both required parameters to needsCurrencyConversion
+        // We're using 'USD' as a fallback stock currency if none is provided
+        if (needsCurrencyConversion(currency, 'USD')) {
           const convertedData = await Promise.all(
             processedData.map(async (item) => ({
               ...item,
