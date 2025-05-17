@@ -9,6 +9,7 @@ import {
   calculateIdealBuyPrice,
   DCFInputData
 } from '../utils/buffettIntrinsicValue';
+import BuffettCriteria from './BuffettCriteria';
 
 interface DCFData {
   ufcf?: number[];
@@ -126,77 +127,83 @@ const BuffettCriteriaGPT = ({
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-      {gptAnalysis && (
-        <>
-          <h2 className="text-xl font-semibold mb-4">Erweiterte Buffett-Kriterienanalyse</h2>
-          
-          {/* Intrinsic Value Section */}
-          {intrinsicValueData && (
-            <div className="mb-6 border-b pb-4 border-gray-200">
-              <div className="mb-4">
-                <h3 className="text-lg font-medium mb-2">Buffett DCF-Bewertung</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Innerer Wert pro Aktie (DCF):</p>
-                    <p className="text-2xl font-bold text-buffett-blue">
-                      {formatCurrency(intrinsicValueData.intrinsicValue)}
-                    </p>
+    <div className="space-y-8">
+      {/* Original Buffett Criteria Component */}
+      <BuffettCriteria criteria={criteria} />
+      
+      {/* DCF Analysis and GPT Analysis */}
+      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+        {gptAnalysis && (
+          <>
+            <h2 className="text-xl font-semibold mb-4">Erweiterte Buffett-Kriterienanalyse</h2>
+            
+            {/* Intrinsic Value Section */}
+            {intrinsicValueData && (
+              <div className="mb-6 border-b pb-4 border-gray-200">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium mb-2">Buffett DCF-Bewertung</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Innerer Wert pro Aktie (DCF):</p>
+                      <p className="text-2xl font-bold text-buffett-blue">
+                        {formatCurrency(intrinsicValueData.intrinsicValue)}
+                      </p>
+                      
+                      {stockPrice && (
+                        <>
+                          <p className="text-sm text-gray-500 mt-2 mb-1">Aktueller Kurs:</p>
+                          <p className="text-xl">
+                            {formatCurrency(stockPrice)}
+                          </p>
+                        </>
+                      )}
+                      
+                      {intrinsicValueData.valuation && intrinsicValueData.valuation.status !== 'unknown' && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-500 mb-1">Abweichung:</p>
+                          <p className={`text-lg font-medium ${
+                            intrinsicValueData.valuation.status === 'undervalued' ? 'text-green-600' :
+                            intrinsicValueData.valuation.status === 'overvalued' ? 'text-red-600' : 
+                            'text-blue-600'
+                          }`}>
+                            {intrinsicValueData.valuation.percentageDiff > 0 ? '+' : ''}
+                            {intrinsicValueData.valuation.percentageDiff.toFixed(1)}% 
+                            ({
+                              intrinsicValueData.valuation.status === 'undervalued' ? 'Unterbewertet' :
+                              intrinsicValueData.valuation.status === 'overvalued' ? 'Überbewertet' : 
+                              'Fair bewertet'
+                            })
+                          </p>
+                        </div>
+                      )}
+                    </div>
                     
-                    {stockPrice && (
-                      <>
-                        <p className="text-sm text-gray-500 mt-2 mb-1">Aktueller Kurs:</p>
-                        <p className="text-xl">
-                          {formatCurrency(stockPrice)}
-                        </p>
-                      </>
-                    )}
-                    
-                    {intrinsicValueData.valuation && intrinsicValueData.valuation.status !== 'unknown' && (
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500 mb-1">Abweichung:</p>
-                        <p className={`text-lg font-medium ${
-                          intrinsicValueData.valuation.status === 'undervalued' ? 'text-green-600' :
-                          intrinsicValueData.valuation.status === 'overvalued' ? 'text-red-600' : 
-                          'text-blue-600'
-                        }`}>
-                          {intrinsicValueData.valuation.percentageDiff > 0 ? '+' : ''}
-                          {intrinsicValueData.valuation.percentageDiff.toFixed(1)}% 
-                          ({
-                            intrinsicValueData.valuation.status === 'undervalued' ? 'Unterbewertet' :
-                            intrinsicValueData.valuation.status === 'overvalued' ? 'Überbewertet' : 
-                            'Fair bewertet'
-                          })
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Idealer Kaufpreis (20% Sicherheitsmarge):</p>
-                    <p className="text-xl font-bold text-green-600">
-                      {formatCurrency(intrinsicValueData.idealBuyPrice)}
-                    </p>
-                    
-                    <p className="text-sm text-gray-500 mt-2 mb-1">Terminal Value-Anteil:</p>
-                    <p className="text-lg">
-                      {formatPercentage(intrinsicValueData.terminalValuePercentage)}
-                    </p>
-                    
-                    <p className="text-sm text-gray-500 mt-2">
-                      Berechnungsbasis: {intrinsicValueData.years} Jahre UFCF + Terminal Value
-                    </p>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Idealer Kaufpreis (20% Sicherheitsmarge):</p>
+                      <p className="text-xl font-bold text-green-600">
+                        {formatCurrency(intrinsicValueData.idealBuyPrice)}
+                      </p>
+                      
+                      <p className="text-sm text-gray-500 mt-2 mb-1">Terminal Value-Anteil:</p>
+                      <p className="text-lg">
+                        {formatPercentage(intrinsicValueData.terminalValuePercentage)}
+                      </p>
+                      
+                      <p className="text-sm text-gray-500 mt-2">
+                        Berechnungsbasis: {intrinsicValueData.years} Jahre UFCF + Terminal Value
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
+            )}
+            
+            <div className="prose max-w-none">
+              <ReactMarkdown>{gptAnalysis}</ReactMarkdown>
             </div>
-          )}
-          
-          <div className="prose max-w-none">
-            <ReactMarkdown>{gptAnalysis}</ReactMarkdown>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
