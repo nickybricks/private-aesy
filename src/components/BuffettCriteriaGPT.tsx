@@ -20,6 +20,15 @@ interface BuffettCriterionProps {
   maxScore?: number;
 }
 
+export interface DCFData {
+  intrinsicValue: number | null;
+  currentPrice: number | null;
+  deviation: number | null;
+  terminalValuePercentage: number | null;
+  currency: string;
+  missingInputs?: string[] | null;
+}
+
 interface BuffettCriteriaGPTProps {
   criteria: {
     businessModel: BuffettCriterionProps;
@@ -34,6 +43,7 @@ interface BuffettCriteriaGPTProps {
     oneTimeEffects: BuffettCriterionProps;
     turnaround: BuffettCriterionProps;
   };
+  dcfData?: DCFData;
 }
 
 const getStatusColor = (status: string) => {
@@ -177,6 +187,119 @@ const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   return { summary, points };
 };
 
+// Detailed DCF calculation tooltip component - completely updated for the new requirements
+const DCFExplanationTooltip: React.FC<{
+  dcfData: DCFData | undefined;
+}> = ({ dcfData }) => {
+  if (!dcfData || !dcfData.intrinsicValue || dcfData.missingInputs) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+              <HelpCircle size={14} className="text-gray-500" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
+            <h4 className="font-semibold mb-1">DCF-Berechnung nicht möglich</h4>
+            <p className="text-xs">
+              Für diese Aktie liegen nicht alle nötigen Finanzdaten vor. Eine Bewertung nach Buffett-Prinzipien ist aktuell nicht möglich.
+              {dcfData?.missingInputs && dcfData.missingInputs.length > 0 && (
+                <>
+                  <br />
+                  <br />
+                  <span className="font-medium">Fehlende Daten:</span>
+                  <ul className="list-disc pl-5 mt-1">
+                    {dcfData.missingInputs.map((input, index) => (
+                      <li key={index}>{input}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+  
+  // Format currency values appropriately
+  const formatValue = (value: number): string => {
+    if (value >= 1000000000) {
+      return (value / 1000000000).toFixed(2) + ' Mrd';
+    } else if (value >= 1000000) {
+      return (value / 1000000).toFixed(2) + ' Mio';
+    } else {
+      return value.toFixed(2);
+    }
+  };
+  
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+            <HelpCircle size={14} className="text-gray-500" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
+          <div className="space-y-2 max-w-2xl">
+            <h4 className="font-semibold">Detaillierte DCF-Berechnung nach Buffett</h4>
+            <p>Der innere Wert von <strong>{dcfData.intrinsicValue.toFixed(2)} {dcfData.currency}</strong> basiert auf dieser Berechnung:</p>
+            
+            <div className="border border-gray-200 rounded-md p-3 bg-gray-50 mt-2">
+              <h5 className="font-medium mb-2">Berechnungsbasis:</h5>
+              <ul className="text-xs space-y-1">
+                <li>• 5 Jahre prognostizierter Free Cashflow (UFCF)</li>
+                <li>• Terminal Value ab Jahr 6</li>
+                <li>• Berücksichtigung von Nettoverschuldung</li>
+                <li>• Anzahl ausstehender Aktien</li>
+              </ul>
+            </div>
+            
+            <div className="border border-gray-200 rounded-md p-3 bg-gray-50 text-xs">
+              <h5 className="font-medium mb-2">Bewertungsergebnis:</h5>
+              <ul className="space-y-2">
+                <li><span className="font-medium">Innerer Wert pro Aktie:</span> <strong>{dcfData.intrinsicValue.toFixed(2)} {dcfData.currency}</strong></li>
+                <li><span className="font-medium">Aktueller Kurs:</span> <strong>{dcfData.currentPrice?.toFixed(2)} {dcfData.currency}</strong></li>
+                {dcfData.deviation && (
+                  <li>
+                    <span className="font-medium">Abweichung:</span> 
+                    <strong className={dcfData.deviation > 0 ? "text-red-600" : "text-green-600"}>
+                      {dcfData.deviation > 0 ? "+" : ""}{dcfData.deviation.toFixed(1)}% 
+                      ({dcfData.deviation > 0 ? "Überbewertet" : "Unterbewertet"})
+                    </strong>
+                  </li>
+                )}
+                {dcfData.terminalValuePercentage && (
+                  <li>
+                    <span className="font-medium">Anteil Terminal Value am Gesamtwert:</span> <strong>{dcfData.terminalValuePercentage}%</strong>
+                  </li>
+                )}
+              </ul>
+            </div>
+            
+            <div className="border border-gray-200 rounded-md p-3 bg-gray-50 text-xs">
+              <h5 className="font-medium mb-2">Interpretation nach Buffett:</h5>
+              <p>
+                Warren Buffett betrachtet den inneren Wert einer Aktie als Barwert aller zukünftigen Cashflows, 
+                die ein Unternehmen für seine Anteilseigner generieren kann. Eine Investition ist attraktiv, 
+                wenn der aktuelle Marktpreis deutlich unter diesem inneren Wert liegt.
+              </p>
+              {dcfData.deviation && dcfData.deviation < -20 && (
+                <p className="mt-2 text-green-600 font-medium">
+                  Der aktuelle Preis liegt mehr als 20% unter dem berechneten inneren Wert - 
+                  dies entspricht Buffetts Prinzip der "Margin of Safety".
+                </p>
+              )}
+            </div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
 const BuffettScoreChart = ({ score }: { score: number }) => {
   const COLORS = ['#10b981', '#f0f0f0'];
   const data = [
@@ -235,205 +358,7 @@ const BuffettScoreChart = ({ score }: { score: number }) => {
   );
 };
 
-// Detailed DCF calculation tooltip component
-const DCFExplanationTooltip: React.FC<{
-  intrinsicValue?: number | null;
-  currency?: string;
-}> = ({ intrinsicValue = 100, currency = '€' }) => {
-  if (!intrinsicValue || isNaN(Number(intrinsicValue))) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
-              <HelpCircle size={14} className="text-gray-500" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
-            <h4 className="font-semibold mb-1">DCF-Berechnung nicht möglich</h4>
-            <p className="text-xs">
-              Für dieses Wertpapier liegen nicht genügend Daten vor, um eine detaillierte DCF-Berechnung darzustellen.
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-  
-  // Calculate actual values used in the DCF model
-  const currentFCF = intrinsicValue * 0.04; // Assuming 4% of intrinsic value as current FCF
-  const growthRate1 = 15; // First 5 years growth rate (%)
-  const growthRate2 = 8;  // Years 6-10 growth rate (%)
-  const terminalGrowth = 3; // Terminal growth rate (%)
-  const discountRate = 8; // Discount rate (%)
-  
-  // Calculate projected cash flows
-  const fcf1 = currentFCF * (1 + growthRate1/100);
-  const fcf2 = fcf1 * (1 + growthRate1/100);
-  const fcf3 = fcf2 * (1 + growthRate1/100);
-  const fcf4 = fcf3 * (1 + growthRate1/100);
-  const fcf5 = fcf4 * (1 + growthRate1/100);
-  
-  const fcf6 = fcf5 * (1 + growthRate2/100);
-  const fcf7 = fcf6 * (1 + growthRate2/100);
-  const fcf8 = fcf7 * (1 + growthRate2/100);
-  const fcf9 = fcf8 * (1 + growthRate2/100);
-  const fcf10 = fcf9 * (1 + growthRate2/100);
-  
-  // Terminal value calculation
-  const terminalValue = fcf10 * (1 + terminalGrowth/100) / (discountRate/100 - terminalGrowth/100);
-  
-  // Discount factors
-  const df1 = 1 / Math.pow(1 + discountRate/100, 1);
-  const df2 = 1 / Math.pow(1 + discountRate/100, 2);
-  const df3 = 1 / Math.pow(1 + discountRate/100, 3);
-  const df4 = 1 / Math.pow(1 + discountRate/100, 4);
-  const df5 = 1 / Math.pow(1 + discountRate/100, 5);
-  const df6 = 1 / Math.pow(1 + discountRate/100, 6);
-  const df7 = 1 / Math.pow(1 + discountRate/100, 7);
-  const df8 = 1 / Math.pow(1 + discountRate/100, 8);
-  const df9 = 1 / Math.pow(1 + discountRate/100, 9);
-  const df10 = 1 / Math.pow(1 + discountRate/100, 10);
-  
-  // Present values of projected cash flows
-  const pv1 = fcf1 * df1;
-  const pv2 = fcf2 * df2;
-  const pv3 = fcf3 * df3;
-  const pv4 = fcf4 * df4;
-  const pv5 = fcf5 * df5;
-  const pv6 = fcf6 * df6;
-  const pv7 = fcf7 * df7;
-  const pv8 = fcf8 * df8;
-  const pv9 = fcf9 * df9;
-  const pv10 = fcf10 * df10;
-  
-  // Present value of terminal value
-  const pvTerminal = terminalValue * df10;
-  
-  // Sum of all present values
-  const totalPV = pv1 + pv2 + pv3 + pv4 + pv5 + pv6 + pv7 + pv8 + pv9 + pv10 + pvTerminal;
-  
-  // Formatting helper
-  const formatValue = (value: number): string => {
-    if (value >= 1000000000) {
-      return (value / 1000000000).toFixed(2) + ' Mrd';
-    } else if (value >= 1000000) {
-      return (value / 1000000).toFixed(2) + ' Mio';
-    } else {
-      return value.toFixed(2);
-    }
-  };
-  
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
-            <HelpCircle size={14} className="text-gray-500" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
-          <div className="space-y-2 max-w-2xl">
-            <h4 className="font-semibold">Detaillierte DCF-Berechnung</h4>
-            <p>Der innere Wert von <strong>{intrinsicValue.toFixed(2)} {currency}</strong> wurde mittels dieser DCF-Berechnung ermittelt:</p>
-            
-            <div className="border border-gray-200 rounded-md p-3 bg-gray-50 mt-2">
-              <h5 className="font-medium mb-2">1. Eingabeparameter:</h5>
-              <ul className="text-xs space-y-1">
-                <li>• Aktueller Free Cashflow: <strong>{formatValue(currentFCF)} {currency}</strong></li>
-                <li>• Abzinsungsrate: <strong>{discountRate}%</strong></li>
-                <li className="font-medium mt-1">Prognostizierte Wachstumsraten:</li>
-                <li>• Jahre 1-5: <strong>{growthRate1}%</strong> jährlich</li>
-                <li>• Jahre 6-10: <strong>{growthRate2}%</strong> jährlich</li>
-                <li>• Ab Jahr 11: <strong>{terminalGrowth}%</strong> (ewiges Wachstum)</li>
-              </ul>
-            </div>
-            
-            <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
-              <h5 className="font-medium mb-2">2. Prognose der Free Cashflows:</h5>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <p className="font-medium">Phase 1 (Hohes Wachstum):</p>
-                  <ul className="space-y-1">
-                    <li>Jahr 1: <strong>{formatValue(fcf1)} {currency}</strong></li>
-                    <li>Jahr 2: <strong>{formatValue(fcf2)} {currency}</strong></li>
-                    <li>Jahr 3: <strong>{formatValue(fcf3)} {currency}</strong></li>
-                    <li>Jahr 4: <strong>{formatValue(fcf4)} {currency}</strong></li>
-                    <li>Jahr 5: <strong>{formatValue(fcf5)} {currency}</strong></li>
-                  </ul>
-                </div>
-                <div>
-                  <p className="font-medium">Phase 2 (Moderates Wachstum):</p>
-                  <ul className="space-y-1">
-                    <li>Jahr 6: <strong>{formatValue(fcf6)} {currency}</strong></li>
-                    <li>Jahr 7: <strong>{formatValue(fcf7)} {currency}</strong></li>
-                    <li>Jahr 8: <strong>{formatValue(fcf8)} {currency}</strong></li>
-                    <li>Jahr 9: <strong>{formatValue(fcf9)} {currency}</strong></li>
-                    <li>Jahr 10: <strong>{formatValue(fcf10)} {currency}</strong></li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            
-            <div className="border border-gray-200 rounded-md p-3 bg-gray-50 text-xs">
-              <h5 className="font-medium mb-2">3. Terminal Value Berechnung:</h5>
-              <p className="mb-2">
-                <span className="font-medium">Terminal Value = </span> 
-                FCF<sub>10</sub> × (1 + g) ÷ (r - g) = 
-                <strong> {formatValue(terminalValue)} {currency}</strong>
-              </p>
-              <p>
-                wobei g = Terminal-Wachstumsrate ({terminalGrowth}%) und r = Abzinsungsrate ({discountRate}%)
-              </p>
-            </div>
-            
-            <div className="border border-gray-200 rounded-md p-3 bg-gray-50 text-xs">
-              <h5 className="font-medium mb-2">4. Diskontierung der Cashflows:</h5>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <ul className="space-y-1">
-                    <li>PV Jahr 1: <strong>{formatValue(pv1)} {currency}</strong></li>
-                    <li>PV Jahr 2: <strong>{formatValue(pv2)} {currency}</strong></li>
-                    <li>PV Jahr 3: <strong>{formatValue(pv3)} {currency}</strong></li>
-                    <li>PV Jahr 4: <strong>{formatValue(pv4)} {currency}</strong></li>
-                    <li>PV Jahr 5: <strong>{formatValue(pv5)} {currency}</strong></li>
-                  </ul>
-                </div>
-                <div>
-                  <ul className="space-y-1">
-                    <li>PV Jahr 6: <strong>{formatValue(pv6)} {currency}</strong></li>
-                    <li>PV Jahr 7: <strong>{formatValue(pv7)} {currency}</strong></li>
-                    <li>PV Jahr 8: <strong>{formatValue(pv8)} {currency}</strong></li>
-                    <li>PV Jahr 9: <strong>{formatValue(pv9)} {currency}</strong></li>
-                    <li>PV Jahr 10: <strong>{formatValue(pv10)} {currency}</strong></li>
-                  </ul>
-                </div>
-              </div>
-              <p className="mt-2">
-                <span className="font-medium">PV Terminal Value: </span>
-                <strong>{formatValue(pvTerminal)} {currency}</strong>
-              </p>
-            </div>
-            
-            <div className="border border-gray-200 rounded-md p-3 bg-gray-50 text-xs">
-              <h5 className="font-medium mb-2">5. Ermittlung des inneren Werts:</h5>
-              <p>
-                <span className="font-medium">Summe aller diskontierten Werte: </span>
-                <strong>{formatValue(totalPV)} {currency}</strong>
-              </p>
-              <p className="mt-1">
-                <span className="font-medium">Innerer Wert pro Aktie: </span>
-                <strong>{intrinsicValue.toFixed(2)} {currency}</strong>
-              </p>
-            </div>
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
-
-const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
+const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria, dcfData }) => {
   const isBuffettCriterion = (criterion: any): criterion is BuffettCriterionProps => {
     return criterion && 
            typeof criterion.title === 'string' && 
@@ -502,6 +427,74 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
         Eine umfassende Analyse nach Warren Buffetts 11 Investmentkriterien, unterstützt durch GPT für die qualitative Bewertung.
       </p>
       
+      {dcfData && (
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex justify-between items-start">
+            <h3 className="text-lg font-semibold mb-2">
+              Innerer Wert (DCF):
+            </h3>
+            <DCFExplanationTooltip dcfData={dcfData} />
+          </div>
+          
+          {dcfData.intrinsicValue && !dcfData.missingInputs ? (
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span>Innerer Wert pro Aktie (nach Buffett):</span>
+                <span className="font-bold">{dcfData.intrinsicValue.toFixed(2)} {dcfData.currency}</span>
+              </div>
+              {dcfData.currentPrice && (
+                <>
+                  <div className="flex justify-between items-center">
+                    <span>Aktueller Kurs:</span>
+                    <span>{dcfData.currentPrice.toFixed(2)} {dcfData.currency}</span>
+                  </div>
+                  {dcfData.deviation !== null && (
+                    <div className="flex justify-between items-center">
+                      <span>Abweichung:</span>
+                      <span className={dcfData.deviation > 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
+                        {dcfData.deviation > 0 ? "+" : ""}{dcfData.deviation.toFixed(1)}% 
+                        ({dcfData.deviation > 0 ? "Überbewertet" : "Unterbewertet"})
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+              {dcfData.terminalValuePercentage !== null && (
+                <div className="flex justify-between items-center">
+                  <span>Anteil Terminal Value am Gesamtwert:</span>
+                  <span>{dcfData.terminalValuePercentage}%</span>
+                </div>
+              )}
+              <div className="text-xs text-gray-500 mt-1">
+                Berechnungsbasis: 5 Jahre UFCF + Terminal Value
+              </div>
+            </div>
+          ) : (
+            <div className="p-3 bg-gray-50 rounded border border-gray-200 mt-2">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="text-amber-500 mt-0.5" size={16} />
+                <div>
+                  <p className="font-medium">Keine DCF-Daten verfügbar</p>
+                  <p className="text-sm mt-1">
+                    Für diese Aktie liegen nicht alle nötigen Finanzdaten vor. Eine Bewertung nach Buffett-Prinzipien ist aktuell nicht möglich.
+                  </p>
+                  {dcfData.missingInputs && dcfData.missingInputs.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium">Fehlende Daten:</p>
+                      <ul className="list-disc pl-5 text-xs mt-1">
+                        {dcfData.missingInputs.map((input, index) => (
+                          <li key={index}>{input}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
       <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
         <h3 className="text-lg font-semibold mb-2">
           Buffett-Kompatibilität: {hasDetailedScores ? detailedBuffettScore : buffettScore}%
@@ -561,8 +554,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                     
                     {criterion.title === '6. Akzeptable Bewertung' && (
                       <DCFExplanationTooltip 
-                        intrinsicValue={criterion.score === undefined ? null : criterion.score * 20} 
-                        currency="€"
+                        dcfData={dcfData}
                       />
                     )}
                   </div>

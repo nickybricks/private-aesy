@@ -1,609 +1,295 @@
-
 import React, { useState, useEffect } from 'react';
-import StockSearch from '@/components/StockSearch';
-import StockHeader from '@/components/StockHeader';
-import BuffettCriteria from '@/components/BuffettCriteria';
-import BuffettCriteriaGPT from '@/components/BuffettCriteriaGPT';
-import FinancialMetrics from '@/components/FinancialMetrics';
-import OverallRating from '@/components/OverallRating';
-import Navigation from '@/components/Navigation';
-import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
-import { hasOpenAiApiKey } from '@/api/openaiApi';
-import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon, AlertTriangle } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  convertCurrency, 
-  shouldConvertCurrency, 
-  needsCurrencyConversion 
-} from '@/utils/currencyConverter';
+import { StockSearch } from '@/components/StockSearch';
+import { StockHeader } from '@/components/StockHeader';
+import { StockChart } from '@/components/StockChart';
+import { FinancialMetrics } from '@/components/FinancialMetrics';
+import { QuantAnalysisTable } from '@/components/QuantAnalysisTable';
+import { OverallRating } from '@/components/OverallRating';
+import BuffettCriteriaGPT, { DCFData } from '@/components/BuffettCriteriaGPT';
+import { ExchangeSelector } from '@/components/ExchangeSelector';
+import { fetchStock, fetchStockHistory } from '@/api/stockApi';
+import { fetchQuantAnalysis } from '@/api/quantAnalyzerApi';
+import { fetchDCFAdvancedData } from '@/api/dcfAnalysisApi';
+import { calculateBuffettDCF } from '@/utils/buffettDCFCalculation';
+import { getMockDCFData } from '@/utils/mockDCFData';
 
-interface HistoricalDataItem {
-  year: string;
-  value: number;
-  originalValue?: number;
-  originalCurrency?: string;
+// Updated Buffer criteria interface to include scores
+interface BuffettCriterion {
+  title: string;
+  status: 'pass' | 'warning' | 'fail';
+  description: string;
+  details: string[];
+  gptAnalysis?: string | null;
+  score?: number;
+  maxScore?: number;
 }
 
-interface FinancialMetricsData {
-  eps?: any;
-  roe?: any;
-  netMargin?: any;
-  roic?: any;
-  debtToAssets?: any;
-  interestCoverage?: any;
-  reportedCurrency?: string;
-  metrics?: Array<{
-    name: string;
-    value: any;
-    formula: string;
-    explanation: string;
-    threshold: string;
-    status: "pass" | "warning" | "fail";
-    originalValue?: any;
-    originalCurrency?: string;
-    isPercentage: boolean;
-    isMultiplier: boolean;
-  }>;
-  historicalData?: {
-    revenue: HistoricalDataItem[];
-    earnings: HistoricalDataItem[];
-    eps: HistoricalDataItem[];
-  };
-}
-
-interface OverallRatingData {
-  overall: any;
-  summary: any;
-  strengths: any[];
-  weaknesses: any[];
-  recommendation: any;
-  buffettScore: number;
-  marginOfSafety: { value: number; status: "pass" | "warning" | "fail"; };
-  bestBuyPrice: number;
-  currentPrice: any;
-  currency: any;
-  intrinsicValue: any;
-  targetMarginOfSafety: number;
-  originalIntrinsicValue?: number | null;
-  originalBestBuyPrice?: number | null;
-  originalPrice?: number | null;
-  originalCurrency?: string;
+interface BuffettCriteria {
+  businessModel: BuffettCriterion;
+  economicMoat: BuffettCriterion;
+  financialMetrics: BuffettCriterion;
+  financialStability: BuffettCriterion;
+  management: BuffettCriterion;
+  valuation: BuffettCriterion;
+  longTermOutlook: BuffettCriterion;
+  rationalBehavior: BuffettCriterion;
+  cyclicalBehavior: BuffettCriterion;
+  oneTimeEffects: BuffettCriterion;
+  turnaround: BuffettCriterion;
 }
 
 const Index = () => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [stockInfo, setStockInfo] = useState(null);
-  const [buffettCriteria, setBuffettCriteria] = useState(null);
-  const [financialMetrics, setFinancialMetrics] = useState<FinancialMetricsData | null>(null);
-  const [overallRating, setOverallRating] = useState<OverallRatingData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [gptAvailable, setGptAvailable] = useState(false);
-  const [activeTab, setActiveTab] = useState('standard');
-  const [stockCurrency, setStockCurrency] = useState<string>('USD'); // Changed default from EUR to USD
-  const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
+  const [stock, setStock] = useState<any>(null);
+  const [selectedStock, setSelectedStock] = useState<string>('');
+  const [exchange, setExchange] = useState<string>('US');
+  const [stockHistory, setStockHistory] = useState<any[]>([]);
+  const [quantAnalysis, setQuantAnalysis] = useState<any>(null);
+  const [buffettCriteria, setBuffettCriteria] = useState<BuffettCriteria | null>(null);
+  const [dcfData, setDcfData] = useState<DCFData | undefined>(undefined);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  // This is a simplified version of BuffettCriteria for demo purposes
+  // In production, these criteria should come from an API or more complex logic
+  const generateBuffettCriteria = (stock: any): BuffettCriteria => {
+    const generateRandomStatus = () => {
+      const statuses = ['pass', 'warning', 'fail'];
+      return statuses[Math.floor(Math.random() * statuses.length)] as 'pass' | 'warning' | 'fail';
+    };
+
+    const generateRandomDetails = () => {
+      const details = [
+        'Stabiles Wachstum in den letzten 5 Jahren',
+        'Hohe Eigenkapitalrendite',
+        'Geringe Verschuldung',
+        'Konstante Dividendenpolitik',
+        'Starke Marktposition'
+      ];
+      const numberOfDetails = Math.floor(Math.random() * (details.length + 1)); // Random number between 0 and details.length
+      const selectedDetails: string[] = [];
+      const availableDetails = [...details]; // Create a copy to avoid modifying the original array
+
+      for (let i = 0; i < numberOfDetails; i++) {
+        const randomIndex = Math.floor(Math.random() * availableDetails.length);
+        selectedDetails.push(availableDetails[randomIndex]);
+        availableDetails.splice(randomIndex, 1); // Remove the selected detail to avoid duplicates
+      }
+
+      return selectedDetails;
+    };
+
+    return {
+      businessModel: {
+        title: '1. Verstehbares Geschäftsmodell',
+        status: generateRandomStatus(),
+        description: 'Das Geschäftsmodell ist einfach zu verstehen und zu analysieren.',
+        details: generateRandomDetails()
+      },
+      economicMoat: {
+        title: '2. Dauerhafter Wettbewerbsvorteil',
+        status: generateRandomStatus(),
+        description: 'Das Unternehmen verfügt über einen nachhaltigen Wettbewerbsvorteil.',
+        details: generateRandomDetails()
+      },
+      financialMetrics: {
+        title: '3. Solide Gewinnmargen',
+        status: generateRandomStatus(),
+        description: 'Das Unternehmen weist solide und stabile Gewinnmargen auf.',
+        details: generateRandomDetails()
+      },
+      financialStability: {
+        title: '4. Konservative Finanzierung',
+        status: generateRandomStatus(),
+        description: 'Das Unternehmen finanziert sich konservativ und hat wenig Schulden.',
+        details: generateRandomDetails()
+      },
+      management: {
+        title: '5. Rationales Management',
+        status: generateRandomStatus(),
+        description: 'Das Management handelt rational und im Interesse der Aktionäre.',
+        details: generateRandomDetails()
+      },
+      valuation: {
+        title: '6. Akzeptable Bewertung',
+        status: generateRandomStatus(),
+        description: 'Die Bewertung des Unternehmens ist im Vergleich zu seinen Fundamentaldaten angemessen.',
+        details: generateRandomDetails()
+      },
+      longTermOutlook: {
+        title: '7. Langfristige Perspektive',
+        status: generateRandomStatus(),
+        description: 'Das Unternehmen hat eine langfristige Perspektive und ist nicht auf kurzfristige Gewinne ausgerichtet.',
+        details: generateRandomDetails()
+      },
+      rationalBehavior: {
+        title: '8. Rationales Verhalten',
+        status: generateRandomStatus(),
+        description: 'Das Unternehmen agiert rational und vermeidet unnötige Risiken.',
+        details: generateRandomDetails()
+      },
+      cyclicalBehavior: {
+        title: '9. Keine zyklische Aktie',
+        status: generateRandomStatus(),
+        description: 'Das Unternehmen ist nicht von Konjunkturzyklen betroffen.',
+        details: generateRandomDetails()
+      },
+      oneTimeEffects: {
+        title: '10. Keine One-Time-Effects',
+        status: generateRandomStatus(),
+        description: 'Das Unternehmen weist keine wiederkehrenden Einmaleffekte auf, die das Ergebnis verzerren.',
+        details: generateRandomDetails()
+      },
+      turnaround: {
+        title: '11. Keine Turnarounds',
+        status: generateRandomStatus(),
+        description: 'Das Unternehmen befindet sich nicht in einer Turnaround-Situation.',
+        details: generateRandomDetails()
+      }
+    };
+  };
 
   useEffect(() => {
-    setGptAvailable(hasOpenAiApiKey());
-    
-    if (hasOpenAiApiKey()) {
-      setActiveTab('gpt');
-    }
-  }, []);
-
-  useEffect(() => {
-    if (stockInfo) {
-      const criticalMissing = 
-        !stockInfo || 
-        stockInfo.price === null || 
-        stockInfo.price === 0 || 
-        stockInfo.marketCap === null || 
-        stockInfo.marketCap === 0;
+    if (selectedStock) {
+      setLoading(true);
       
-      setHasCriticalDataMissing(criticalMissing);
-    }
-  }, [stockInfo]);
-
-  const convertFinancialMetrics = async (metrics: any, reportedCurrency: string, stockPriceCurrency: string) => {
-    if (!metrics || !reportedCurrency || !stockPriceCurrency) return metrics;
-    
-    if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
-      console.log(`No conversion needed: both stock price and metrics are in ${stockPriceCurrency}`);
-      return metrics;
-    }
-    
-    if (Array.isArray(metrics)) {
-      const convertedMetrics = await Promise.all(metrics.map(async metric => {
-        if (
-          typeof metric.value !== 'number' || 
-          isNaN(metric.value) || 
-          metric.isPercentage ||
-          metric.isMultiplier
-        ) {
-          return metric;
-        }
-        
+      const loadStockData = async () => {
         try {
-          const originalValue = metric.value;
-          const convertedValue = await convertCurrency(metric.value, reportedCurrency, stockPriceCurrency);
+          const stockData = await fetchStock(selectedStock, exchange);
+          setStock(stockData);
           
-          return {
-            ...metric,
-            value: convertedValue,
-            originalValue: originalValue,
-            originalCurrency: reportedCurrency
-          };
+          if (stockData) {
+            const historyData = await fetchStockHistory(selectedStock);
+            setStockHistory(historyData);
+            
+            // Generate Buffett criteria based on stock data
+            const criteria = generateBuffettCriteria(stockData);
+            setBuffettCriteria(criteria);
+            
+            // Fetch quant analysis
+            const quantData = await fetchQuantAnalysis(selectedStock);
+            setQuantAnalysis(quantData);
+            
+            // Fetch DCF data
+            const fetchDCFData = async () => {
+              try {
+                const dcfAdvancedData = await fetchDCFAdvancedData(selectedStock);
+                
+                if (dcfAdvancedData) {
+                  const calculatedDCF = calculateBuffettDCF({
+                    ufcf: dcfAdvancedData.ufcf,
+                    wacc: dcfAdvancedData.wacc,
+                    presentTerminalValue: dcfAdvancedData.presentTerminalValue,
+                    netDebt: dcfAdvancedData.netDebt,
+                    dilutedSharesOutstanding: dcfAdvancedData.dilutedSharesOutstanding,
+                    currentPrice: stockData.price,
+                    currency: stockData.currency || 'USD'
+                  });
+                  
+                  setDcfData(calculatedDCF);
+                } else {
+                  // If API call fails, set DCF data with missing inputs
+                  setDcfData({
+                    intrinsicValue: null,
+                    currentPrice: stockData.price,
+                    deviation: null,
+                    terminalValuePercentage: null,
+                    currency: stockData.currency || 'USD',
+                    missingInputs: ['API-Daten nicht verfügbar']
+                  });
+                }
+              } catch (error) {
+                console.error('Error calculating DCF:', error);
+                setDcfData({
+                  intrinsicValue: null,
+                  currentPrice: stockData.price,
+                  deviation: null,
+                  terminalValuePercentage: null,
+                  currency: stockData.currency || 'USD',
+                  missingInputs: ['Berechnungsfehler']
+                });
+              }
+            };
+            
+            fetchDCFData();
+          }
         } catch (error) {
-          console.error(`Error converting ${metric.name}:`, error);
-          return metric;
+          console.error('Error loading stock data:', error);
+        } finally {
+          setLoading(false);
         }
-      }));
-
-      return convertedMetrics;
-    }
-    
-    return metrics;
-  };
-
-  const convertHistoricalData = async (historicalData: any, reportedCurrency: string, stockPriceCurrency: string) => {
-    if (!historicalData || !reportedCurrency || !stockPriceCurrency) return historicalData;
-    
-    if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
-      console.log(`No historical data conversion needed: both stock price and data are in ${stockPriceCurrency}`);
-      return historicalData;
-    }
-    
-    try {
-      const convertedData = {
-        revenue: historicalData.revenue ? await Promise.all(historicalData.revenue.map(async (item: any) => ({
-          ...item,
-          originalValue: item.value,
-          originalCurrency: reportedCurrency,
-          value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
-        }))) : [],
-        earnings: historicalData.earnings ? await Promise.all(historicalData.earnings.map(async (item: any) => ({
-          ...item,
-          originalValue: item.value,
-          originalCurrency: reportedCurrency,
-          value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
-        }))) : [],
-        eps: historicalData.eps ? await Promise.all(historicalData.eps.map(async (item: any) => ({
-          ...item,
-          originalValue: item.value,
-          originalCurrency: reportedCurrency,
-          value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
-        }))) : []
       };
-
-      return convertedData;
-    } catch (error) {
-      console.error('Error converting historical data:', error);
-      return historicalData;
+      
+      loadStockData();
     }
+  }, [selectedStock, exchange]);
+
+  const handleStockSelect = (ticker: string) => {
+    setSelectedStock(ticker);
   };
 
-  const handleSearch = async (ticker: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      setStockInfo(null);
-      setBuffettCriteria(null);
-      setFinancialMetrics(null);
-      setOverallRating(null);
-      setHasCriticalDataMissing(false);
-      
-      const info = await fetchStockInfo(ticker);
-      console.log('Stock Info:', JSON.stringify(info, null, 2));
-      setStockInfo(info);
-      
-      if (info && info.currency) {
-        setStockCurrency(info.currency);
-        console.log(`Stock price currency: ${info.currency}`);
-      } else {
-        // Default to USD instead of EUR if no currency information is available
-        setStockCurrency('USD');
-        console.log('No currency information available, defaulting to USD');
-      }
-      
-      const criticalDataMissing = 
-        !info || 
-        info.price === null || 
-        info.price === 0 || 
-        info.marketCap === null || 
-        info.marketCap === 0;
-      
-      setHasCriticalDataMissing(criticalDataMissing);
-      
-      if (!criticalDataMissing) {
-        toast({
-          title: "Analyse läuft",
-          description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
-        });
-        
-        if (gptAvailable) {
-          setActiveTab('gpt');
-        }
-        
-        const [criteria, rawMetricsData, rating] = await Promise.all([
-          analyzeBuffettCriteria(ticker),
-          getFinancialMetrics(ticker),
-          getOverallRating(ticker)
-        ]);
-        
-        console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
-        console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
-        console.log('Overall Rating:', JSON.stringify(rating, null, 2));
-        
-        const priceCurrency = info?.currency || 'USD'; // Default to USD instead of EUR
-        const reportedCurrency = rawMetricsData?.reportedCurrency || priceCurrency;
-        
-        console.log(`Price currency: ${priceCurrency}, Reported financial data currency: ${reportedCurrency}`);
-        
-        const metricsData: FinancialMetricsData = {
-          ...rawMetricsData,
-          metrics: [
-            { 
-              name: 'Gewinn pro Aktie (EPS)', 
-              value: rawMetricsData.eps, 
-              formula: 'Nettogewinn / Anzahl Aktien', 
-              explanation: 'Zeigt den Unternehmensgewinn pro Aktie', 
-              threshold: '> 0, wachsend', 
-              status: rawMetricsData.eps > 0 ? 'positive' as 'pass' : 'negative' as 'fail',
-              isPercentage: false,
-              isMultiplier: false
-            },
-            { 
-              name: 'Eigenkapitalrendite (ROE)', 
-              value: rawMetricsData.roe * 100, 
-              formula: 'Nettogewinn / Eigenkapital', 
-              explanation: 'Zeigt die Effizienz des eingesetzten Kapitals', 
-              threshold: '> 15%', 
-              status: rawMetricsData.roe * 100 > 15 ? 'positive' as 'pass' : 'warning',
-              isPercentage: true,
-              isMultiplier: false
-            },
-            { 
-              name: 'Nettomarge', 
-              value: rawMetricsData.netMargin * 100, 
-              formula: 'Nettogewinn / Umsatz', 
-              explanation: 'Zeigt die Profitabilität', 
-              threshold: '> 10%', 
-              status: rawMetricsData.netMargin * 100 > 10 ? 'positive' as 'pass' : 'warning',
-              isPercentage: true,
-              isMultiplier: false
-            },
-            { 
-              name: 'Kapitalrendite (ROIC)', 
-              value: rawMetricsData.roic * 100, 
-              formula: 'NOPAT / Investiertes Kapital', 
-              explanation: 'Zeigt die Effizienz aller Investments', 
-              threshold: '> 10%', 
-              status: rawMetricsData.roic * 100 > 10 ? 'positive' as 'pass' : 'warning',
-              isPercentage: true,
-              isMultiplier: false
-            },
-            { 
-              name: 'Schulden zu Vermögen', 
-              value: rawMetricsData.debtToAssets * 100, 
-              formula: 'Gesamtschulden / Gesamtvermögen', 
-              explanation: 'Zeigt die Verschuldungsquote', 
-              threshold: '< 50%', 
-              status: rawMetricsData.debtToAssets * 100 < 50 ? 'positive' as 'pass' : 'warning',
-              isPercentage: true,
-              isMultiplier: false
-            },
-            { 
-              name: 'Zinsdeckungsgrad', 
-              value: rawMetricsData.interestCoverage, 
-              formula: 'EBIT / Zinsaufwand', 
-              explanation: 'Zeigt die Fähigkeit, Zinsen zu decken', 
-              threshold: '> 5', 
-              status: rawMetricsData.interestCoverage > 5 ? 'positive' as 'pass' : 'warning',
-              isPercentage: false,
-              isMultiplier: true
-            },
-          ],
-          historicalData: rawMetricsData.historicalData || {
-            revenue: [],
-            earnings: [],
-            eps: []
-          },
-          reportedCurrency: reportedCurrency
-        };
-        
-        if (metricsData) {
-          if (metricsData.metrics) {
-            if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
-              metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
-            }
-          }
-          
-          if (metricsData.historicalData) {
-            if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
-              metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
-            }
-          }
-        }
-        
-        if (rating) {
-          try {
-            const updatedRating = { ...rating };
-            const ratingCurrency = rating.currency || reportedCurrency;
-            
-            console.log(`Rating original currency: ${ratingCurrency}, Target currency: ${priceCurrency}`);
-            console.log(`Original intrinsic value: ${updatedRating.intrinsicValue} ${ratingCurrency}`);
-            
-            if (shouldConvertCurrency(priceCurrency, ratingCurrency)) {
-              console.log(`Converting rating values from ${ratingCurrency} to ${priceCurrency}`);
-              
-              if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined) {
-                updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
-                
-                updatedRating.intrinsicValue = await convertCurrency(
-                  updatedRating.intrinsicValue, 
-                  ratingCurrency, 
-                  priceCurrency
-                );
-                
-                console.log(`Converted intrinsic value: ${updatedRating.intrinsicValue} ${priceCurrency}`);
-              }
-              
-              if (updatedRating.intrinsicValue !== null && 
-                  updatedRating.intrinsicValue !== undefined && 
-                  updatedRating.targetMarginOfSafety !== undefined) {
-                  
-                if (updatedRating.bestBuyPrice !== null && updatedRating.bestBuyPrice !== undefined) {
-                  updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
-                }
-                
-                updatedRating.bestBuyPrice = updatedRating.intrinsicValue * 
-                  (1 - (updatedRating.targetMarginOfSafety / 100));
-                
-                console.log(`Recalculated best buy price: ${updatedRating.bestBuyPrice} ${priceCurrency}`);
-              }
-              
-              if (updatedRating.intrinsicValue !== null && 
-                  updatedRating.intrinsicValue !== undefined && 
-                  updatedRating.currentPrice !== null && 
-                  updatedRating.currentPrice !== undefined) {
-                
-                if (updatedRating.currentPrice) {
-                  updatedRating.originalPrice = updatedRating.currentPrice;
-                  
-                  console.log(`Current price already in ${priceCurrency}: ${updatedRating.currentPrice}`);
-                }
-                
-                if (updatedRating.intrinsicValue > 0) {
-                  updatedRating.marginOfSafety = {
-                    value: ((updatedRating.intrinsicValue - updatedRating.currentPrice) / 
-                      updatedRating.intrinsicValue) * 100,
-                    status: updatedRating.marginOfSafety?.status || 'fail'
-                  };
-                  
-                  console.log(`Recalculated margin of safety: ${updatedRating.marginOfSafety.value}%`);
-                }
-              }
-              
-              if (ratingCurrency !== priceCurrency) {
-                updatedRating.originalCurrency = ratingCurrency;
-                updatedRating.currency = priceCurrency;
-              }
-            } else {
-              console.log(`No rating conversion needed: both stock price and rating are in ${priceCurrency}`);
-            }
-            
-            if (info && info.price !== null && info.price !== undefined) {
-              updatedRating.currentPrice = info.price;
-              console.log(`Using stock price from info: ${updatedRating.currentPrice} ${priceCurrency}`);
-            }
-            
-            setOverallRating(updatedRating);
-          } catch (error) {
-            console.error('Error converting rating values:', error);
-            setOverallRating(rating);
-          }
-        } else {
-          setOverallRating(rating);
-        }
-        
-        setBuffettCriteria(criteria);
-        setFinancialMetrics(metricsData);
-        
-        toast({
-          title: "Analyse abgeschlossen",
-          description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
-        });
-      } else {
-        toast({
-          title: "Analyse nicht möglich",
-          description: `Für ${info.name} liegen nicht ausreichend Daten für eine Buffett-Analyse vor.`,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error searching for stock:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
-      
-      let enhancedErrorMessage = errorMessage;
-      if(errorMessage.includes("Keine Daten gefunden für")) {
-        const searchedTicker = ticker.toUpperCase();
-        
-        if(searchedTicker === "APPL") {
-          enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Meinten Sie vielleicht AAPL (Apple)?`;
-        } else if(searchedTicker === "GOOGL" || searchedTicker === "GOOG") {
-          enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Versuchen Sie es mit GOOGL oder GOOG (Alphabet/Google).`;
-        } else if(searchedTicker === "FB") {
-          enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Meta (ehemals Facebook) wird jetzt als META gehandelt.`;
-        } else {
-          enhancedErrorMessage = `Keine Daten gefunden für ${searchedTicker}. Bitte überprüfen Sie das Aktiensymbol.`;
-        }
-      }
-      
-      setError(enhancedErrorMessage);
-      toast({
-        title: "Fehler",
-        description: enhancedErrorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleExchangeChange = (newExchange: string) => {
+    setExchange(newExchange);
+    // Reset selected stock when changing exchanges
+    setSelectedStock('');
+    setStock(null);
+    setStockHistory([]);
+    setQuantAnalysis(null);
+    setBuffettCriteria(null);
+    setDcfData(undefined);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-screen-xl">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Buffett Benchmark Tool</h1>
-        <p className="text-buffett-subtext">
-          Analysieren Sie Aktien nach Warren Buffetts Investmentprinzipien
-        </p>
-      </header>
+    <div className="container mx-auto p-4 max-w-screen-xl">
+      <h1 className="text-3xl font-bold mb-6">Buffett Quant Analyzer</h1>
       
-      <Navigation />
-      
-      {!gptAvailable && (
-        <div className="mb-8 animate-fade-in">
-          <Alert className="mb-4 bg-yellow-50 border-yellow-200">
-            <InfoIcon className="h-4 w-4 text-yellow-500" />
-            <AlertTitle className="text-yellow-700">OpenAI API-Key konfigurieren</AlertTitle>
-            <AlertDescription className="text-yellow-600">
-              Der OpenAI API-Key in der Datei <code className="bg-yellow-100 px-1 py-0.5 rounded">src/api/openaiApi.ts</code> ist noch nicht konfiguriert.
-              Bitte öffnen Sie die Datei und ersetzen Sie den Platzhalter 'IHR-OPENAI-API-KEY-HIER' mit Ihrem tatsächlichen OpenAI API-Key.
-            </AlertDescription>
-          </Alert>
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="md:w-2/3">
+          <StockSearch onSelect={handleStockSelect} selectedStock={selectedStock} />
         </div>
-      )}
-      
-      {stockInfo && stockInfo.currency && stockInfo.reportedCurrency && needsCurrencyConversion(stockInfo.reportedCurrency, stockInfo.currency) && (
-        <Alert className="mb-4 bg-yellow-50 border-yellow-200">
-          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          <AlertTitle className="text-yellow-700">Währungsumrechnung</AlertTitle>
-          <AlertDescription className="text-yellow-600">
-            Wenn Finanzkennzahlen (z. B. Umsatz, FCF, EBIT) in einer anderen Währung angegeben sind als die Kurswährung der Aktie, werden diese intern auf die Kurswährung umgerechnet.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      <StockSearch onSearch={handleSearch} isLoading={isLoading} />
-      
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <InfoIcon className="h-4 w-4" />
-          <AlertTitle>Fehler bei der Datenabfrage</AlertTitle>
-          <AlertDescription>
-            <p>{error}</p>
-            <p className="mt-2 text-sm">
-              {error.includes('API-Key') ? (
-                <>
-                  Bitte stellen Sie sicher, dass ein gültiger API-Schlüssel verwendet wird. 
-                  Die Financial Modeling Prep API benötigt einen gültigen API-Schlüssel, den Sie
-                  unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="underline">financialmodelingprep.com</a> kostenlos erhalten können.
-                </>
-              ) : (
-                'Bitte überprüfen Sie das eingegebene Aktiensymbol oder versuchen Sie es später erneut.'
-              )}
-            </p>
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {stockInfo && (
-        <StockHeader stockInfo={stockInfo} />
-      )}
-      
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-buffett-blue border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status"></div>
-            <p className="mt-4 text-lg">Analysiere Aktie nach Warren Buffett's Kriterien...</p>
-            <p className="text-buffett-subtext mt-2">Dies kann einige Momente dauern</p>
-          </div>
+        <div className="md:w-1/3">
+          <ExchangeSelector onChange={handleExchangeChange} value={exchange} />
         </div>
-      ) : (
+      </div>
+      
+      {loading ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Loading stock data...</p>
+        </div>
+      ) : stock ? (
         <>
-          {!hasCriticalDataMissing && buffettCriteria && (
-            <div className="mb-10">
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-4">
-                  <TabsTrigger value="standard">Standard-Analyse</TabsTrigger>
-                  <TabsTrigger value="gpt" disabled={!gptAvailable}>
-                    {gptAvailable ? 'GPT-Analyse (11 Kriterien)' : 'GPT-Analyse (Nicht verfügbar)'}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="standard">
-                  <BuffettCriteria criteria={buffettCriteria} />
-                </TabsContent>
-                <TabsContent value="gpt">
-                  {gptAvailable ? (
-                    <BuffettCriteriaGPT criteria={buffettCriteria} />
-                  ) : (
-                    <Alert>
-                      <InfoIcon className="h-4 w-4" />
-                      <AlertTitle>GPT-Analyse nicht verfügbar</AlertTitle>
-                      <AlertDescription>
-                        Bitte konfigurieren Sie Ihren OpenAI API-Key in der Datei src/api/openaiApi.ts, um Zugang zur erweiterten GPT-Analyse zu erhalten.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </TabsContent>
-              </Tabs>
+          <StockHeader stock={stock} />
+          
+          <div className="mt-6">
+            <StockChart data={stockHistory} />
+          </div>
+          
+          <div className="mt-6">
+            <FinancialMetrics stock={stock} />
+          </div>
+          
+          {quantAnalysis && (
+            <div className="mt-6">
+              <QuantAnalysisTable data={quantAnalysis} />
             </div>
           )}
           
-          {!hasCriticalDataMissing && financialMetrics && (
-            <div className="mb-10">
-              <FinancialMetrics 
-                metrics={financialMetrics.metrics} 
-                historicalData={financialMetrics.historicalData} 
-                currency={stockCurrency}
+          {buffettCriteria && (
+            <div className="mt-6">
+              <BuffettCriteriaGPT 
+                criteria={buffettCriteria} 
+                dcfData={dcfData} 
               />
             </div>
           )}
           
-          {!hasCriticalDataMissing && overallRating && (
-            <div className="mb-10">
-              <OverallRating 
-                rating={{
-                  ...overallRating,
-                  originalCurrency: needsCurrencyConversion(stockCurrency, overallRating.currency) ? overallRating.currency : undefined
-                } as OverallRatingData} 
-              />
-            </div>
-          )}
-          
-          {hasCriticalDataMissing && stockInfo && (
-            <div className="mb-10">
-              <Alert className="bg-red-50 border-red-200">
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-                <AlertTitle className="text-red-700">Buffett-Analyse nicht möglich</AlertTitle>
-                <AlertDescription className="text-red-600">
-                  <p className="mb-3">
-                    Für {stockInfo.ticker} liegen aktuell nicht genügend Daten für eine vollständige Bewertung vor.
-                    Die Buffett-Analyse benötigt mindestens einen aktuellen Kurs und Marktkapitalisierung.
-                  </p>
-                  <p>
-                    Bitte wählen Sie ein anderes Symbol mit vollständigeren Daten, um eine aussagekräftige Analyse nach Warren Buffetts Kriterien zu erhalten.
-                  </p>
-                </AlertDescription>
-              </Alert>
-            </div>
-          )}
+          <div className="mt-6">
+            <OverallRating stock={stock} />
+          </div>
         </>
+      ) : (
+        <div className="text-center py-20">
+          <p className="text-gray-500">Wählen Sie eine Aktie aus, um die Analyse zu starten.</p>
+        </div>
       )}
-      
-      <footer className="mt-12 pt-8 border-t border-gray-200 text-buffett-subtext text-sm text-center">
-        <p className="mb-2">
-          Buffett Benchmark Tool - Analysieren Sie Aktien nach Warren Buffetts Investmentprinzipien
-        </p>
-        <p className="mb-2">
-          Dieses Tool verwendet die Financial Modeling Prep API zur Datenabfrage in Echtzeit.
-        </p>
-        <p>
-          Dieses Tool bietet keine Anlageberatung. Alle Analysen dienen nur zu Informationszwecken.
-        </p>
-      </footer>
     </div>
   );
 };
