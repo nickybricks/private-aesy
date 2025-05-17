@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
-import { StockSearch } from '@/components/StockSearch';
-import { StockHeader } from '@/components/StockHeader';
-import { StockChart } from '@/components/StockChart';
-import { FinancialMetrics } from '@/components/FinancialMetrics';
-import { QuantAnalysisTable } from '@/components/QuantAnalysisTable';
-import { OverallRating } from '@/components/OverallRating';
+import StockSearch from '@/components/StockSearch';
+import StockHeader from '@/components/StockHeader';
+import StockChart from '@/components/StockChart';
+import FinancialMetrics from '@/components/FinancialMetrics';
+import QuantAnalysisTable from '@/components/QuantAnalysisTable';
+import OverallRating from '@/components/OverallRating';
 import BuffettCriteriaGPT, { DCFData } from '@/components/BuffettCriteriaGPT';
-import { ExchangeSelector } from '@/components/ExchangeSelector';
+import ExchangeSelector from '@/components/ExchangeSelector';
 import { fetchStock, fetchStockHistory } from '@/api/stockApi';
 import { fetchQuantAnalysis } from '@/api/quantAnalyzerApi';
 import { fetchDCFAdvancedData } from '@/api/dcfAnalysisApi';
@@ -246,7 +247,7 @@ const Index = () => {
           <StockSearch onSelect={handleStockSelect} selectedStock={selectedStock} />
         </div>
         <div className="md:w-1/3">
-          <ExchangeSelector onChange={handleExchangeChange} value={exchange} />
+          <ExchangeSelector selectedExchange={exchange} onExchangeChange={handleExchangeChange} />
         </div>
       </div>
       
