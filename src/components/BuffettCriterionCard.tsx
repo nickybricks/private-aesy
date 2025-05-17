@@ -8,6 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { DCFExplanationTooltip } from './DCFExplanationTooltip';
 import { BuffettScoreDisplay } from './BuffettScoreDisplay';
 import { BuffettCriterionProps, getStatusColor, getStatusBadge, extractKeyInsights } from '@/utils/buffettUtils';
+import { DCFData } from '@/context/StockContextTypes';
 
 interface BuffettCriterionCardProps {
   criterion: BuffettCriterionProps;
@@ -26,7 +27,7 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
             <BuffettScoreDisplay criterion={criterion} />
             
             {criterion.title === '6. Akzeptable Bewertung' && criterion.dcfData && (
-              <DCFExplanationTooltip dcfData={criterion.dcfData} />
+              <DCFExplanationTooltip dcfData={criterion.dcfData as DCFData} />
             )}
           </div>
           <Badge className={getStatusBadge(criterion.status)}>

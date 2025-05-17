@@ -81,14 +81,22 @@ export const useStockSearch = () => {
       
       // Initialize the rating with required properties
       let updatedRating = null;
+      let extractedDcfData = null;
+      
       if (rating) {
+        // Check if dcfData exists in the API response and extract it
+        if (rating.dcfData) {
+          extractedDcfData = rating.dcfData;
+          console.log('DCF Data found:', JSON.stringify(extractedDcfData, null, 2));
+        }
+        
         updatedRating = {
           ...rating,
           originalIntrinsicValue: rating.originalIntrinsicValue || null,
           originalBestBuyPrice: rating.originalBestBuyPrice || null,
           originalPrice: rating.originalPrice || null,
           reportedCurrency: reportedCurrency, // Explicitly assign the required property
-          dcfData: rating.dcfData || undefined // Extract DCF data from the API response if it exists
+          dcfData: extractedDcfData // Assign the extracted DCF data
         };
         
         const ratingCurrency = updatedRating.currency || reportedCurrency;
@@ -99,9 +107,6 @@ export const useStockSearch = () => {
           console.log(`Using stock price from info: ${updatedRating.currentPrice} ${priceCurrency}`);
         }
       }
-      
-      // Extract DCF data directly from the rating object
-      const dcfData = updatedRating?.dcfData || null;
       
       toast({
         title: "Analyse abgeschlossen",
@@ -115,7 +120,7 @@ export const useStockSearch = () => {
         criteria, 
         metricsData, 
         rating: updatedRating,
-        dcfData
+        dcfData: extractedDcfData
       };
     } catch (error) {
       console.error('Error searching for stock:', error);
