@@ -92,7 +92,13 @@ export const convertRatingValues = async (
   if (!rating) return rating;
   
   try {
-    const updatedRating = { ...rating };
+    // Create a copy of the rating object and initialize required properties
+    const updatedRating = {
+      ...rating,
+      originalIntrinsicValue: rating.originalIntrinsicValue || null,
+      originalBestBuyPrice: rating.originalBestBuyPrice || null,
+      originalPrice: rating.originalPrice || null
+    };
     
     console.log(`Rating original currency: ${ratingCurrency}, Target currency: ${priceCurrency}`);
     console.log(`Original intrinsic value: ${updatedRating.intrinsicValue} ${ratingCurrency}`);

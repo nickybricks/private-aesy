@@ -79,14 +79,18 @@ export const useStockSearch = () => {
         }
       }
       
-      let updatedRating = rating;
+      // Initialize the rating with required properties
+      let updatedRating = rating ? {
+        ...rating,
+        originalIntrinsicValue: rating.originalIntrinsicValue || null,
+        originalBestBuyPrice: rating.originalBestBuyPrice || null,
+        originalPrice: rating.originalPrice || null,
+        reportedCurrency: reportedCurrency
+      } : null;
       
-      if (rating) {
-        const ratingCurrency = rating.currency || reportedCurrency;
-        updatedRating = await convertRatingValues(rating, ratingCurrency, priceCurrency);
-        
-        // Add the reportedCurrency to the rating object
-        updatedRating.reportedCurrency = reportedCurrency;
+      if (updatedRating) {
+        const ratingCurrency = updatedRating.currency || reportedCurrency;
+        updatedRating = await convertRatingValues(updatedRating, ratingCurrency, priceCurrency);
         
         if (info && info.price !== null && info.price !== undefined) {
           updatedRating.currentPrice = info.price;
