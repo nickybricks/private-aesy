@@ -1,3 +1,4 @@
+
 /**
  * Currency conversion utility using Exchange Rate API
  */
@@ -99,14 +100,14 @@ export const convertCurrency = async (
 
 /**
  * Determines if currency conversion is needed based on stock price currency and reported currency
- * This is a new function to implement the specific business logic requested
+ * Updated to respect the new rules - only convert if reported currency differs from stock currency
  */
 export const shouldConvertCurrency = (
-  reportedCurrency: string,
-  stockPriceCurrency: string
+  stockPriceCurrency: string,
+  reportedCurrency: string
 ): boolean => {
   // Only convert if the reported currency is different from the stock price currency
-  return reportedCurrency !== stockPriceCurrency;
+  return stockPriceCurrency !== reportedCurrency;
 };
 
 /**
@@ -115,7 +116,7 @@ export const shouldConvertCurrency = (
  */
 export const formatCurrency = (
   value: number | string | null | undefined,
-  currency: string = 'EUR',
+  currency: string = 'USD',
   showOriginal: boolean = false,
   originalValue?: number | string | null | undefined,
   originalCurrency?: string,
@@ -220,17 +221,18 @@ export const formatCurrency = (
 
 /**
  * Check if we need to convert this value from its original currency
+ * Modified to no longer check if currency is EUR, but whether conversion is needed at all
  */
-export const needsCurrencyConversion = (currency: string): boolean => {
-  return currency !== 'EUR';
+export const needsCurrencyConversion = (reportedCurrency: string, stockCurrency: string): boolean => {
+  return reportedCurrency !== stockCurrency;
 };
 
 /**
  * Get appropriate decimal places for any currency
  */
 export const getCurrencyDecimalPlaces = (currency: string): number => {
-  // For Korean Won, we typically don't show decimal places
-  if (currency === 'KRW') return 0;
+  // For Korean Won, Japanese Yen we typically don't show decimal places
+  if (currency === 'KRW' || currency === 'JPY') return 0;
   return 2; // Use 2 decimal places for most currencies
 };
 
@@ -269,6 +271,6 @@ export const formatScaledNumber = (value: number, currency?: string): string => 
     unit = ' Mio.';
   }
   
-  const decimals = currency === 'KRW' ? 0 : 2;
+  const decimals = currency === 'KRW' || currency === 'JPY' ? 0 : 2;
   return `${scaledValue.toLocaleString('de-DE', { maximumFractionDigits: decimals })}${unit}${currency ? ' ' + currency : ''}`;
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -81,7 +82,7 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [gptAvailable, setGptAvailable] = useState(false);
   const [activeTab, setActiveTab] = useState('standard');
-  const [stockCurrency, setStockCurrency] = useState<string>('EUR');
+  const [stockCurrency, setStockCurrency] = useState<string>('USD'); // Changed default from EUR to USD
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
 
   useEffect(() => {
@@ -201,8 +202,9 @@ const Index = () => {
         setStockCurrency(info.currency);
         console.log(`Stock price currency: ${info.currency}`);
       } else {
-        setStockCurrency('EUR');
-        console.log('No currency information available, defaulting to EUR');
+        // Default to USD instead of EUR if no currency information is available
+        setStockCurrency('USD');
+        console.log('No currency information available, defaulting to USD');
       }
       
       const criticalDataMissing = 
@@ -234,7 +236,7 @@ const Index = () => {
         console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
         console.log('Overall Rating:', JSON.stringify(rating, null, 2));
         
-        const priceCurrency = info?.currency || 'EUR';
+        const priceCurrency = info?.currency || 'USD'; // Default to USD instead of EUR
         const reportedCurrency = rawMetricsData?.reportedCurrency || priceCurrency;
         
         console.log(`Price currency: ${priceCurrency}, Reported financial data currency: ${reportedCurrency}`);
@@ -474,14 +476,12 @@ const Index = () => {
         </div>
       )}
       
-      {stockInfo && stockInfo.currency && needsCurrencyConversion(stockInfo.currency) && (
+      {stockInfo && stockInfo.currency && stockInfo.reportedCurrency && needsCurrencyConversion(stockInfo.reportedCurrency, stockInfo.currency) && (
         <Alert className="mb-4 bg-yellow-50 border-yellow-200">
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          <AlertTitle className="text-yellow-700">Währungsumrechnung aktiviert</AlertTitle>
+          <AlertTitle className="text-yellow-700">Währungsumrechnung</AlertTitle>
           <AlertDescription className="text-yellow-600">
-            Die Daten dieser Aktie werden in <strong>{stockInfo.currency}</strong> angegeben. 
-            Für eine korrekte Analyse werden alle finanziellen Kennzahlen automatisch in EUR umgerechnet.
-            Die Originalwerte werden zur Transparenz ebenfalls angezeigt.
+            Wenn Finanzkennzahlen (z. B. Umsatz, FCF, EBIT) in einer anderen Währung angegeben sind als die Kurswährung der Aktie, werden diese intern auf die Kurswährung umgerechnet.
           </AlertDescription>
         </Alert>
       )}
@@ -567,7 +567,7 @@ const Index = () => {
               <OverallRating 
                 rating={{
                   ...overallRating,
-                  originalCurrency: needsCurrencyConversion(stockCurrency) ? stockCurrency : undefined
+                  originalCurrency: needsCurrencyConversion(stockCurrency, overallRating.currency) ? overallRating.currency : undefined
                 } as OverallRatingData} 
               />
             </div>
