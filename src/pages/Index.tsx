@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -72,6 +71,14 @@ interface OverallRatingData {
   originalCurrency?: string;
 }
 
+interface DCFData {
+  ufcf?: number[] | number; // Can be either an array of yearly UFCFs or a single number
+  wacc?: number;
+  presentTerminalValue?: number;
+  netDebt?: number;
+  dilutedSharesOutstanding?: number;
+}
+
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -84,6 +91,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('standard');
   const [stockCurrency, setStockCurrency] = useState<string>('USD'); // Changed default from EUR to USD
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
+  const [dcfData, setDcfData] = useState<DCFData | null>(null); // New state for DCF data
 
   useEffect(() => {
     setGptAvailable(hasOpenAiApiKey());
@@ -193,6 +201,7 @@ const Index = () => {
       setFinancialMetrics(null);
       setOverallRating(null);
       setHasCriticalDataMissing(false);
+      setDcfData(null); // Reset DCF data
       
       const info = await fetchStockInfo(ticker);
       console.log('Stock Info:', JSON.stringify(info, null, 2));
@@ -202,7 +211,7 @@ const Index = () => {
         setStockCurrency(info.currency);
         console.log(`Stock price currency: ${info.currency}`);
       } else {
-        // Default to USD instead of EUR if no currency information is available
+        // Default to USD if no currency information is available
         setStockCurrency('USD');
         console.log('No currency information available, defaulting to USD');
       }
@@ -235,6 +244,24 @@ const Index = () => {
         console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
         console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
         console.log('Overall Rating:', JSON.stringify(rating, null, 2));
+        
+        // Create mock DCF data for demonstration purposes
+        // In a real application, this would come from your API
+        const mockDcfData: DCFData = {
+          ufcf: [
+            info.freeCashFlow || 1000000000, // If available, use actual FCF
+            (info.freeCashFlow || 1000000000) * 1.15, // Grow by 15% yearly
+            (info.freeCashFlow || 1000000000) * 1.15 * 1.15,
+            (info.freeCashFlow || 1000000000) * 1.15 * 1.15 * 1.15,
+            (info.freeCashFlow || 1000000000) * 1.15 * 1.15 * 1.15 * 1.15
+          ],
+          wacc: 9.5, // 9.5%
+          presentTerminalValue: (info.freeCashFlow || 1000000000) * 15, // Simplified terminal value
+          netDebt: info.totalDebt - (info.cashAndCashEquivalents || 0),
+          dilutedSharesOutstanding: info.sharesOutstanding || 1000000000
+        };
+        
+        setDcfData(mockDcfData);
         
         const priceCurrency = info?.currency || 'USD'; // Default to USD instead of EUR
         const reportedCurrency = rawMetricsData?.reportedCurrency || priceCurrency;
@@ -537,7 +564,12 @@ const Index = () => {
                 </TabsContent>
                 <TabsContent value="gpt">
                   {gptAvailable ? (
-                    <BuffettCriteriaGPT criteria={buffettCriteria} />
+                    <BuffettCriteriaGPT 
+                      criteria={buffettCriteria} 
+                      stockPrice={stockInfo?.price} 
+                      currency={stockCurrency}
+                      dcfData={dcfData}
+                    />
                   ) : (
                     <Alert>
                       <InfoIcon className="h-4 w-4" />

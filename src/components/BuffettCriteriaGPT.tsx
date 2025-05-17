@@ -1,14 +1,38 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Info, AlertCircle, HelpCircle } from 'lucide-react';
+import { Bot, Info, AlertCircle, HelpCircle, Calculator, DollarSign, Percent, TrendingUp, TrendingDown, Minimize2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+interface DCFData {
+  ufcf?: number[] | number;
+  wacc?: number;
+  presentTerminalValue?: number;
+  netDebt?: number;
+  dilutedSharesOutstanding?: number;
+}
+
+interface DCFResult {
+  intrinsicValue: number;
+  enterpriseValue: number;
+  equityValue: number;
+  sumPvUfcf: number;
+  terminalValuePercentage: number;
+  isValid: boolean;
+  details?: {
+    pvUfcfs: number[];
+    years: number;
+  };
+  errorMessage?: string;
+  missingInputs?: string[];
+}
 
 interface BuffettCriterionProps {
   title: string;
@@ -34,6 +58,9 @@ interface BuffettCriteriaGPTProps {
     oneTimeEffects: BuffettCriterionProps;
     turnaround: BuffettCriterionProps;
   };
+  stockPrice?: number;
+  currency?: string;
+  dcfData?: DCFData;
 }
 
 const getStatusColor = (status: string) => {
@@ -177,6 +204,128 @@ const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   return { summary, points };
 };
 
+const calculateBuffettIntrinsicValue = (data: DCFData): DCFResult => {
+  // Validate required inputs
+  const missingInputs: string[] = [];
+  
+  // Check if ufcf is an array and has at least 5 elements
+  if (!data.ufcf) {
+    missingInputs.push("ufcf (mindestens 5 Jahre)");
+  } else if (Array.isArray(data.ufcf)) {
+    if (data.ufcf.length < 5) {
+      missingInputs.push("ufcf (mindestens 5 Jahre)");
+    }
+  } else {
+    // If ufcf is just a single number, convert it to an array with 5 years of growth
+    // This is a fallback for APIs that return a single UFCF value
+    const baseUfcf = data.ufcf as number;
+    data.ufcf = [
+      baseUfcf,
+      baseUfcf * 1.1, // Assume 10% growth for years 2-5
+      baseUfcf * 1.21,
+      baseUfcf * 1.331,
+      baseUfcf * 1.4641
+    ];
+  }
+  
+  if (data.wacc === undefined) missingInputs.push("wacc");
+  if (data.presentTerminalValue === undefined) missingInputs.push("presentTerminalValue");
+  if (data.netDebt === undefined) missingInputs.push("netDebt");
+  if (data.dilutedSharesOutstanding === undefined || data.dilutedSharesOutstanding <= 0) 
+    missingInputs.push("dilutedSharesOutstanding");
+  
+  // Return error if any required inputs are missing
+  if (missingInputs.length > 0) {
+    return {
+      intrinsicValue: 0,
+      enterpriseValue: 0,
+      equityValue: 0,
+      sumPvUfcf: 0,
+      terminalValuePercentage: 0,
+      isValid: false,
+      errorMessage: "Unzureichende Daten für DCF-Berechnung",
+      missingInputs
+    };
+  }
+  
+  try {
+    // Convert WACC from percentage to decimal
+    const waccDecimal = data.wacc! / 100;
+    
+    // Ensure ufcf is an array at this point
+    const ufcfArray = data.ufcf as number[];
+    
+    // Calculate present value of each year's UFCF
+    const pvUfcfs = ufcfArray.map((yearlyUfcf, index) => {
+      const year = index + 1;
+      return yearlyUfcf / Math.pow(1 + waccDecimal, year);
+    });
+    
+    // Sum up the present values
+    const sumPvUfcf = pvUfcfs.reduce((sum, pv) => sum + pv, 0);
+    
+    // Calculate enterprise value
+    const enterpriseValue = sumPvUfcf + data.presentTerminalValue!;
+    
+    // Calculate equity value
+    const equityValue = enterpriseValue - data.netDebt!;
+    
+    // Calculate intrinsic value per share
+    const intrinsicValue = equityValue / data.dilutedSharesOutstanding!;
+    
+    // Calculate terminal value percentage
+    const terminalValuePercentage = (data.presentTerminalValue! / enterpriseValue) * 100;
+    
+    return {
+      intrinsicValue,
+      enterpriseValue,
+      equityValue,
+      sumPvUfcf,
+      terminalValuePercentage,
+      isValid: true,
+      details: {
+        pvUfcfs,
+        years: ufcfArray.length
+      }
+    };
+  } catch (error) {
+    console.error("Error in DCF calculation:", error);
+    return {
+      intrinsicValue: 0,
+      enterpriseValue: 0,
+      equityValue: 0,
+      sumPvUfcf: 0,
+      terminalValuePercentage: 0,
+      isValid: false,
+      errorMessage: "Fehler bei der DCF-Berechnung",
+      missingInputs: ["Berechnungsfehler"]
+    };
+  }
+};
+
+const evaluateValuation = (intrinsicValue: number, currentPrice: number): {
+  status: 'undervalued' | 'fairvalued' | 'overvalued';
+  percentageDiff: number;
+} => {
+  const percentageDiff = ((currentPrice - intrinsicValue) / intrinsicValue) * 100;
+  
+  let status: 'undervalued' | 'fairvalued' | 'overvalued';
+  
+  if (percentageDiff <= -10) {
+    status = 'undervalued';
+  } else if (percentageDiff >= 10) {
+    status = 'overvalued';
+  } else {
+    status = 'fairvalued';
+  }
+  
+  return { status, percentageDiff };
+};
+
+const calculateIdealBuyPrice = (intrinsicValue: number, marginOfSafety: number = 20): number => {
+  return intrinsicValue * (1 - marginOfSafety / 100);
+};
+
 const BuffettScoreChart = ({ score }: { score: number }) => {
   const COLORS = ['#10b981', '#f0f0f0'];
   const data = [
@@ -235,11 +384,189 @@ const BuffettScoreChart = ({ score }: { score: number }) => {
   );
 };
 
-// Detailed DCF calculation tooltip component
+// New component for displaying DCF analysis results
+const DCFAnalysisSection: React.FC<{
+  dcfData?: DCFData;
+  stockPrice?: number;
+  currency?: string;
+  marginOfSafety?: number;
+}> = ({ dcfData, stockPrice, currency = 'USD', marginOfSafety = 20 }) => {
+  // Perform DCF calculation if data is available
+  const dcfResult = dcfData ? calculateBuffettIntrinsicValue(dcfData) : null;
+  
+  if (!dcfData || !dcfResult || !dcfResult.isValid) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Calculator size={18} className="text-gray-500" />
+          Buffett DCF-Bewertung
+        </h3>
+        
+        <Alert className="bg-yellow-50 border-yellow-200">
+          <AlertCircle className="h-5 w-5 text-yellow-600" />
+          <AlertDescription className="text-yellow-700">
+            <p className="font-medium">❗ Keine DCF-Daten verfügbar</p>
+            <p className="mt-1">
+              Für diese Aktie liegen nicht alle nötigen Finanzdaten vor. Eine Bewertung nach Buffett-Prinzipien ist aktuell nicht möglich.
+            </p>
+            {dcfResult?.missingInputs && dcfResult.missingInputs.length > 0 && (
+              <div className="mt-2 text-sm">
+                <p className="font-medium">Fehlende Daten:</p>
+                <ul className="list-disc pl-4 mt-1">
+                  {dcfResult.missingInputs.map((input, index) => (
+                    <li key={index}>{input}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+  
+  // Format numbers for display
+  const formatValue = (value: number): string => {
+    return new Intl.NumberFormat('de-DE', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    }).format(value);
+  };
+  
+  // Calculate valuation metrics
+  const valuation = stockPrice ? evaluateValuation(dcfResult.intrinsicValue, stockPrice) : null;
+  const idealBuyPrice = calculateIdealBuyPrice(dcfResult.intrinsicValue, marginOfSafety);
+  
+  // Labels for valuation status
+  const valuationLabel = !valuation ? 'Keine Kursdaten' :
+    valuation.status === 'undervalued' ? 'Unterbewertet' :
+    valuation.status === 'fairvalued' ? 'Fair bewertet' :
+    'Überbewertet';
+  
+  // Colors for valuation status
+  const valuationColor = !valuation ? 'text-gray-500' :
+    valuation.status === 'undervalued' ? 'text-green-600' :
+    valuation.status === 'fairvalued' ? 'text-blue-600' :
+    'text-red-600';
+  
+  // Icon for valuation status
+  const ValuationIcon = !valuation ? Minimize2 :
+    valuation.status === 'undervalued' ? TrendingDown :
+    valuation.status === 'fairvalued' ? Minimize2 :
+    TrendingUp;
+    
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <Calculator size={18} className="text-blue-600" />
+        Buffett DCF-Bewertung
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                <Info size={14} className="text-gray-500" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-sm p-4">
+              <h4 className="font-semibold mb-1">Buffett DCF-Bewertung</h4>
+              <p className="text-sm">
+                Diese Berechnung basiert auf Warren Buffetts Prinzip des Discounted Cash Flow (DCF):
+              </p>
+              <ul className="text-xs list-disc pl-4 mt-2">
+                <li>Prognostizierte Free Cashflows für {dcfResult.details?.years || 5} Jahre</li>
+                <li>Terminalwert für alle zukünftigen Jahre danach</li>
+                <li>Abzug der Nettoschulden</li>
+                <li>Berechnung pro ausstehende Aktie</li>
+              </ul>
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <p className="text-xs">
+                  <span className="font-medium">Terminalwert-Anteil:</span> {dcfResult.terminalValuePercentage.toFixed(1)}% des Enterprise Value
+                </p>
+                <p className="text-xs">
+                  <span className="font-medium">Margin of Safety:</span> {marginOfSafety}% (Idealer Kaufpreis)
+                </p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div className="mb-4">
+            <div className="text-sm text-gray-500 mb-1">Innerer Wert pro Aktie (nach Buffett)</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {formatValue(dcfResult.intrinsicValue)} {currency}
+            </div>
+          </div>
+          
+          {stockPrice && (
+            <div className="mb-4">
+              <div className="text-sm text-gray-500 mb-1">Aktueller Kurs</div>
+              <div className="text-xl">
+                {formatValue(stockPrice)} {currency}
+              </div>
+            </div>
+          )}
+          
+          {valuation && (
+            <div className="mb-4">
+              <div className="text-sm text-gray-500 mb-1">Abweichung</div>
+              <div className={`text-xl font-medium flex items-center gap-1 ${valuationColor}`}>
+                <ValuationIcon size={18} />
+                {valuation.percentageDiff > 0 ? '+' : ''}
+                {formatValue(valuation.percentageDiff)}% ({valuationLabel})
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div>
+          <div className="mb-4">
+            <div className="text-sm text-gray-500 mb-1">Idealer Kaufpreis (mit {marginOfSafety}% Sicherheitsmarge)</div>
+            <div className="text-xl font-bold text-green-600">
+              {formatValue(idealBuyPrice)} {currency}
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <div className="text-sm text-gray-500 mb-1">Terminalwert-Anteil am Gesamtwert</div>
+            <div className="text-lg flex items-center gap-1">
+              <Percent size={16} />
+              {formatValue(dcfResult.terminalValuePercentage)}%
+            </div>
+          </div>
+          
+          <div className="text-sm text-gray-500">
+            Berechnungsbasis: {dcfResult.details?.years || 5} Jahre UFCF + Terminal Value
+          </div>
+        </div>
+      </div>
+      
+      {valuation && (
+        <div className={`mt-4 pt-4 border-t border-gray-200 ${valuationColor}`}>
+          <div className="flex items-center gap-2">
+            <DollarSign size={16} />
+            <span className="font-medium">
+              {valuation.status === 'undervalued' 
+                ? `${Math.abs(valuation.percentageDiff).toFixed(1)}% unter innerem Wert (Kaufgelegenheit)`
+                : valuation.status === 'fairvalued'
+                ? 'Fairer Preis (nahe am inneren Wert)'
+                : `${valuation.percentageDiff.toFixed(1)}% über innerem Wert (überteuert)`}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Updated Detailed DCF calculation tooltip component that uses the correct currency
 const DCFExplanationTooltip: React.FC<{
   intrinsicValue?: number | null;
   currency?: string;
-}> = ({ intrinsicValue = 100, currency = '€' }) => {
+}> = ({ intrinsicValue = 100, currency = 'USD' }) => {
   if (!intrinsicValue || isNaN(Number(intrinsicValue))) {
     return (
       <TooltipProvider>
@@ -433,7 +760,7 @@ const DCFExplanationTooltip: React.FC<{
   );
 };
 
-const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
+const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria, stockPrice, currency = 'USD', dcfData }) => {
   const isBuffettCriterion = (criterion: any): criterion is BuffettCriterionProps => {
     return criterion && 
            typeof criterion.title === 'string' && 
@@ -526,6 +853,16 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
         </p>
       </div>
       
+      {/* Add DCF Analysis Section */}
+      {dcfData && (
+        <DCFAnalysisSection 
+          dcfData={dcfData}
+          stockPrice={stockPrice}
+          currency={currency}
+          marginOfSafety={20}
+        />
+      )}
+      
       <BuffettScoreChart score={hasDetailedScores ? detailedBuffettScore : buffettScore} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -561,8 +898,9 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
                     
                     {criterion.title === '6. Akzeptable Bewertung' && (
                       <DCFExplanationTooltip 
-                        intrinsicValue={criterion.score === undefined ? null : criterion.score * 20} 
-                        currency="€"
+                        intrinsicValue={dcfData && calculateBuffettIntrinsicValue(dcfData).isValid ? 
+                          calculateBuffettIntrinsicValue(dcfData).intrinsicValue : null} 
+                        currency={currency}
                       />
                     )}
                   </div>
