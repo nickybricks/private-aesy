@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -5,7 +6,7 @@ import BuffettCriteria from '@/components/BuffettCriteria';
 import BuffettCriteriaGPT from '@/components/BuffettCriteriaGPT';
 import FinancialMetrics from '@/components/FinancialMetrics';
 import OverallRating from '@/components/OverallRating';
-import BuffettDCFAnalysis from '@/components/BuffettDCFAnalysis'; // New component
+import BuffettDCFAnalysis from '@/components/BuffettDCFAnalysis';
 import Navigation from '@/components/Navigation';
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';

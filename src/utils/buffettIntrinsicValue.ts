@@ -153,7 +153,8 @@ export function generateDCFExplanation(
   currency: string
 ): string {
   if (!result.isValid) {
-    return `# DCF-Berechnung nicht möglich\n\nFür diese Aktie liegen nicht genügend Finanzdaten vor.\n\n**Fehlende Daten:**\n${result.missingInputs.map(input => `- ${input}`).join('\n')}`;
+    const errorResult = result as IntrinsicValueError;
+    return `# DCF-Berechnung nicht möglich\n\nFür diese Aktie liegen nicht genügend Finanzdaten vor.\n\n**Fehlende Daten:**\n${errorResult.missingInputs.map(input => `- ${input}`).join('\n')}`;
   }
   
   const data = result as IntrinsicValueResult;
