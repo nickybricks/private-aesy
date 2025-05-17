@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,8 +8,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Progress } from '@/components/ui/progress';
 import { ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { DCFExplanationTooltip } from './DCFExplanationTooltip';
 
 interface BuffettCriterionProps {
   title: string;
@@ -18,6 +20,15 @@ interface BuffettCriterionProps {
   gptAnalysis?: string | null;
   score?: number;
   maxScore?: number;
+  dcfData?: {
+    ufcf: number[];
+    wacc: number;
+    presentTerminalValue: number;
+    netDebt: number;
+    dilutedSharesOutstanding: number;
+    currency: string;
+    intrinsicValue: number;
+  };
 }
 
 interface BuffettCriteriaGPTProps {

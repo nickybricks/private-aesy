@@ -5,7 +5,7 @@ import { useStock } from '@/context/StockContext';
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 
 const RatingSection: React.FC = () => {
-  const { overallRating, stockCurrency, hasCriticalDataMissing } = useStock();
+  const { overallRating, stockCurrency, hasCriticalDataMissing, dcfData } = useStock();
   
   if (!overallRating || hasCriticalDataMissing) {
     return null;
@@ -17,7 +17,8 @@ const RatingSection: React.FC = () => {
         rating={{
           ...overallRating,
           originalCurrency: needsCurrencyConversion(stockCurrency, overallRating.currency) ? overallRating.currency : undefined
-        }} 
+        }}
+        dcfData={dcfData}
       />
     </div>
   );

@@ -4,7 +4,7 @@ import FinancialMetrics from '@/components/FinancialMetrics';
 import { useStock } from '@/context/StockContext';
 
 const MetricsSection: React.FC = () => {
-  const { financialMetrics, stockCurrency, hasCriticalDataMissing } = useStock();
+  const { financialMetrics, stockCurrency, hasCriticalDataMissing, dcfData } = useStock();
   
   if (!financialMetrics || hasCriticalDataMissing) {
     return null;
@@ -16,6 +16,7 @@ const MetricsSection: React.FC = () => {
         metrics={financialMetrics.metrics} 
         historicalData={financialMetrics.historicalData} 
         currency={stockCurrency}
+        dcfData={dcfData}
       />
     </div>
   );
