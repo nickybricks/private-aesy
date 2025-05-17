@@ -8,7 +8,7 @@ import QuantAnalysisTable from '@/components/QuantAnalysisTable';
 import OverallRating from '@/components/OverallRating';
 import BuffettCriteriaGPT, { DCFData } from '@/components/BuffettCriteriaGPT';
 import ExchangeSelector from '@/components/ExchangeSelector';
-import { fetchStockData, fetchStockPriceHistory } from '@/api/stockApi';
+import { fetchStockInfo, analyzeBuffettCriteria, getOverallRating } from '@/api/stockApi';
 import { analyzeStockByBuffettCriteria } from '@/api/quantAnalyzerApi';
 import { fetchDCFAdvancedData } from '@/api/dcfAnalysisApi';
 import { calculateBuffettDCF } from '@/utils/buffettDCFCalculation';
@@ -48,104 +48,8 @@ const Index = () => {
   const [dcfData, setDcfData] = useState<DCFData | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // This is a simplified version of BuffettCriteria for demo purposes
-  // In production, these criteria should come from an API or more complex logic
-  const generateBuffettCriteria = (stock: any): BuffettCriteria => {
-    const generateRandomStatus = () => {
-      const statuses = ['pass', 'warning', 'fail'];
-      return statuses[Math.floor(Math.random() * statuses.length)] as 'pass' | 'warning' | 'fail';
-    };
-
-    const generateRandomDetails = () => {
-      const details = [
-        'Stabiles Wachstum in den letzten 5 Jahren',
-        'Hohe Eigenkapitalrendite',
-        'Geringe Verschuldung',
-        'Konstante Dividendenpolitik',
-        'Starke Marktposition'
-      ];
-      const numberOfDetails = Math.floor(Math.random() * (details.length + 1)); // Random number between 0 and details.length
-      const selectedDetails: string[] = [];
-      const availableDetails = [...details]; // Create a copy to avoid modifying the original array
-
-      for (let i = 0; i < numberOfDetails; i++) {
-        const randomIndex = Math.floor(Math.random() * availableDetails.length);
-        selectedDetails.push(availableDetails[randomIndex]);
-        availableDetails.splice(randomIndex, 1); // Remove the selected detail to avoid duplicates
-      }
-
-      return selectedDetails;
-    };
-
-    return {
-      businessModel: {
-        title: '1. Verstehbares Geschäftsmodell',
-        status: generateRandomStatus(),
-        description: 'Das Geschäftsmodell ist einfach zu verstehen und zu analysieren.',
-        details: generateRandomDetails()
-      },
-      economicMoat: {
-        title: '2. Dauerhafter Wettbewerbsvorteil',
-        status: generateRandomStatus(),
-        description: 'Das Unternehmen verfügt über einen nachhaltigen Wettbewerbsvorteil.',
-        details: generateRandomDetails()
-      },
-      financialMetrics: {
-        title: '3. Solide Gewinnmargen',
-        status: generateRandomStatus(),
-        description: 'Das Unternehmen weist solide und stabile Gewinnmargen auf.',
-        details: generateRandomDetails()
-      },
-      financialStability: {
-        title: '4. Konservative Finanzierung',
-        status: generateRandomStatus(),
-        description: 'Das Unternehmen finanziert sich konservativ und hat wenig Schulden.',
-        details: generateRandomDetails()
-      },
-      management: {
-        title: '5. Rationales Management',
-        status: generateRandomStatus(),
-        description: 'Das Management handelt rational und im Interesse der Aktionäre.',
-        details: generateRandomDetails()
-      },
-      valuation: {
-        title: '6. Akzeptable Bewertung',
-        status: generateRandomStatus(),
-        description: 'Die Bewertung des Unternehmens ist im Vergleich zu seinen Fundamentaldaten angemessen.',
-        details: generateRandomDetails()
-      },
-      longTermOutlook: {
-        title: '7. Langfristige Perspektive',
-        status: generateRandomStatus(),
-        description: 'Das Unternehmen hat eine langfristige Perspektive und ist nicht auf kurzfristige Gewinne ausgerichtet.',
-        details: generateRandomDetails()
-      },
-      rationalBehavior: {
-        title: '8. Rationales Verhalten',
-        status: generateRandomStatus(),
-        description: 'Das Unternehmen agiert rational und vermeidet unnötige Risiken.',
-        details: generateRandomDetails()
-      },
-      cyclicalBehavior: {
-        title: '9. Keine zyklische Aktie',
-        status: generateRandomStatus(),
-        description: 'Das Unternehmen ist nicht von Konjunkturzyklen betroffen.',
-        details: generateRandomDetails()
-      },
-      oneTimeEffects: {
-        title: '10. Keine One-Time-Effects',
-        status: generateRandomStatus(),
-        description: 'Das Unternehmen weist keine wiederkehrenden Einmaleffekte auf, die das Ergebnis verzerren.',
-        details: generateRandomDetails()
-      },
-      turnaround: {
-        title: '11. Keine Turnarounds',
-        status: generateRandomStatus(),
-        description: 'Das Unternehmen befindet sich nicht in einer Turnaround-Situation.',
-        details: generateRandomDetails()
-      }
-    };
-  };
+  // This function is now removed as we're using live data only
+  // No mock data generation anymore
 
   useEffect(() => {
     if (selectedStock) {
@@ -153,16 +57,25 @@ const Index = () => {
       
       const loadStockData = async () => {
         try {
-          const stockData = await fetchStockData(selectedStock, exchange);
+          // Use fetchStockInfo instead of fetchStockData
+          const stockData = await fetchStockInfo(selectedStock);
           setStock(stockData);
           
           if (stockData) {
-            const historyData = await fetchStockPriceHistory(selectedStock);
-            setStockHistory(historyData);
+            // For stock history, we'll use the analyzeBuffettCriteria to get historical data as well
+            const buffettAnalysis = await analyzeBuffettCriteria(selectedStock);
+            // Extract the historical data from buffettAnalysis if available
+            if (buffettAnalysis && buffettAnalysis.financialMetrics && 
+                buffettAnalysis.financialMetrics.historicalData) {
+              const historyData = buffettAnalysis.financialMetrics.historicalData;
+              setStockHistory(historyData.eps.map((item: any) => ({
+                date: item.year.toString(),
+                value: item.value
+              })));
+            }
             
-            // Generate Buffett criteria based on stock data
-            const criteria = generateBuffettCriteria(stockData);
-            setBuffettCriteria(criteria);
+            // Set Buffett criteria from actual API call
+            setBuffettCriteria(buffettAnalysis);
             
             // Fetch quant analysis
             const quantData = await analyzeStockByBuffettCriteria(selectedStock);
@@ -243,10 +156,16 @@ const Index = () => {
       
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="md:w-2/3">
-          <StockSearch onSelect={handleStockSelect} selectedStock={selectedStock} />
+          <StockSearch 
+            selectedStock={selectedStock}
+            handleSelectStock={handleStockSelect} 
+          />
         </div>
         <div className="md:w-1/3">
-          <ExchangeSelector selectedExchange={exchange} onExchangeChange={handleExchangeChange} />
+          <ExchangeSelector 
+            selectedExchange={exchange} 
+            handleExchangeChange={handleExchangeChange} 
+          />
         </div>
       </div>
       
@@ -256,19 +175,27 @@ const Index = () => {
         </div>
       ) : stock ? (
         <>
-          <StockHeader stock={stock} />
+          <StockHeader 
+            stockData={stock} 
+          />
           
           <div className="mt-6">
-            <StockChart data={stockHistory} />
+            <StockChart 
+              stockData={stockHistory}
+            />
           </div>
           
           <div className="mt-6">
-            <FinancialMetrics stock={stock} />
+            <FinancialMetrics 
+              stockData={stock} 
+            />
           </div>
           
           {quantAnalysis && (
             <div className="mt-6">
-              <QuantAnalysisTable data={quantAnalysis} />
+              <QuantAnalysisTable 
+                analysisData={quantAnalysis} 
+              />
             </div>
           )}
           
@@ -282,7 +209,9 @@ const Index = () => {
           )}
           
           <div className="mt-6">
-            <OverallRating stock={stock} />
+            <OverallRating 
+              stockData={stock} 
+            />
           </div>
         </>
       ) : (
