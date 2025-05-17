@@ -85,6 +85,9 @@ export const useStockSearch = () => {
         const ratingCurrency = rating.currency || reportedCurrency;
         updatedRating = await convertRatingValues(rating, ratingCurrency, priceCurrency);
         
+        // Add the reportedCurrency to the rating object
+        updatedRating.reportedCurrency = reportedCurrency;
+        
         if (info && info.price !== null && info.price !== undefined) {
           updatedRating.currentPrice = info.price;
           console.log(`Using stock price from info: ${updatedRating.currentPrice} ${priceCurrency}`);

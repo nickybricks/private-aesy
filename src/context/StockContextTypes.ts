@@ -48,6 +48,7 @@ export interface OverallRatingData {
   currency: any;
   intrinsicValue: any;
   targetMarginOfSafety: number;
+  reportedCurrency?: string;  // Added the missing reportedCurrency property
   originalIntrinsicValue?: number | null;
   originalBestBuyPrice?: number | null;
   originalPrice?: number | null;
