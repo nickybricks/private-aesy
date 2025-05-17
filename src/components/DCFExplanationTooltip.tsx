@@ -8,18 +8,9 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { ClickableTooltip } from './ClickableTooltip';
+import { DCFData } from '@/context/StockContextTypes';
 
-interface DCFDataProps {
-  ufcf: number[];
-  wacc: number;
-  presentTerminalValue: number;
-  netDebt: number;
-  dilutedSharesOutstanding: number;
-  currency: string;
-  intrinsicValue: number;
-}
-
-export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFDataProps }> = ({ dcfData }) => {
+export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData }) => {
   // If no data provided, show a simplified tooltip
   if (!dcfData) {
     return (
@@ -51,23 +42,6 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFDataProps }> = ({ dc
       return value.toFixed(2);
     }
   };
-
-  // Calculate present values of each UFCF
-  const pvUfcfs = dcfData.ufcf.map((cashflow, index) => 
-    cashflow / Math.pow(1 + dcfData.wacc / 100, index + 1)
-  );
-  
-  // Sum all present values
-  const sumPvUfcfs = pvUfcfs.reduce((sum, pv) => sum + pv, 0);
-  
-  // Calculate enterprise value
-  const enterpriseValue = sumPvUfcfs + dcfData.presentTerminalValue;
-  
-  // Calculate equity value
-  const equityValue = enterpriseValue - dcfData.netDebt;
-  
-  // Calculate intrinsic value per share
-  const calculatedIntrinsicValue = equityValue / dcfData.dilutedSharesOutstanding;
   
   return (
     <ClickableTooltip 
@@ -102,7 +76,7 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFDataProps }> = ({ dc
               <div>
                 <p className="font-medium">Abgezinste UFCFs (PV):</p>
                 <ul className="space-y-1">
-                  {pvUfcfs.map((pv, index) => (
+                  {dcfData.pvUfcfs.map((pv, index) => (
                     <li key={index}>Jahr {index + 1}: <strong>{formatValue(pv)} {dcfData.currency}</strong></li>
                   ))}
                 </ul>
@@ -126,19 +100,19 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFDataProps }> = ({ dc
             <ul className="space-y-2">
               <li>
                 <span className="font-medium">Summe aller abgezinsten UFCFs: </span>
-                <strong>{formatValue(sumPvUfcfs)} {dcfData.currency}</strong>
+                <strong>{formatValue(dcfData.sumPvUfcfs)} {dcfData.currency}</strong>
               </li>
               <li>
                 <span className="font-medium">Enterprise Value = PV(UFCFs) + PV(Terminal): </span>
-                <strong>{formatValue(enterpriseValue)} {dcfData.currency}</strong>
+                <strong>{formatValue(dcfData.enterpriseValue)} {dcfData.currency}</strong>
               </li>
               <li>
                 <span className="font-medium">Equity Value = Enterprise Value - Nettoverschuldung: </span>
-                <strong>{formatValue(equityValue)} {dcfData.currency}</strong>
+                <strong>{formatValue(dcfData.equityValue)} {dcfData.currency}</strong>
               </li>
               <li>
                 <span className="font-medium">Innerer Wert pro Aktie = Equity Value / Anzahl Aktien: </span>
-                <strong>{calculatedIntrinsicValue.toFixed(2)} {dcfData.currency}</strong>
+                <strong>{dcfData.intrinsicValue.toFixed(2)} {dcfData.currency}</strong>
               </li>
             </ul>
           </div>

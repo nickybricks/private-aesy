@@ -1,6 +1,5 @@
-
 import { convertCurrency, shouldConvertCurrency } from '@/utils/currencyConverter';
-import { FinancialMetricsData, OverallRatingData } from './StockContextTypes';
+import { FinancialMetricsData, OverallRatingData, DCFData } from './StockContextTypes';
 
 export const processFinancialMetrics = (
   rawMetricsData: any, 
@@ -82,23 +81,63 @@ export const processFinancialMetrics = (
   return metricsData;
 };
 
-export const generateMockDCFData = (rating: OverallRatingData, priceCurrency: string): any => {
-  if (rating && rating.intrinsicValue) {
-    return {
-      ufcf: [
-        rating.intrinsicValue * 0.04 * 1.15, // Year 1 FCF with growth
-        rating.intrinsicValue * 0.04 * 1.15 * 1.15, // Year 2
-        rating.intrinsicValue * 0.04 * 1.15 * 1.15 * 1.15, // Year 3
-        rating.intrinsicValue * 0.04 * 1.15 * 1.15 * 1.15 * 1.15, // Year 4
-        rating.intrinsicValue * 0.04 * 1.15 * 1.15 * 1.15 * 1.15 * 1.15, // Year 5
-      ],
-      wacc: 8.5, // Example WACC
-      presentTerminalValue: rating.intrinsicValue * 0.75, // Example terminal value (75% of intrinsic)
-      netDebt: rating.intrinsicValue * 0.2, // Example net debt (20% of intrinsic)
-      dilutedSharesOutstanding: 1000000, // Example outstanding shares
-      currency: rating.currency || priceCurrency,
-      intrinsicValue: rating.intrinsicValue
-    };
+export const generateMockDCFData = (rating: OverallRatingData, priceCurrency: string): DCFData | undefined => {
+  if (!rating || !rating.intrinsicValue) {
+    return undefined;
   }
-  return undefined;
+  
+  // Real DCF calculation based on Buffett principles
+  // These would typically come from the API, but for now we're creating realistic values
+  
+  // 1. Input parameters
+  const wacc = 8.5; // Example WACC (%)
+  const netDebt = rating.intrinsicValue * 0.2; // Example net debt (20% of intrinsic)
+  const dilutedSharesOutstanding = 1000000; // Example outstanding shares
+  const currency = rating.currency || priceCurrency;
+  
+  // 2. Generate realistic free cash flows (growing at 15% yearly)
+  const baseUfcf = rating.intrinsicValue * dilutedSharesOutstanding * 0.04; // Base unlevered free cash flow
+  const ufcf = [
+    baseUfcf * 1.15,  // Year 1
+    baseUfcf * 1.15 * 1.15,  // Year 2
+    baseUfcf * 1.15 * 1.15 * 1.15,  // Year 3
+    baseUfcf * 1.15 * 1.15 * 1.15 * 1.15,  // Year 4
+    baseUfcf * 1.15 * 1.15 * 1.15 * 1.15 * 1.15  // Year 5
+  ];
+  
+  // 3. Calculate present value of each cash flow
+  const pvUfcfs = ufcf.map((cashflow, index) => 
+    cashflow / Math.pow(1 + wacc / 100, index + 1)
+  );
+  
+  // 4. Sum of present values
+  const sumPvUfcfs = pvUfcfs.reduce((sum, pv) => sum + pv, 0);
+  
+  // 5. Terminal value (present value)
+  // Assuming terminal value is 75% of total value (common in DCF models)
+  const presentTerminalValue = rating.intrinsicValue * dilutedSharesOutstanding * 0.75;
+  
+  // 6. Enterprise value
+  const enterpriseValue = sumPvUfcfs + presentTerminalValue;
+  
+  // 7. Equity value
+  const equityValue = enterpriseValue - netDebt;
+  
+  // 8. Intrinsic value per share
+  const calculatedIntrinsicValue = equityValue / dilutedSharesOutstanding;
+  
+  // Return complete DCF data
+  return {
+    ufcf,
+    wacc,
+    presentTerminalValue,
+    netDebt,
+    dilutedSharesOutstanding,
+    currency,
+    intrinsicValue: calculatedIntrinsicValue,
+    pvUfcfs,
+    sumPvUfcfs,
+    enterpriseValue,
+    equityValue
+  };
 };
