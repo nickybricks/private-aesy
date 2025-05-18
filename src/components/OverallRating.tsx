@@ -124,7 +124,7 @@ const IntrinsicValueTooltip: React.FC<{
     return (
       <div className="space-y-2">
         <h4 className="font-semibold">DCF-Berechnung nicht möglich</h4>
-        <p>Für dieses Wertpapier liegen nicht genügend Daten vor, um eine DCF-Berechnung durchzuführen.</p>
+        <p>Für dieses Wertpapier liegen nicht genügend Daten vor, um einen inneren Wert zu ermitteln. Eine DCF-Berechnung kann nicht durchgeführt werden.</p>
       </div>
     );
   }
@@ -395,7 +395,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     originalBestBuyPrice
   } = rating;
   
-  // Check for missing data
+  // Überprüfe auf fehlende Daten
   const hasMissingPriceData = currentPrice === null || 
                              currentPrice === undefined || 
                              bestBuyPrice === null || 

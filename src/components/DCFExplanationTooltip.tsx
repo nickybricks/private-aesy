@@ -11,7 +11,7 @@ import { ClickableTooltip } from './ClickableTooltip';
 import { DCFData } from '@/context/StockContextTypes';
 
 export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData }) => {
-  // If no data provided, show a simplified tooltip
+  // Wenn keine Daten vorhanden sind, zeige eine Fehlermeldung an
   if (!dcfData) {
     return (
       <TooltipProvider>
@@ -22,9 +22,9 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
             </button>
           </TooltipTrigger>
           <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
-            <h4 className="font-semibold mb-1">DCF-Berechnung nicht möglich</h4>
+            <h4 className="font-semibold mb-1">DCF-Berechnung nicht verfügbar</h4>
             <p className="text-xs">
-              Für dieses Wertpapier liegen nicht genügend Daten vor, um eine detaillierte DCF-Berechnung darzustellen.
+              Für dieses Wertpapier liegen keine Daten vor, um eine DCF-Berechnung durchzuführen. Ein innerer Wert kann daher nicht ermittelt werden.
             </p>
           </TooltipContent>
         </Tooltip>
@@ -32,9 +32,12 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
     );
   }
 
-  // Check if required DCF data fields are available
-  if (!dcfData.ufcf || !dcfData.wacc || dcfData.presentTerminalValue === undefined || 
-      dcfData.netDebt === undefined || !dcfData.dilutedSharesOutstanding) {
+  // Überprüfe, ob erforderliche DCF-Datenfelder verfügbar sind
+  const requiredFieldsMissing = !dcfData.ufcf || !dcfData.wacc || 
+    dcfData.presentTerminalValue === undefined || 
+    dcfData.netDebt === undefined || !dcfData.dilutedSharesOutstanding;
+
+  if (requiredFieldsMissing) {
     return (
       <TooltipProvider>
         <Tooltip>
@@ -46,7 +49,7 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
           <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
             <h4 className="font-semibold mb-1">DCF-Berechnung nicht möglich</h4>
             <p className="text-xs">
-              Für dieses Wertpapier liegen nicht alle nötigen DCF-Daten vor. Eine Bewertung nach Buffett-Prinzipien ist aktuell nicht möglich.
+              Für dieses Wertpapier liegen unvollständige DCF-Daten vor. Ein innerer Wert kann nicht zuverlässig berechnet werden. Eine Bewertung nach Buffett-Prinzipien ist aktuell nicht möglich.
             </p>
           </TooltipContent>
         </Tooltip>
@@ -54,7 +57,7 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
     );
   }
 
-  // Formatting helper
+  // Formattierungshilfe
   const formatValue = (value: number): string => {
     if (value >= 1000000000) {
       return (value / 1000000000).toFixed(2) + ' Mrd';
@@ -65,6 +68,7 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
     }
   };
   
+  // Wenn alle Daten vorhanden sind, zeige den vollständigen Tooltip
   return (
     <ClickableTooltip 
       side="right"
