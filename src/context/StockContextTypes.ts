@@ -57,18 +57,20 @@ export interface OverallRatingData {
 }
 
 export interface DCFData {
-  ufcf: number[];  // Unlevered Free Cash Flows for 5 years
-  wacc: number;    // Weighted Average Cost of Capital (%)
-  presentTerminalValue: number;  // Present value of terminal value
-  netDebt: number; // Net debt (total debt - cash)
-  dilutedSharesOutstanding: number; // Number of outstanding shares
-  currency: string; // Currency of the calculations
-  intrinsicValue: number; // Calculated intrinsic value per share
-  // New fields for detailed DCF calculations
-  pvUfcfs: number[]; // Present values of each UFCF
-  sumPvUfcfs: number; // Sum of all present values of UFCFs
-  enterpriseValue: number; // Enterprise value (sum PVs + terminal value)
-  equityValue: number; // Equity value (enterprise value - net debt)
+  // Eingabeparameter
+  ufcf: number[];                     // Unlevered Free Cash Flows für 5+ Jahre
+  wacc: number;                       // Weighted Average Cost of Capital (%)
+  presentTerminalValue: number;       // Bereits abgezinster Terminal Value
+  netDebt: number;                    // Nettoverschuldung (Total Debt - Cash)
+  dilutedSharesOutstanding: number;   // Anzahl ausstehender Aktien
+  currency: string;                   // Währung der Berechnungen
+  
+  // Berechnete Werte
+  pvUfcfs: number[];                  // Present Values der einzelnen UFCFs
+  sumPvUfcfs: number;                 // Summe aller PVs der UFCFs
+  enterpriseValue: number;            // Unternehmenswert (PV Summe + Terminal Value)
+  equityValue: number;                // Eigenkapitalwert (Enterprise Value - Nettoverschuldung)
+  intrinsicValue: number;             // Berechneter innerer Wert pro Aktie
 }
 
 export interface StockContextType {

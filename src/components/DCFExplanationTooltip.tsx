@@ -11,7 +11,7 @@ import { ClickableTooltip } from './ClickableTooltip';
 import { DCFData } from '@/context/StockContextTypes';
 
 export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData }) => {
-  // If no data provided, show a simplified tooltip
+  // Wenn keine Daten vorhanden sind, zeige einen vereinfachten Tooltip
   if (!dcfData) {
     return (
       <TooltipProvider>
@@ -32,7 +32,7 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
     );
   }
 
-  // Formatting helper
+  // Formatierungshilfe
   const formatValue = (value: number): string => {
     if (value >= 1000000000) {
       return (value / 1000000000).toFixed(2) + ' Mrd';
