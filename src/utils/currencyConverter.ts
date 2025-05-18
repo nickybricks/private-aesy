@@ -12,13 +12,43 @@ export const shouldConvertCurrency = (fromCurrency: string, toCurrency: string):
 // Alias for shouldConvertCurrency for more semantic usage
 export const needsCurrencyConversion = shouldConvertCurrency;
 
+// Normalize currency symbols to standard codes
+const normalizeCurrencyCode = (currency: string): string => {
+  // Convert common currency symbols to their code equivalents
+  const symbolToCode: Record<string, string> = {
+    '€': 'EUR',
+    '$': 'USD',
+    '£': 'GBP',
+    '¥': 'JPY',
+    '₹': 'INR',
+    '₽': 'RUB',
+    '₩': 'KRW',
+    'CHF': 'CHF', // Already a code
+    'EUR': 'EUR', // Already a code
+    'USD': 'USD', // Already a code
+    'GBP': 'GBP', // Already a code
+    'JPY': 'JPY', // Already a code
+  };
+  
+  return symbolToCode[currency] || currency;
+};
+
 // Function to get the exchange rate from API
 export const getExchangeRate = async (fromCurrency: string, toCurrency: string): Promise<number | null> => {
   try {
-    const response = await axios.get(`https://financialmodelingprep.com/api/v3/fx/${fromCurrency}${toCurrency}?apikey=${API_KEY}`);
+    // Normalize currency codes before making the API call
+    const normalizedFromCurrency = normalizeCurrencyCode(fromCurrency);
+    const normalizedToCurrency = normalizeCurrencyCode(toCurrency);
+    
+    console.log(`Getting exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+    
+    const response = await axios.get(`https://financialmodelingprep.com/api/v3/fx/${normalizedFromCurrency}${normalizedToCurrency}?apikey=${API_KEY}`);
+    
     if (response.data && response.data[0] && response.data[0].rate) {
+      console.log(`Exchange rate: ${response.data[0].rate}`);
       return response.data[0].rate;
     }
+    console.warn('Exchange rate not found in response:', response.data);
     return null;
   } catch (error) {
     console.error('Error fetching exchange rate:', error);
@@ -54,7 +84,10 @@ export const getCurrencyDecimalPlaces = (currency: string): number => {
     // Add more special cases as needed
   };
   
-  return specialCurrencies[currency] !== undefined ? specialCurrencies[currency] : 2;
+  // Normalize the currency code first
+  const normalizedCode = normalizeCurrencyCode(currency);
+  
+  return specialCurrencies[normalizedCode] !== undefined ? specialCurrencies[normalizedCode] : 2;
 };
 
 // Function to format currency values properly
@@ -77,7 +110,9 @@ export const formatCurrency = (
     return 'N/A';
   }
   
-  const decimalPlaces = getCurrencyDecimalPlaces(currency);
+  // Normalize the currency code
+  const normalizedCurrency = normalizeCurrencyCode(currency);
+  const decimalPlaces = getCurrencyDecimalPlaces(normalizedCurrency);
   
   let formattedValue = '';
   
@@ -129,7 +164,9 @@ export const formatScaledNumber = (value: number, currency: string): string => {
     unit = "";
   }
   
-  const decimalPlaces = unit ? 2 : getCurrencyDecimalPlaces(currency);
+  // Normalize the currency code
+  const normalizedCurrency = normalizeCurrencyCode(currency);
+  const decimalPlaces = unit ? 2 : getCurrencyDecimalPlaces(normalizedCurrency);
   
   return `${scaledValue.toFixed(decimalPlaces)} ${unit} ${currency}`;
 };
