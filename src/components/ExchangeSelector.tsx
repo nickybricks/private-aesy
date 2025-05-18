@@ -41,6 +41,7 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
               <p className="mt-1">Die Analyse berücksichtigt 10 quantitative Kriterien.</p>
               <p className="mt-1 text-sm text-yellow-600 font-medium">
                 Hinweis: Bei ausländischen Börsen werden Werte automatisch in EUR umgerechnet.
+                {window.location.hostname.includes('localhost') ? ' (Offline-Modus)' : ''}
               </p>
             </TooltipContent>
           </Tooltip>
