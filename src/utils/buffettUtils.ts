@@ -1,3 +1,4 @@
+
 export const getStatusColor = (status: string) => {
   switch (status) {
     case 'pass':
@@ -102,21 +103,14 @@ export const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   return { summary, points };
 };
 
-// Aktualisierte DCFDataProps-Schnittstelle entsprechend der neuen DCFData-Schnittstelle
 export interface DCFDataProps {
-  ufcf: number[];                     // Unlevered Free Cash Flows für 5+ Jahre
-  wacc: number;                       // Weighted Average Cost of Capital (%)
-  presentTerminalValue: number;       // Bereits abgezinster Terminal Value
-  netDebt: number;                    // Nettoverschuldung (Total Debt - Cash)
-  dilutedSharesOutstanding: number;   // Anzahl ausstehender Aktien
-  currency: string;                   // Währung der Berechnungen
-  intrinsicValue: number;             // Berechneter innerer Wert pro Aktie
-  
-  // Optionale berechnete Werte, falls bereits in der API-Antwort enthalten
-  pvUfcfs?: number[];                 // Present Values der einzelnen UFCFs
-  sumPvUfcfs?: number;                // Summe aller PVs der UFCFs
-  enterpriseValue?: number;           // Unternehmenswert
-  equityValue?: number;               // Eigenkapitalwert
+  ufcf: number[];
+  wacc: number;
+  presentTerminalValue: number;
+  netDebt: number;
+  dilutedSharesOutstanding: number;
+  currency: string;
+  intrinsicValue: number;
 }
 
 export interface BuffettCriterionProps {
