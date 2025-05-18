@@ -692,7 +692,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     longTermOutlook: {
       status: longTermStatus,
       title: '7. Langfristiger Horizont',
-      description: `${companyProfile.companyName} operiert in einer Branche mit ${longTermStatus === 'pass' ? 'guten' : longTermStatus === 'warning' ? 'moderaten' : 'unsicheren'} langfristigen Aussichten.`,
+      description: `${companyProfile.companyName} operiert in einer Branche mit ${longTermStatus === 'pass' ? 'guten' : longTermStatus === 'warning' ? 'modernen' : 'unsicheren'} langfristigen Aussichten.`,
       details: [
         `Branche: ${companyProfile.industry || 'Unbekannt'}`,
         `Sektor: ${sector}`,
@@ -1191,6 +1191,8 @@ export const getOverallRating = async (ticker: string) => {
     let convertedEps = eps;
     if (eps !== null && shouldConvertCurrency(reportedCurrency, currency)) {
       try {
+        // Here is likely the issue - the convertCurrency function might be called with 3 parameters
+        // when it only accepts 2. Let's fix it:
         convertedEps = await convertCurrency(eps, reportedCurrency, currency);
         console.log(`Converted EPS from ${reportedCurrency} to ${currency}: ${eps} -> ${convertedEps}`);
       } catch (error) {
