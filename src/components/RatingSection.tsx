@@ -16,6 +16,7 @@ const RatingSection: React.FC = () => {
       <OverallRating 
         rating={{
           ...overallRating,
+          currency: stockCurrency, // Hier verwenden wir explizit die Aktienkurswährung
           originalCurrency: needsCurrencyConversion(stockCurrency, overallRating.currency) ? overallRating.currency : undefined
         }}
       />
