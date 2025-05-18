@@ -19,7 +19,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getExchangeRate } from '@/utils/currencyConverter';
 
 type Rating = 'buy' | 'watch' | 'avoid';
 
@@ -272,7 +271,7 @@ const IntrinsicValueTooltip: React.FC<{
       <div className="border border-gray-200 rounded-md p-3 bg-gray-50 mt-2">
         <h5 className="font-medium mb-2">1. Eingabeparameter:</h5>
         <ul className="text-sm space-y-1">
-          <li>• Aktueller Free Cashflow: <strong>{formatBothValues(currentFCF)}</strong></li>
+          <li>• Aktueller Free Cashflow: <strong>{showExchangeInfo ? formatBothValues(currentFCF) : formatValue(currentFCF)}</strong></li>
           <li>• Abzinsungsrate: <strong>{discountRate}%</strong></li>
           <li className="font-medium mt-1">Prognostizierte Wachstumsraten:</li>
           <li>• Jahre 1-5: <strong>{growthRate1}%</strong> jährlich</li>
@@ -634,9 +633,11 @@ const MarginOfSafetyExplanation: React.FC = () => (
           <li>Risikominimierung: Selbst bei Problemen ist Verlustrisiko geringer</li>
         </ul>
         <div className="mt-2 pt-2 border-t border-gray-200">
-          <p className="text-xs font-medium">Benjamin Graham (Buffetts Mentor):</p>
-          <p className="text-xs italic mt-1">
-            "Der intelligente Investor kauft mit einer Sicherheitsmarge, um sich vor Fehlern oder Pech zu schützen."
+          <p className="text-xs">
+            <span className="font-medium">Größere Sicherheitsmarge (&gt;30%):</span> Ideal für volatile oder zyklische Aktien
+          </p>
+          <p className="text-xs">
+            <span className="font-medium">Geringere Marge (10-20%):</span> Akzeptabel bei sehr stabilen Unternehmen
           </p>
         </div>
       </TooltipContent>
@@ -644,337 +645,421 @@ const MarginOfSafetyExplanation: React.FC = () => (
   </TooltipProvider>
 );
 
-// Main OverallRating component that we'll export as default
+const RatingExplanation: React.FC<{ rating: 'buy' | 'watch' | 'avoid' }> = ({ rating }) => (
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+          <HelpCircle size={14} className="text-gray-500" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-sm p-4">
+        <h4 className="font-semibold mb-1">
+          {rating === 'buy' ? 'Kaufen' : 
+           rating === 'watch' ? 'Beobachten' : 
+           'Vermeiden'} - Was bedeutet das?
+        </h4>
+        {rating === 'avoid' ? (
+          <>
+            <p className="text-sm mb-2">
+              "Vermeiden" bedeutet nicht automatisch "verkaufen", sondern:
+            </p>
+            <ul className="text-xs list-disc pl-4">
+              <li>Kein Neueinstieg zum aktuellen Preis</li>
+              <li>Bei Besitz: Fundamentalanalyse prüfen</li>
+              <li>Meist einer dieser Gründe:</li>
+              <ul className="list-disc pl-4 mt-1">
+                <li>Zu teuer (über innerem Wert)</li>
+                <li>Zu geringe Qualität (&lt;60% Buffett-Score)</li>
+                <li>Zu hohes Risiko/Unsicherheit</li>
+              </ul>
+            </ul>
+          </>
+        ) : rating === 'watch' ? (
+          <>
+            <p className="text-sm mb-2">
+              "Beobachten" ist eine neutrale Empfehlung:
+            </p>
+            <ul className="text-xs list-disc pl-4">
+              <li>Qualität gut, aber Preis zu hoch</li>
+              <li>Oder: Mittlere Qualität (60-74%), aber unterbewertet</li>
+              <li>Watchlist-Kandidat für späteren Einstieg</li>
+              <li>Weitere Analyse der Fundamentaldaten empfohlen</li>
+            </ul>
+          </>
+        ) : (
+          <>
+            <p className="text-sm mb-2">
+              "Kaufen" bedeutet eine starke Empfehlung:
+            </p>
+            <ul className="text-xs list-disc pl-4">
+              <li>Hohe Qualität (≥75% Buffett-Score)</li>
+              <li>Deutliche Unterbewertung (&gt;20% MoS)</li>
+              <li>Stabiles Geschäftsmodell</li>
+              <li>Gute langfristige Perspektiven</li>
+            </ul>
+          </>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+);
+
 const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   if (!rating) return null;
   
-  // Determine if we should display currency conversion information
-  const showCurrencyInfo = rating.originalCurrency && 
-                          rating.currency && 
-                          rating.originalCurrency !== rating.currency;
+  let { 
+    overall, 
+    summary, 
+    strengths, 
+    weaknesses, 
+    recommendation, 
+    buffettScore, 
+    marginOfSafety, 
+    bestBuyPrice,
+    currentPrice,
+    currency = '€',
+    intrinsicValue,
+    targetMarginOfSafety = 20,
+    originalCurrency,
+    originalPrice,
+    originalIntrinsicValue,
+    originalBestBuyPrice
+  } = rating;
   
-  // Determine the overall rating and reasoning
-  const ratingData = rating.overall || 
-    determineRating(rating.buffettScore, rating.marginOfSafety?.value).rating;
+  // Check for missing data
+  const hasMissingPriceData = currentPrice === null || 
+                             currentPrice === undefined || 
+                             bestBuyPrice === null || 
+                             bestBuyPrice === undefined || 
+                             intrinsicValue === null || 
+                             intrinsicValue === undefined;
+  
+  if (hasMissingPriceData) {
+    console.warn("Fehlende Preisinformationen für Wertanalyse:", 
+      { currentPrice, bestBuyPrice, intrinsicValue });
+  }
+  
+  // Override the marginOfSafety status based on the actual value
+  if (marginOfSafety) {
+    marginOfSafety.status = interpretMarginOfSafety(marginOfSafety.value);
+  }
+  
+  // Re-determine the overall rating based on buffettScore and marginOfSafety
+  if (buffettScore !== undefined && marginOfSafety !== undefined) {
+    const newRatingData = determineRating(buffettScore, marginOfSafety.value);
+    overall = newRatingData.rating;
+    
+    // Update summary based on the new rating logic
+    summary = newRatingData.reasoning;
+    
+    // Update recommendation based on new rating
+    if (overall === 'buy') {
+      recommendation = `Basierend auf der hohen Buffett-Kompatibilität (${buffettScore}%) und der attraktiven Unterbewertung (MoS: ${marginOfSafety.value.toFixed(1)}%) wird ein Kauf empfohlen. Der aktuelle Preis bietet eine ausreichende Sicherheitsmarge zum inneren Wert.`;
+    } else if (overall === 'watch') {
+      recommendation = `Die Aktie zeigt ${buffettScore >= 75 ? 'sehr gute' : 'solide'} Fundamentaldaten (${buffettScore}%), aber ${marginOfSafety.value >= 0 ? 'bietet nicht genug Sicherheitsmarge' : 'ist zu teuer'}. Es wird empfohlen, die Aktie auf die Beobachtungsliste zu setzen und bei einem günstigeren Kurs erneut zu prüfen.`;
+    } else {
+      if (buffettScore < 60) {
+        recommendation = `Die Aktie erfüllt zu wenige von Buffetts Qualitätskriterien (${buffettScore}%). Unabhängig vom Preis sollte nach Alternativen mit besseren Fundamentaldaten gesucht werden.`;
+      } else {
+        recommendation = `Trotz ${buffettScore >= 75 ? 'sehr guter' : 'solider'} Fundamentaldaten (${buffettScore}%) ist die Aktie mit einer negativen Sicherheitsmarge von ${Math.abs(marginOfSafety.value).toFixed(1)}% zu teuer. Ein Kauf ist erst bei deutlich niedrigeren Kursen zu empfehlen.`;
+      }
+    }
+  }
+  
+  const ratingTitle = {
+    buy: 'Kaufen',
+    watch: 'Beobachten',
+    avoid: 'Vermeiden'
+  }[overall];
+  
+  const ratingColor = {
+    buy: 'bg-buffett-green bg-opacity-10 border-buffett-green',
+    watch: 'bg-buffett-yellow bg-opacity-10 border-buffett-yellow',
+    avoid: 'bg-buffett-red bg-opacity-10 border-buffett-red'
+  }[overall];
+
+  // Safely calculate price difference
+  const priceDifference = (currentPrice !== null && 
+                          currentPrice !== undefined && 
+                          bestBuyPrice !== null && 
+                          bestBuyPrice !== undefined && 
+                          !isNaN(Number(currentPrice)) && 
+                          !isNaN(Number(bestBuyPrice))) 
+    ? currentPrice - bestBuyPrice 
+    : undefined;
+  
+  const priceDifferencePercent = (currentPrice !== null && 
+                                 currentPrice !== undefined && 
+                                 !isNaN(Number(currentPrice)) && 
+                                 bestBuyPrice !== null && 
+                                 bestBuyPrice !== undefined && 
+                                 !isNaN(Number(bestBuyPrice)) && 
+                                 bestBuyPrice > 0)
+    ? ((currentPrice - bestBuyPrice) / bestBuyPrice) * 100
+    : undefined;
+
+  const decisionFactor = overall === 'avoid' && marginOfSafety && marginOfSafety.value < 0 
+    ? 'Preis ist zu hoch für ein Investment' 
+    : overall === 'avoid' && buffettScore && buffettScore < 60
+    ? 'Zu wenige Buffett-Kriterien erfüllt'
+    : overall === 'watch'
+    ? 'Fundamentalwerte gut, aber nicht optimal bewertet'
+    : 'Preis und Qualität im Einklang';
+  
+  // Funktion, die die Rating-Logik erklärt
+  const explainRatingLogic = () => {
+    if (buffettScore === undefined || marginOfSafety === undefined) {
+      return null;
+    }
+
+    if (buffettScore >= 75 && marginOfSafety.value > 20 && overall === 'buy') {
+      return "Hohe Qualität (≥75%) + starke Unterbewertung (>20%) = Kaufempfehlung";
+    } else if (buffettScore >= 75 && marginOfSafety.value >= 0 && overall === 'watch') {
+      return "Hohe Qualität (≥75%) + faire/leichte Bewertung = Beobachten";
+    } else if (buffettScore >= 75 && marginOfSafety.value < 0 && overall === 'avoid') {
+      return "Hohe Qualität (≥75%), aber überbewertet (<0%) = Vermeiden";
+    } else if (buffettScore >= 60 && buffettScore < 75 && marginOfSafety.value > 10 && overall === 'watch') {
+      return "Mittlere Qualität (60-74%) + Unterbewertung (>10%) = Beobachten (vorsichtiger Kauf)";
+    } else if (buffettScore < 60 && overall === 'avoid') {
+      return "Schwache Qualität (<60%) = Vermeiden (unabhängig vom Preis)";
+    }
+    
+    return "Bewertung basierend auf Buffett-Score und Margin of Safety";
+  };
+  
+  const ratingLogic = explainRatingLogic();
   
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <PieChart size={20} className="text-buffett-blue" />
+    <div className="buffett-card animate-fade-in">
+      {hasMissingPriceData && (
+        <div className="mb-6">
+          <Alert className="bg-yellow-50 border-yellow-200">
+            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <AlertDescription className="text-yellow-700">
+              Für dieses Symbol liegen unvollständige Preisdaten vor. Die Bewertung basiert auf verfügbaren Daten und könnte ungenau sein.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+      
+      <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
         Gesamtbewertung
+        <RatingExplanation rating={overall} />
       </h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Column 1: Rating and summary */}
-        <div className="bg-gray-50 p-4 rounded-md">
-          <div className="flex items-center gap-4 mb-4">
-            <RatingIcon rating={ratingData} />
-            <div>
-              <h3 className="font-bold text-lg capitalize">
-                {ratingData === 'buy' ? 'Kaufen' : 
-                 ratingData === 'watch' ? 'Beobachten' : 'Vermeiden'}
-              </h3>
-              {rating.buffettScore && (
-                <div className="flex items-center mt-1">
+      <div className={`rounded-xl p-6 border ${ratingColor} mb-6`}>
+        <div className="flex items-center gap-4">
+          <RatingIcon rating={overall} />
+          <div className="flex-1">
+            <h3 className="text-xl font-bold">{ratingTitle}</h3>
+            <p className="text-buffett-subtext">{summary}</p>
+            
+            {ratingLogic && (
+              <div className="mt-2 text-sm p-2 bg-white bg-opacity-50 rounded-md">
+                <p className="font-medium">Bewertungslogik:</p>
+                <p>{ratingLogic}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        {buffettScore !== undefined && (
+          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <PieChart size={18} className="text-buffett-blue" />
+              <h4 className="font-semibold">Buffett-Kompatibilität</h4>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                      <Info size={14} className="text-gray-500" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <ScoreBreakdownTooltip buffettScore={buffettScore} />
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            
+            <div className="flex items-center justify-center mb-3">
+              <BuffettScoreChart score={buffettScore} />
+            </div>
+            
+            <div className="text-sm mt-2 text-gray-600">
+              {buffettScore >= 75 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
+              buffettScore >= 60 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
+              'Geringe Übereinstimmung mit Buffetts Investitionskriterien'}
+            </div>
+          </div>
+        )}
+        
+        {marginOfSafety !== undefined && (
+          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingDown size={18} className="text-buffett-blue" />
+              <h4 className="font-semibold">Margin of Safety</h4>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                      <Info size={14} className="text-gray-500" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <MarginOfSafetyTooltip 
+                      targetMarginOfSafety={targetMarginOfSafety}
+                      intrinsicValue={intrinsicValue}
+                      currentPrice={currentPrice}
+                      currency={currency}
+                    />
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <div className="text-2xl font-bold mb-2"
+                 style={{
+                   color: marginOfSafety.value >= 30 ? '#10b981' :
+                          marginOfSafety.value >= 10 ? '#f59e0b' :
+                          marginOfSafety.value >= 0 ? '#f59e0b' : '#ef4444'
+                 }}>
+              {marginOfSafety.value.toFixed(1)}%
+            </div>
+            <div className="text-sm text-gray-600">
+              {getMarginOfSafetyDescription(marginOfSafety.value)}
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-2">
+                <MarginOfSafetyExplanation />
+                <span className="text-sm font-medium">Buffett-Standard: {targetMarginOfSafety}% Sicherheitsmarge</span>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {(bestBuyPrice !== undefined && bestBuyPrice !== null) && (
+          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign size={18} className="text-buffett-blue" />
+              <h4 className="font-semibold">Idealer Kaufpreis</h4>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                      <Info size={14} className="text-gray-500" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <BuffettBuyPriceTooltip 
+                      intrinsicValue={intrinsicValue}
+                      bestBuyPrice={bestBuyPrice}
+                      targetMarginOfSafety={targetMarginOfSafety}
+                      currency={currency}
+                    />
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            
+            <div className="flex items-baseline gap-2 mb-1">
+              <div className="text-2xl font-bold text-buffett-blue">
+                {!isNaN(Number(bestBuyPrice)) ? `${Number(bestBuyPrice).toFixed(2)} ${currency}` : 'N/A'}
+              </div>
+              {currentPrice !== null && currentPrice !== undefined && !isNaN(Number(currentPrice)) && (
+                <div className={`text-sm ${priceDifference && priceDifference < 0 ? 'text-buffett-green' : 'text-buffett-red'}`}>
+                  {currentPrice.toFixed(2)} {currency}
+                  {priceDifference !== undefined && priceDifferencePercent !== undefined && (
+                    <span>
+                      {' '}
+                      ({priceDifference > 0 ? '+' : ''}{priceDifference.toFixed(2)} {currency} / 
+                      {priceDifferencePercent > 0 ? '+' : ''}{priceDifferencePercent.toFixed(1)}%)
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="text-sm text-gray-600 mb-3">
+              Maximaler Kaufpreis für attraktives Investment
+            </div>
+            
+            {intrinsicValue !== undefined && intrinsicValue !== null && !isNaN(Number(intrinsicValue)) && (
+              <div className="flex items-center mt-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <Calculator size={14} className="text-gray-500" />
+                  <span className="text-gray-600">Innerer Wert (DCF): {intrinsicValue.toFixed(2)} {currency}</span>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="flex items-center text-sm text-gray-700 cursor-help">
-                          <span className="mr-1">Buffett-Score:</span>
-                          <span className={`font-semibold ${
-                            rating.buffettScore >= 75 ? 'text-buffett-green' :
-                            rating.buffettScore >= 60 ? 'text-buffett-yellow' :
-                            'text-buffett-red'
-                          }`}>
-                            {rating.buffettScore}%
-                          </span>
-                          <Info size={14} className="ml-1 text-gray-400" />
-                        </div>
+                        <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                          <Info size={14} className="text-gray-500" />
+                        </button>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        <ScoreBreakdownTooltip buffettScore={rating.buffettScore} />
+                      <TooltipContent className="max-w-xl p-4">
+                        <IntrinsicValueTooltip 
+                          intrinsicValue={intrinsicValue} 
+                          currency={currency}
+                          originalCurrency={originalCurrency}
+                          originalIntrinsicValue={originalIntrinsicValue}
+                        />
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+            
+            {originalCurrency && originalCurrency !== currency && originalBestBuyPrice !== null && originalBestBuyPrice !== undefined && (
+              <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500">
+                Ursprünglicher Preis: {originalBestBuyPrice.toFixed(2)} {originalCurrency}
+              </div>
+            )}
           </div>
-          
-          <div className="mb-4">
-            <h4 className="font-semibold text-sm text-gray-700 mb-1">Zusammenfassung</h4>
-            <p className="text-sm">{rating.summary}</p>
-          </div>
-          
-          <div className="mb-4">
-            <h4 className="font-semibold text-sm text-gray-700 mb-1">Stärken</h4>
-            <ul className="list-disc pl-5 text-sm space-y-1">
-              {rating.strengths?.map((strength, i) => (
-                <li key={i}>{strength}</li>
+        )}
+      </div>
+      
+      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm mb-6">
+        <h3 className="font-semibold mb-1">Zusammenfassung</h3>
+        <p className="text-buffett-subtext mb-4">{recommendation}</p>
+        
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div>
+            <h4 className="font-semibold text-buffett-green mb-2 flex items-center gap-2">
+              <CheckCircle size={16} className="text-buffett-green" />
+              Stärken
+            </h4>
+            <ul className="list-disc pl-5 space-y-1">
+              {strengths.map((strength, index) => (
+                <li key={index} className="text-sm text-gray-700">{strength}</li>
               ))}
             </ul>
           </div>
           
           <div>
-            <h4 className="font-semibold text-sm text-gray-700 mb-1">Schwächen</h4>
-            <ul className="list-disc pl-5 text-sm space-y-1">
-              {rating.weaknesses?.map((weakness, i) => (
-                <li key={i}>{weakness}</li>
+            <h4 className="font-semibold text-buffett-red mb-2 flex items-center gap-2">
+              <XCircle size={16} className="text-buffett-red" />
+              Schwächen
+            </h4>
+            <ul className="list-disc pl-5 space-y-1">
+              {weaknesses.map((weakness, index) => (
+                <li key={index} className="text-sm text-gray-700">{weakness}</li>
               ))}
             </ul>
           </div>
         </div>
         
-        {/* Column 2: Buffett Score and Recommendation */}
-        <div className="md:col-span-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Buffett Score Card */}
-            {rating.buffettScore && (
-              <div className="bg-gray-50 p-4 rounded-md">
-                <h3 className="font-semibold mb-3 flex items-center gap-1">
-                  <BarChart3 size={18} className="text-buffett-blue" />
-                  <span>Buffett-Score</span>
-                </h3>
-                
-                <div className="flex items-center justify-between">
-                  <BuffettScoreChart score={rating.buffettScore} />
-                  <div className="ml-4">
-                    <p className="text-sm">
-                      <span className={`font-semibold ${
-                        rating.buffettScore >= 75 ? 'text-buffett-green' :
-                        rating.buffettScore >= 60 ? 'text-buffett-yellow' :
-                        'text-buffett-red'
-                      }`}>
-                        {rating.buffettScore >= 75 ? 'Hervorragend' :
-                         rating.buffettScore >= 60 ? 'Gut' :
-                         'Schwach'}
-                      </span>
-                    </p>
-                    <p className="text-xs text-gray-600 mt-1">
-                      {rating.buffettScore >= 75 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
-                       rating.buffettScore >= 60 ? 'Gute Übereinstimmung, nähere Analyse empfohlen' :
-                       'Entspricht nicht Buffetts Investmentstil'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Margin of Safety Card */}
-            {rating.marginOfSafety && (
-              <div className="bg-gray-50 p-4 rounded-md">
-                <h3 className="font-semibold mb-3 flex items-center gap-1">
-                  <TrendingDown size={18} className="text-buffett-blue" />
-                  <span>Sicherheitsmarge (MoS)</span>
-                </h3>
-                
-                <div className="flex items-center justify-between">
-                  <div className="relative w-24 h-24 flex items-center justify-center">
-                    <div className={`text-2xl font-bold ${
-                      rating.marginOfSafety.value > 0 ? 'text-buffett-green' : 'text-buffett-red'
-                    }`}>
-                      {Math.round(rating.marginOfSafety.value)}%
-                    </div>
-                    <div className={`absolute bottom-0 text-xs ${
-                      rating.marginOfSafety.value > 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {rating.marginOfSafety.value > 0 ? 'Unterbewertet' : 'Überbewertet'}
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm">
-                      <span className={`font-semibold ${
-                        rating.marginOfSafety.value > 30 ? 'text-buffett-green' :
-                        rating.marginOfSafety.value > 0 ? 'text-buffett-yellow' :
-                        'text-buffett-red'
-                      }`}>
-                        {getMarginOfSafetyDescription(rating.marginOfSafety.value)}
-                      </span>
-                    </p>
-                    <div className="flex items-center mt-1">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button className="text-xs text-gray-600 flex items-center">
-                              Mehr erfahren <Info size={12} className="ml-1" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <MarginOfSafetyTooltip 
-                              targetMarginOfSafety={rating.targetMarginOfSafety || 20}
-                              intrinsicValue={rating.intrinsicValue}
-                              currentPrice={rating.currentPrice}
-                              currency={rating.currency}
-                            />
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Value Analysis Card */}
-            <div className="bg-gray-50 p-4 rounded-md md:col-span-2">
-              <h3 className="font-semibold mb-3 flex items-center gap-1">
-                <Eye size={18} className="text-buffett-blue" />
-                <span>Bewertungsanalyse</span>
-                {showCurrencyInfo && (
-                  <span className="text-xs font-normal text-gray-500 ml-1">
-                    (Umgerechnet von {rating.originalCurrency} nach {rating.currency})
-                  </span>
-                )}
-              </h3>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                {/* Current Price */}
-                <div>
-                  <div className="text-gray-600 mb-1 flex items-center">
-                    <DollarSign size={14} className="mr-1" />
-                    <span>Aktueller Preis:</span>
-                  </div>
-                  <div className="font-semibold">
-                    {rating.currentPrice !== null && rating.currentPrice !== undefined
-                      ? `${rating.currentPrice.toFixed(2)} ${rating.currency}`
-                      : 'N/A'}
-                    {showCurrencyInfo && rating.originalPrice && (
-                      <div className="text-xs text-gray-500">
-                        ({rating.originalPrice.toFixed(2)} {rating.originalCurrency})
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Intrinsic Value */}
-                <div>
-                  <div className="text-gray-600 mb-1 flex items-center">
-                    <Calculator size={14} className="mr-1" />
-                    <span>Innerer Wert:</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="ml-1">
-                            <DCFExplanationTooltip />
-                          </div>
-                        </TooltipTrigger>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <div className="font-semibold">
-                    {rating.intrinsicValue !== null && rating.intrinsicValue !== undefined
-                      ? `${rating.intrinsicValue.toFixed(2)} ${rating.currency}`
-                      : 'N/A'}
-                    {showCurrencyInfo && rating.originalIntrinsicValue && (
-                      <div className="text-xs text-gray-500">
-                        ({rating.originalIntrinsicValue.toFixed(2)} {rating.originalCurrency})
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Best Buy Price */}
-                <div>
-                  <div className="text-gray-600 mb-1 flex items-center">
-                    <DollarSign size={14} className="mr-1" />
-                    <span>Buffett-Kaufpreis:</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="ml-1">
-                            <MarginOfSafetyExplanation />
-                          </div>
-                        </TooltipTrigger>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <div className="font-semibold text-buffett-blue">
-                    {rating.bestBuyPrice !== null && rating.bestBuyPrice !== undefined
-                      ? `${rating.bestBuyPrice.toFixed(2)} ${rating.currency}`
-                      : 'N/A'}
-                    {showCurrencyInfo && rating.originalBestBuyPrice && (
-                      <div className="text-xs text-gray-500">
-                        ({rating.originalBestBuyPrice.toFixed(2)} {rating.originalCurrency})
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Value Gap */}
-                <div>
-                  <div className="text-gray-600 mb-1">Abweichung zum Kaufpreis:</div>
-                  {rating.bestBuyPrice !== null && 
-                   rating.bestBuyPrice !== undefined && 
-                   rating.currentPrice !== null && 
-                   rating.currentPrice !== undefined ? (
-                    <div className={`font-semibold ${
-                      rating.currentPrice <= rating.bestBuyPrice ? 'text-buffett-green' : 'text-buffett-red'
-                    }`}>
-                      {rating.currentPrice <= rating.bestBuyPrice
-                        ? `${((1 - rating.currentPrice / rating.bestBuyPrice) * 100).toFixed(1)}% günstiger`
-                        : `${((rating.currentPrice / rating.bestBuyPrice - 1) * 100).toFixed(1)}% teurer`
-                      }
-                    </div>
-                  ) : (
-                    <div>N/A</div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Detailed tooltips for the value analysis */}
-              <div className="mt-4 text-center text-xs text-gray-600 flex justify-center space-x-4">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button className="underline flex items-center">
-                        <Info size={12} className="mr-1" /> DCF-Berechnung anzeigen
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <IntrinsicValueTooltip 
-                        intrinsicValue={rating.intrinsicValue} 
-                        currency={rating.currency || 'EUR'}
-                        originalCurrency={rating.originalCurrency}
-                        originalIntrinsicValue={rating.originalIntrinsicValue}
-                      />
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button className="underline flex items-center">
-                        <Info size={12} className="mr-1" /> Buffett-Kaufpreis Details
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <BuffettBuyPriceTooltip 
-                        intrinsicValue={rating.intrinsicValue} 
-                        bestBuyPrice={rating.bestBuyPrice} 
-                        targetMarginOfSafety={rating.targetMarginOfSafety || 20}
-                        currency={rating.currency || 'EUR'}
-                      />
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </div>
-            
-            {/* Recommendation */}
-            <div className="bg-gray-50 p-4 rounded-md md:col-span-2">
-              <h3 className="font-semibold mb-2">Handlungsempfehlung</h3>
-              <p className="text-sm">{rating.recommendation}</p>
-              
-              {/* Alert for price sensitivity */}
-              <Alert className="mt-4 py-2 bg-gray-100">
-                <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                <AlertDescription className="text-xs text-gray-700">
-                  Die Bewertung und Handlungsempfehlung basieren auf den aktuellen Finanzdaten und Kurs. 
-                  Signifikante Kursänderungen können die Bewertung beeinflussen.
-                </AlertDescription>
-              </Alert>
-            </div>
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="flex items-center gap-2">
+            <BarChart3 size={16} className="text-buffett-blue" />
+            <span className="font-medium">Entscheidender Faktor:</span>
+            <span>{decisionFactor}</span>
           </div>
         </div>
       </div>
@@ -982,16 +1067,4 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   );
 };
 
-// Export the main component as default and the helper components as named exports
 export default OverallRating;
-
-export {
-  RatingIcon,
-  IntrinsicValueTooltip,
-  MarginOfSafetyTooltip,
-  BuffettBuyPriceTooltip,
-  ScoreBreakdownTooltip,
-  BuffettScoreChart,
-  DCFExplanationTooltip,
-  MarginOfSafetyExplanation,
-};
