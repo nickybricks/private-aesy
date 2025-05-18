@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // OpenAI API Key - Fest im Code eingebaut
-const OPENAI_API_KEY = '';
+const OPENAI_API_KEY = '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';
 
 // OpenAI API Key handling
 const getOpenAiApiKey = () => {
