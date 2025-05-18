@@ -1,3 +1,4 @@
+
 /**
  * Currency conversion utility using Exchange Rate API
  */
@@ -12,36 +13,6 @@ interface ExchangeRateCache {
 let rateCache: ExchangeRateCache | null = null;
 const CACHE_DURATION = 1000 * 60 * 60; // 1 hour cache
 
-// Fallback rates to use when API is unavailable - common currency pairs
-const FALLBACK_RATES: Record<string, Record<string, number>> = {
-  'USD': {
-    'EUR': 0.89529,
-    'GBP': 0.753041,
-    'JPY': 145.6692,
-    'CHF': 0.837907,
-    'CAD': 1.397036,
-    'AUD': 1.560946,
-    'CNY': 7.210675,
-    'HKD': 7.814117,
-    'SGD': 1.299216,
-    'INR': 85.620333,
-    'KRW': 1396.588552
-  },
-  'EUR': {
-    'USD': 1.1169,
-    'GBP': 0.84112,
-    'JPY': 162.71,
-    'CHF': 0.93593,
-    'CAD': 1.56051,
-    'AUD': 1.74355,
-    'CNY': 8.0542,
-    'HKD': 8.7284,
-    'SGD': 1.4511,
-    'INR': 95.6337,
-    'KRW': 1559.93
-  }
-};
-
 // Fetch live exchange rates from exchangerate.host
 const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<string, number>> => {
   try {
@@ -53,78 +24,27 @@ const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<
     }
 
     console.log('Fetching fresh exchange rates for', baseCurrency);
+    const response = await fetch(`https://open.er-api.com/v6/latest/${baseCurrency}`);
     
-    // Try to fetch with regular fetch first
-    try {
-      const response = await fetch(`https://open.er-api.com/v6/latest/${baseCurrency}`, {
-        mode: 'cors', // Try with CORS first
-        cache: 'no-cache',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data.rates) {
-          // Store in cache
-          rateCache = {
-            rates: data.rates,
-            lastUpdated: Date.now(),
-            baseCurrency
-          };
-          
-          return data.rates;
-        }
-      }
-      
-      throw new Error(`API returned status ${response.status}`);
-    } catch (apiError) {
-      console.warn('Error fetching exchange rates via standard fetch, trying fallback:', apiError);
-      
-      // If we have fallback rates for this currency, use them
-      if (FALLBACK_RATES[baseCurrency]) {
-        console.log(`Using fallback rates for ${baseCurrency} due to API connectivity issues`);
-        
-        // Store in cache
-        rateCache = {
-          rates: FALLBACK_RATES[baseCurrency],
-          lastUpdated: Date.now(),
-          baseCurrency
-        };
-        
-        return FALLBACK_RATES[baseCurrency];
-      }
-      
-      // If we have USD fallback and need another currency, use USD as base and invert
-      if (baseCurrency !== 'USD' && FALLBACK_RATES['USD'][baseCurrency]) {
-        console.log(`Deriving ${baseCurrency} rates from USD fallback rates`);
-        
-        const usdToBaseCurrencyRate = FALLBACK_RATES['USD'][baseCurrency];
-        const derivedRates: Record<string, number> = {};
-        
-        for (const [currency, rate] of Object.entries(FALLBACK_RATES['USD'])) {
-          if (currency !== baseCurrency) {
-            derivedRates[currency] = rate / usdToBaseCurrencyRate;
-          }
-        }
-        
-        // Add USD rate
-        derivedRates['USD'] = 1 / usdToBaseCurrencyRate;
-        
-        // Store in cache
-        rateCache = {
-          rates: derivedRates,
-          lastUpdated: Date.now(),
-          baseCurrency
-        };
-        
-        return derivedRates;
-      }
-      
-      throw new Error(`Failed to fetch exchange rates for ${baseCurrency} and no fallback available`);
+    if (!response.ok) {
+      throw new Error(`Exchange rate API error: ${response.status} ${response.statusText}`);
     }
+    
+    const data = await response.json();
+
+    if (!data.rates) {
+      console.error('Exchange rate API error:', data);
+      throw new Error('Failed to fetch exchange rates: No rates in response');
+    }
+
+    // Store in cache
+    rateCache = {
+      rates: data.rates,
+      lastUpdated: Date.now(),
+      baseCurrency
+    };
+
+    return data.rates;
   } catch (error) {
     console.error('Error fetching exchange rates:', error);
     throw new Error(`Failed to fetch exchange rates for ${baseCurrency}`);
@@ -166,26 +86,6 @@ export const convertCurrency = async (
     
     if (!rates[toCurrency]) {
       console.error(`No exchange rate available for ${fromCurrency} to ${toCurrency}`);
-      
-      // Try the reverse conversion if possible
-      try {
-        const reverseRates = await fetchExchangeRates(toCurrency);
-        if (reverseRates[fromCurrency]) {
-          const convertedValue = numericValue / reverseRates[fromCurrency];
-          console.log(`Converted ${numericValue} ${fromCurrency} to ${convertedValue.toFixed(2)} ${toCurrency} using reverse rate`);
-          return convertedValue;
-        }
-      } catch (reverseError) {
-        console.error('Reverse conversion also failed:', reverseError);
-      }
-      
-      // Direct fallback for common currency pairs
-      if (fromCurrency === 'USD' && toCurrency === 'EUR') {
-        return numericValue * 0.89529;
-      } else if (fromCurrency === 'EUR' && toCurrency === 'USD') {
-        return numericValue * 1.1169;
-      }
-      
       throw new Error(`No exchange rate available for ${fromCurrency} to ${toCurrency}`);
     }
     
@@ -194,34 +94,20 @@ export const convertCurrency = async (
     return convertedValue;
   } catch (error) {
     console.error('Error converting currency:', error);
-    
-    // Fallback for common currency pairs
-    if (fromCurrency === 'USD' && toCurrency === 'EUR') {
-      const fallbackValue = numericValue * 0.89529;
-      console.log(`Using fallback conversion: ${numericValue} ${fromCurrency} to ${fallbackValue.toFixed(2)} ${toCurrency}`);
-      return fallbackValue;
-    } else if (fromCurrency === 'EUR' && toCurrency === 'USD') {
-      const fallbackValue = numericValue * 1.1169;
-      console.log(`Using fallback conversion: ${numericValue} ${fromCurrency} to ${fallbackValue.toFixed(2)} ${toCurrency}`);
-      return fallbackValue;
-    }
-    
-    // If all else fails, just return the original value
-    console.warn(`Failed to convert ${fromCurrency} to ${toCurrency}. Using original value.`);
-    return numericValue;
+    throw error; // Propagate the error to handle it in the components
   }
 };
 
 /**
  * Determines if currency conversion is needed based on stock price currency and reported currency
- * This is a new function to implement the specific business logic requested
+ * Updated to respect the new rules - only convert if reported currency differs from stock currency
  */
 export const shouldConvertCurrency = (
-  reportedCurrency: string,
-  stockPriceCurrency: string
+  stockPriceCurrency: string,
+  reportedCurrency: string
 ): boolean => {
   // Only convert if the reported currency is different from the stock price currency
-  return reportedCurrency !== stockPriceCurrency;
+  return stockPriceCurrency !== reportedCurrency;
 };
 
 /**
@@ -230,7 +116,7 @@ export const shouldConvertCurrency = (
  */
 export const formatCurrency = (
   value: number | string | null | undefined,
-  currency: string = 'EUR',
+  currency: string = 'USD',
   showOriginal: boolean = false,
   originalValue?: number | string | null | undefined,
   originalCurrency?: string,
@@ -335,17 +221,18 @@ export const formatCurrency = (
 
 /**
  * Check if we need to convert this value from its original currency
+ * Modified to no longer check if currency is EUR, but whether conversion is needed at all
  */
-export const needsCurrencyConversion = (currency: string): boolean => {
-  return currency !== 'EUR';
+export const needsCurrencyConversion = (reportedCurrency: string, stockCurrency: string): boolean => {
+  return reportedCurrency !== stockCurrency;
 };
 
 /**
  * Get appropriate decimal places for any currency
  */
 export const getCurrencyDecimalPlaces = (currency: string): number => {
-  // For Korean Won, we typically don't show decimal places
-  if (currency === 'KRW') return 0;
+  // For Korean Won, Japanese Yen we typically don't show decimal places
+  if (currency === 'KRW' || currency === 'JPY') return 0;
   return 2; // Use 2 decimal places for most currencies
 };
 
@@ -358,14 +245,6 @@ export const getExchangeRate = async (fromCurrency: string, toCurrency: string):
     return rates[toCurrency] || null;
   } catch (error) {
     console.error('Error getting exchange rate:', error);
-    
-    // Fallback for common currency pairs
-    if (fromCurrency === 'USD' && toCurrency === 'EUR') {
-      return 0.89529;
-    } else if (fromCurrency === 'EUR' && toCurrency === 'USD') {
-      return 1.1169;
-    }
-    
     return null;
   }
 };
@@ -392,6 +271,6 @@ export const formatScaledNumber = (value: number, currency?: string): string => 
     unit = ' Mio.';
   }
   
-  const decimals = currency === 'KRW' ? 0 : 2;
+  const decimals = currency === 'KRW' || currency === 'JPY' ? 0 : 2;
   return `${scaledValue.toLocaleString('de-DE', { maximumFractionDigits: decimals })}${unit}${currency ? ' ' + currency : ''}`;
 };

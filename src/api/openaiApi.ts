@@ -1,7 +1,8 @@
+
 import axios from 'axios';
 
 // OpenAI API Key - Fest im Code eingebaut
-const OPENAI_API_KEY = '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';
+const OPENAI_API_KEY = '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';
 
 // OpenAI API Key handling
 const getOpenAiApiKey = () => {
@@ -10,9 +11,7 @@ const getOpenAiApiKey = () => {
 
 export const hasOpenAiApiKey = (): boolean => {
   // Instead of comparing with empty string, check if the key exists and has a length
-  // Also ensure it has the expected format of an OpenAI API key
-  const key = OPENAI_API_KEY;
-  return !!key && key.length > 0 && (key.startsWith('sk-') || key.startsWith('sk-org-') || key.startsWith('sk-proj-'));
+  return !!OPENAI_API_KEY && OPENAI_API_KEY.length > 0;
 };
 
 // OpenAI API Service
@@ -35,11 +34,8 @@ export const queryGPT = async (prompt: string): Promise<string> => {
     const apiKey = getOpenAiApiKey();
     
     if (!apiKey || apiKey.length === 0) {
-      console.error('OpenAI API-Key fehlt oder ist nicht konfiguriert');
       throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
     }
-    
-    console.log('Sende Anfrage an OpenAI API...');
     
     const response = await axios.post<OpenAIResponse>(
       OPENAI_API_URL,
@@ -66,31 +62,13 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       }
     );
     
-    console.log('OpenAI API Antwort erhalten:', response.status);
     return response.data.choices[0].message.content.trim();
   } catch (error) {
     console.error('Error querying OpenAI:', error);
-    
-    // Verbesserte Fehlerdiagnose
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-      const message = error.response?.data?.error?.message || error.message;
-      
-      console.error(`OpenAI API Status: ${status}, Meldung: ${message}`);
-      console.error('Vollständiger Fehlerbericht:', JSON.stringify(error.response?.data || {}, null, 2));
-      
-      if (status === 401) {
-        throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei. Hinweis: "sk-proj-" Format-Keys funktionieren unter Umständen nicht. Verwenden Sie einen Standard API-Key der mit "sk-" beginnt.');
-      } else if (status === 429) {
-        throw new Error('OpenAI API-Rate-Limit überschritten. Bitte versuchen Sie es später erneut oder überprüfen Sie Ihr OpenAI-Abonnement.');
-      } else if (status === 500 || status === 503) {
-        throw new Error('OpenAI API-Server sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.');
-      } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
-        throw new Error('Netzwerkfehler beim Verbinden mit OpenAI API. Bitte überprüfen Sie Ihre Internetverbindung.');
-      }
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei.');
     }
-    
-    throw new Error('Fehler bei der Anfrage an OpenAI. Bitte überprüfen Sie Ihre Internetverbindung und den API-Key in openaiApi.ts.');
+    throw new Error('Fehler bei der Anfrage an OpenAI. Bitte versuchen Sie es später erneut.');
   }
 };
 
