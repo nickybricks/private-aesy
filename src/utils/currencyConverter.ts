@@ -1,7 +1,8 @@
 
 import axios from 'axios';
 
-const API_KEY = process.env.NEXT_PUBLIC_FMP_API_KEY;
+// Use import.meta.env instead of process.env for Vite projects
+const API_KEY = import.meta.env.VITE_FMP_API_KEY || '';
 
 // Function to determine if currency conversion is needed
 export const shouldConvertCurrency = (fromCurrency: string, toCurrency: string): boolean => {
