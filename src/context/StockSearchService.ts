@@ -84,12 +84,25 @@ export const useStockSearch = () => {
       let extractedDcfData = null;
       
       if (rating) {
-        // Check if dcfData exists in the API response as a custom property
-        // Use type assertion to access the potentially undefined property
+        // Überprüfe, ob dcfData in der API-Antwort vorhanden ist
         const ratingAny = rating as any;
         if (ratingAny && typeof ratingAny === 'object' && 'dcfData' in ratingAny) {
           extractedDcfData = ratingAny.dcfData;
           console.log('DCF Data found:', JSON.stringify(extractedDcfData, null, 2));
+          
+          // Prüfe explizit, ob equityValuePerShare vorhanden ist und logge es
+          if (extractedDcfData.equityValuePerShare !== undefined) {
+            console.log(`DCF equityValuePerShare (this should be used as intrinsicValue): ${extractedDcfData.equityValuePerShare}`);
+          }
+          
+          // Prüfe explizit die intrinsicValue aus dem DCF
+          if (extractedDcfData.intrinsicValue !== undefined) {
+            console.log(`DCF intrinsicValue: ${extractedDcfData.intrinsicValue}`);
+          } else if (extractedDcfData.equityValuePerShare !== undefined) {
+            // Wenn intrinsicValue nicht existiert, aber equityValuePerShare ja, verwende diese
+            extractedDcfData.intrinsicValue = extractedDcfData.equityValuePerShare;
+            console.log(`Setting intrinsicValue to equityValuePerShare: ${extractedDcfData.intrinsicValue}`);
+          }
         }
         
         updatedRating = {
@@ -100,6 +113,20 @@ export const useStockSearch = () => {
           reportedCurrency: reportedCurrency, // Explicitly assign the required property
           dcfData: extractedDcfData // Assign the extracted DCF data
         };
+        
+        // WICHTIG: Setze den intrinsischen Wert aus den DCF-Daten, wenn verfügbar
+        if (extractedDcfData && (extractedDcfData.intrinsicValue !== undefined || extractedDcfData.equityValuePerShare !== undefined)) {
+          const intrinsicValue = extractedDcfData.intrinsicValue || extractedDcfData.equityValuePerShare;
+          
+          console.log(`Setting rating.intrinsicValue directly from DCF data: ${intrinsicValue}`);
+          updatedRating.intrinsicValue = intrinsicValue;
+          
+          // Aktualisiere auch den info.intrinsicValue
+          if (info) {
+            info.intrinsicValue = intrinsicValue;
+            console.log(`Updated info.intrinsicValue with DCF data: ${intrinsicValue}`);
+          }
+        }
         
         const ratingCurrency = updatedRating.currency || reportedCurrency;
         updatedRating = await convertRatingValues(updatedRating, ratingCurrency, priceCurrency);
@@ -114,6 +141,11 @@ export const useStockSearch = () => {
         title: "Analyse abgeschlossen",
         description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
       });
+      
+      // Logge die endgültigen Werte für Debugging
+      console.log(`Final intrinsicValue in rating: ${updatedRating?.intrinsicValue}`);
+      console.log(`Final intrinsicValue in info: ${info?.intrinsicValue}`);
+      console.log(`Final intrinsicValue in dcfData: ${extractedDcfData?.intrinsicValue}`);
       
       return { 
         info, 

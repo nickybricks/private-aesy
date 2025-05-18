@@ -51,6 +51,14 @@ export function StockProvider({ children }: StockProviderProps) {
         dcfData: newDcfData
       } = await searchStockInfo(ticker);
       
+      // Wenn die dcfData einen intrinsicValue enthält, aktualisiere diesen in den stockInfo-Daten
+      if (newDcfData && newDcfData.intrinsicValue !== undefined) {
+        if (info) {
+          info.intrinsicValue = newDcfData.intrinsicValue;
+          console.log(`Updated stockInfo.intrinsicValue with dcfData.intrinsicValue: ${newDcfData.intrinsicValue}`);
+        }
+      }
+      
       setStockInfo(info);
       setStockCurrency(currency);
       setHasCriticalDataMissing(criticalDataMissing);

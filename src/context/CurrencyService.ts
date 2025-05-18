@@ -1,171 +1,129 @@
 
-import { shouldConvertCurrency, convertCurrency } from '@/utils/currencyConverter';
-import { FinancialMetricsData, HistoricalDataItem, OverallRatingData } from './StockContextTypes';
+import { HistoricalDataItem, OverallRatingData } from "@/context/StockContextTypes";
+import { convertCurrency, getExchangeRate, shouldConvertCurrency } from "@/utils/currencyConverter";
 
-export const convertFinancialMetrics = async (
-  metrics: any[], 
-  reportedCurrency: string, 
-  stockPriceCurrency: string
-): Promise<any[]> => {
-  if (!metrics || !reportedCurrency || !stockPriceCurrency) return metrics;
-  
-  if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
-    console.log(`No conversion needed: both stock price and metrics are in ${stockPriceCurrency}`);
+/**
+ * Konvertiert die Werte der Finanzkennzahlen von der Quellwährung in die Zielwährung
+ */
+export const convertFinancialMetrics = async (metrics: any[], fromCurrency: string, toCurrency: string) => {
+  if (!shouldConvertCurrency(fromCurrency, toCurrency) || !metrics || metrics.length === 0) {
     return metrics;
   }
   
-  const convertedMetrics = await Promise.all(metrics.map(async metric => {
-    if (
-      typeof metric.value !== 'number' || 
-      isNaN(metric.value) || 
-      metric.isPercentage ||
-      metric.isMultiplier
-    ) {
-      return metric;
-    }
-    
-    try {
+  const rate = await getExchangeRate(fromCurrency, toCurrency);
+  if (!rate) return metrics;
+  
+  return metrics.map(metric => {
+    if (metric.value !== null && metric.value !== undefined && !isNaN(Number(metric.value))) {
       const originalValue = metric.value;
-      const convertedValue = await convertCurrency(metric.value, reportedCurrency, stockPriceCurrency);
+      const convertedValue = convertCurrency(originalValue, rate);
       
       return {
         ...metric,
         value: convertedValue,
-        originalValue: originalValue,
-        originalCurrency: reportedCurrency
+        originalValue,
+        originalCurrency: fromCurrency
       };
-    } catch (error) {
-      console.error(`Error converting ${metric.name}:`, error);
-      return metric;
     }
-  }));
-
-  return convertedMetrics;
+    return metric;
+  });
 };
 
-export const convertHistoricalData = async (
-  historicalData: any, 
-  reportedCurrency: string, 
-  stockPriceCurrency: string
-): Promise<any> => {
-  if (!historicalData || !reportedCurrency || !stockPriceCurrency) return historicalData;
-  
-  if (!shouldConvertCurrency(stockPriceCurrency, reportedCurrency)) {
-    console.log(`No historical data conversion needed: both stock price and data are in ${stockPriceCurrency}`);
+/**
+ * Konvertiert historische Daten von der Quellwährung in die Zielwährung
+ */
+export const convertHistoricalData = async (historicalData: any, fromCurrency: string, toCurrency: string) => {
+  if (!shouldConvertCurrency(fromCurrency, toCurrency) || !historicalData) {
     return historicalData;
   }
   
-  try {
-    const convertedData = {
-      revenue: historicalData.revenue ? await Promise.all(historicalData.revenue.map(async (item: any) => ({
-        ...item,
-        originalValue: item.value,
-        originalCurrency: reportedCurrency,
-        value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
-      }))) : [],
-      earnings: historicalData.earnings ? await Promise.all(historicalData.earnings.map(async (item: any) => ({
-        ...item,
-        originalValue: item.value,
-        originalCurrency: reportedCurrency,
-        value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
-      }))) : [],
-      eps: historicalData.eps ? await Promise.all(historicalData.eps.map(async (item: any) => ({
-        ...item,
-        originalValue: item.value,
-        originalCurrency: reportedCurrency,
-        value: await convertCurrency(item.value, reportedCurrency, stockPriceCurrency)
-      }))) : []
-    };
-
-    return convertedData;
-  } catch (error) {
-    console.error('Error converting historical data:', error);
-    return historicalData;
-  }
+  const rate = await getExchangeRate(fromCurrency, toCurrency);
+  if (!rate) return historicalData;
+  
+  const convertItemValues = (items: HistoricalDataItem[]) => {
+    if (!items || !Array.isArray(items)) return [];
+    
+    return items.map(item => {
+      if (item.value !== undefined && item.value !== null && !isNaN(Number(item.value))) {
+        const originalValue = item.value;
+        const convertedValue = convertCurrency(originalValue, rate);
+        
+        return {
+          ...item,
+          value: convertedValue,
+          originalValue,
+          originalCurrency: fromCurrency
+        };
+      }
+      return item;
+    });
+  };
+  
+  return {
+    revenue: historicalData.revenue ? convertItemValues(historicalData.revenue) : [],
+    earnings: historicalData.earnings ? convertItemValues(historicalData.earnings) : [],
+    eps: historicalData.eps ? convertItemValues(historicalData.eps) : []
+  };
 };
 
-export const convertRatingValues = async (
-  rating: OverallRatingData, 
-  ratingCurrency: string, 
-  priceCurrency: string
-): Promise<OverallRatingData> => {
-  if (!rating) return rating;
-  
-  try {
-    // Create a copy of the rating object and initialize required properties
-    const updatedRating = {
-      ...rating,
-      originalIntrinsicValue: rating.originalIntrinsicValue || null,
-      originalBestBuyPrice: rating.originalBestBuyPrice || null,
-      originalPrice: rating.originalPrice || null,
-      reportedCurrency: rating.reportedCurrency // Ensure reportedCurrency is copied over
-    };
-    
-    console.log(`Rating original currency: ${ratingCurrency}, Target currency: ${priceCurrency}`);
-    console.log(`Original intrinsic value: ${updatedRating.intrinsicValue} ${ratingCurrency}`);
-    
-    if (shouldConvertCurrency(priceCurrency, ratingCurrency)) {
-      console.log(`Converting rating values from ${ratingCurrency} to ${priceCurrency}`);
-      
-      if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined) {
-        updatedRating.originalIntrinsicValue = updatedRating.intrinsicValue;
-        
-        updatedRating.intrinsicValue = await convertCurrency(
-          updatedRating.intrinsicValue, 
-          ratingCurrency, 
-          priceCurrency
-        );
-        
-        console.log(`Converted intrinsic value: ${updatedRating.intrinsicValue} ${priceCurrency}`);
-      }
-      
-      if (updatedRating.intrinsicValue !== null && 
-          updatedRating.intrinsicValue !== undefined && 
-          updatedRating.targetMarginOfSafety !== undefined) {
-          
-        if (updatedRating.bestBuyPrice !== null && updatedRating.bestBuyPrice !== undefined) {
-          updatedRating.originalBestBuyPrice = updatedRating.bestBuyPrice;
-        }
-        
-        updatedRating.bestBuyPrice = updatedRating.intrinsicValue * 
-          (1 - (updatedRating.targetMarginOfSafety / 100));
-        
-        console.log(`Recalculated best buy price: ${updatedRating.bestBuyPrice} ${priceCurrency}`);
-      }
-      
-      if (updatedRating.intrinsicValue !== null && 
-          updatedRating.intrinsicValue !== undefined && 
-          updatedRating.currentPrice !== null && 
-          updatedRating.currentPrice !== undefined) {
-        
-        if (updatedRating.currentPrice) {
-          updatedRating.originalPrice = updatedRating.currentPrice;
-          
-          console.log(`Current price already in ${priceCurrency}: ${updatedRating.currentPrice}`);
-        }
-        
-        if (updatedRating.intrinsicValue > 0) {
-          updatedRating.marginOfSafety = {
-            value: ((updatedRating.intrinsicValue - updatedRating.currentPrice) / 
-              updatedRating.intrinsicValue) * 100,
-            status: updatedRating.marginOfSafety?.status || 'fail'
-          };
-          
-          console.log(`Recalculated margin of safety: ${updatedRating.marginOfSafety.value}%`);
-        }
-      }
-      
-      if (ratingCurrency !== priceCurrency) {
-        updatedRating.originalCurrency = ratingCurrency;
-        updatedRating.currency = priceCurrency;
-      }
-    } else {
-      console.log(`No rating conversion needed: both stock price and rating are in ${priceCurrency}`);
-    }
-    
-    return updatedRating;
-  } catch (error) {
-    console.error('Error converting rating values:', error);
+/**
+ * Konvertiert die Bewertungswerte von der Quellwährung in die Zielwährung
+ */
+export const convertRatingValues = async (rating: OverallRatingData, fromCurrency: string, toCurrency: string) => {
+  if (!shouldConvertCurrency(fromCurrency, toCurrency) || !rating) {
     return rating;
   }
+  
+  console.log(`Converting rating values from ${fromCurrency} to ${toCurrency}`);
+  
+  const rate = await getExchangeRate(fromCurrency, toCurrency);
+  if (!rate) return rating;
+  
+  console.log(`Exchange rate: ${rate}`);
+  
+  // Speichere Originalwerte vor der Konvertierung
+  const originalIntrinsicValue = rating.intrinsicValue;
+  const originalBestBuyPrice = rating.bestBuyPrice;
+  const originalPrice = rating.currentPrice;
+  
+  let updatedRating = { ...rating };
+  
+  // Prüfen und sicherstellen, dass dcfData direkt verwendet wird, wenn vorhanden
+  if (rating.dcfData && rating.dcfData.intrinsicValue !== undefined) {
+    console.log(`Using intrinsicValue directly from dcfData: ${rating.dcfData.intrinsicValue}`);
+    updatedRating.intrinsicValue = rating.dcfData.intrinsicValue;
+    
+    // Berechne den bestBuyPrice aus dem intrinsischen Wert und der targetMarginOfSafety
+    if (rating.targetMarginOfSafety !== undefined) {
+      const discountFactor = 1 - (rating.targetMarginOfSafety / 100);
+      updatedRating.bestBuyPrice = rating.dcfData.intrinsicValue * discountFactor;
+      console.log(`Calculated bestBuyPrice: ${updatedRating.bestBuyPrice} from intrinsicValue ${rating.dcfData.intrinsicValue} with discount factor ${discountFactor}`);
+    }
+  } else {
+    // Nur konvertieren, wenn dcfData nicht direkt verfügbar ist
+    if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined && !isNaN(Number(updatedRating.intrinsicValue))) {
+      updatedRating.intrinsicValue = convertCurrency(updatedRating.intrinsicValue, rate);
+      console.log(`Converted intrinsicValue from ${originalIntrinsicValue} to ${updatedRating.intrinsicValue}`);
+    }
+    
+    if (updatedRating.bestBuyPrice !== null && updatedRating.bestBuyPrice !== undefined && !isNaN(Number(updatedRating.bestBuyPrice))) {
+      updatedRating.bestBuyPrice = convertCurrency(updatedRating.bestBuyPrice, rate);
+      console.log(`Converted bestBuyPrice from ${originalBestBuyPrice} to ${updatedRating.bestBuyPrice}`);
+    }
+  }
+  
+  // Aktienpreis konvertieren
+  if (updatedRating.currentPrice !== null && updatedRating.currentPrice !== undefined && !isNaN(Number(updatedRating.currentPrice))) {
+    updatedRating.currentPrice = convertCurrency(updatedRating.currentPrice, rate);
+    console.log(`Converted currentPrice from ${originalPrice} to ${updatedRating.currentPrice}`);
+  }
+  
+  return {
+    ...updatedRating,
+    currency: toCurrency,
+    originalCurrency: fromCurrency,
+    originalIntrinsicValue,
+    originalBestBuyPrice,
+    originalPrice
+  };
 };

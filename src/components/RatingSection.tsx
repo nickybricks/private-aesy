@@ -1,25 +1,23 @@
 
 import React from 'react';
-import OverallRating from '@/components/OverallRating';
 import { useStock } from '@/context/StockContext';
-import { needsCurrencyConversion } from '@/utils/currencyConverter';
+import OverallRating from '@/components/OverallRating';
 
 const RatingSection: React.FC = () => {
-  const { overallRating, stockCurrency, hasCriticalDataMissing } = useStock();
+  const { overallRating, isLoading, hasCriticalDataMissing, dcfData } = useStock();
   
-  if (!overallRating || hasCriticalDataMissing) {
-    return null;
+  if (isLoading || hasCriticalDataMissing || !overallRating) return null;
+  
+  // Debugging-Information
+  console.log("DCF Data in RatingSection:", dcfData);
+  if (dcfData) {
+    console.log("DCF intrinsicValue:", dcfData.intrinsicValue);
   }
-
+  console.log("overallRating intrinsicValue:", overallRating.intrinsicValue);
+  
   return (
-    <div className="mb-10">
-      <OverallRating 
-        rating={{
-          ...overallRating,
-          currency: stockCurrency, // Hier verwenden wir explizit die Aktienkurswährung
-          originalCurrency: needsCurrencyConversion(stockCurrency, overallRating.currency) ? overallRating.currency : undefined
-        }}
-      />
+    <div className="mb-8">
+      <OverallRating rating={overallRating} />
     </div>
   );
 };
