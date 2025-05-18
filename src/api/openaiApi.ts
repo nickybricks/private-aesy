@@ -37,6 +37,8 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
     }
     
+    console.log('Sende Anfrage an OpenAI API...');
+    
     const response = await axios.post<OpenAIResponse>(
       OPENAI_API_URL,
       {
@@ -62,13 +64,28 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       }
     );
     
+    console.log('OpenAI API Antwort erhalten:', response.status);
     return response.data.choices[0].message.content.trim();
   } catch (error) {
     console.error('Error querying OpenAI:', error);
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
-      throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei.');
+    
+    // Verbesserte Fehlerdiagnose
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const message = error.response?.data?.error?.message || error.message;
+      
+      console.error(`OpenAI API Status: ${status}, Meldung: ${message}`);
+      
+      if (status === 401) {
+        throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei.');
+      } else if (status === 429) {
+        throw new Error('OpenAI API-Rate-Limit überschritten. Bitte versuchen Sie es später erneut oder überprüfen Sie Ihr OpenAI-Abonnement.');
+      } else if (status === 500 || status === 503) {
+        throw new Error('OpenAI API-Server sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.');
+      }
     }
-    throw new Error('Fehler bei der Anfrage an OpenAI. Bitte versuchen Sie es später erneut.');
+    
+    throw new Error('Fehler bei der Anfrage an OpenAI. Bitte überprüfen Sie Ihre Internetverbindung und den API-Key.');
   }
 };
 
