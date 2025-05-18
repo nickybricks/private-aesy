@@ -123,7 +123,12 @@ export const useStockSearch = () => {
           
           // Aktualisiere auch den info.intrinsicValue
           if (info) {
-            info.intrinsicValue = intrinsicValue;
+            // Ensure intrinsicValue exists by creating a new object with the property
+            const updatedInfo = {
+              ...info,
+              intrinsicValue: intrinsicValue
+            };
+            info = updatedInfo;
             console.log(`Updated info.intrinsicValue with DCF data: ${intrinsicValue}`);
           }
         }

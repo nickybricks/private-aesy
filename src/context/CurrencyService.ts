@@ -1,7 +1,4 @@
 
-import { HistoricalDataItem, OverallRatingData } from "@/context/StockContextTypes";
-import { convertCurrency, getExchangeRate, shouldConvertCurrency } from "@/utils/currencyConverter";
-
 /**
  * Konvertiert die Werte der Finanzkennzahlen von der Quellwährung in die Zielwährung
  */
@@ -102,19 +99,19 @@ export const convertRatingValues = async (rating: OverallRatingData, fromCurrenc
   } else {
     // Nur konvertieren, wenn dcfData nicht direkt verfügbar ist
     if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined && !isNaN(Number(updatedRating.intrinsicValue))) {
-      updatedRating.intrinsicValue = convertCurrency(updatedRating.intrinsicValue, rate);
+      updatedRating.intrinsicValue = await convertCurrency(updatedRating.intrinsicValue, fromCurrency, toCurrency);
       console.log(`Converted intrinsicValue from ${originalIntrinsicValue} to ${updatedRating.intrinsicValue}`);
     }
     
     if (updatedRating.bestBuyPrice !== null && updatedRating.bestBuyPrice !== undefined && !isNaN(Number(updatedRating.bestBuyPrice))) {
-      updatedRating.bestBuyPrice = convertCurrency(updatedRating.bestBuyPrice, rate);
+      updatedRating.bestBuyPrice = await convertCurrency(updatedRating.bestBuyPrice, fromCurrency, toCurrency);
       console.log(`Converted bestBuyPrice from ${originalBestBuyPrice} to ${updatedRating.bestBuyPrice}`);
     }
   }
   
   // Aktienpreis konvertieren
   if (updatedRating.currentPrice !== null && updatedRating.currentPrice !== undefined && !isNaN(Number(updatedRating.currentPrice))) {
-    updatedRating.currentPrice = convertCurrency(updatedRating.currentPrice, rate);
+    updatedRating.currentPrice = await convertCurrency(updatedRating.currentPrice, fromCurrency, toCurrency);
     console.log(`Converted currentPrice from ${originalPrice} to ${updatedRating.currentPrice}`);
   }
   

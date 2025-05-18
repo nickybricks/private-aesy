@@ -52,6 +52,33 @@ const fetchExchangeRates = async (baseCurrency: string = 'USD'): Promise<Record<
 };
 
 /**
+ * Convert a monetary value using an exchange rate directly
+ */
+export const convertCurrency = (
+  value: number | string | null | undefined,
+  rate: number
+): number => {
+  // Handle non-numeric or invalid inputs
+  if (value === null || value === undefined || value === '' || 
+      (typeof value === 'string' && value.toLowerCase().includes('n/a'))) {
+    return 0;
+  }
+  
+  // Convert string to number if needed
+  let numericValue: number;
+  try {
+    numericValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+    if (isNaN(numericValue)) return 0;
+  } catch (e) {
+    console.error('Error converting value to number:', e, value);
+    return 0;
+  }
+  
+  const convertedValue = numericValue * rate;
+  return convertedValue;
+};
+
+/**
  * Convert a monetary value from source currency to target currency
  */
 export const convertCurrency = async (

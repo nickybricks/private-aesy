@@ -3,13 +3,28 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData } from './StockContextTypes';
 import { useStockSearch } from './StockSearchService';
 
+// Define a more specific interface for stockInfo
+interface StockInfo {
+  name: any;
+  ticker: any;
+  price: any;
+  change: any;
+  changePercent: any;
+  currency: any;
+  marketCap: any;
+  intrinsicValue?: number | null;
+  sharesOutstanding?: number | null;
+  reportedCurrency?: string;
+  originalCurrency?: string;
+}
+
 const StockContext = createContext<StockContextType | undefined>(undefined);
 
 export function StockProvider({ children }: StockProviderProps) {
   const { checkHasGptAvailable, searchStockInfo } = useStockSearch();
   
   const [isLoading, setIsLoading] = useState(false);
-  const [stockInfo, setStockInfo] = useState(null);
+  const [stockInfo, setStockInfo] = useState<StockInfo | null>(null);
   const [buffettCriteria, setBuffettCriteria] = useState(null);
   const [financialMetrics, setFinancialMetrics] = useState<FinancialMetricsData | null>(null);
   const [overallRating, setOverallRating] = useState<OverallRatingData | null>(null);
@@ -54,12 +69,18 @@ export function StockProvider({ children }: StockProviderProps) {
       // Wenn die dcfData einen intrinsicValue enthält, aktualisiere diesen in den stockInfo-Daten
       if (newDcfData && newDcfData.intrinsicValue !== undefined) {
         if (info) {
-          info.intrinsicValue = newDcfData.intrinsicValue;
+          // Ensure intrinsicValue exists on info object
+          const updatedInfo = {
+            ...info,
+            intrinsicValue: newDcfData.intrinsicValue
+          };
+          setStockInfo(updatedInfo);
           console.log(`Updated stockInfo.intrinsicValue with dcfData.intrinsicValue: ${newDcfData.intrinsicValue}`);
         }
+      } else {
+        setStockInfo(info);
       }
       
-      setStockInfo(info);
       setStockCurrency(currency);
       setHasCriticalDataMissing(criticalDataMissing);
       
