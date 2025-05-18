@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -257,7 +256,7 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   );
 };
 
-const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData, currency = 'USD' }) => {
+const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData, currency = 'EUR' }) => {
   if (!metrics) return null;
   
   const metricsArray = Array.isArray(metrics) ? metrics.map(metric => {

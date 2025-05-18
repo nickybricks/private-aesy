@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Area,
@@ -74,9 +75,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           close: item.close,
         }));
 
-        // Fix here: Pass both required parameters to needsCurrencyConversion
-        // We're using 'USD' as a fallback stock currency if none is provided
-        if (needsCurrencyConversion(currency, 'USD')) {
+        if (needsCurrencyConversion(currency)) {
           const convertedData = await Promise.all(
             processedData.map(async (item) => ({
               ...item,

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, RefreshCcw, Edit2, ArrowRight, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -64,7 +63,7 @@ const normalizeIntrinsicValuePerShare = (
   intrinsicValue: number | null, 
   sharesOutstanding: number | null,
   price: number | null,
-  currency: string = 'USD'
+  currency: string = 'EUR'
 ): number | null => {
   if (intrinsicValue === null) return null;
   
@@ -138,13 +137,12 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
       }
       
       const loadExchangeRateInfo = async () => {
-        if (!criticalMissing && stockInfo.currency && stockInfo.reportedCurrency && stockInfo.currency !== stockInfo.reportedCurrency) {
+        if (!criticalMissing && stockInfo.currency && stockInfo.currency !== 'EUR') {
           try {
-            // Show currency notice if report currency differs from stock currency
-            setShowCurrencyNotice(true);
-            const rate = await getExchangeRate(stockInfo.reportedCurrency, stockInfo.currency);
-            if (rate) {
-              setExchangeRate(rate);
+            const rateToEUR = await getExchangeRate(stockInfo.currency, 'EUR');
+            if (rateToEUR) {
+              setExchangeRate(rateToEUR);
+              setShowCurrencyNotice(true);
             }
           } catch (error) {
             console.error('Error fetching exchange rate info:', error);
@@ -260,11 +258,11 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
           <div className="text-3xl font-semibold">
             {price !== null && !isNaN(price) ? `${price.toFixed(2)} ${currency}` : `– ${currency}`}
             
-            {stockInfo.reportedCurrency && currency !== stockInfo.reportedCurrency && exchangeRate && (
+            {currency !== 'EUR' && exchangeRate && (
               <ClickableTooltip
                 content={
                   <p className="max-w-xs">
-                    Wechselkurs: 1 {stockInfo.reportedCurrency} = {exchangeRate.toFixed(6)} {currency}
+                    Wechselkurs: 1 {currency} = {exchangeRate.toFixed(6)} EUR
                   </p>
                 }
               >
@@ -329,25 +327,25 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         </Alert>
       )}
       
-      {showCurrencyNotice && (
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-          <div className="flex items-start gap-2">
-            <Info size={18} className="text-buffett-blue mt-0.5" />
-            <div>
-              <h3 className="font-medium text-buffett-blue mb-1">Währungsinformation</h3>
-              <p className="text-sm">
-                <strong>Kurswährung: {currency}</strong>
-                {reportedCurrency && reportedCurrency !== currency && (
-                  <> (Berichtswährung: {reportedCurrency})</>
-                )}
-              </p>
-              <p className="text-sm mt-1">
-                Wenn Finanzkennzahlen (z. B. Umsatz, FCF, EBIT) in einer anderen Währung angegeben sind als die Kurswährung der Aktie ({currency}), werden diese intern auf die Kurswährung umgerechnet.
-              </p>
-            </div>
+      <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+        <div className="flex items-start gap-2">
+          <Info size={18} className="text-buffett-blue mt-0.5" />
+          <div>
+            <h3 className="font-medium text-buffett-blue mb-1">Währungsinformation</h3>
+            <p className="text-sm">
+              <strong>Kurswährung: {currency}</strong>
+              {stockInfo?.reportedCurrency && stockInfo.reportedCurrency !== currency && (
+                <> (Berichtswährung: {stockInfo.reportedCurrency})</>
+              )}
+            </p>
+            <p className="text-sm mt-1">
+              Alle Finanzkennzahlen wurden – falls notwendig – in {currency} umgerechnet, 
+              um eine korrekte Analyse zu ermöglichen. Originalwerte in abweichenden Währungen 
+              werden in den Tooltips angezeigt.
+            </p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
