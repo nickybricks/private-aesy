@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Info } from 'lucide-react';
+import { hasOpenAiApiKey } from '@/api/openaiApi';
 
 interface ExchangeSelectorProps {
   selectedExchange: string;
@@ -25,6 +26,8 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
   selectedExchange, 
   onExchangeChange 
 }) => {
+  const isGptAvailable = hasOpenAiApiKey();
+  
   return (
     <div className="mb-6">
       <div className="flex items-center mb-2">
@@ -39,6 +42,11 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
             <TooltipContent className="max-w-sm">
               <p>Wählen Sie eine Börse aus, deren Aktien Sie nach Buffett-Kriterien analysieren möchten.</p>
               <p className="mt-1">Die Analyse berücksichtigt 10 quantitative Kriterien.</p>
+              {!isGptAvailable && (
+                <p className="mt-1 text-red-500 font-medium">
+                  Hinweis: GPT-Analyse ist nicht verfügbar. Bitte konfigurieren Sie einen gültigen OpenAI API-Key in der Datei src/api/openaiApi.ts.
+                </p>
+              )}
               <p className="mt-1 text-sm text-yellow-600 font-medium">
                 Hinweis: Bei ausländischen Börsen werden Werte automatisch in EUR umgerechnet.
                 {window.location.hostname.includes('localhost') ? ' (Offline-Modus)' : ''}
@@ -78,6 +86,14 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
           </span>
         )}
       </p>
+      
+      {!isGptAvailable && (
+        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
+          <p className="text-amber-800 text-sm">
+            <strong>GPT-Analyse deaktiviert:</strong> Um die erweiterte GPT-Analyse zu aktivieren, überprüfen Sie bitte Ihren OpenAI API-Key in der Datei <code className="bg-amber-100 px-1 py-0.5 rounded">src/api/openaiApi.ts</code>.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

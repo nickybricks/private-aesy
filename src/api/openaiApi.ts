@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // OpenAI API Key - Fest im Code eingebaut
@@ -11,7 +10,9 @@ const getOpenAiApiKey = () => {
 
 export const hasOpenAiApiKey = (): boolean => {
   // Instead of comparing with empty string, check if the key exists and has a length
-  return !!OPENAI_API_KEY && OPENAI_API_KEY.length > 0;
+  // Also ensure it has the expected format of an OpenAI API key
+  const key = OPENAI_API_KEY;
+  return !!key && key.length > 0 && (key.startsWith('sk-') || key.startsWith('sk-org-') || key.startsWith('sk-proj-'));
 };
 
 // OpenAI API Service
@@ -34,6 +35,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
     const apiKey = getOpenAiApiKey();
     
     if (!apiKey || apiKey.length === 0) {
+      console.error('OpenAI API-Key fehlt oder ist nicht konfiguriert');
       throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
     }
     
@@ -75,17 +77,20 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       const message = error.response?.data?.error?.message || error.message;
       
       console.error(`OpenAI API Status: ${status}, Meldung: ${message}`);
+      console.error('Vollständiger Fehlerbericht:', JSON.stringify(error.response?.data || {}, null, 2));
       
       if (status === 401) {
-        throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei.');
+        throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei. Hinweis: "sk-proj-" Format-Keys funktionieren unter Umständen nicht. Verwenden Sie einen Standard API-Key der mit "sk-" beginnt.');
       } else if (status === 429) {
         throw new Error('OpenAI API-Rate-Limit überschritten. Bitte versuchen Sie es später erneut oder überprüfen Sie Ihr OpenAI-Abonnement.');
       } else if (status === 500 || status === 503) {
         throw new Error('OpenAI API-Server sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.');
+      } else if (error.message.includes('Network Error') || error.message.includes('Failed to fetch')) {
+        throw new Error('Netzwerkfehler beim Verbinden mit OpenAI API. Bitte überprüfen Sie Ihre Internetverbindung.');
       }
     }
     
-    throw new Error('Fehler bei der Anfrage an OpenAI. Bitte überprüfen Sie Ihre Internetverbindung und den API-Key.');
+    throw new Error('Fehler bei der Anfrage an OpenAI. Bitte überprüfen Sie Ihre Internetverbindung und den API-Key in openaiApi.ts.');
   }
 };
 
