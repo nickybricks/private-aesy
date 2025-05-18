@@ -32,6 +32,28 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
     );
   }
 
+  // Check if required DCF data fields are available
+  if (!dcfData.ufcf || !dcfData.wacc || dcfData.presentTerminalValue === undefined || 
+      dcfData.netDebt === undefined || !dcfData.dilutedSharesOutstanding) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+              <HelpCircle size={14} className="text-gray-500" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" align="start" className="max-w-md p-4 bg-white border-gray-200 shadow-lg">
+            <h4 className="font-semibold mb-1">DCF-Berechnung nicht möglich</h4>
+            <p className="text-xs">
+              Für dieses Wertpapier liegen nicht alle nötigen DCF-Daten vor. Eine Bewertung nach Buffett-Prinzipien ist aktuell nicht möglich.
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
   // Formatting helper
   const formatValue = (value: number): string => {
     if (value >= 1000000000) {
