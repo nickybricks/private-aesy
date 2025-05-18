@@ -20,6 +20,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { DCFExplanationTooltip } from './DCFExplanationTooltip';
+import RatingExplanation from './RatingExplanation';
+import MarginOfSafetyExplanation from './MarginOfSafetyExplanation';
 
 type Rating = 'buy' | 'watch' | 'avoid';
 
