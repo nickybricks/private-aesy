@@ -10,18 +10,12 @@ interface ClickableTooltipProps {
   children: ReactNode;
   content: ReactNode;
   className?: string;
-  side?: "top" | "right" | "bottom" | "left";
-  align?: "start" | "center" | "end";
-  width?: string;
 }
 
 export const ClickableTooltip: React.FC<ClickableTooltipProps> = ({ 
   children, 
   content, 
-  className,
-  side = "top",
-  align = "center",
-  width = "auto"
+  className 
 }) => {
   return (
     <Popover>
@@ -30,7 +24,7 @@ export const ClickableTooltip: React.FC<ClickableTooltipProps> = ({
           {children}
         </span>
       </PopoverTrigger>
-      <PopoverContent side={side} align={align} className={width !== "auto" ? `w-${width}` : undefined}>
+      <PopoverContent>
         {content}
       </PopoverContent>
     </Popover>
