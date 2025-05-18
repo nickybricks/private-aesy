@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Area,
@@ -15,7 +14,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { ChartContainer } from '@/components/ui/chart';
 import { Button } from '@/components/ui/button';
-import { convertWithCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
+import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 
 interface StockChartProps {
@@ -80,7 +79,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           const convertedData = await Promise.all(
             processedData.map(async (item) => ({
               ...item,
-              close: await convertWithCurrency(item.close, 'USD', currency),
+              close: await convertCurrency(item.close, 'USD', currency),
             }))
           );
           processedData = convertedData;
