@@ -21,6 +21,10 @@ import {
 } from "@/components/ui/tooltip";
 import { DCFExplanationTooltip } from './DCFExplanationTooltip';
 import { DCFData } from '@/context/StockContextTypes';
+import RatingExplanation from './RatingExplanation';
+import ScoreBreakdownTooltip from './ScoreBreakdownTooltip';
+import { BuffettScoreChart } from './BuffettScoreChart';
+import MarginOfSafetyExplanation from './MarginOfSafetyExplanation';
 
 type Rating = 'buy' | 'watch' | 'avoid';
 
