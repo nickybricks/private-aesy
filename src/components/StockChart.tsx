@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Area,
@@ -14,7 +15,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { ChartContainer } from '@/components/ui/chart';
 import { Button } from '@/components/ui/button';
-import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
+import { convertWithCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 
 interface StockChartProps {
@@ -74,13 +75,12 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           close: item.close,
         }));
 
-        // Fix here: Pass both required parameters to needsCurrencyConversion
-        // We're using 'USD' as a fallback stock currency if none is provided
-        if (needsCurrencyConversion(currency, 'USD')) {
+        // Fix here: Use the correct currency conversion function
+        if (needsCurrencyConversion('USD', currency)) {
           const convertedData = await Promise.all(
             processedData.map(async (item) => ({
               ...item,
-              close: await convertCurrency(item.close, currency, 'EUR'),
+              close: await convertWithCurrency(item.close, 'USD', currency),
             }))
           );
           processedData = convertedData;

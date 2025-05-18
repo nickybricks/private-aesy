@@ -121,15 +121,15 @@ export const useStockSearch = () => {
           console.log(`Setting rating.intrinsicValue directly from DCF data: ${intrinsicValue}`);
           updatedRating.intrinsicValue = intrinsicValue;
           
-          // Aktualisiere auch den info Objekt mit dem intrinsicValue
-          if (info) {
-            // Erstelle ein neues Objekt anstatt das bestehende zu modifizieren
-            info = {
-              ...info,
-              intrinsicValue: intrinsicValue
-            };
-            console.log(`Updated info.intrinsicValue with DCF data: ${intrinsicValue}`);
-          }
+          // Create enhanced info object with intrinsicValue
+          const enhancedInfo = {
+            ...info,
+            intrinsicValue: intrinsicValue
+          };
+          
+          // Replace the info object with the enhanced version
+          info = enhancedInfo;
+          console.log(`Updated info with DCF intrinsicValue: ${intrinsicValue}`);
         }
         
         const ratingCurrency = updatedRating.currency || reportedCurrency;
@@ -148,7 +148,9 @@ export const useStockSearch = () => {
       
       // Logge die endgültigen Werte für Debugging
       console.log(`Final intrinsicValue in rating: ${updatedRating?.intrinsicValue}`);
-      console.log(`Final intrinsicValue in info: ${info?.intrinsicValue}`);
+      if (info && 'intrinsicValue' in info) {
+        console.log(`Final intrinsicValue in info: ${info.intrinsicValue}`);
+      }
       console.log(`Final intrinsicValue in dcfData: ${extractedDcfData?.intrinsicValue}`);
       
       return { 
