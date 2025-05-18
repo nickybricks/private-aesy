@@ -23,7 +23,7 @@ const RatingExplanation: React.FC<RatingExplanationProps> = ({ rating }) => {
             <p>Zu beachten:</p>
             <ul className="list-disc pl-4">
               <li>Hoher Buffett-Score (≥75%)</li>
-              <li>Signifikante Sicherheitsmarge (>20%)</li>
+              <li>Signifikante Sicherheitsmarge (&gt;20%)</li>
               <li>Günstiger Preis im Verhältnis zum inneren Wert</li>
             </ul>
           </div>
