@@ -26,7 +26,7 @@ export const useStockSearch = () => {
 
   const searchStockInfo = async (ticker: string) => {
     try {
-      const info = await fetchStockInfo(ticker);
+      let info = await fetchStockInfo(ticker);
       console.log('Stock Info:', JSON.stringify(info, null, 2));
       
       const stockCurrency = info && info.currency ? info.currency : 'USD';
@@ -121,14 +121,13 @@ export const useStockSearch = () => {
           console.log(`Setting rating.intrinsicValue directly from DCF data: ${intrinsicValue}`);
           updatedRating.intrinsicValue = intrinsicValue;
           
-          // Aktualisiere auch den info.intrinsicValue
+          // Aktualisiere auch den info Objekt mit dem intrinsicValue
           if (info) {
-            // Ensure intrinsicValue exists by creating a new object with the property
-            const updatedInfo = {
+            // Erstelle ein neues Objekt anstatt das bestehende zu modifizieren
+            info = {
               ...info,
               intrinsicValue: intrinsicValue
             };
-            info = updatedInfo;
             console.log(`Updated info.intrinsicValue with DCF data: ${intrinsicValue}`);
           }
         }

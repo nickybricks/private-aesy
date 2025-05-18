@@ -81,7 +81,7 @@ export const convertCurrency = (
 /**
  * Convert a monetary value from source currency to target currency
  */
-export const convertCurrency = async (
+export const convertWithCurrency = async (
   value: number | string | null | undefined,
   fromCurrency: string = 'USD',
   toCurrency: string = 'EUR'
