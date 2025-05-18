@@ -2,7 +2,7 @@
 import { shouldConvertCurrency, getExchangeRate } from '@/utils/currencyConverter';
 import { OverallRatingData } from './StockContextTypes';
 
-// Definiere die benötigten Typen
+// Define the needed types
 interface HistoricalDataItem {
   value: number;
   year: string;
@@ -11,7 +11,7 @@ interface HistoricalDataItem {
 }
 
 /**
- * Konvertiert die Werte der Finanzkennzahlen von der Quellwährung in die Zielwährung
+ * Convert financial metrics values from source currency to target currency
  */
 export const convertFinancialMetrics = async (metrics: any[], fromCurrency: string, toCurrency: string) => {
   if (!shouldConvertCurrency(fromCurrency, toCurrency) || !metrics || metrics.length === 0) {
@@ -38,7 +38,7 @@ export const convertFinancialMetrics = async (metrics: any[], fromCurrency: stri
 };
 
 /**
- * Konvertiert historische Daten von der Quellwährung in die Zielwährung
+ * Convert historical data from source currency to target currency
  */
 export const convertHistoricalData = async (historicalData: any, fromCurrency: string, toCurrency: string) => {
   if (!shouldConvertCurrency(fromCurrency, toCurrency) || !historicalData) {
@@ -75,7 +75,7 @@ export const convertHistoricalData = async (historicalData: any, fromCurrency: s
 };
 
 /**
- * Konvertiert die Bewertungswerte von der Quellwährung in die Zielwährung
+ * Convert rating values from source currency to target currency
  */
 export const convertRatingValues = async (rating: OverallRatingData, fromCurrency: string, toCurrency: string) => {
   if (!shouldConvertCurrency(fromCurrency, toCurrency) || !rating) {
@@ -89,26 +89,26 @@ export const convertRatingValues = async (rating: OverallRatingData, fromCurrenc
   
   console.log(`Exchange rate: ${rate}`);
   
-  // Speichere Originalwerte vor der Konvertierung
+  // Store original values before conversion
   const originalIntrinsicValue = rating.intrinsicValue;
   const originalBestBuyPrice = rating.bestBuyPrice;
   const originalPrice = rating.currentPrice;
   
   let updatedRating = { ...rating };
   
-  // Prüfen und sicherstellen, dass dcfData direkt verwendet wird, wenn vorhanden
+  // Check and ensure dcfData is used directly if available
   if (rating.dcfData && rating.dcfData.intrinsicValue !== undefined) {
     console.log(`Using intrinsicValue directly from dcfData: ${rating.dcfData.intrinsicValue}`);
     updatedRating.intrinsicValue = rating.dcfData.intrinsicValue;
     
-    // Berechne den bestBuyPrice aus dem intrinsischen Wert und der targetMarginOfSafety
+    // Calculate bestBuyPrice from intrinsic value and targetMarginOfSafety
     if (rating.targetMarginOfSafety !== undefined) {
       const discountFactor = 1 - (rating.targetMarginOfSafety / 100);
       updatedRating.bestBuyPrice = rating.dcfData.intrinsicValue * discountFactor;
       console.log(`Calculated bestBuyPrice: ${updatedRating.bestBuyPrice} from intrinsicValue ${rating.dcfData.intrinsicValue} with discount factor ${discountFactor}`);
     }
   } else {
-    // Nur konvertieren, wenn dcfData nicht direkt verfügbar ist
+    // Only convert if dcfData is not directly available
     if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined && !isNaN(Number(updatedRating.intrinsicValue))) {
       const convertedValue = Number(updatedRating.intrinsicValue) * rate;
       updatedRating.intrinsicValue = convertedValue;
@@ -122,7 +122,7 @@ export const convertRatingValues = async (rating: OverallRatingData, fromCurrenc
     }
   }
   
-  // Aktienpreis konvertieren
+  // Convert stock price
   if (updatedRating.currentPrice !== null && updatedRating.currentPrice !== undefined && !isNaN(Number(updatedRating.currentPrice))) {
     const convertedValue = Number(updatedRating.currentPrice) * rate;
     updatedRating.currentPrice = convertedValue;
