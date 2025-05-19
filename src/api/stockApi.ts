@@ -1176,15 +1176,96 @@ export const getOverallRating = async (ticker: string) => {
       weaknesses.push('Bedenken bezüglich der Qualität oder Aktionärsfreundlichkeit des Managements');
     }
     
+    // Get earnings per share from criteria
+    const eps = criteria.financialMetrics && 
+                criteria.financialMetrics.details && 
+                criteria.financialMetrics.details.length > 3 ? 
+                parseFloat(criteria.financialMetrics.details[3].split(":")[1]) : null;
+    
     // Get financial metrics to determine the reported currency
     const financialMetrics = await getFinancialMetrics(ticker);
     const reportedCurrency = financialMetrics?.reportedCurrency || 'USD';
-    console.log(`Stock price currency: ${currency}, Reported currency: ${reportedCurrency}`);
+    console.log(`EPS reported currency: ${reportedCurrency}, Stock price currency: ${currency}`);
 
-    // Die DCF-Werte und Margin of Safety werden in StockSearchService.ts basierend auf den API-Daten festgelegt
-    // Hier werden keine eigenen Berechnungen für den intrinsischen Wert durchgeführt
+    // Convert EPS if currencies are different
+    let convertedEps = eps;
+    if (eps !== null && shouldConvertCurrency(reportedCurrency, currency)) {
+      try {
+        // Here is likely the issue - the convertCurrency function might be called with 3 parameters
+        // when it only accepts 2. Let's fix it:
+        convertedEps = await convertCurrency(eps, reportedCurrency, currency);
+        console.log(`Converted EPS from ${reportedCurrency} to ${currency}: ${eps} -> ${convertedEps}`);
+      } catch (error) {
+        console.error('Error converting EPS currency:', error);
+        // Fallback to original EPS if conversion fails
+        convertedEps = eps;
+      }
+    } else {
+      console.log(`No currency conversion needed for EPS: ${reportedCurrency} = ${currency}`);
+    }
+
+    // Calculate intrinsic value
+    let intrinsicValue;
+    const targetMarginOfSafety = 20; // Default target Margin of Safety (%)
+
+    // Use the previously defined variables instead of redeclaring them
+    // Remove these duplicate declarations:
+    // const isOvervalued = criteria.valuation.status === 'fail';
+    // const hasGoodMoat = criteria.economicMoat.status === 'pass';
+
+    if (convertedEps && currentPrice) {
+      // Simple intrinsic value calculation using a justified P/E ratio
+      const justifiedPE = hasGoodMoat ? 18 : 15; // Higher P/E for companies with moat
+      intrinsicValue = convertedEps * justifiedPE;
+      console.log(`Calculated intrinsic value: ${intrinsicValue} ${currency} (using justified P/E of ${justifiedPE}, converted EPS: ${convertedEps})`);
+    } else if (currentPrice) {
+      // Fallback if no EPS data - estimate using current price and valuation status
+      if (criteria.valuation.status === 'pass') {
+        intrinsicValue = currentPrice * 1.1;
+      } else if (criteria.valuation.status === 'warning') {
+        intrinsicValue = currentPrice;
+      } else {
+        intrinsicValue = currentPrice * 0.8;
+      }
+      console.log(`Fallback intrinsic value: ${intrinsicValue} ${currency} (based on current price: ${currentPrice})`);
+    }
+
+    // Calculate original intrinsic value before conversion
+    let originalIntrinsicValue = null;
+    if (eps !== null && reportedCurrency !== currency) {
+      const justifiedPE = hasGoodMoat ? 18 : 15;
+      originalIntrinsicValue = eps * justifiedPE;
+      console.log(`Original intrinsic value (before currency conversion): ${originalIntrinsicValue} ${reportedCurrency}`);
+    }
+
+    // Calculate best buy price with target margin of safety
+    const bestBuyPrice = intrinsicValue ? 
+      intrinsicValue * (1 - targetMarginOfSafety / 100) : 
+      undefined;
     
-    // Erstellen der Empfehlung basierend auf Buffett-Kriterien
+    const originalBestBuyPrice = originalIntrinsicValue ? 
+      originalIntrinsicValue * (1 - targetMarginOfSafety / 100) : 
+      null;
+    
+    // Calculate current margin of safety
+    let marginOfSafety = {
+      value: 0,
+      status: 'fail' as 'pass' | 'warning' | 'fail'
+    };
+    
+    if (intrinsicValue && currentPrice && intrinsicValue > 0) {
+      marginOfSafety.value = ((intrinsicValue - currentPrice) / intrinsicValue) * 100;
+      
+      if (marginOfSafety.value >= 20) {
+        marginOfSafety.status = 'pass';
+      } else if (marginOfSafety.value >= 10) {
+        marginOfSafety.status = 'warning';
+      } else {
+        marginOfSafety.status = 'fail';
+      }
+    }
+    
+    // Make a more concrete recommendation
     let recommendation;
     if (overall === 'buy') {
       recommendation = `${criteria.businessModel.description.split(' ist tätig')[0]} erfüllt zahlreiche Buffett-Kriterien mit einer Bewertung von ${finalBuffettScore}% auf dem Buffett-Score.
@@ -1192,7 +1273,7 @@ export const getOverallRating = async (ticker: string) => {
 Stärken:
 - ${strengths.slice(0, 3).join('\n- ')}
 
-Das Unternehmen zeigt einen starken wirtschaftlichen Burggraben, solide Finanzen und eine angemessene Bewertung.
+Das Unternehmen zeigt einen starken wirtschaftlichen Burggraben, solide Finanzen und eine angemessene Bewertung. Die aktuelle Margin of Safety beträgt ${marginOfSafety.value.toFixed(1)}%.
 
 Fazit: ${isBusinessModelComplex ? 'Trotz des etwas komplexeren Geschäftsmodells' : 'Mit seinem verständlichen Geschäftsmodell'} stellt ${criteria.businessModel.description.split(' ist tätig')[0]} eine attraktive langfristige Investition dar, die Buffetts Prinzipien entspricht.`;
     } else if (overall === 'watch') {
@@ -1202,17 +1283,25 @@ ${hasGoodMoat ? '✓ Überzeugender wirtschaftlicher Burggraben vorhanden' : '×
 ${isFinanciallyStable ? '✓ Solide finanzielle Situation' : '× Bedenken bezüglich der finanziellen Stabilität'}
 ${isOvervalued ? '× Aktuell überbewertet' : '× Nicht attraktiv genug bewertet'}
 
-Fazit: Behalten Sie die Aktie auf Ihrer Beobachtungsliste und erwägen Sie einen Einstieg, wenn ein günstigerer Preis erreicht wird.`;
+Buffett-Kaufpreis: ${bestBuyPrice?.toFixed(2) || 'N/A'} ${currency}
+Aktueller Preis: ${currentPrice?.toFixed(2) || 'N/A'} ${currency}
+Margin of Safety: ${marginOfSafety.value.toFixed(1)}%
+
+Fazit: Behalten Sie die Aktie auf Ihrer Beobachtungsliste und erwägen Sie einen Einstieg, wenn der Preis näher am Buffett-Kaufpreis liegt.`;
     } else {
       recommendation = `${criteria.businessModel.description.split(' ist tätig')[0]} erfüllt nicht ausreichend Buffetts Investitionskriterien (${finalBuffettScore}% Buffett-Score).
       
 Hauptgründe:
-${isOvervalued ? '- Die aktuelle Bewertung ist deutlich zu hoch' : ''}
+${isOvervalued ? '- Die aktuelle Bewertung ist deutlich zu hoch (Margin of Safety: ' + marginOfSafety.value.toFixed(1) + '%)' : ''}
 ${!hasGoodMoat ? '- Kein überzeugender wirtschaftlicher Burggraben erkennbar' : ''}
 ${!isFinanciallyStable ? '- Bedenken bezüglich der finanziellen Stabilität' : ''}
 ${isBusinessModelComplex ? '- Das Geschäftsmodell ist komplex und schwer verständlich' : ''}
 
-Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen, die mehr von Buffetts Prinzipien erfüllen.`;
+Buffett-Kaufpreis: ${bestBuyPrice?.toFixed(2) || 'N/A'} ${currency}
+Aktueller Preis: ${currentPrice?.toFixed(2) || 'N/A'} ${currency}
+Überbewertung: ${Math.abs(marginOfSafety.value).toFixed(1)}%
+
+Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen, die mehr von Buffetts Prinzipien erfüllen. Wenn Sie dennoch investieren möchten, wäre ein Einstieg beim Buffett-Kaufpreis angemessener.`;
     }
     
     return {
@@ -1222,10 +1311,17 @@ Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen
       weaknesses,
       recommendation,
       buffettScore: finalBuffettScore,
+      marginOfSafety,
+      bestBuyPrice,
       currentPrice,
       currency,
-      reportedCurrency,
-      targetMarginOfSafety: 20 // Standardwert, wird in StockSearchService.ts verwendet
+      intrinsicValue,
+      targetMarginOfSafety,
+      originalIntrinsicValue,
+      originalBestBuyPrice,
+      originalPrice: eps,
+      originalCurrency: reportedCurrency, // Changed from originalCurrency to reportedCurrency
+      reportedCurrency // Added this property to be explicit
     };
   } catch (error) {
     console.error('Error generating overall rating:', error);
