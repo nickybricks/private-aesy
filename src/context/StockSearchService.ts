@@ -23,10 +23,67 @@ const fetchCustomDCF = async (ticker: string) => {
     });
     
     console.log('Custom DCF API response received:', response.data);
+    
+    // Überprüfen, ob die API-Daten ein Array zurückgegeben hat
+    if (Array.isArray(response.data) && response.data.length > 0) {
+      const dcfData = response.data[0]; // Nehme das erste Element
+      console.log('Processing DCF data from array:', dcfData);
+      
+      // Extrahiere die jährlichen Daten und verarbeite sie
+      if (dcfData.fcfAnnual && Array.isArray(dcfData.fcfAnnual)) {
+        console.log('Found annual FCF data:', dcfData.fcfAnnual);
+        
+        // Projektionen für die nächsten 5 Jahre extrahieren
+        const projectedFcf = dcfData.fcfAnnual
+          .filter(annual => annual.year >= new Date().getFullYear())
+          .map(annual => annual.fcf)
+          .slice(0, 5); // Begrenzen auf 5 Jahre
+        
+        // Barwertberechnung mit WACC
+        const wacc = dcfData.wacc || 0.09; // Fallback auf 9% wenn nicht vorhanden
+        const pvProjectedFcf = projectedFcf.map((fcf, index) => {
+          return fcf / Math.pow(1 + wacc, index + 1);
+        });
+        
+        const sumPvProjectedFcf = pvProjectedFcf.reduce((sum, pv) => sum + pv, 0);
+        
+        // Terminal value Berechnung
+        const lastFcf = projectedFcf[projectedFcf.length - 1] || 0;
+        const growthRate = 0.02; // Annahme: 2% langfristiges Wachstum
+        const terminalValue = lastFcf * (1 + growthRate) / (wacc - growthRate);
+        const terminalValuePv = terminalValue / Math.pow(1 + wacc, projectedFcf.length);
+        
+        // Enterprise und Equity Value
+        const enterpriseValue = sumPvProjectedFcf + terminalValuePv;
+        const netDebt = dcfData.netDebt || 0;
+        const equityValue = enterpriseValue - netDebt;
+        
+        // Intrinsischer Wert pro Aktie
+        const sharesOutstanding = dcfData.sharesOutstanding || 0;
+        const dcfValue = sharesOutstanding > 0 ? equityValue / sharesOutstanding : 0;
+        
+        const processedData = {
+          projectedFcf,
+          projectedFcfPv: pvProjectedFcf,
+          wacc,
+          terminalValuePv,
+          netDebt,
+          sharesOutstanding,
+          dcfValue,
+          sumPvProjectedFcf,
+          enterpriseValue,
+          equityValue
+        };
+        
+        console.log('Processed DCF data:', processedData);
+        return processedData;
+      }
+    }
+    
+    console.log('Returning original DCF data format');
     return response.data;
   } catch (error) {
     console.error('Error fetching custom DCF data:', error);
-    // Hier werfen wir keinen Fehler, da DCF-Daten optional sind
     return null;
   }
 };
