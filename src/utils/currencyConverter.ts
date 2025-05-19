@@ -12,7 +12,7 @@ export const shouldConvertCurrency = (fromCurrency: string, toCurrency: string):
 // Alias for shouldConvertCurrency for more semantic usage
 export const needsCurrencyConversion = shouldConvertCurrency;
 
-// Helper function to debug DCF data
+// Helper function to debug DCF data with enhanced output
 export const debugDCFData = (dcfData: any): void => {
   console.log('==== DEBUG DCF DATA ====');
   console.log('DCF Data received:', dcfData ? 'YES' : 'NO (null/undefined)');
@@ -21,6 +21,11 @@ export const debugDCFData = (dcfData: any): void => {
     console.warn('DCF ERROR: No DCF data available to debug');
     return;
   }
+  
+  // More detailed output for DCF data properties
+  console.log('DCF Data type:', typeof dcfData);
+  console.log('DCF Data keys:', Object.keys(dcfData));
+  console.log('DCF Data structure:', JSON.stringify(dcfData, null, 2));
   
   // Log essential properties for DCF calculation
   console.log({

@@ -1,11 +1,13 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStock } from '@/context/StockContext';
 import OverallRating from '@/components/OverallRating';
 import { debugDCFData } from '@/utils/currencyConverter';
+import ErrorAlert from '@/components/ErrorAlert';
 
 const RatingSection: React.FC = () => {
   const { overallRating, isLoading, hasCriticalDataMissing, dcfData, stockInfo } = useStock();
+  const [dcfError, setDcfError] = useState<string | null>(null);
   
   // Add a useEffect to debug DCF data when it becomes available
   useEffect(() => {
@@ -22,6 +24,9 @@ const RatingSection: React.FC = () => {
         // Der intrinsische Wert sollte aus den DCF-Daten kommen
         if (overallRating.intrinsicValue !== dcfData.intrinsicValue) {
           console.warn('DCF ERROR: Mismatch between overallRating.intrinsicValue and dcfData.intrinsicValue');
+          setDcfError('Inkonsistenz zwischen den berechneten Werten gefunden. Bitte versuchen Sie es später erneut.');
+        } else {
+          setDcfError(null);
         }
       }
       
@@ -59,11 +64,13 @@ const RatingSection: React.FC = () => {
       if (missingParts.length > 0) {
         if (missingParts.includes('intrinsicValue')) {
           console.error(`DCF CRITICAL ERROR: Wichtige Daten fehlen: ${missingParts.join(', ')}`);
+          setDcfError(`Kritische DCF-Daten fehlen: ${missingParts.join(', ')}`);
         } else {
           console.warn(`DCF WARNING: Einige DCF-Daten fehlen: ${missingParts.join(', ')}`);
         }
       } else {
         console.log('Alle kritischen DCF-Daten sind vorhanden');
+        setDcfError(null);
       }
       
       // Log the calculated intrinsic value
@@ -85,6 +92,7 @@ const RatingSection: React.FC = () => {
         }
       } else {
         console.error('DCF ERROR: Intrinsic Value ist 0 oder undefiniert!');
+        setDcfError('Intrinsischer Wert konnte nicht berechnet werden.');
       }
     } else {
       console.warn('RatingSection: No DCF data available. Make sure the custom DCF endpoint is being called.');
@@ -103,6 +111,12 @@ const RatingSection: React.FC = () => {
   
   return (
     <div className="mb-8">
+      {dcfError && (
+        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-md">
+          <p className="font-medium">DCF-Berechnungshinweis:</p>
+          <p className="text-sm">{dcfError}</p>
+        </div>
+      )}
       <OverallRating rating={overallRating} />
     </div>
   );

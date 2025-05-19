@@ -56,6 +56,8 @@ export function StockProvider({ children }: StockProviderProps) {
       setHasCriticalDataMissing(false);
       setDcfData(undefined);
       
+      console.log(`Starting stock search for ticker: ${ticker}`);
+      
       const { 
         info, 
         stockCurrency: currency, 
@@ -65,6 +67,9 @@ export function StockProvider({ children }: StockProviderProps) {
         rating,
         dcfData: newDcfData
       } = await searchStockInfo(ticker);
+      
+      console.log(`Search complete for ${ticker}, processing results...`);
+      console.log(`DCF data received:`, newDcfData ? 'YES' : 'NO');
       
       // Wenn die dcfData einen intrinsicValue enthält, aktualisiere diesen in den stockInfo-Daten
       if (newDcfData && newDcfData.intrinsicValue !== undefined) {
@@ -79,10 +84,14 @@ export function StockProvider({ children }: StockProviderProps) {
         }
       } else {
         setStockInfo(info);
+        console.log('No DCF data with intrinsicValue available to update stockInfo');
       }
       
       setStockCurrency(currency);
       setHasCriticalDataMissing(criticalDataMissing);
+      setDcfData(newDcfData);
+      
+      console.log(`Setting DCF data in context:`, newDcfData);
       
       if (!criticalDataMissing) {
         if (gptAvailable) {
@@ -92,10 +101,10 @@ export function StockProvider({ children }: StockProviderProps) {
         setBuffettCriteria(criteria);
         setFinancialMetrics(metricsData);
         setOverallRating(rating);
-        setDcfData(newDcfData);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      console.error(`Stock search error: ${errorMessage}`, error);
       setError(errorMessage);
     } finally {
       setIsLoading(false);

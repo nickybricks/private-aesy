@@ -19,25 +19,39 @@ const fetchCustomDCF = async (ticker: string) => {
     console.log(`Full API URL: ${DCF_BASE_URL}?symbol=${ticker}&apikey=[REDACTED]`);
     
     // Verbesserte Fehlerbehandlung mit Timeout und detailliertem Logging
-    const response = await axios.get(DCF_BASE_URL, {
-      params: {
-        symbol: ticker,
-        apikey: DEFAULT_FMP_API_KEY
-      },
-      timeout: 10000 // 10s Timeout
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15s Timeout
     
-    // Detailliertere Protokollierung der Antwort
-    console.log('Custom DCF API response status:', response.status);
-    console.log('Custom DCF API response headers:', response.headers);
-    console.log('Custom DCF API response received:', 
-      Array.isArray(response.data) 
-        ? `Array with ${response.data.length} items` 
-        : typeof response.data);
-    
-    if (response.data && Array.isArray(response.data)) {
-      console.log('First item in response (if available):', 
-        response.data.length > 0 ? JSON.stringify(response.data[0], null, 2) : 'No items');
+    try {
+      const response = await axios.get(DCF_BASE_URL, {
+        params: {
+          symbol: ticker,
+          apikey: DEFAULT_FMP_API_KEY
+        },
+        signal: controller.signal,
+        timeout: 15000 // 15s Timeout
+      });
+      
+      clearTimeout(timeout);
+      
+      // Detailliertere Protokollierung der Antwort
+      console.log('Custom DCF API response status:', response.status);
+      console.log('Custom DCF API response headers:', response.headers);
+      console.log('Custom DCF API response received:', 
+        Array.isArray(response.data) 
+          ? `Array with ${response.data.length} items` 
+          : typeof response.data);
+      
+      if (response.data && Array.isArray(response.data)) {
+        console.log('First item in response (if available):', 
+          response.data.length > 0 ? JSON.stringify(response.data[0], null, 2) : 'No items');
+      } else {
+        console.warn('Custom DCF API did not return an array:', typeof response.data);
+        console.log('Response data sample:', JSON.stringify(response.data).substring(0, 500) + '...');
+      }
+    } catch (axiosError) {
+      clearTimeout(timeout);
+      throw axiosError;
     }
     
     // Überprüfen, ob die API-Daten ein Array zurückgegeben hat
@@ -143,7 +157,28 @@ const fetchCustomDCF = async (ticker: string) => {
       console.warn('Custom DCF API did not return an array or returned an empty array');
       console.log('DCF API response type:', typeof response.data);
       console.log('DCF API response:', response.data);
-      return null;
+      
+      // Log more details about the response for debugging
+      if (response.data) {
+        if (typeof response.data === 'string') {
+          console.log('DCF API response as string:', response.data.substring(0, 500) + '...');
+          try {
+            // Try to parse if it's a JSON string
+            const parsedData = JSON.parse(response.data);
+            console.log('Parsed JSON data:', parsedData);
+          } catch (e) {
+            console.log('Response is not valid JSON');
+          }
+        } else if (typeof response.data === 'object') {
+          console.log('DCF API response object keys:', Object.keys(response.data));
+          // Check if there's an error message
+          if (response.data.error || response.data.message) {
+            console.error('API error message:', response.data.error || response.data.message);
+          }
+        }
+      }
+      
+      throw new Error('DCF API did not return expected data format');
     }
   } catch (error) {
     console.error('Error fetching custom DCF data:', error);
@@ -153,18 +188,34 @@ const fetchCustomDCF = async (ticker: string) => {
       console.error('API request failed with status:', error.response?.status);
       console.error('API request failed with data:', error.response?.data);
       console.error('API request config:', error.config);
+      
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        console.error('API request timed out');
+      }
+      
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.error('API authentication failed - check API key');
+      }
     }
+    
+    console.log('Attempting fallback API call for DCF data...');
     
     // Versuchen wir einen alternativen Ansatz über fallback API
     try {
-      console.log(`Attempting fallback API call for DCF data for ${ticker}`);
       const fallbackUrl = `https://financialmodelingprep.com/api/v3/discounted-cash-flow/${ticker}`;
       console.log(`Using fallback URL: ${fallbackUrl}`);
       
+      // Verbesserte Fehlerbehandlung für fallback API
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15s Timeout
+      
       const fallbackResponse = await axios.get(fallbackUrl, {
         params: { apikey: DEFAULT_FMP_API_KEY },
-        timeout: 10000
+        signal: controller.signal,
+        timeout: 15000
       });
+      
+      clearTimeout(timeout);
       
       console.log('Fallback API response status:', fallbackResponse.status);
       console.log('Fallback API response data:', fallbackResponse.data);
@@ -176,7 +227,7 @@ const fetchCustomDCF = async (ticker: string) => {
         
         if (dcfData.dcf && dcfData.dcf > 0) {
           // Einfacheres DCF-Objekt aus fallback API erstellen
-          return {
+          const fallbackDcfData = {
             intrinsicValue: dcfData.dcf,
             currency: dcfData.currency || 'USD',
             wacc: 0.09, // Standardwert, da nicht in der API enthalten
@@ -190,13 +241,66 @@ const fetchCustomDCF = async (ticker: string) => {
             equityValue: 0, // Nicht in der API enthalten
             equityValuePerShare: dcfData.dcf // Für Abwärtskompatibilität
           };
+          
+          debugDCFData(fallbackDcfData);
+          return fallbackDcfData;
         }
       }
       console.warn('Fallback API call did not return usable DCF data');
+      
+      // Weitere detaillierte Debugging-Informationen
+      if (fallbackResponse.data) {
+        console.log('Fallback response type:', typeof fallbackResponse.data);
+        
+        if (Array.isArray(fallbackResponse.data)) {
+          console.log('Fallback array length:', fallbackResponse.data.length);
+        } else if (typeof fallbackResponse.data === 'object') {
+          console.log('Fallback response keys:', Object.keys(fallbackResponse.data));
+        }
+      }
+      
+      // Versuche eine dritte API als letzten Ausweg
+      console.log('Attempting tertiary API call for stock valuation...');
+      const tertiaryUrl = `https://financialmodelingprep.com/api/v3/company/discounted-cash-flow/${ticker}`;
+      
+      const tertiaryResponse = await axios.get(tertiaryUrl, {
+        params: { apikey: DEFAULT_FMP_API_KEY },
+        timeout: 15000
+      });
+      
+      console.log('Tertiary API response status:', tertiaryResponse.status);
+      console.log('Tertiary API response data:', tertiaryResponse.data);
+      
+      if (tertiaryResponse.data && tertiaryResponse.data.dcf > 0) {
+        const tcfData = tertiaryResponse.data;
+        
+        // Einfacheres DCF-Objekt aus tertiärer API erstellen
+        return {
+          intrinsicValue: tcfData.dcf,
+          currency: 'USD', // Standardwert, da nicht in der API enthalten
+          wacc: 0.09,
+          dilutedSharesOutstanding: tcfData.totalShares || 0,
+          netDebt: 0,
+          ufcf: [],
+          presentTerminalValue: 0,
+          pvUfcfs: [],
+          sumPvUfcfs: 0,
+          enterpriseValue: 0,
+          equityValue: 0,
+          equityValuePerShare: tcfData.dcf
+        };
+      }
+      
     } catch (fallbackError) {
       console.error('Fallback API call also failed:', fallbackError);
+      
+      if (axios.isAxiosError(fallbackError)) {
+        console.error('Fallback request failed with status:', fallbackError.response?.status);
+        console.error('Fallback request failed with data:', fallbackError.response?.data);
+      }
     }
     
+    console.error('All DCF API attempts failed. Returning null.');
     return null;
   }
 };
