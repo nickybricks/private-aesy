@@ -125,42 +125,12 @@ export const convertRatingValues = async (rating: OverallRatingData, fromCurrenc
   
   let updatedRating = { ...rating };
   
-  // Log DCF data inputs
-  if (rating.dcfData) {
-    console.log('DCF input data before currency conversion:');
-    console.log({
-      ufcfs: rating.dcfData.ufcf,
-      sharesOutstanding: rating.dcfData.dilutedSharesOutstanding,
-      netDebt: rating.dcfData.netDebt,
-      discountRate: rating.dcfData.wacc,
-      currency: rating.dcfData.currency
-    });
-    
-    // Check for NaN values in DCF inputs
-    if (rating.dcfData.ufcf && rating.dcfData.ufcf.some(val => isNaN(val))) {
-      console.warn('DCF ERROR: Some UFCF values are NaN');
-    }
-    
-    if (isNaN(Number(rating.dcfData.netDebt))) {
-      console.warn(`DCF ERROR: Net debt is NaN: ${rating.dcfData.netDebt}`);
-    }
-    
-    if (isNaN(Number(rating.dcfData.dilutedSharesOutstanding))) {
-      console.warn(`DCF ERROR: Shares outstanding is NaN: ${rating.dcfData.dilutedSharesOutstanding}`);
-    }
-    
-    if (isNaN(Number(rating.dcfData.wacc))) {
-      console.warn(`DCF ERROR: WACC is NaN: ${rating.dcfData.wacc}`);
-    }
-  }
-  
   // Check and ensure dcfData is used directly if available
   if (rating.dcfData && rating.dcfData.intrinsicValue !== undefined) {
     console.log(`Using intrinsicValue directly from dcfData: ${rating.dcfData.intrinsicValue}`);
     
     if (isNaN(Number(rating.dcfData.intrinsicValue))) {
       console.warn(`DCF ERROR: Intrinsic value from DCF data is NaN: ${rating.dcfData.intrinsicValue}`);
-      // If NaN, don't use this value
     } else {
       // Check if we need to convert the DCF intrinsic value
       if (rating.dcfData.currency && rating.dcfData.currency !== toCurrency) {
@@ -200,8 +170,6 @@ export const convertRatingValues = async (rating: OverallRatingData, fromCurrenc
         updatedRating.intrinsicValue = convertedValue;
         console.log(`Converted intrinsicValue from ${originalIntrinsicValue} to ${updatedRating.intrinsicValue}`);
       }
-    } else if (updatedRating.intrinsicValue !== null && updatedRating.intrinsicValue !== undefined) {
-      console.warn(`DCF ERROR: Original intrinsic value is NaN: ${updatedRating.intrinsicValue}`);
     }
     
     if (updatedRating.bestBuyPrice !== null && updatedRating.bestBuyPrice !== undefined && !isNaN(Number(updatedRating.bestBuyPrice))) {
@@ -213,8 +181,6 @@ export const convertRatingValues = async (rating: OverallRatingData, fromCurrenc
         updatedRating.bestBuyPrice = convertedValue;
         console.log(`Converted bestBuyPrice from ${originalBestBuyPrice} to ${updatedRating.bestBuyPrice}`);
       }
-    } else if (updatedRating.bestBuyPrice !== null && updatedRating.bestBuyPrice !== undefined) {
-      console.warn(`DCF ERROR: Original best buy price is NaN: ${updatedRating.bestBuyPrice}`);
     }
   }
   
@@ -228,8 +194,6 @@ export const convertRatingValues = async (rating: OverallRatingData, fromCurrenc
       updatedRating.currentPrice = convertedValue;
       console.log(`Converted currentPrice from ${originalPrice} to ${updatedRating.currentPrice}`);
     }
-  } else if (updatedRating.currentPrice !== null && updatedRating.currentPrice !== undefined) {
-    console.warn(`DCF ERROR: Original current price is NaN: ${updatedRating.currentPrice}`);
   }
   
   return {

@@ -18,13 +18,9 @@ const RatingSection: React.FC = () => {
       if (overallRating) {
         console.log('Overall Rating has intrinsicValue:', overallRating.intrinsicValue);
         console.log('DCF has intrinsicValue:', dcfData.intrinsicValue);
-        
-        if (overallRating.intrinsicValue !== dcfData.intrinsicValue) {
-          console.warn('DCF WARNING: Mismatch between overallRating.intrinsicValue and dcfData.intrinsicValue');
-        }
       }
       
-      // Debug zu fehlenden wichtigen Daten
+      // Debug fehlende wichtige Daten
       const missingParts = [];
       if (!dcfData.ufcf || dcfData.ufcf.length === 0) missingParts.push('ufcf');
       if (!dcfData.wacc) missingParts.push('wacc');
