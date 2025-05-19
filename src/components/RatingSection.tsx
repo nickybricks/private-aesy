@@ -26,15 +26,27 @@ const RatingSection: React.FC = () => {
       
       // Debug zu fehlenden wichtigen Daten
       const missingParts = [];
-      if (!dcfData.ufcf || dcfData.ufcf.length === 0) missingParts.push('ufcf');
-      if (dcfData.wacc === 0) missingParts.push('wacc');
-      if (dcfData.presentTerminalValue === 0) missingParts.push('terminalValue');
-      if (dcfData.dilutedSharesOutstanding === 0) missingParts.push('sharesOutstanding');
+      if (!dcfData.ufcf || !Array.isArray(dcfData.ufcf) || dcfData.ufcf.length === 0) {
+        missingParts.push('ufcf');
+      } else {
+        console.log(`ufcf values (${dcfData.ufcf.length} years):`, dcfData.ufcf);
+      }
+      
+      if (!dcfData.wacc || dcfData.wacc === 0) missingParts.push('wacc');
+      if (!dcfData.presentTerminalValue || dcfData.presentTerminalValue === 0) missingParts.push('terminalValue');
+      if (!dcfData.dilutedSharesOutstanding || dcfData.dilutedSharesOutstanding === 0) missingParts.push('sharesOutstanding');
       
       if (missingParts.length > 0) {
         console.warn(`DCF WARNING: Wichtige Daten fehlen: ${missingParts.join(', ')}`);
       } else {
         console.log('Alle kritischen DCF-Daten sind vorhanden');
+        
+        // Log the calculated intrinsic value
+        if (dcfData.intrinsicValue && dcfData.intrinsicValue > 0) {
+          console.log(`DCF Intrinsic Value berechnet: ${dcfData.intrinsicValue.toFixed(2)} ${dcfData.currency || 'USD'}`);
+        } else {
+          console.warn('DCF Intrinsic Value ist 0 oder undefiniert!');
+        }
       }
     } else {
       console.warn('RatingSection: No DCF data available. Make sure the custom DCF endpoint is being called.');
