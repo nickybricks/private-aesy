@@ -11,6 +11,60 @@ import { ClickableTooltip } from './ClickableTooltip';
 import { DCFData } from '@/context/StockContextTypes';
 
 export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData }) => {
+  // Debug DCF data
+  React.useEffect(() => {
+    if (!dcfData) {
+      console.warn('DCF ERROR: No DCF data available');
+      return;
+    }
+
+    // Log DCF input parameters
+    console.log({
+      currency: dcfData.currency,
+      ufcf: dcfData.ufcf,
+      wacc: dcfData.wacc,
+      sharesOutstanding: dcfData.dilutedSharesOutstanding,
+      netDebt: dcfData.netDebt,
+      intrinsicValue: dcfData.intrinsicValue
+    });
+
+    // Check for missing critical fields
+    if (!dcfData.ufcf) {
+      console.warn('DCF ERROR: Keine FreeCashFlows verfügbar');
+    }
+    
+    if (!dcfData.wacc || isNaN(dcfData.wacc)) {
+      console.warn(`DCF ERROR: Ungültiger WACC Wert: ${dcfData.wacc}`);
+    }
+    
+    if (dcfData.presentTerminalValue === undefined || isNaN(dcfData.presentTerminalValue)) {
+      console.warn(`DCF ERROR: Ungültiger Terminal Value: ${dcfData.presentTerminalValue}`);
+    }
+    
+    if (dcfData.netDebt === undefined || isNaN(dcfData.netDebt)) {
+      console.warn(`DCF ERROR: Ungültiger Net Debt: ${dcfData.netDebt}`);
+    }
+    
+    if (!dcfData.dilutedSharesOutstanding || isNaN(dcfData.dilutedSharesOutstanding)) {
+      console.warn(`DCF ERROR: Ungültige Anzahl Aktien: ${dcfData.dilutedSharesOutstanding}`);
+    }
+    
+    // Check for NaN intrinsic value
+    if (isNaN(dcfData.intrinsicValue)) {
+      console.warn('DCF ERROR: Berechneter intrinsischer Wert ist NaN');
+      
+      // Debug the calculation steps
+      console.log({
+        sumPvUfcfs: dcfData.sumPvUfcfs,
+        presentTerminalValue: dcfData.presentTerminalValue,
+        enterpriseValue: dcfData.enterpriseValue,
+        netDebt: dcfData.netDebt,
+        equityValue: dcfData.equityValue,
+        dilutedSharesOutstanding: dcfData.dilutedSharesOutstanding
+      });
+    }
+  }, [dcfData]);
+
   // Wenn keine Daten vorhanden sind, zeige eine Fehlermeldung an
   if (!dcfData) {
     return (
@@ -59,6 +113,10 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
 
   // Formattierungshilfe
   const formatValue = (value: number): string => {
+    if (isNaN(value)) {
+      return 'N/A (NaN)';
+    }
+    
     if (value >= 1000000000) {
       return (value / 1000000000).toFixed(2) + ' Mrd';
     } else if (value >= 1000000) {
@@ -77,14 +135,14 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
       content={
         <div className="space-y-2 max-w-2xl">
           <h4 className="font-semibold">Detaillierte DCF-Berechnung</h4>
-          <p>Der innere Wert von <strong>{dcfData.intrinsicValue.toFixed(2)} {dcfData.currency}</strong> wurde mittels dieser DCF-Berechnung ermittelt:</p>
+          <p>Der innere Wert von <strong>{isNaN(dcfData.intrinsicValue) ? 'N/A (Fehler)' : dcfData.intrinsicValue.toFixed(2)} {dcfData.currency}</strong> wurde mittels dieser DCF-Berechnung ermittelt:</p>
           
           <div className="border border-gray-200 rounded-md p-3 bg-gray-50 mt-2">
             <h5 className="font-medium mb-2">1. Eingabeparameter:</h5>
             <ul className="text-xs space-y-1">
-              <li>• WACC (Kapitalkosten): <strong>{dcfData.wacc.toFixed(2)}%</strong></li>
-              <li>• Nettoverschuldung: <strong>{formatValue(dcfData.netDebt)} {dcfData.currency}</strong></li>
-              <li>• Ausstehende Aktien: <strong>{formatValue(dcfData.dilutedSharesOutstanding)}</strong></li>
+              <li>• WACC (Kapitalkosten): <strong>{isNaN(dcfData.wacc) ? 'N/A (Fehler)' : dcfData.wacc.toFixed(2)}%</strong></li>
+              <li>• Nettoverschuldung: <strong>{isNaN(dcfData.netDebt) ? 'N/A (Fehler)' : formatValue(dcfData.netDebt)} {dcfData.currency}</strong></li>
+              <li>• Ausstehende Aktien: <strong>{isNaN(dcfData.dilutedSharesOutstanding) ? 'N/A (Fehler)' : formatValue(dcfData.dilutedSharesOutstanding)}</strong></li>
             </ul>
           </div>
           
@@ -95,7 +153,7 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
                 <p className="font-medium">Prognostizierte UFCFs:</p>
                 <ul className="space-y-1">
                   {dcfData.ufcf.map((cashflow, index) => (
-                    <li key={index}>Jahr {index + 1}: <strong>{formatValue(cashflow)} {dcfData.currency}</strong></li>
+                    <li key={index}>Jahr {index + 1}: <strong>{isNaN(cashflow) ? 'N/A (Fehler)' : formatValue(cashflow)} {dcfData.currency}</strong></li>
                   ))}
                 </ul>
               </div>
@@ -103,7 +161,7 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
                 <p className="font-medium">Abgezinste UFCFs (PV):</p>
                 <ul className="space-y-1">
                   {dcfData.pvUfcfs.map((pv, index) => (
-                    <li key={index}>Jahr {index + 1}: <strong>{formatValue(pv)} {dcfData.currency}</strong></li>
+                    <li key={index}>Jahr {index + 1}: <strong>{isNaN(pv) ? 'N/A (Fehler)' : formatValue(pv)} {dcfData.currency}</strong></li>
                   ))}
                 </ul>
               </div>
@@ -114,7 +172,7 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
             <h5 className="font-medium mb-2">3. Terminal Value:</h5>
             <p className="mb-2">
               <span className="font-medium">Terminal Value (PV): </span> 
-              <strong>{formatValue(dcfData.presentTerminalValue)} {dcfData.currency}</strong>
+              <strong>{isNaN(dcfData.presentTerminalValue) ? 'N/A (Fehler)' : formatValue(dcfData.presentTerminalValue)} {dcfData.currency}</strong>
             </p>
             <p>
               Dies repräsentiert den abgezinsten Wert aller zukünftigen Cashflows ab Jahr 6.
@@ -126,19 +184,19 @@ export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData
             <ul className="space-y-2">
               <li>
                 <span className="font-medium">Summe aller abgezinsten UFCFs: </span>
-                <strong>{formatValue(dcfData.sumPvUfcfs)} {dcfData.currency}</strong>
+                <strong>{isNaN(dcfData.sumPvUfcfs) ? 'N/A (Fehler)' : formatValue(dcfData.sumPvUfcfs)} {dcfData.currency}</strong>
               </li>
               <li>
                 <span className="font-medium">Enterprise Value = PV(UFCFs) + PV(Terminal): </span>
-                <strong>{formatValue(dcfData.enterpriseValue)} {dcfData.currency}</strong>
+                <strong>{isNaN(dcfData.enterpriseValue) ? 'N/A (Fehler)' : formatValue(dcfData.enterpriseValue)} {dcfData.currency}</strong>
               </li>
               <li>
                 <span className="font-medium">Equity Value = Enterprise Value - Nettoverschuldung: </span>
-                <strong>{formatValue(dcfData.equityValue)} {dcfData.currency}</strong>
+                <strong>{isNaN(dcfData.equityValue) ? 'N/A (Fehler)' : formatValue(dcfData.equityValue)} {dcfData.currency}</strong>
               </li>
               <li>
                 <span className="font-medium">Innerer Wert pro Aktie = Equity Value / Anzahl Aktien: </span>
-                <strong>{dcfData.intrinsicValue.toFixed(2)} {dcfData.currency}</strong>
+                <strong>{isNaN(dcfData.intrinsicValue) ? 'N/A (Fehler)' : dcfData.intrinsicValue.toFixed(2)} {dcfData.currency}</strong>
               </li>
             </ul>
           </div>

@@ -42,12 +42,18 @@ export const getExchangeRate = async (fromCurrency: string, toCurrency: string):
     
     console.log(`Getting exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
     
-    // Updated to use exchangerate.host API which is more reliable and CORS-friendly
+    // Using exchangerate.host API which is more reliable and CORS-friendly
     const response = await axios.get(`https://api.exchangerate.host/latest?base=${normalizedFromCurrency}&symbols=${normalizedToCurrency}`);
     
     if (response.data && response.data.rates && response.data.rates[normalizedToCurrency]) {
       const rate = response.data.rates[normalizedToCurrency];
       console.log(`Exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}: ${rate}`);
+      
+      if (isNaN(rate)) {
+        console.warn(`DCF ERROR: Exchange rate is NaN from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+        return null;
+      }
+      
       return rate;
     }
     
@@ -56,11 +62,18 @@ export const getExchangeRate = async (fromCurrency: string, toCurrency: string):
     const fmpResponse = await axios.get(`https://financialmodelingprep.com/api/v3/fx/${normalizedFromCurrency}${normalizedToCurrency}?apikey=${API_KEY}`);
     
     if (fmpResponse.data && fmpResponse.data[0] && fmpResponse.data[0].rate) {
-      console.log(`FMP exchange rate: ${fmpResponse.data[0].rate}`);
-      return fmpResponse.data[0].rate;
+      const rate = fmpResponse.data[0].rate;
+      console.log(`FMP exchange rate: ${rate}`);
+      
+      if (isNaN(rate)) {
+        console.warn(`DCF ERROR: FMP exchange rate is NaN from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+        return null;
+      }
+      
+      return rate;
     }
     
-    console.warn('Exchange rate not found in response');
+    console.warn(`DCF ERROR: Exchange rate not found in response for ${normalizedFromCurrency} to ${normalizedToCurrency}`);
     return null;
   } catch (error) {
     console.error('Error fetching exchange rate:', error);
@@ -76,12 +89,19 @@ export const getExchangeRate = async (fromCurrency: string, toCurrency: string):
       if (fallbackResponse.data && fallbackResponse.data.rates && fallbackResponse.data.rates[normalizedToCurrency]) {
         const rate = fallbackResponse.data.rates[normalizedToCurrency];
         console.log(`Fallback exchange rate: ${rate}`);
+        
+        if (isNaN(rate)) {
+          console.warn(`DCF ERROR: Fallback exchange rate is NaN from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+          return null;
+        }
+        
         return rate;
       }
     } catch (fallbackError) {
       console.error('Fallback API also failed:', fallbackError);
     }
     
+    console.warn(`DCF ERROR: All exchange rate APIs failed for ${fromCurrency} to ${toCurrency}`);
     return null;
   }
 };
@@ -92,12 +112,26 @@ export const convertCurrency = async (
   fromCurrency: string, 
   toCurrency: string
 ): Promise<number> => {
+  // Debug input values
+  console.log(`Converting currency: ${value} from ${fromCurrency} to ${toCurrency}`);
+  
   if (!shouldConvertCurrency(fromCurrency, toCurrency)) return value;
   
   const rate = await getExchangeRate(fromCurrency, toCurrency);
-  if (rate === null) return value; // If rate fetch fails, return original value
+  if (rate === null) {
+    console.warn(`DCF ERROR: Currency conversion failed - using original value ${value}`);
+    return value; // If rate fetch fails, return original value
+  }
   
-  return value * rate;
+  const convertedValue = value * rate;
+  console.log(`Converted ${value} ${fromCurrency} to ${convertedValue} ${toCurrency} (rate: ${rate})`);
+  
+  if (isNaN(convertedValue)) {
+    console.warn(`DCF ERROR: Converted value is NaN - using original value ${value}`);
+    return value;
+  }
+  
+  return convertedValue;
 };
 
 // Alias for convertCurrency to maintain compatibility with StockChart.tsx

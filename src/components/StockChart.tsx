@@ -53,7 +53,14 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       setIsLoading(true);
       setError(null);
       try {
-        console.log(`Fetching historical data for ${symbol}`);
+        console.log(`Fetching historical data for ${symbol} with currency ${currency}`);
+        
+        // Debug intrinsic value
+        if (intrinsicValue === undefined || intrinsicValue === null || isNaN(Number(intrinsicValue))) {
+          console.warn(`DCF ERROR: Intrinsic value is invalid: ${intrinsicValue}`);
+        } else {
+          console.log(`Using intrinsic value: ${intrinsicValue} ${currency}`);
+        }
         
         const response = await fetch(
           `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${DEFAULT_FMP_API_KEY}`
@@ -77,30 +84,56 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
 
         // Normalize currency codes
         const normalizedCurrency = normalizeCurrencyCode(currency);
+        console.log(`Normalized currency: ${normalizedCurrency}`);
         
         // Fix here: Use the correct currency conversion function with normalized currency codes
         if (needsCurrencyConversion('USD', normalizedCurrency)) {
           console.log(`Converting currency from USD to ${normalizedCurrency}`);
-          const convertedData = await Promise.all(
-            processedData.map(async (item) => ({
-              ...item,
-              close: await convertCurrency(item.close, 'USD', normalizedCurrency),
-            }))
-          );
-          processedData = convertedData;
+          
+          // Check if we have an exchange rate before attempting conversion
+          const testRate = await convertCurrency(1, 'USD', normalizedCurrency);
+          if (isNaN(Number(testRate))) {
+            console.warn(`DCF ERROR: No valid exchange rate USD → ${normalizedCurrency} available (${testRate})`);
+            // Use original data without conversion if we can't get a valid rate
+            setError(`Währungsumrechnung nicht möglich (USD → ${normalizedCurrency})`);
+          } else {
+            console.log(`Exchange rate USD → ${normalizedCurrency}: ${testRate / 1}`);
+            // Convert each data point with debug information
+            const convertedData = await Promise.all(
+              processedData.map(async (item, index) => {
+                const convertedClose = await convertCurrency(item.close, 'USD', normalizedCurrency);
+                if (index === 0) { // Only log the first item to avoid console spam
+                  console.log(`Converted ${item.close} USD to ${convertedClose} ${normalizedCurrency}`);
+                }
+                return {
+                  ...item,
+                  close: convertedClose,
+                };
+              })
+            );
+            processedData = convertedData;
+          }
         }
 
-        // Create an array of intrinsic values that match the length of processedData
-        // This ensures that the intrinsic value is displayed as a horizontal line
+        // Create chart data with intrinsic value
         const chartData: ChartData[] = processedData
-          .map(item => ({
-            date: new Date(item.date),
-            price: item.close,
-            intrinsicValue: intrinsicValue && !isNaN(Number(intrinsicValue)) ? Number(intrinsicValue) : null,
-          }))
+          .map(item => {
+            const dataPoint = {
+              date: new Date(item.date),
+              price: item.close,
+              intrinsicValue: intrinsicValue && !isNaN(Number(intrinsicValue)) ? Number(intrinsicValue) : null,
+            };
+            
+            // Debug for NaN values
+            if (isNaN(dataPoint.price)) {
+              console.warn(`DCF ERROR: NaN price value for date ${item.date}`);
+            }
+            
+            return dataPoint;
+          })
           .sort((a, b) => a.date.getTime() - b.date.getTime());
         
-        console.log(`Chart data prepared with intrinsic value: ${intrinsicValue}`);
+        console.log(`Chart data prepared with ${chartData.length} points. Intrinsic value: ${intrinsicValue}`);
         setHistoricalData(chartData);
       } catch (err) {
         console.error('Error fetching historical data:', err);
