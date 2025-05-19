@@ -15,73 +15,64 @@ const DCF_BASE_URL = 'https://financialmodelingprep.com/stable/custom-discounted
 const fetchCustomDCF = async (ticker: string) => {
   try {
     console.log(`Fetching custom DCF data for ${ticker} from ${DCF_BASE_URL}`);
-    const response = await axios.get(DCF_BASE_URL, {
+    const apiResponse = await axios.get(DCF_BASE_URL, {
       params: {
         symbol: ticker,
         apikey: DEFAULT_FMP_API_KEY
       }
     });
     
-    console.log('Custom DCF API response received:', response.data);
+    console.log('Custom DCF API response received:', apiResponse.data);
     
     // Überprüfen, ob die API-Daten ein Array zurückgegeben hat
-    if (Array.isArray(response.data) && response.data.length > 0) {
-      const dcfData = response.data[0]; // Nehme das erste Element
-      console.log('Processing DCF data from array:', dcfData);
+    if (Array.isArray(apiResponse.data) && apiResponse.data.length > 0) {
+      // Wir nehmen das erste Element aus dem Array (das aktuellste Jahr)
+      const dcfData = apiResponse.data[0];
+      console.log('Processing first year DCF data from array:', dcfData);
       
-      // Extrahiere die jährlichen Daten und verarbeite sie
-      if (dcfData.fcfAnnual && Array.isArray(dcfData.fcfAnnual)) {
-        console.log('Found annual FCF data:', dcfData.fcfAnnual);
+      // Prüfen, ob wichtige Daten vorhanden sind
+      if (dcfData && dcfData.equityValuePerShare !== undefined) {
+        // Projektionen für die nächsten 5 Jahre extrahieren (ufcf)
+        const projectedFcf = apiResponse.data
+          .filter((annual: any) => annual.year >= new Date().getFullYear().toString())
+          .sort((a: any, b: any) => parseInt(a.year) - parseInt(b.year))
+          .map((annual: any) => annual.ufcf || 0)
+          .slice(0, 5);
         
-        // Projektionen für die nächsten 5 Jahre extrahieren
-        const projectedFcf = dcfData.fcfAnnual
-          .filter(annual => annual.year >= new Date().getFullYear())
-          .map(annual => annual.fcf)
-          .slice(0, 5); // Begrenzen auf 5 Jahre
+        console.log('Projected FCF for next 5 years:', projectedFcf);
         
-        // Barwertberechnung mit WACC
-        const wacc = dcfData.wacc || 0.09; // Fallback auf 9% wenn nicht vorhanden
-        const pvProjectedFcf = projectedFcf.map((fcf, index) => {
-          return fcf / Math.pow(1 + wacc, index + 1);
+        // Berechnung der PV für diese UFCFs
+        const wacc = dcfData.wacc || 0.09;
+        const pvProjectedFcf = projectedFcf.map((fcf: number, index: number) => {
+          return fcf / Math.pow(1 + wacc/100, index + 1);
         });
         
-        const sumPvProjectedFcf = pvProjectedFcf.reduce((sum, pv) => sum + pv, 0);
+        console.log('PV of projected FCF:', pvProjectedFcf);
+        console.log('WACC used:', wacc);
         
-        // Terminal value Berechnung
-        const lastFcf = projectedFcf[projectedFcf.length - 1] || 0;
-        const growthRate = 0.02; // Annahme: 2% langfristiges Wachstum
-        const terminalValue = lastFcf * (1 + growthRate) / (wacc - growthRate);
-        const terminalValuePv = terminalValue / Math.pow(1 + wacc, projectedFcf.length);
-        
-        // Enterprise und Equity Value
-        const enterpriseValue = sumPvProjectedFcf + terminalValuePv;
-        const netDebt = dcfData.netDebt || 0;
-        const equityValue = enterpriseValue - netDebt;
-        
-        // Intrinsischer Wert pro Aktie
-        const sharesOutstanding = dcfData.sharesOutstanding || 0;
-        const dcfValue = sharesOutstanding > 0 ? equityValue / sharesOutstanding : 0;
-        
+        // Extrahiere weitere wichtige Werte direkt
         const processedData = {
           projectedFcf,
           projectedFcfPv: pvProjectedFcf,
-          wacc,
-          terminalValuePv,
-          netDebt,
-          sharesOutstanding,
-          dcfValue,
-          sumPvProjectedFcf,
-          enterpriseValue,
-          equityValue
+          wacc: dcfData.wacc || 0,
+          terminalValuePv: dcfData.presentTerminalValue || 0,
+          netDebt: dcfData.netDebt || 0,
+          sharesOutstanding: dcfData.dilutedSharesOutstanding || 0,
+          dcfValue: dcfData.equityValuePerShare || 0,
+          sumPvProjectedFcf: dcfData.sumPvUfcf || 0,
+          enterpriseValue: dcfData.enterpriseValue || 0,
+          equityValue: dcfData.equityValue || 0
         };
         
-        console.log('Processed DCF data:', processedData);
+        console.log('Successfully processed DCF data:', processedData);
         return processedData;
+      } else {
+        console.warn('DCF ERROR: Missing critical data in API response:', dcfData);
       }
     }
     
     console.log('Returning original DCF data format');
-    return response.data;
+    return apiResponse.data && apiResponse.data[0] ? apiResponse.data[0] : null;
   } catch (error) {
     console.error('Error fetching custom DCF data:', error);
     return null;
@@ -186,6 +177,7 @@ export const useStockSearch = () => {
           equityValue: customDcfData.equityValue || 0
         };
 
+        console.log('Extracted DCF data:');
         debugDCFData(extractedDcfData);
         
         // Speichere die Aktienanzahl in den Informationen, falls verfügbar
