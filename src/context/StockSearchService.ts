@@ -48,7 +48,11 @@ const fetchCustomDCF = async (ticker: string) => {
         console.log('Projected FCF for next 5 years:', projectedFcf);
         
         // Berechnung der PV für diese UFCFs
-        const wacc = dcfData.wacc || 0.09;
+        if (!dcfData.wacc) {
+          throw new Error('WACC-Daten fehlen in der DCF-Berechnung');
+        }
+        
+        const wacc = dcfData.wacc;
         const pvProjectedFcf = projectedFcf.map((fcf: number, index: number) => {
           return fcf / Math.pow(1 + wacc/100, index + 1);
         });
@@ -57,14 +61,26 @@ const fetchCustomDCF = async (ticker: string) => {
         console.log('WACC used:', wacc);
         
         // Extrahiere weitere wichtige Werte direkt
+        if (!dcfData.presentTerminalValue) {
+          throw new Error('Terminal Value-Daten fehlen in der DCF-Berechnung');
+        }
+        
+        if (!dcfData.dilutedSharesOutstanding) {
+          throw new Error('Shares Outstanding-Daten fehlen in der DCF-Berechnung');
+        }
+        
+        if (!dcfData.equityValuePerShare) {
+          throw new Error('Equity Value Per Share-Daten fehlen in der DCF-Berechnung');
+        }
+        
         const processedData = {
           projectedFcf,
           projectedFcfPv: pvProjectedFcf,
-          wacc: dcfData.wacc || 0,
-          terminalValuePv: dcfData.presentTerminalValue || 0,
+          wacc: dcfData.wacc,
+          terminalValuePv: dcfData.presentTerminalValue,
           netDebt: dcfData.netDebt || 0,
-          sharesOutstanding: dcfData.dilutedSharesOutstanding || 0,
-          dcfValue: dcfData.equityValuePerShare || 0,
+          sharesOutstanding: dcfData.dilutedSharesOutstanding,
+          dcfValue: dcfData.equityValuePerShare,
           sumPvProjectedFcf: dcfData.sumPvUfcf || 0,
           enterpriseValue: dcfData.enterpriseValue || 0,
           equityValue: dcfData.equityValue || 0
@@ -73,17 +89,14 @@ const fetchCustomDCF = async (ticker: string) => {
         console.log('Successfully processed DCF data:', processedData);
         return processedData;
       } else {
-        console.warn('DCF ERROR: Missing critical data in API response. equityValuePerShare:', dcfData?.equityValuePerShare);
+        throw new Error('DCF ERROR: Wichtige Daten (equityValuePerShare) fehlen in der API-Antwort');
       }
     } else {
-      console.warn('DCF ERROR: API response is not an array or is empty');
+      throw new Error('DCF ERROR: API-Antwort ist kein Array oder ist leer');
     }
-    
-    console.log('Returning original DCF data format');
-    return apiResponse.data && apiResponse.data[0] ? apiResponse.data[0] : null;
   } catch (error) {
     console.error('Error fetching custom DCF data:', error);
-    return null;
+    throw error;
   }
 };
 
@@ -130,156 +143,177 @@ export const useStockSearch = () => {
       });
       
       // Parallele Ausführung aller API-Aufrufe, einschließlich des neuen DCF-Aufrufs
-      const [criteria, rawMetricsData, rating, customDcfData] = await Promise.all([
-        analyzeBuffettCriteria(ticker),
-        getFinancialMetrics(ticker),
-        getOverallRating(ticker),
-        fetchCustomDCF(ticker)
-      ]);
-      
-      console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
-      console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
-      console.log('Overall Rating:', JSON.stringify(rating, null, 2));
-      console.log('Custom DCF Data:', JSON.stringify(customDcfData, null, 2));
-      
-      const priceCurrency = info?.currency || 'USD';
-      const reportedCurrency = rawMetricsData?.reportedCurrency || priceCurrency;
-      
-      console.log(`Price currency: ${priceCurrency}, Reported financial data currency: ${reportedCurrency}`);
-      
-      let metricsData = processFinancialMetrics(rawMetricsData, reportedCurrency, priceCurrency);
-      
-      if (metricsData) {
-        if (metricsData.metrics) {
-          if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
-            metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
-          }
+      try {
+        const [criteria, rawMetricsData, rating, customDcfData] = await Promise.all([
+          analyzeBuffettCriteria(ticker),
+          getFinancialMetrics(ticker),
+          getOverallRating(ticker),
+          fetchCustomDCF(ticker)
+        ]);
+        
+        console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
+        console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
+        console.log('Overall Rating:', JSON.stringify(rating, null, 2));
+        console.log('Custom DCF Data:', JSON.stringify(customDcfData, null, 2));
+        
+        const priceCurrency = info?.currency || 'USD';
+        const reportedCurrency = rawMetricsData?.reportedCurrency;
+        
+        if (!reportedCurrency) {
+          throw new Error('Berichtswährung fehlt in den Finanzdaten');
         }
         
-        if (metricsData.historicalData) {
-          if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
-            metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
-          }
-        }
-      }
-      
-      // Initialize the rating with required properties
-      let updatedRating = null;
-      let extractedDcfData = null;
-
-      // Verarbeite das neue benutzerdefinierte DCF-Ergebnis, wenn verfügbar
-      if (customDcfData) {
-        console.log('Using custom DCF data from direct API call');
-        // Formatiere die Daten in das benötigte Format
-        extractedDcfData = {
-          ufcf: customDcfData.projectedFcf || [],
-          wacc: customDcfData.wacc || 0,
-          presentTerminalValue: customDcfData.terminalValuePv || 0,
-          netDebt: customDcfData.netDebt || 0,
-          dilutedSharesOutstanding: customDcfData.sharesOutstanding || 0,
-          currency: stockCurrency,
-          intrinsicValue: customDcfData.dcfValue || 0,
-          pvUfcfs: customDcfData.projectedFcfPv || [],
-          sumPvUfcfs: customDcfData.sumPvProjectedFcf || 0,
-          enterpriseValue: customDcfData.enterpriseValue || 0,
-          equityValue: customDcfData.equityValue || 0
-        };
-
-        console.log('Extracted DCF data:');
-        debugDCFData(extractedDcfData);
+        console.log(`Price currency: ${priceCurrency}, Reported financial data currency: ${reportedCurrency}`);
         
-        // Speichere die Aktienanzahl in den Informationen, falls verfügbar
-        if (customDcfData.sharesOutstanding) {
-          info = {
-            ...info,
-            sharesOutstanding: customDcfData.sharesOutstanding
-          };
-        }
-      } else if (rating) {
-        // Fallback zu den DCF-Daten aus dem Rating, wenn vorhanden
-        console.log('Falling back to DCF data from rating response');
-        const ratingAny = rating as any;
-        if (ratingAny && typeof ratingAny === 'object' && 'dcfData' in ratingAny) {
-          extractedDcfData = ratingAny.dcfData;
-          console.log('DCF Data found in API response.');
+        let metricsData = processFinancialMetrics(rawMetricsData, reportedCurrency, priceCurrency);
+        
+        if (metricsData) {
+          if (metricsData.metrics) {
+            if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
+              metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
+            }
+          }
           
-          // Debug the full DCF data structure using our new utility
+          if (metricsData.historicalData) {
+            if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
+              metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
+            }
+          }
+        }
+        
+        // Initialize the rating with required properties
+        let updatedRating = null;
+        let extractedDcfData = null;
+
+        // Verarbeite das neue benutzerdefinierte DCF-Ergebnis, wenn verfügbar
+        if (customDcfData) {
+          console.log('Using custom DCF data from direct API call');
+          // Formatiere die Daten in das benötigte Format
+          extractedDcfData = {
+            ufcf: customDcfData.projectedFcf || [],
+            wacc: customDcfData.wacc || 0,
+            presentTerminalValue: customDcfData.terminalValuePv || 0,
+            netDebt: customDcfData.netDebt || 0,
+            dilutedSharesOutstanding: customDcfData.sharesOutstanding || 0,
+            currency: stockCurrency,
+            intrinsicValue: customDcfData.dcfValue || 0,
+            pvUfcfs: customDcfData.projectedFcfPv || [],
+            sumPvUfcfs: customDcfData.sumPvProjectedFcf || 0,
+            enterpriseValue: customDcfData.enterpriseValue || 0,
+            equityValue: customDcfData.equityValue || 0
+          };
+
+          console.log('Extracted DCF data:');
           debugDCFData(extractedDcfData);
           
-          // Prüfe explizit, ob equityValuePerShare vorhanden ist und logge es
-          if (extractedDcfData.equityValuePerShare !== undefined) {
-            console.log(`DCF equityValuePerShare (this should be used as intrinsicValue): ${extractedDcfData.equityValuePerShare}`);
+          // Speichere die Aktienanzahl in den Informationen, falls verfügbar
+          if (customDcfData.sharesOutstanding) {
+            info = {
+              ...info,
+              sharesOutstanding: customDcfData.sharesOutstanding
+            };
           }
-          
-          // Prüfe explizit die intrinsicValue aus dem DCF
-          if (extractedDcfData.intrinsicValue !== undefined) {
-            console.log(`DCF intrinsicValue: ${extractedDcfData.intrinsicValue}`);
-          } else if (extractedDcfData.equityValuePerShare !== undefined) {
-            // Wenn intrinsicValue nicht existiert, aber equityValuePerShare ja, verwende diese
-            extractedDcfData.intrinsicValue = extractedDcfData.equityValuePerShare;
-            console.log(`Setting intrinsicValue to equityValuePerShare: ${extractedDcfData.intrinsicValue}`);
+        } else if (rating) {
+          // Fallback zu den DCF-Daten aus dem Rating, wenn vorhanden
+          console.log('Falling back to DCF data from rating response');
+          const ratingAny = rating as any;
+          if (ratingAny && typeof ratingAny === 'object' && 'dcfData' in ratingAny) {
+            extractedDcfData = ratingAny.dcfData;
+            console.log('DCF Data found in API response.');
+            
+            // Debug the full DCF data structure using our new utility
+            debugDCFData(extractedDcfData);
+            
+            // Prüfe explizit, ob equityValuePerShare vorhanden ist und logge es
+            if (extractedDcfData.equityValuePerShare !== undefined) {
+              console.log(`DCF equityValuePerShare (this should be used as intrinsicValue): ${extractedDcfData.equityValuePerShare}`);
+            } else {
+              throw new Error('equityValuePerShare fehlt in den DCF-Daten');
+            }
+            
+            // Prüfe explizit die intrinsicValue aus dem DCF
+            if (extractedDcfData.intrinsicValue !== undefined) {
+              console.log(`DCF intrinsicValue: ${extractedDcfData.intrinsicValue}`);
+            } else if (extractedDcfData.equityValuePerShare !== undefined) {
+              // Wenn intrinsicValue nicht existiert, aber equityValuePerShare ja, verwende diese
+              extractedDcfData.intrinsicValue = extractedDcfData.equityValuePerShare;
+              console.log(`Setting intrinsicValue to equityValuePerShare: ${extractedDcfData.intrinsicValue}`);
+            } else {
+              throw new Error('Weder intrinsicValue noch equityValuePerShare sind in den DCF-Daten vorhanden');
+            }
+          } else {
+            throw new Error('DCF ERROR: Keine DCF-Daten in der API-Antwort gefunden');
           }
         } else {
-          console.warn('DCF ERROR: No DCF data found in API response');
+          throw new Error('Weder direkte DCF-Daten noch Rating-Daten verfügbar');
         }
-      }
-      
-      if (rating) {
-        updatedRating = {
-          ...rating,
-          originalIntrinsicValue: rating.originalIntrinsicValue || null,
-          originalBestBuyPrice: rating.originalBestBuyPrice || null,
-          originalPrice: rating.originalPrice || null,
-          reportedCurrency: reportedCurrency,
-          dcfData: extractedDcfData
-        };
         
-        // WICHTIG: Setze den intrinsischen Wert aus den DCF-Daten, wenn verfügbar
-        if (extractedDcfData && extractedDcfData.intrinsicValue !== undefined) {
-          console.log(`Setting rating.intrinsicValue directly from DCF data: ${extractedDcfData.intrinsicValue}`);
-          updatedRating.intrinsicValue = extractedDcfData.intrinsicValue;
-          
-          // Create enhanced info object with intrinsicValue
-          const enhancedInfo = {
-            ...info,
-            intrinsicValue: extractedDcfData.intrinsicValue
+        if (rating) {
+          updatedRating = {
+            ...rating,
+            originalIntrinsicValue: rating.originalIntrinsicValue || null,
+            originalBestBuyPrice: rating.originalBestBuyPrice || null,
+            originalPrice: rating.originalPrice || null,
+            reportedCurrency: reportedCurrency,
+            dcfData: extractedDcfData
           };
           
-          // Replace the info object with the enhanced version
-          info = enhancedInfo;
-          console.log(`Updated info with DCF intrinsicValue: ${extractedDcfData.intrinsicValue}`);
+          // WICHTIG: Setze den intrinsischen Wert aus den DCF-Daten, wenn verfügbar
+          if (extractedDcfData && extractedDcfData.intrinsicValue !== undefined) {
+            console.log(`Setting rating.intrinsicValue directly from DCF data: ${extractedDcfData.intrinsicValue}`);
+            updatedRating.intrinsicValue = extractedDcfData.intrinsicValue;
+            
+            // Create enhanced info object with intrinsicValue
+            const enhancedInfo = {
+              ...info,
+              intrinsicValue: extractedDcfData.intrinsicValue
+            };
+            
+            // Replace the info object with the enhanced version
+            info = enhancedInfo;
+            console.log(`Updated info with DCF intrinsicValue: ${extractedDcfData.intrinsicValue}`);
+          } else {
+            throw new Error('Kein intrinsischer Wert in den DCF-Daten vorhanden');
+          }
+          
+          const ratingCurrency = updatedRating.currency || reportedCurrency;
+          updatedRating = await convertRatingValues(updatedRating, ratingCurrency, priceCurrency);
+          
+          if (info && info.price !== null && info.price !== undefined) {
+            updatedRating.currentPrice = info.price;
+            console.log(`Using stock price from info: ${updatedRating.currentPrice} ${priceCurrency}`);
+          } else {
+            throw new Error('Kein Aktienpreis in den Info-Daten vorhanden');
+          }
+        } else {
+          throw new Error('Keine Rating-Daten verfügbar');
         }
         
-        const ratingCurrency = updatedRating.currency || reportedCurrency;
-        updatedRating = await convertRatingValues(updatedRating, ratingCurrency, priceCurrency);
+        toast({
+          title: "Analyse abgeschlossen",
+          description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
+        });
         
-        if (info && info.price !== null && info.price !== undefined) {
-          updatedRating.currentPrice = info.price;
-          console.log(`Using stock price from info: ${updatedRating.currentPrice} ${priceCurrency}`);
+        // Logge die endgültigen Werte für Debugging
+        console.log(`Final intrinsicValue in rating: ${updatedRating?.intrinsicValue}`);
+        if (info && 'intrinsicValue' in info) {
+          console.log(`Final intrinsicValue in info: ${info.intrinsicValue}`);
         }
+        console.log(`Final intrinsicValue in dcfData: ${extractedDcfData?.intrinsicValue}`);
+        
+        return { 
+          info, 
+          stockCurrency, 
+          criticalDataMissing, 
+          criteria, 
+          metricsData, 
+          rating: updatedRating,
+          dcfData: extractedDcfData
+        };
+      } catch (error) {
+        console.error('API-Aufruf oder Datenverarbeitung fehlgeschlagen:', error);
+        throw new Error(`Datenverarbeitungsfehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
       }
-      
-      toast({
-        title: "Analyse abgeschlossen",
-        description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
-      });
-      
-      // Logge die endgültigen Werte für Debugging
-      console.log(`Final intrinsicValue in rating: ${updatedRating?.intrinsicValue}`);
-      if (info && 'intrinsicValue' in info) {
-        console.log(`Final intrinsicValue in info: ${info.intrinsicValue}`);
-      }
-      console.log(`Final intrinsicValue in dcfData: ${extractedDcfData?.intrinsicValue}`);
-      
-      return { 
-        info, 
-        stockCurrency, 
-        criticalDataMissing, 
-        criteria, 
-        metricsData, 
-        rating: updatedRating,
-        dcfData: extractedDcfData
-      };
     } catch (error) {
       console.error('Error searching for stock:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';

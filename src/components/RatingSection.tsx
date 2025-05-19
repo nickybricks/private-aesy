@@ -27,10 +27,10 @@ const RatingSection: React.FC = () => {
       // Debug zu fehlenden wichtigen Daten
       const missingParts = [];
       if (!dcfData.ufcf || dcfData.ufcf.length === 0) missingParts.push('ufcf');
-      if (dcfData.wacc === 0) missingParts.push('wacc');
-      if (dcfData.presentTerminalValue === 0) missingParts.push('terminalValue');
-      if (dcfData.dilutedSharesOutstanding === 0) missingParts.push('sharesOutstanding');
-      if (dcfData.intrinsicValue === 0) missingParts.push('intrinsicValue');
+      if (!dcfData.wacc) missingParts.push('wacc');
+      if (!dcfData.presentTerminalValue) missingParts.push('terminalValue');
+      if (!dcfData.dilutedSharesOutstanding) missingParts.push('sharesOutstanding');
+      if (!dcfData.intrinsicValue) missingParts.push('intrinsicValue');
       
       if (missingParts.length > 0) {
         console.warn(`DCF WARNING: Wichtige Daten fehlen: ${missingParts.join(', ')}`);
