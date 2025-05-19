@@ -7,7 +7,6 @@ import { debugDCFData } from '@/utils/currencyConverter';
 const RatingSection: React.FC = () => {
   const { overallRating, isLoading, hasCriticalDataMissing, dcfData, stockInfo } = useStock();
   
-  // Add a useEffect to debug DCF data when it becomes available
   useEffect(() => {
     console.log('RatingSection mounted or dcfData changed');
     
@@ -20,7 +19,7 @@ const RatingSection: React.FC = () => {
         console.log('DCF has intrinsicValue:', dcfData.intrinsicValue);
       }
       
-      // Debug fehlende wichtige Daten
+      // Debug missing important data
       const missingParts = [];
       if (!dcfData.ufcf || dcfData.ufcf.length === 0) missingParts.push('ufcf');
       if (!dcfData.wacc) missingParts.push('wacc');
@@ -29,14 +28,14 @@ const RatingSection: React.FC = () => {
       if (!dcfData.intrinsicValue) missingParts.push('intrinsicValue');
       
       if (missingParts.length > 0) {
-        console.warn(`DCF WARNING: Wichtige Daten fehlen: ${missingParts.join(', ')}`);
+        console.warn(`DCF WARNING: Important data missing: ${missingParts.join(', ')}`);
       } else {
-        console.log('Alle kritischen DCF-Daten sind vorhanden');
+        console.log('All critical DCF data is available');
       }
     } else {
       console.warn('RatingSection: No DCF data available. Make sure the custom DCF endpoint is being called.');
       
-      // Debug zum Kontext
+      // Debug context
       if (stockInfo) {
         console.log('Stock info is available:', stockInfo.ticker);
       } else {

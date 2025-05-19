@@ -48,27 +48,26 @@ export interface OverallRatingData {
   currency: any;
   intrinsicValue: any;
   targetMarginOfSafety: number;
-  reportedCurrency: string;  // Required
+  reportedCurrency: string;
   originalIntrinsicValue: number | null;
   originalBestBuyPrice: number | null;
   originalPrice: number | null;
   originalCurrency?: string;
-  dcfData?: DCFData;  // Add dcfData property to OverallRatingData
+  dcfData?: DCFData;
 }
 
 export interface DCFData {
-  ufcf: number[];  // Unlevered Free Cash Flows for 5 years
-  wacc: number;    // Weighted Average Cost of Capital (%)
-  presentTerminalValue: number;  // Present value of terminal value
-  netDebt: number; // Net debt (total debt - cash)
-  dilutedSharesOutstanding: number; // Number of outstanding shares
-  currency: string; // Currency of the calculations
-  intrinsicValue: number; // Calculated intrinsic value per share
-  // New fields for detailed DCF calculations
-  pvUfcfs: number[]; // Present values of each UFCF
-  sumPvUfcfs: number; // Sum of all present values of UFCFs
-  enterpriseValue: number; // Enterprise value (sum PVs + terminal value)
-  equityValue: number; // Equity value (enterprise value - net debt)
+  ufcf: number[];
+  wacc: number;
+  presentTerminalValue: number;
+  netDebt: number;
+  dilutedSharesOutstanding: number;
+  currency: string;
+  intrinsicValue: number;
+  pvUfcfs: number[];
+  sumPvUfcfs: number;
+  enterpriseValue: number;
+  equityValue: number;
 }
 
 export interface StockContextType {
