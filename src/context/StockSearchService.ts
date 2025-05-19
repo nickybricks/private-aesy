@@ -1,9 +1,35 @@
+
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { shouldConvertCurrency, debugDCFData } from '@/utils/currencyConverter';
 import { processFinancialMetrics } from './StockDataProcessor';
 import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
+import axios from 'axios';
+import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
+
+// Konstante für den direkten DCF-Endpunkt
+const DCF_BASE_URL = 'https://financialmodelingprep.com/stable/custom-discounted-cash-flow';
+
+// Hilfsfunktion zum Abrufen der DCF-Daten
+const fetchCustomDCF = async (ticker: string) => {
+  try {
+    console.log(`Fetching custom DCF data for ${ticker} from ${DCF_BASE_URL}`);
+    const response = await axios.get(DCF_BASE_URL, {
+      params: {
+        symbol: ticker,
+        apikey: DEFAULT_FMP_API_KEY
+      }
+    });
+    
+    console.log('Custom DCF API response received:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching custom DCF data:', error);
+    // Hier werfen wir keinen Fehler, da DCF-Daten optional sind
+    return null;
+  }
+};
 
 export const useStockSearch = () => {
   const { toast } = useToast();
@@ -47,15 +73,18 @@ export const useStockSearch = () => {
         description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
       });
       
-      const [criteria, rawMetricsData, rating] = await Promise.all([
+      // Parallele Ausführung aller API-Aufrufe, einschließlich des neuen DCF-Aufrufs
+      const [criteria, rawMetricsData, rating, customDcfData] = await Promise.all([
         analyzeBuffettCriteria(ticker),
         getFinancialMetrics(ticker),
-        getOverallRating(ticker)
+        getOverallRating(ticker),
+        fetchCustomDCF(ticker)
       ]);
       
       console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
       console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
       console.log('Overall Rating:', JSON.stringify(rating, null, 2));
+      console.log('Custom DCF Data:', JSON.stringify(customDcfData, null, 2));
       
       const priceCurrency = info?.currency || 'USD';
       const reportedCurrency = rawMetricsData?.reportedCurrency || priceCurrency;
@@ -81,9 +110,37 @@ export const useStockSearch = () => {
       // Initialize the rating with required properties
       let updatedRating = null;
       let extractedDcfData = null;
-      
-      if (rating) {
-        // Überprüfe, ob dcfData in der API-Antwort vorhanden ist
+
+      // Verarbeite das neue benutzerdefinierte DCF-Ergebnis, wenn verfügbar
+      if (customDcfData) {
+        console.log('Using custom DCF data from direct API call');
+        // Formatiere die Daten in das benötigte Format
+        extractedDcfData = {
+          ufcf: customDcfData.projectedFcf || [],
+          wacc: customDcfData.wacc || 0,
+          presentTerminalValue: customDcfData.terminalValuePv || 0,
+          netDebt: customDcfData.netDebt || 0,
+          dilutedSharesOutstanding: customDcfData.sharesOutstanding || 0,
+          currency: stockCurrency,
+          intrinsicValue: customDcfData.dcfValue || 0,
+          pvUfcfs: customDcfData.projectedFcfPv || [],
+          sumPvUfcfs: customDcfData.sumPvProjectedFcf || 0,
+          enterpriseValue: customDcfData.enterpriseValue || 0,
+          equityValue: customDcfData.equityValue || 0
+        };
+
+        debugDCFData(extractedDcfData);
+        
+        // Speichere die Aktienanzahl in den Informationen, falls verfügbar
+        if (customDcfData.sharesOutstanding) {
+          info = {
+            ...info,
+            sharesOutstanding: customDcfData.sharesOutstanding
+          };
+        }
+      } else if (rating) {
+        // Fallback zu den DCF-Daten aus dem Rating, wenn vorhanden
+        console.log('Falling back to DCF data from rating response');
         const ratingAny = rating as any;
         if (ratingAny && typeof ratingAny === 'object' && 'dcfData' in ratingAny) {
           extractedDcfData = ratingAny.dcfData;
@@ -108,32 +165,32 @@ export const useStockSearch = () => {
         } else {
           console.warn('DCF ERROR: No DCF data found in API response');
         }
-        
+      }
+      
+      if (rating) {
         updatedRating = {
           ...rating,
           originalIntrinsicValue: rating.originalIntrinsicValue || null,
           originalBestBuyPrice: rating.originalBestBuyPrice || null,
           originalPrice: rating.originalPrice || null,
-          reportedCurrency: reportedCurrency, // Explicitly assign the required property
-          dcfData: extractedDcfData // Assign the extracted DCF data
+          reportedCurrency: reportedCurrency,
+          dcfData: extractedDcfData
         };
         
         // WICHTIG: Setze den intrinsischen Wert aus den DCF-Daten, wenn verfügbar
-        if (extractedDcfData && (extractedDcfData.intrinsicValue !== undefined || extractedDcfData.equityValuePerShare !== undefined)) {
-          const intrinsicValue = extractedDcfData.intrinsicValue || extractedDcfData.equityValuePerShare;
-          
-          console.log(`Setting rating.intrinsicValue directly from DCF data: ${intrinsicValue}`);
-          updatedRating.intrinsicValue = intrinsicValue;
+        if (extractedDcfData && extractedDcfData.intrinsicValue !== undefined) {
+          console.log(`Setting rating.intrinsicValue directly from DCF data: ${extractedDcfData.intrinsicValue}`);
+          updatedRating.intrinsicValue = extractedDcfData.intrinsicValue;
           
           // Create enhanced info object with intrinsicValue
           const enhancedInfo = {
             ...info,
-            intrinsicValue: intrinsicValue
+            intrinsicValue: extractedDcfData.intrinsicValue
           };
           
           // Replace the info object with the enhanced version
           info = enhancedInfo;
-          console.log(`Updated info with DCF intrinsicValue: ${intrinsicValue}`);
+          console.log(`Updated info with DCF intrinsicValue: ${extractedDcfData.intrinsicValue}`);
         }
         
         const ratingCurrency = updatedRating.currency || reportedCurrency;

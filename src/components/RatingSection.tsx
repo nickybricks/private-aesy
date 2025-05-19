@@ -24,7 +24,7 @@ const RatingSection: React.FC = () => {
         }
       }
     } else {
-      console.warn('RatingSection: No DCF data available');
+      console.warn('RatingSection: No DCF data available. Make sure the custom DCF endpoint is being called.');
     }
   }, [dcfData, overallRating]);
   
