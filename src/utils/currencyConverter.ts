@@ -42,16 +42,46 @@ export const getExchangeRate = async (fromCurrency: string, toCurrency: string):
     
     console.log(`Getting exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
     
-    const response = await axios.get(`https://financialmodelingprep.com/api/v3/fx/${normalizedFromCurrency}${normalizedToCurrency}?apikey=${API_KEY}`);
+    // Updated to use exchangerate.host API which is more reliable and CORS-friendly
+    const response = await axios.get(`https://api.exchangerate.host/latest?base=${normalizedFromCurrency}&symbols=${normalizedToCurrency}`);
     
-    if (response.data && response.data[0] && response.data[0].rate) {
-      console.log(`Exchange rate: ${response.data[0].rate}`);
-      return response.data[0].rate;
+    if (response.data && response.data.rates && response.data.rates[normalizedToCurrency]) {
+      const rate = response.data.rates[normalizedToCurrency];
+      console.log(`Exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}: ${rate}`);
+      return rate;
     }
-    console.warn('Exchange rate not found in response:', response.data);
+    
+    // Fallback to FMP API if exchangerate.host fails
+    console.log(`Fallback to FMP API for exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+    const fmpResponse = await axios.get(`https://financialmodelingprep.com/api/v3/fx/${normalizedFromCurrency}${normalizedToCurrency}?apikey=${API_KEY}`);
+    
+    if (fmpResponse.data && fmpResponse.data[0] && fmpResponse.data[0].rate) {
+      console.log(`FMP exchange rate: ${fmpResponse.data[0].rate}`);
+      return fmpResponse.data[0].rate;
+    }
+    
+    console.warn('Exchange rate not found in response');
     return null;
   } catch (error) {
     console.error('Error fetching exchange rate:', error);
+    
+    // Try fallback API if first one fails
+    try {
+      const normalizedFromCurrency = normalizeCurrencyCode(fromCurrency);
+      const normalizedToCurrency = normalizeCurrencyCode(toCurrency);
+      
+      console.log(`Trying fallback API for exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+      const fallbackResponse = await axios.get(`https://api.exchangerate.host/latest?base=${normalizedFromCurrency}&symbols=${normalizedToCurrency}`);
+      
+      if (fallbackResponse.data && fallbackResponse.data.rates && fallbackResponse.data.rates[normalizedToCurrency]) {
+        const rate = fallbackResponse.data.rates[normalizedToCurrency];
+        console.log(`Fallback exchange rate: ${rate}`);
+        return rate;
+      }
+    } catch (fallbackError) {
+      console.error('Fallback API also failed:', fallbackError);
+    }
+    
     return null;
   }
 };

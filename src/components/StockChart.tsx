@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Area,
@@ -14,7 +15,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { ChartContainer } from '@/components/ui/chart';
 import { Button } from '@/components/ui/button';
-import { convertCurrency, needsCurrencyConversion } from '@/utils/currencyConverter';
+import { convertCurrency, needsCurrencyConversion, normalizeCurrencyCode } from '@/utils/currencyConverter';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 
 interface StockChartProps {
@@ -74,12 +75,16 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           close: item.close,
         }));
 
-        // Fix here: Use the correct currency conversion function
-        if (needsCurrencyConversion('USD', currency)) {
+        // Normalize currency codes
+        const normalizedCurrency = normalizeCurrencyCode(currency);
+        
+        // Fix here: Use the correct currency conversion function with normalized currency codes
+        if (needsCurrencyConversion('USD', normalizedCurrency)) {
+          console.log(`Converting currency from USD to ${normalizedCurrency}`);
           const convertedData = await Promise.all(
             processedData.map(async (item) => ({
               ...item,
-              close: await convertCurrency(item.close, 'USD', currency),
+              close: await convertCurrency(item.close, 'USD', normalizedCurrency),
             }))
           );
           processedData = convertedData;
@@ -183,7 +188,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           }}
         >
           <ResponsiveContainer width="100%" height={580}>
-            <ComposedChart data={filteredData} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
+            <ComposedChart data={getFilteredData()} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
@@ -219,7 +224,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                             ? payload[0].value.toFixed(2) 
                             : payload[0].value} {currency}
                         </p>
-                        {showIntrinsicLine && (
+                        {intrinsicValue !== null && intrinsicValue !== undefined && !isNaN(Number(intrinsicValue)) && (
                           <p className="text-sm text-green-700">
                             Innerer Wert: {Number(intrinsicValue).toFixed(2)} {currency}
                           </p>
@@ -237,7 +242,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                 fillOpacity={1}
                 fill="url(#colorPrice)"
               />
-              {showIntrinsicLine && (
+              {intrinsicValue !== null && intrinsicValue !== undefined && !isNaN(Number(intrinsicValue)) && (
                 <ReferenceLine
                   y={Number(intrinsicValue)}
                   stroke="hsl(142, 76%, 36%)"
