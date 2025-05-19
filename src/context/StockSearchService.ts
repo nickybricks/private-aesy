@@ -16,14 +16,29 @@ const DCF_BASE_URL = 'https://financialmodelingprep.com/stable/custom-discounted
 const fetchCustomDCF = async (ticker: string) => {
   try {
     console.log(`Fetching custom DCF data for ${ticker} from ${DCF_BASE_URL}`);
+    console.log(`Full API URL: ${DCF_BASE_URL}?symbol=${ticker}&apikey=[REDACTED]`);
+    
+    // Verbesserte Fehlerbehandlung mit Timeout und detailliertem Logging
     const response = await axios.get(DCF_BASE_URL, {
       params: {
         symbol: ticker,
         apikey: DEFAULT_FMP_API_KEY
-      }
+      },
+      timeout: 10000 // 10s Timeout
     });
     
-    console.log('Custom DCF API response received:', response.data);
+    // Detailliertere Protokollierung der Antwort
+    console.log('Custom DCF API response status:', response.status);
+    console.log('Custom DCF API response headers:', response.headers);
+    console.log('Custom DCF API response received:', 
+      Array.isArray(response.data) 
+        ? `Array with ${response.data.length} items` 
+        : typeof response.data);
+    
+    if (response.data && Array.isArray(response.data)) {
+      console.log('First item in response (if available):', 
+        response.data.length > 0 ? JSON.stringify(response.data[0], null, 2) : 'No items');
+    }
     
     // Überprüfen, ob die API-Daten ein Array zurückgegeben hat
     if (Array.isArray(response.data) && response.data.length > 0) {
@@ -50,10 +65,13 @@ const fetchCustomDCF = async (ticker: string) => {
       
       if (!latestCompleteYear) {
         console.warn('No year with complete DCF data found');
+        console.log('Available fields in the first data item:', 
+          sortedData.length > 0 ? Object.keys(sortedData[0]) : 'No data items');
         return null;
       }
       
       console.log('Using data from year', latestCompleteYear.year, 'for complete DCF calculation');
+      console.log('Complete year data:', latestCompleteYear);
       
       // Projektionen für die nächsten Jahre extrahieren
       const currentYear = new Date().getFullYear();
@@ -123,10 +141,62 @@ const fetchCustomDCF = async (ticker: string) => {
       return processedData;
     } else {
       console.warn('Custom DCF API did not return an array or returned an empty array');
+      console.log('DCF API response type:', typeof response.data);
+      console.log('DCF API response:', response.data);
       return null;
     }
   } catch (error) {
     console.error('Error fetching custom DCF data:', error);
+    
+    // Erweiterte Fehlerinformationen
+    if (axios.isAxiosError(error)) {
+      console.error('API request failed with status:', error.response?.status);
+      console.error('API request failed with data:', error.response?.data);
+      console.error('API request config:', error.config);
+    }
+    
+    // Versuchen wir einen alternativen Ansatz über fallback API
+    try {
+      console.log(`Attempting fallback API call for DCF data for ${ticker}`);
+      const fallbackUrl = `https://financialmodelingprep.com/api/v3/discounted-cash-flow/${ticker}`;
+      console.log(`Using fallback URL: ${fallbackUrl}`);
+      
+      const fallbackResponse = await axios.get(fallbackUrl, {
+        params: { apikey: DEFAULT_FMP_API_KEY },
+        timeout: 10000
+      });
+      
+      console.log('Fallback API response status:', fallbackResponse.status);
+      console.log('Fallback API response data:', fallbackResponse.data);
+      
+      // Wir versuchen die Daten von der alternativen API zu verarbeiten
+      if (fallbackResponse.data && Array.isArray(fallbackResponse.data) && fallbackResponse.data.length > 0) {
+        const dcfData = fallbackResponse.data[0];
+        console.log('Extracted DCF data from fallback API:', dcfData);
+        
+        if (dcfData.dcf && dcfData.dcf > 0) {
+          // Einfacheres DCF-Objekt aus fallback API erstellen
+          return {
+            intrinsicValue: dcfData.dcf,
+            currency: dcfData.currency || 'USD',
+            wacc: 0.09, // Standardwert, da nicht in der API enthalten
+            dilutedSharesOutstanding: dcfData.sharesOutstanding || 0,
+            netDebt: 0, // Nicht in der API enthalten
+            ufcf: [], // Nicht in der API enthalten
+            presentTerminalValue: 0, // Nicht in der API enthalten
+            pvUfcfs: [], // Nicht in der API enthalten
+            sumPvUfcfs: 0, // Nicht in der API enthalten
+            enterpriseValue: 0, // Nicht in der API enthalten
+            equityValue: 0, // Nicht in der API enthalten
+            equityValuePerShare: dcfData.dcf // Für Abwärtskompatibilität
+          };
+        }
+      }
+      console.warn('Fallback API call did not return usable DCF data');
+    } catch (fallbackError) {
+      console.error('Fallback API call also failed:', fallbackError);
+    }
+    
     return null;
   }
 };

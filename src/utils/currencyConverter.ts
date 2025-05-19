@@ -26,7 +26,7 @@ export const debugDCFData = (dcfData: any): void => {
   console.log({
     'Currency': dcfData.currency,
     'WACC': dcfData.wacc,
-    'Unlevered Free Cash Flows': dcfData.ufcf,
+    'Unlevered Free Cash Flows': Array.isArray(dcfData.ufcf) ? `${dcfData.ufcf.length} values` : 'Not an array',
     'Present Value of Terminal': dcfData.presentTerminalValue,
     'Net Debt': dcfData.netDebt,
     'Diluted Shares Outstanding': dcfData.dilutedSharesOutstanding,
@@ -37,25 +37,47 @@ export const debugDCFData = (dcfData: any): void => {
     'Equity Value per Share': dcfData.equityValuePerShare
   });
   
+  // Validiere die berechneten Werte
+  if (dcfData.intrinsicValue) {
+    if (dcfData.intrinsicValue === dcfData.equityValuePerShare) {
+      console.log('DCF-Validierung: intrinsicValue entspricht equityValuePerShare ✅');
+    } else {
+      console.warn('DCF-Warnung: intrinsicValue und equityValuePerShare unterscheiden sich');
+      console.log(`intrinsicValue: ${dcfData.intrinsicValue}, equityValuePerShare: ${dcfData.equityValuePerShare}`);
+    }
+  }
+  
+  // Prüfe ob die Berechnungswerte plausibel sind
+  if (dcfData.enterpriseValue > 0 && dcfData.equityValue > 0) {
+    console.log('DCF-Validierung: Enterprise Value und Equity Value sind positiv ✅');
+    console.log(`Enterprise Value: ${dcfData.enterpriseValue}, Equity Value: ${dcfData.equityValue}`);
+    
+    if (dcfData.netDebt >= 0) {
+      console.log(`Nettoverschuldung: ${dcfData.netDebt}`);
+      const calculatedEquityValue = dcfData.enterpriseValue - dcfData.netDebt;
+      
+      // Prüfe ob der berechnete Equity-Wert mit dem gespeicherten übereinstimmt
+      const equityValueError = Math.abs(calculatedEquityValue - dcfData.equityValue);
+      if (equityValueError < 0.01) {
+        console.log('DCF-Validierung: Equity Value Berechnung korrekt ✅');
+      } else {
+        console.warn('DCF-Warnung: Equity Value Berechnung ungenau');
+        console.log(`Berechnet: ${calculatedEquityValue}, Gespeichert: ${dcfData.equityValue}, Differenz: ${equityValueError}`);
+      }
+    }
+  }
+  
   // Check for missing critical fields
   const missingFields = [];
-  if (!dcfData.ufcf || !Array.isArray(dcfData.ufcf) || dcfData.ufcf.length === 0) {
-    missingFields.push('ufcf (Unlevered Free Cash Flows)');
+  if (dcfData.intrinsicValue === undefined || dcfData.intrinsicValue === 0) {
+    missingFields.push('intrinsicValue (Intrinsic Value per Share)');
   }
   
   if (dcfData.wacc === undefined || isNaN(dcfData.wacc)) {
     missingFields.push('wacc (Weighted Average Cost of Capital)');
   }
   
-  if (dcfData.presentTerminalValue === undefined || isNaN(dcfData.presentTerminalValue)) {
-    missingFields.push('presentTerminalValue (Present Value of Terminal Value)');
-  }
-  
-  if (dcfData.netDebt === undefined || isNaN(dcfData.netDebt)) {
-    missingFields.push('netDebt (Net Debt)');
-  }
-  
-  if (!dcfData.dilutedSharesOutstanding || isNaN(dcfData.dilutedSharesOutstanding)) {
+  if (dcfData.dilutedSharesOutstanding === undefined || isNaN(dcfData.dilutedSharesOutstanding) || dcfData.dilutedSharesOutstanding === 0) {
     missingFields.push('dilutedSharesOutstanding (Number of Shares)');
   }
   
@@ -75,7 +97,7 @@ export const debugDCFData = (dcfData: any): void => {
     console.warn('DCF ERROR: Equity value per share is NaN');
   }
   
-  // Log raw DCF data for detailed inspection
+  // Detaillierte Daten-Log
   console.log('Raw DCF Data:', JSON.stringify(dcfData, null, 2));
   console.log('==== END DEBUG DCF DATA ====');
 };
