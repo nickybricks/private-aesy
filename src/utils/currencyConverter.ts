@@ -13,7 +13,7 @@ export const shouldConvertCurrency = (fromCurrency: string, toCurrency: string):
 export const needsCurrencyConversion = shouldConvertCurrency;
 
 // Normalize currency symbols to standard codes
-const normalizeCurrencyCode = (currency: string): string => {
+export const normalizeCurrencyCode = (currency: string): string => {
   // Convert common currency symbols to their code equivalents
   const symbolToCode: Record<string, string> = {
     '€': 'EUR',
