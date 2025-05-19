@@ -1,4 +1,3 @@
-
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
@@ -7,6 +6,7 @@ import { processFinancialMetrics } from './StockDataProcessor';
 import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
+import { StockInfo } from '@/types/stock';
 
 // Konstante für den direkten DCF-Endpunkt
 const DCF_BASE_URL = 'https://financialmodelingprep.com/stable/custom-discounted-cash-flow';
@@ -51,7 +51,7 @@ export const useStockSearch = () => {
 
   const searchStockInfo = async (ticker: string) => {
     try {
-      let info = await fetchStockInfo(ticker);
+      let info: StockInfo = await fetchStockInfo(ticker);
       console.log('Stock Info:', JSON.stringify(info, null, 2));
       
       const stockCurrency = info && info.currency ? info.currency : 'USD';
