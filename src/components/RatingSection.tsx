@@ -30,6 +30,7 @@ const RatingSection: React.FC = () => {
       if (dcfData.wacc === 0) missingParts.push('wacc');
       if (dcfData.presentTerminalValue === 0) missingParts.push('terminalValue');
       if (dcfData.dilutedSharesOutstanding === 0) missingParts.push('sharesOutstanding');
+      if (dcfData.intrinsicValue === 0) missingParts.push('intrinsicValue');
       
       if (missingParts.length > 0) {
         console.warn(`DCF WARNING: Wichtige Daten fehlen: ${missingParts.join(', ')}`);

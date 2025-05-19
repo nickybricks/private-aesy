@@ -1,3 +1,4 @@
+
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
@@ -26,16 +27,21 @@ const fetchCustomDCF = async (ticker: string) => {
     
     // Überprüfen, ob die API-Daten ein Array zurückgegeben hat
     if (Array.isArray(apiResponse.data) && apiResponse.data.length > 0) {
-      // Wir nehmen das erste Element aus dem Array (das aktuellste Jahr)
+      // Das erste Element enthält die aktuellsten und wichtigsten Daten
       const dcfData = apiResponse.data[0];
       console.log('Processing first year DCF data from array:', dcfData);
       
       // Prüfen, ob wichtige Daten vorhanden sind
-      if (dcfData && dcfData.equityValuePerShare !== undefined) {
+      if (dcfData && typeof dcfData.equityValuePerShare !== 'undefined') {
+        console.log(`Found equityValuePerShare: ${dcfData.equityValuePerShare}`);
+        
         // Projektionen für die nächsten 5 Jahre extrahieren (ufcf)
-        const projectedFcf = apiResponse.data
-          .filter((annual: any) => annual.year >= new Date().getFullYear().toString())
-          .sort((a: any, b: any) => parseInt(a.year) - parseInt(b.year))
+        const currentYear = new Date().getFullYear();
+        const projectedYears = apiResponse.data
+          .filter((annual: any) => parseInt(annual.year) >= currentYear)
+          .sort((a: any, b: any) => parseInt(a.year) - parseInt(b.year));
+        
+        const projectedFcf = projectedYears
           .map((annual: any) => annual.ufcf || 0)
           .slice(0, 5);
         
@@ -67,8 +73,10 @@ const fetchCustomDCF = async (ticker: string) => {
         console.log('Successfully processed DCF data:', processedData);
         return processedData;
       } else {
-        console.warn('DCF ERROR: Missing critical data in API response:', dcfData);
+        console.warn('DCF ERROR: Missing critical data in API response. equityValuePerShare:', dcfData?.equityValuePerShare);
       }
+    } else {
+      console.warn('DCF ERROR: API response is not an array or is empty');
     }
     
     console.log('Returning original DCF data format');
