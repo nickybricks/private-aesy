@@ -22,8 +22,9 @@ const fetchCustomDCF = async (ticker: string) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000); // 15s Timeout
     
+    let response;
     try {
-      const response = await axios.get(DCF_BASE_URL, {
+      response = await axios.get(DCF_BASE_URL, {
         params: {
           symbol: ticker,
           apikey: DEFAULT_FMP_API_KEY
@@ -55,7 +56,7 @@ const fetchCustomDCF = async (ticker: string) => {
     }
     
     // Überprüfen, ob die API-Daten ein Array zurückgegeben hat
-    if (Array.isArray(response.data) && response.data.length > 0) {
+    if (response && Array.isArray(response.data) && response.data.length > 0) {
       // Daten nach Jahren sortieren (neueste zuerst)
       const sortedData = [...response.data].sort((a, b) => b.year - a.year);
       console.log('Sorted DCF data by year (newest first):', sortedData);
@@ -155,11 +156,11 @@ const fetchCustomDCF = async (ticker: string) => {
       return processedData;
     } else {
       console.warn('Custom DCF API did not return an array or returned an empty array');
-      console.log('DCF API response type:', typeof response.data);
-      console.log('DCF API response:', response.data);
-      
-      // Log more details about the response for debugging
-      if (response.data) {
+      if (response && response.data) {
+        console.log('DCF API response type:', typeof response.data);
+        console.log('DCF API response:', response.data);
+        
+        // Log more details about the response for debugging
         if (typeof response.data === 'string') {
           console.log('DCF API response as string:', response.data.substring(0, 500) + '...');
           try {
