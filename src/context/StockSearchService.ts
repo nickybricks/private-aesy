@@ -8,6 +8,7 @@ import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } f
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { StockInfo } from '@/types/stock';
+import { OverallRatingData } from './StockContextTypes';
 
 // Konstante für den direkten DCF-Endpunkt
 const DCF_BASE_URL = 'https://financialmodelingprep.com/stable/custom-discounted-cash-flow';
@@ -182,7 +183,7 @@ export const useStockSearch = () => {
         }
         
         // Initialize the rating with required properties
-        let updatedRating = null;
+        let updatedRating: OverallRatingData | null = null;
         let extractedDcfData = null;
 
         // Verarbeite das neue benutzerdefinierte DCF-Ergebnis, wenn verfügbar
@@ -250,10 +251,13 @@ export const useStockSearch = () => {
         
         if (rating) {
           updatedRating = {
-            ...rating,
-            originalIntrinsicValue: rating.originalIntrinsicValue || null,
-            originalBestBuyPrice: rating.originalBestBuyPrice || null,
-            originalPrice: rating.originalPrice || null,
+            ...(rating as any), // Cast to any to allow property access
+            // Safely assign these properties with null as fallback
+            originalIntrinsicValue: (rating as any).originalIntrinsicValue || null,
+            originalBestBuyPrice: (rating as any).originalBestBuyPrice || null,
+            originalPrice: (rating as any).originalPrice || null,
+            marginOfSafety: (rating as any).marginOfSafety || { value: 0, status: "fail" as const },
+            bestBuyPrice: (rating as any).bestBuyPrice || 0,
             reportedCurrency: reportedCurrency,
             dcfData: extractedDcfData
           };
