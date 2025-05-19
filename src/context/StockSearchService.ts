@@ -1,8 +1,7 @@
-
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
-import { shouldConvertCurrency } from '@/utils/currencyConverter';
+import { shouldConvertCurrency, debugDCFData } from '@/utils/currencyConverter';
 import { processFinancialMetrics } from './StockDataProcessor';
 import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
 
@@ -88,7 +87,10 @@ export const useStockSearch = () => {
         const ratingAny = rating as any;
         if (ratingAny && typeof ratingAny === 'object' && 'dcfData' in ratingAny) {
           extractedDcfData = ratingAny.dcfData;
-          console.log('DCF Data found:', JSON.stringify(extractedDcfData, null, 2));
+          console.log('DCF Data found in API response.');
+          
+          // Debug the full DCF data structure using our new utility
+          debugDCFData(extractedDcfData);
           
           // Prüfe explizit, ob equityValuePerShare vorhanden ist und logge es
           if (extractedDcfData.equityValuePerShare !== undefined) {
@@ -103,6 +105,8 @@ export const useStockSearch = () => {
             extractedDcfData.intrinsicValue = extractedDcfData.equityValuePerShare;
             console.log(`Setting intrinsicValue to equityValuePerShare: ${extractedDcfData.intrinsicValue}`);
           }
+        } else {
+          console.warn('DCF ERROR: No DCF data found in API response');
         }
         
         updatedRating = {

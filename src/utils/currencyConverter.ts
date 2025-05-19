@@ -12,6 +12,74 @@ export const shouldConvertCurrency = (fromCurrency: string, toCurrency: string):
 // Alias for shouldConvertCurrency for more semantic usage
 export const needsCurrencyConversion = shouldConvertCurrency;
 
+// Helper function to debug DCF data
+export const debugDCFData = (dcfData: any): void => {
+  console.log('==== DEBUG DCF DATA ====');
+  console.log('DCF Data received:', dcfData ? 'YES' : 'NO (null/undefined)');
+  
+  if (!dcfData) {
+    console.warn('DCF ERROR: No DCF data available to debug');
+    return;
+  }
+  
+  // Log essential properties for DCF calculation
+  console.log({
+    'Currency': dcfData.currency,
+    'WACC': dcfData.wacc,
+    'Unlevered Free Cash Flows': dcfData.ufcf,
+    'Present Value of Terminal': dcfData.presentTerminalValue,
+    'Net Debt': dcfData.netDebt,
+    'Diluted Shares Outstanding': dcfData.dilutedSharesOutstanding,
+    'Sum of Present Value of UFCFs': dcfData.sumPvUfcfs,
+    'Enterprise Value': dcfData.enterpriseValue,
+    'Equity Value': dcfData.equityValue,
+    'Intrinsic Value per Share': dcfData.intrinsicValue,
+    'Equity Value per Share': dcfData.equityValuePerShare
+  });
+  
+  // Check for missing critical fields
+  const missingFields = [];
+  if (!dcfData.ufcf || !Array.isArray(dcfData.ufcf) || dcfData.ufcf.length === 0) {
+    missingFields.push('ufcf (Unlevered Free Cash Flows)');
+  }
+  
+  if (dcfData.wacc === undefined || isNaN(dcfData.wacc)) {
+    missingFields.push('wacc (Weighted Average Cost of Capital)');
+  }
+  
+  if (dcfData.presentTerminalValue === undefined || isNaN(dcfData.presentTerminalValue)) {
+    missingFields.push('presentTerminalValue (Present Value of Terminal Value)');
+  }
+  
+  if (dcfData.netDebt === undefined || isNaN(dcfData.netDebt)) {
+    missingFields.push('netDebt (Net Debt)');
+  }
+  
+  if (!dcfData.dilutedSharesOutstanding || isNaN(dcfData.dilutedSharesOutstanding)) {
+    missingFields.push('dilutedSharesOutstanding (Number of Shares)');
+  }
+  
+  // Log any missing fields
+  if (missingFields.length > 0) {
+    console.warn('DCF ERROR: Missing critical fields:', missingFields.join(', '));
+  } else {
+    console.log('All critical DCF fields are present');
+  }
+  
+  // Check for NaN in calculated values
+  if (dcfData.intrinsicValue !== undefined && isNaN(dcfData.intrinsicValue)) {
+    console.warn('DCF ERROR: Calculated intrinsic value is NaN');
+  }
+  
+  if (dcfData.equityValuePerShare !== undefined && isNaN(dcfData.equityValuePerShare)) {
+    console.warn('DCF ERROR: Equity value per share is NaN');
+  }
+  
+  // Log raw DCF data for detailed inspection
+  console.log('Raw DCF Data:', JSON.stringify(dcfData, null, 2));
+  console.log('==== END DEBUG DCF DATA ====');
+};
+
 // Normalize currency symbols to standard codes
 export const normalizeCurrencyCode = (currency: string): string => {
   // Convert common currency symbols to their code equivalents

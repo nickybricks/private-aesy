@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HelpCircle } from 'lucide-react';
 import {
@@ -9,60 +8,51 @@ import {
 } from "@/components/ui/tooltip";
 import { ClickableTooltip } from './ClickableTooltip';
 import { DCFData } from '@/context/StockContextTypes';
+import { debugDCFData } from '@/utils/currencyConverter';
 
 export const DCFExplanationTooltip: React.FC<{ dcfData?: DCFData }> = ({ dcfData }) => {
   // Debug DCF data
   React.useEffect(() => {
+    console.log('DCFExplanationTooltip rendering with dcfData:', dcfData ? 'present' : 'not present');
+    
     if (!dcfData) {
-      console.warn('DCF ERROR: No DCF data available');
+      console.warn('DCFExplanationTooltip: No DCF data available');
       return;
     }
 
-    // Log DCF input parameters
-    console.log({
-      currency: dcfData.currency,
-      ufcf: dcfData.ufcf,
-      wacc: dcfData.wacc,
-      sharesOutstanding: dcfData.dilutedSharesOutstanding,
-      netDebt: dcfData.netDebt,
-      intrinsicValue: dcfData.intrinsicValue
-    });
-
-    // Check for missing critical fields
-    if (!dcfData.ufcf) {
-      console.warn('DCF ERROR: Keine FreeCashFlows verfügbar');
-    }
+    // Use our enhanced debug function
+    debugDCFData(dcfData);
     
-    if (!dcfData.wacc || isNaN(dcfData.wacc)) {
-      console.warn(`DCF ERROR: Ungültiger WACC Wert: ${dcfData.wacc}`);
-    }
-    
-    if (dcfData.presentTerminalValue === undefined || isNaN(dcfData.presentTerminalValue)) {
-      console.warn(`DCF ERROR: Ungültiger Terminal Value: ${dcfData.presentTerminalValue}`);
-    }
-    
-    if (dcfData.netDebt === undefined || isNaN(dcfData.netDebt)) {
-      console.warn(`DCF ERROR: Ungültiger Net Debt: ${dcfData.netDebt}`);
-    }
-    
-    if (!dcfData.dilutedSharesOutstanding || isNaN(dcfData.dilutedSharesOutstanding)) {
-      console.warn(`DCF ERROR: Ungültige Anzahl Aktien: ${dcfData.dilutedSharesOutstanding}`);
-    }
-    
-    // Check for NaN intrinsic value
-    if (isNaN(dcfData.intrinsicValue)) {
-      console.warn('DCF ERROR: Berechneter intrinsischer Wert ist NaN');
+    // Additional component-specific debug checks
+    if (dcfData.ufcf && dcfData.pvUfcfs) {
+      // Check that the lengths match
+      if (dcfData.ufcf.length !== dcfData.pvUfcfs.length) {
+        console.warn(`DCF ERROR: UFCF length (${dcfData.ufcf.length}) doesn't match PV_UFCF length (${dcfData.pvUfcfs.length})`);
+      }
       
-      // Debug the calculation steps
-      console.log({
-        sumPvUfcfs: dcfData.sumPvUfcfs,
-        presentTerminalValue: dcfData.presentTerminalValue,
-        enterpriseValue: dcfData.enterpriseValue,
-        netDebt: dcfData.netDebt,
-        equityValue: dcfData.equityValue,
-        dilutedSharesOutstanding: dcfData.dilutedSharesOutstanding
+      // Check individual cash flow values
+      dcfData.ufcf.forEach((cf, index) => {
+        if (isNaN(cf)) {
+          console.warn(`DCF ERROR: UFCF for year ${index + 1} is NaN`);
+        }
+      });
+      
+      dcfData.pvUfcfs.forEach((pv, index) => {
+        if (isNaN(pv)) {
+          console.warn(`DCF ERROR: PV of UFCF for year ${index + 1} is NaN`);
+        }
       });
     }
+    
+    // Check final calculation steps
+    console.log('DCF Calculation Check:');
+    console.log(`1. Sum PV UFCFs: ${dcfData.sumPvUfcfs}`);
+    console.log(`2. + Terminal Value (PV): ${dcfData.presentTerminalValue}`);
+    console.log(`3. = Enterprise Value: ${dcfData.enterpriseValue}`);
+    console.log(`4. - Net Debt: ${dcfData.netDebt}`);
+    console.log(`5. = Equity Value: ${dcfData.equityValue}`);
+    console.log(`6. ÷ Shares: ${dcfData.dilutedSharesOutstanding}`);
+    console.log(`7. = Value Per Share: ${dcfData.intrinsicValue}`);
   }, [dcfData]);
 
   // Wenn keine Daten vorhanden sind, zeige eine Fehlermeldung an
