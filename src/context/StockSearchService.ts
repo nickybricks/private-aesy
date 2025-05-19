@@ -181,6 +181,194 @@ export const useStockSearch = () => {
         fetchCustomDCF(ticker)
       ]);
       
+      console.log('Buffett Criteria:', JSON.stringify(criteriaI'll fix the TypeScript errors in the StockSearchService.ts file. Looking at the errors, it appears there's a mismatch between the field names in the customDcfData object and the fields we're trying to access.
+
+<lov-code>
+Let's fix the property name mismatches in the StockSearchService.ts file:
+
+<lov-write file_path="src/context/StockSearchService.ts">
+import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
+import { hasOpenAiApiKey } from '@/api/openaiApi';
+import { useToast } from '@/hooks/use-toast';
+import { shouldConvertCurrency, debugDCFData } from '@/utils/currencyConverter';
+import { processFinancialMetrics } from './StockDataProcessor';
+import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
+import axios from 'axios';
+import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
+import { StockInfo } from '@/types/stock';
+
+// Konstante für den direkten DCF-Endpunkt
+const DCF_BASE_URL = 'https://financialmodelingprep.com/stable/custom-discounted-cash-flow';
+
+// Hilfsfunktion zum Abrufen der DCF-Daten
+const fetchCustomDCF = async (ticker: string) => {
+  try {
+    console.log(`Fetching custom DCF data for ${ticker} from ${DCF_BASE_URL}`);
+    const response = await axios.get(DCF_BASE_URL, {
+      params: {
+        symbol: ticker,
+        apikey: DEFAULT_FMP_API_KEY
+      }
+    });
+    
+    console.log('Custom DCF API response received:', response.data);
+    
+    // Überprüfen, ob die API-Daten ein Array zurückgegeben hat
+    if (Array.isArray(response.data) && response.data.length > 0) {
+      // Daten nach Jahren sortieren (neueste zuerst)
+      const sortedData = [...response.data].sort((a, b) => b.year - a.year);
+      console.log('Sorted DCF data by year (newest first):', sortedData);
+      
+      // Die FCF-Werte für alle Jahre extrahieren
+      const fcfValues = sortedData
+        .filter(yearData => yearData.fcf !== undefined && yearData.fcf !== null)
+        .map(yearData => ({
+          year: yearData.year,
+          fcf: yearData.fcf
+        }));
+      
+      console.log('Extracted FCF values for all years:', fcfValues);
+      
+      // Das letzte Jahr mit vollständigen Daten finden (normalerweise das letzte Prognosejahr)
+      const latestCompleteYear = sortedData.find(yearData => 
+        yearData.wacc !== undefined && 
+        yearData.netDebt !== undefined && 
+        yearData.sharesOutstanding !== undefined
+      );
+      
+      if (!latestCompleteYear) {
+        console.warn('No year with complete DCF data found');
+        return null;
+      }
+      
+      console.log('Using data from year', latestCompleteYear.year, 'for complete DCF calculation');
+      
+      // Projektionen für die nächsten Jahre extrahieren
+      const currentYear = new Date().getFullYear();
+      const projectedFcf = fcfValues
+        .filter(item => item.year >= currentYear)
+        .sort((a, b) => a.year - b.year)  // Nach Jahren sortieren (älteste zuerst)
+        .map(item => item.fcf)
+        .slice(0, 5);  // Auf 5 Jahre begrenzen
+      
+      if (projectedFcf.length === 0) {
+        console.warn('No projected FCF values found for future years');
+        return null;
+      }
+      
+      console.log('Projected FCF for next 5 years:', projectedFcf);
+      
+      // DCF-Berechnungen durchführen
+      const wacc = latestCompleteYear.wacc || 0.09; // Fallback auf 9% wenn nicht vorhanden
+      console.log('Using WACC:', wacc);
+      
+      // Barwertberechnung mit WACC
+      const pvProjectedFcf = projectedFcf.map((fcf, index) => {
+        return fcf / Math.pow(1 + wacc, index + 1);
+      });
+      
+      console.log('Present value of projected FCFs:', pvProjectedFcf);
+      
+      const sumPvProjectedFcf = pvProjectedFcf.reduce((sum, pv) => sum + pv, 0);
+      
+      // Terminal value Berechnung
+      const lastFcf = projectedFcf[projectedFcf.length - 1] || 0;
+      const growthRate = 0.02; // Annahme: 2% langfristiges Wachstum
+      const terminalValue = lastFcf * (1 + growthRate) / (wacc - growthRate);
+      const terminalValuePv = terminalValue / Math.pow(1 + wacc, projectedFcf.length);
+      
+      console.log('Terminal value:', terminalValue);
+      console.log('Present value of terminal value:', terminalValuePv);
+      
+      // Enterprise und Equity Value
+      const enterpriseValue = sumPvProjectedFcf + terminalValuePv;
+      const netDebt = latestCompleteYear.netDebt || 0;
+      const equityValue = enterpriseValue - netDebt;
+      
+      // Intrinsischer Wert pro Aktie
+      const sharesOutstanding = latestCompleteYear.sharesOutstanding || 0;
+      const dcfValue = sharesOutstanding > 0 ? equityValue / sharesOutstanding : 0;
+      
+      // Strukturiertes DCF-Ergebnisobjekt erstellen
+      const processedData = {
+        ufcf: projectedFcf,
+        wacc,
+        netDebt,
+        dilutedSharesOutstanding: sharesOutstanding,
+        presentTerminalValue: terminalValuePv,
+        currency: latestCompleteYear.currency || 'USD',
+        intrinsicValue: dcfValue,
+        pvUfcfs: pvProjectedFcf,
+        sumPvUfcfs: sumPvProjectedFcf,
+        enterpriseValue,
+        equityValue,
+        equityValuePerShare: dcfValue  // Für Abwärtskompatibilität
+      };
+      
+      console.log('Final processed DCF data:', processedData);
+      debugDCFData(processedData);
+      
+      return processedData;
+    } else {
+      console.warn('Custom DCF API did not return an array or returned an empty array');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching custom DCF data:', error);
+    return null;
+  }
+};
+
+export const useStockSearch = () => {
+  const { toast } = useToast();
+  
+  const checkHasGptAvailable = (): boolean => {
+    return hasOpenAiApiKey();
+  };
+
+  const checkCriticalDataMissing = (info: any): boolean => {
+    if (!info) return true;
+    
+    return (
+      info.price === null || 
+      info.price === 0 || 
+      info.marketCap === null || 
+      info.marketCap === 0
+    );
+  };
+
+  const searchStockInfo = async (ticker: string) => {
+    try {
+      let info: StockInfo = await fetchStockInfo(ticker);
+      console.log('Stock Info:', JSON.stringify(info, null, 2));
+      
+      const stockCurrency = info && info.currency ? info.currency : 'USD';
+      console.log(`Stock price currency: ${stockCurrency}`);
+      
+      const criticalDataMissing = checkCriticalDataMissing(info);
+      
+      if (criticalDataMissing) {
+        toast({
+          title: "Analyse nicht möglich",
+          description: `Für ${info.name} liegen nicht ausreichend Daten für eine Buffett-Analyse vor.`,
+          variant: "destructive",
+        });
+        return { info, stockCurrency, criticalDataMissing, criteria: null, metricsData: null, rating: null, dcfData: null };
+      }
+      
+      toast({
+        title: "Analyse läuft",
+        description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
+      });
+      
+      // Parallele Ausführung aller API-Aufrufe, einschließlich des neuen DCF-Aufrufs
+      const [criteria, rawMetricsData, rating, customDcfData] = await Promise.all([
+        analyzeBuffettCriteria(ticker),
+        getFinancialMetrics(ticker),
+        getOverallRating(ticker),
+        fetchCustomDCF(ticker)
+      ]);
+      
       console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
       console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
       console.log('Overall Rating:', JSON.stringify(rating, null, 2));
@@ -216,15 +404,15 @@ export const useStockSearch = () => {
         console.log('Using custom DCF data from direct API call');
         // Formatiere die Daten in das benötigte Format
         extractedDcfData = {
-          ufcf: customDcfData.projectedFcf || [],
+          ufcf: customDcfData.ufcf || [],
           wacc: customDcfData.wacc || 0,
-          presentTerminalValue: customDcfData.terminalValuePv || 0,
+          presentTerminalValue: customDcfData.presentTerminalValue || 0,
           netDebt: customDcfData.netDebt || 0,
-          dilutedSharesOutstanding: customDcfData.sharesOutstanding || 0,
+          dilutedSharesOutstanding: customDcfData.dilutedSharesOutstanding || 0,
           currency: stockCurrency,
-          intrinsicValue: customDcfData.dcfValue || 0,
-          pvUfcfs: customDcfData.projectedFcfPv || [],
-          sumPvUfcfs: customDcfData.sumPvProjectedFcf || 0,
+          intrinsicValue: customDcfData.intrinsicValue || 0,
+          pvUfcfs: customDcfData.pvUfcfs || [],
+          sumPvUfcfs: customDcfData.sumPvUfcfs || 0,
           enterpriseValue: customDcfData.enterpriseValue || 0,
           equityValue: customDcfData.equityValue || 0
         };
@@ -232,10 +420,10 @@ export const useStockSearch = () => {
         debugDCFData(extractedDcfData);
         
         // Speichere die Aktienanzahl in den Informationen, falls verfügbar
-        if (customDcfData.sharesOutstanding) {
+        if (customDcfData.dilutedSharesOutstanding) {
           info = {
             ...info,
-            sharesOutstanding: customDcfData.sharesOutstanding
+            sharesOutstanding: customDcfData.dilutedSharesOutstanding
           };
         }
       } else if (rating) {
