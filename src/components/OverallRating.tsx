@@ -409,7 +409,26 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       { currentPrice, bestBuyPrice, intrinsicValue });
   }
   
-  // Override the marginOfSafety status based on the actual value
+  // Calculate margin of safety if it's not provided but we have the necessary values
+  if (!marginOfSafety && intrinsicValue !== null && intrinsicValue !== undefined && 
+      currentPrice !== null && currentPrice !== undefined) {
+    const mosValue = ((intrinsicValue - currentPrice) / intrinsicValue) * 100;
+    marginOfSafety = {
+      value: mosValue,
+      status: interpretMarginOfSafety(mosValue)
+    };
+    console.log(`Calculated marginOfSafety: ${mosValue.toFixed(2)}% from intrinsicValue: ${intrinsicValue} and currentPrice: ${currentPrice}`);
+  } else if (marginOfSafety && marginOfSafety.value === 0 && 
+            intrinsicValue !== null && intrinsicValue !== undefined && 
+            currentPrice !== null && currentPrice !== undefined) {
+    // Recalculate if it's 0 but we have the values to calculate it properly
+    const mosValue = ((intrinsicValue - currentPrice) / intrinsicValue) * 100;
+    marginOfSafety.value = mosValue;
+    marginOfSafety.status = interpretMarginOfSafety(mosValue);
+    console.log(`Updated marginOfSafety from 0 to: ${mosValue.toFixed(2)}% using intrinsicValue: ${intrinsicValue} and currentPrice: ${currentPrice}`);
+  }
+  
+  // Override the marginOfSafety status based on the actual value if marginOfSafety exists
   if (marginOfSafety) {
     marginOfSafety.status = interpretMarginOfSafety(marginOfSafety.value);
   }
