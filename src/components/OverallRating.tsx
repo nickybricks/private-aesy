@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   CheckCircle, 
@@ -85,7 +84,7 @@ const determineRating = (
   }
 };
 
-// Function to interpret MoS status properly
+// Function to interpret MoS status properly based on Buffett's standard
 const interpretMarginOfSafety = (value: number): 'pass' | 'warning' | 'fail' => {
   if (value > 30) return 'pass'; // Strongly undervalued
   if (value >= 10) return 'warning'; // Slightly undervalued
@@ -189,8 +188,9 @@ const MarginOfSafetyTooltip: React.FC<{
     ? intrinsicValue - (actualMarginValue as number) 
     : 80;
     
+  // Corrected calculation using Buffett's formula: MoS = (Intrinsic Value - Market Price) / Market Price
   const actualMargin = hasRealData && intrinsicValue && currentPrice 
-    ? ((intrinsicValue - currentPrice) / intrinsicValue) * 100 
+    ? ((intrinsicValue - currentPrice) / currentPrice) * 100 
     : -25;
   
   return (
@@ -410,22 +410,23 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   }
   
   // Calculate margin of safety if it's not provided but we have the necessary values
+  // Using Buffett's formula: MoS = (Intrinsic Value - Market Price) / Market Price
   if (!marginOfSafety && intrinsicValue !== null && intrinsicValue !== undefined && 
       currentPrice !== null && currentPrice !== undefined) {
-    const mosValue = ((intrinsicValue - currentPrice) / intrinsicValue) * 100;
+    const mosValue = ((intrinsicValue - currentPrice) / currentPrice) * 100;
     marginOfSafety = {
       value: mosValue,
       status: interpretMarginOfSafety(mosValue)
     };
-    console.log(`Calculated marginOfSafety: ${mosValue.toFixed(2)}% from intrinsicValue: ${intrinsicValue} and currentPrice: ${currentPrice}`);
+    console.log(`Calculated marginOfSafety: ${mosValue.toFixed(2)}% from intrinsicValue: ${intrinsicValue} and currentPrice: ${currentPrice} (using Market Price as denominator)`);
   } else if (marginOfSafety && marginOfSafety.value === 0 && 
             intrinsicValue !== null && intrinsicValue !== undefined && 
             currentPrice !== null && currentPrice !== undefined) {
     // Recalculate if it's 0 but we have the values to calculate it properly
-    const mosValue = ((intrinsicValue - currentPrice) / intrinsicValue) * 100;
+    const mosValue = ((intrinsicValue - currentPrice) / currentPrice) * 100;
     marginOfSafety.value = mosValue;
     marginOfSafety.status = interpretMarginOfSafety(mosValue);
-    console.log(`Updated marginOfSafety from 0 to: ${mosValue.toFixed(2)}% using intrinsicValue: ${intrinsicValue} and currentPrice: ${currentPrice}`);
+    console.log(`Updated marginOfSafety from 0 to: ${mosValue.toFixed(2)}% using intrinsicValue: ${intrinsicValue} and currentPrice: ${currentPrice} (using Market Price as denominator)`);
   }
   
   // Override the marginOfSafety status based on the actual value if marginOfSafety exists

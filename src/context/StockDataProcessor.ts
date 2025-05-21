@@ -1,3 +1,4 @@
+
 /**
  * Processes financial metrics data and adds additional information
  */
@@ -66,6 +67,7 @@ export const normalizeIntrinsicValuePerShare = (intrinsicValue: number | null, s
 
 /**
  * Calculate margin of safety based on current price and intrinsic value
+ * using Buffett's standard: MoS = (Intrinsic Value - Market Price) / Market Price
  */
 export const calculateMarginOfSafety = (
   intrinsicValue: number | null, 
@@ -82,8 +84,9 @@ export const calculateMarginOfSafety = (
     return defaultValue;
   }
   
-  // Calculate margin of safety percentage
-  const mos = ((Number(intrinsicValue) - Number(currentPrice)) / Number(intrinsicValue)) * 100;
+  // Calculate margin of safety percentage using Buffett's formula:
+  // MoS = (Intrinsic Value - Market Price) / Market Price
+  const mos = ((Number(intrinsicValue) - Number(currentPrice)) / Number(currentPrice)) * 100;
   
   // Determine status based on margin of safety value
   let status: 'pass' | 'warning' | 'fail';
