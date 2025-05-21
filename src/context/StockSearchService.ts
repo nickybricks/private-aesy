@@ -1,8 +1,9 @@
+
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { shouldConvertCurrency, debugDCFData } from '@/utils/currencyConverter';
-import { processFinancialMetrics } from './StockDataProcessor';
+import { processFinancialMetrics, calculateBuffettBuyPrice } from './StockDataProcessor';
 import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
