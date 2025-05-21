@@ -16,7 +16,10 @@ const RatingSection: React.FC = () => {
       
       if (overallRating) {
         console.log('Overall Rating has intrinsicValue:', overallRating.intrinsicValue);
+        console.log('Overall Rating has bestBuyPrice:', overallRating.bestBuyPrice);
+        console.log('Overall Rating has currency:', overallRating.currency);
         console.log('DCF has intrinsicValue:', dcfData.intrinsicValue);
+        console.log('DCF has currency:', dcfData.currency);
       }
       
       // Debug missing important data
@@ -38,6 +41,7 @@ const RatingSection: React.FC = () => {
       // Debug context
       if (stockInfo) {
         console.log('Stock info is available:', stockInfo.ticker);
+        console.log('Stock currency:', stockInfo.currency);
       } else {
         console.log('No stock info available yet.');
       }

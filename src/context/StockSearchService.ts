@@ -1,4 +1,3 @@
-
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
@@ -196,7 +195,7 @@ export const useStockSearch = () => {
             presentTerminalValue: customDcfData.terminalValuePv || 0,
             netDebt: customDcfData.netDebt || 0,
             dilutedSharesOutstanding: customDcfData.sharesOutstanding || 0,
-            currency: stockCurrency,
+            currency: priceCurrency, // Verwende immer die Kurswährung
             intrinsicValue: customDcfData.dcfValue || 0,
             pvUfcfs: customDcfData.projectedFcfPv || [],
             sumPvUfcfs: customDcfData.sumPvProjectedFcf || 0,
@@ -267,6 +266,11 @@ export const useStockSearch = () => {
             console.log(`Setting rating.intrinsicValue directly from DCF data: ${extractedDcfData.intrinsicValue}`);
             updatedRating.intrinsicValue = extractedDcfData.intrinsicValue;
             
+            // Berechne den bestBuyPrice basierend auf dem intrinsischen Wert
+            const targetMarginOfSafety = updatedRating.targetMarginOfSafety || 20;
+            updatedRating.bestBuyPrice = calculateBuffettBuyPrice(extractedDcfData.intrinsicValue, targetMarginOfSafety);
+            console.log(`Calculated bestBuyPrice: ${updatedRating.bestBuyPrice} from intrinsicValue: ${extractedDcfData.intrinsicValue}`);
+            
             // Create enhanced info object with intrinsicValue
             const enhancedInfo = {
               ...info,
@@ -280,8 +284,8 @@ export const useStockSearch = () => {
             throw new Error('Kein intrinsischer Wert in den DCF-Daten vorhanden');
           }
           
-          const ratingCurrency = updatedRating.currency || reportedCurrency;
-          updatedRating = await convertRatingValues(updatedRating, ratingCurrency, priceCurrency);
+          // Stelle sicher, dass die Währung immer die Kurswährung ist
+          updatedRating.currency = priceCurrency;
           
           if (info && info.price !== null && info.price !== undefined) {
             updatedRating.currentPrice = info.price;
@@ -300,10 +304,12 @@ export const useStockSearch = () => {
         
         // Logge die endgültigen Werte für Debugging
         console.log(`Final intrinsicValue in rating: ${updatedRating?.intrinsicValue}`);
+        console.log(`Final bestBuyPrice in rating: ${updatedRating?.bestBuyPrice}`);
         if (info && 'intrinsicValue' in info) {
           console.log(`Final intrinsicValue in info: ${info.intrinsicValue}`);
         }
         console.log(`Final intrinsicValue in dcfData: ${extractedDcfData?.intrinsicValue}`);
+        console.log(`Final currency used: ${priceCurrency}`);
         
         return { 
           info, 

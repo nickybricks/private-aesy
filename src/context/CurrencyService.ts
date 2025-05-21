@@ -146,6 +146,12 @@ export const convertRatingValues = async (rating: OverallRatingData, fromCurrenc
           } else {
             console.log(`Converted DCF intrinsic value: ${convertedDcfValue}`);
             updatedRating.intrinsicValue = convertedDcfValue;
+            // Auch DCF-Daten aktualisieren
+            updatedRating.dcfData = {
+              ...updatedRating.dcfData,
+              intrinsicValue: convertedDcfValue,
+              currency: toCurrency
+            };
           }
         }
       } else {
@@ -169,17 +175,13 @@ export const convertRatingValues = async (rating: OverallRatingData, fromCurrenc
       } else {
         updatedRating.intrinsicValue = convertedValue;
         console.log(`Converted intrinsicValue from ${originalIntrinsicValue} to ${updatedRating.intrinsicValue}`);
-      }
-    }
-    
-    if (updatedRating.bestBuyPrice !== null && updatedRating.bestBuyPrice !== undefined && !isNaN(Number(updatedRating.bestBuyPrice))) {
-      const convertedValue = Number(updatedRating.bestBuyPrice) * rate;
-      
-      if (isNaN(convertedValue)) {
-        console.warn('DCF ERROR: Converted best buy price is NaN');
-      } else {
-        updatedRating.bestBuyPrice = convertedValue;
-        console.log(`Converted bestBuyPrice from ${originalBestBuyPrice} to ${updatedRating.bestBuyPrice}`);
+        
+        // Berechne auch den bestBuyPrice neu
+        if (updatedRating.targetMarginOfSafety !== undefined) {
+          const discountFactor = 1 - (updatedRating.targetMarginOfSafety / 100);
+          updatedRating.bestBuyPrice = updatedRating.intrinsicValue * discountFactor;
+          console.log(`Recalculated bestBuyPrice after conversion: ${updatedRating.bestBuyPrice}`);
+        }
       }
     }
   }
@@ -205,3 +207,4 @@ export const convertRatingValues = async (rating: OverallRatingData, fromCurrenc
     originalPrice
   };
 };
+
