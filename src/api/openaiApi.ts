@@ -69,8 +69,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
         ],
         tool_choice: { type: 'web_search_preview' }, // Erzwingt Websuche
         input: fullPrompt,  // Der kombinierte Prompt mit System-Anweisungen
-        temperature: 0.3,
-        max_tokens: 500
+        
       },
       {
         headers: {
