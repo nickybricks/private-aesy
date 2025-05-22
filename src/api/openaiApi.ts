@@ -14,12 +14,18 @@ export const hasOpenAiApiKey = (): boolean => {
   return !!OPENAI_API_KEY && OPENAI_API_KEY.length > 0;
 };
 
-// OpenAI API Service
-const OPENAI_API_URL = 'https://api.openai.com/v1/responses';
+// OpenAI API Service - Updated to use Chat Completions API
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 export interface OpenAIResponse {
   id: string;
-  content: string[];
+  choices: Array<{
+    message: {
+      content: string;
+      tool_calls?: any[];
+    };
+    finish_reason: string;
+  }>;
   usage: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -27,7 +33,7 @@ export interface OpenAIResponse {
   };
 }
 
-// Function to query the OpenAI API using the Responses API with web search
+// Function to query the OpenAI API using the Chat Completions API with web search
 export const queryGPT = async (prompt: string): Promise<string> => {
   try {
     const apiKey = getOpenAiApiKey();
@@ -40,9 +46,12 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       OPENAI_API_URL,
       {
         model: 'gpt-4o',
-        input: prompt,
-        tools: [{ type: 'web_search_preview' }],
-        tool_choice: { type: 'web_search_preview' }, // Erzwingt Websuche
+        messages: [
+          { role: 'system', content: 'Du bist ein hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien.' },
+          { role: 'user', content: prompt }
+        ],
+        tools: [{ type: 'web_search' }],
+        tool_choice: { type: 'web_search' }, // Erzwingt Websuche
         max_tokens: 500,
         temperature: 0.3,
       },
@@ -55,8 +64,12 @@ export const queryGPT = async (prompt: string): Promise<string> => {
     );
     
     // Extract content from the response
-    if (response.data && response.data.content && Array.isArray(response.data.content) && response.data.content.length > 0) {
-      return response.data.content.join(' ').trim();
+    if (response.data && 
+        response.data.choices && 
+        response.data.choices.length > 0 && 
+        response.data.choices[0].message && 
+        response.data.choices[0].message.content) {
+      return response.data.choices[0].message.content.trim();
     }
     
     throw new Error('Unerwartetes Antwortformat von der OpenAI-API');
