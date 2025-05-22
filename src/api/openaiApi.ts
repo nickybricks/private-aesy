@@ -54,6 +54,9 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
     }
     
+    // Erweitere den Prompt mit System-Instruktionen (anstatt separaten system-Parameter)
+    const fullPrompt = `Als hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien, beantworte folgende Frage: ${prompt}`;
+    
     const response = await axios.post<OpenAIResponse>(
       OPENAI_API_URL,
       {
@@ -65,7 +68,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
           }
         ],
         tool_choice: { type: 'web_search_preview' }, // Erzwingt Websuche
-        input: prompt,  // Input statt system und Nachrichtenarray
+        input: fullPrompt,  // Der kombinierte Prompt mit System-Anweisungen
         temperature: 0.3,
         max_tokens: 500
       },
