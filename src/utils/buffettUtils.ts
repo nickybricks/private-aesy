@@ -1,4 +1,3 @@
-
 export const getStatusColor = (status: string) => {
   switch (status) {
     case 'pass':
@@ -35,11 +34,84 @@ export const deriveScoreFromGptAnalysis = (
   const analysis = criterion.gptAnalysis.toLowerCase();
   
   if (criterion.title === '1. Verstehbares Geschäftsmodell') {
-    if (analysis.includes('einfach') || analysis.includes('klar') || analysis.includes('verständlich')) {
+    if (analysis.includes('einfach verständlich') || 
+        analysis.includes('klar') || 
+        analysis.includes('verständlich') || 
+        (analysis.includes('bewertung:') && analysis.includes('pass'))) {
       return 3;
-    } else if (analysis.includes('moderat') || analysis.includes('mittlere komplexität')) {
+    } else if (analysis.includes('moderat') || 
+               analysis.includes('mittlere komplexität') || 
+               (analysis.includes('bewertung:') && analysis.includes('warning'))) {
       return 2;
-    } else if (analysis.includes('komplex') || analysis.includes('schwer verständlich')) {
+    } else if (analysis.includes('komplex') || 
+               analysis.includes('schwer verständlich') || 
+               (analysis.includes('bewertung:') && analysis.includes('fail'))) {
+      return 1;
+    }
+  }
+  
+  if (criterion.title === '2. Wirtschaftlicher Burggraben') {
+    if (analysis.includes('starker moat') || 
+        (analysis.includes('bewertung:') && analysis.includes('pass'))) {
+      return 3;
+    } else if (analysis.includes('moderater moat') || 
+               (analysis.includes('bewertung:') && analysis.includes('warning'))) {
+      return 2;
+    } else if (analysis.includes('schwacher moat') || 
+               analysis.includes('kein moat') || 
+               (analysis.includes('bewertung:') && analysis.includes('fail'))) {
+      return 1;
+    }
+  }
+  
+  if (criterion.title === '5. Kompetentes Management') {
+    if (analysis.includes('gutes management') || 
+        (analysis.includes('bewertung:') && analysis.includes('pass'))) {
+      return 3;
+    } else if (analysis.includes('durchschnittliches management') || 
+               (analysis.includes('bewertung:') && analysis.includes('warning'))) {
+      return 2;
+    } else if (analysis.includes('problematisches management') || 
+               (analysis.includes('bewertung:') && analysis.includes('fail'))) {
+      return 1;
+    }
+  }
+  
+  if (criterion.title === '7. Langfristige Perspektive') {
+    if (analysis.includes('starke langzeitperspektive') || 
+        (analysis.includes('bewertung:') && analysis.includes('pass'))) {
+      return 3;
+    } else if (analysis.includes('moderate langzeitperspektive') || 
+               (analysis.includes('bewertung:') && analysis.includes('warning'))) {
+      return 2;
+    } else if (analysis.includes('schwache langzeitperspektive') || 
+               (analysis.includes('bewertung:') && analysis.includes('fail'))) {
+      return 1;
+    }
+  }
+  
+  if (criterion.title === '9. Antizyklisches Verhalten') {
+    if (analysis.includes('antizyklisches verhalten') || 
+        (analysis.includes('bewertung:') && analysis.includes('pass'))) {
+      return 3;
+    } else if (analysis.includes('neutrales verhalten') || 
+               (analysis.includes('bewertung:') && analysis.includes('warning'))) {
+      return 2;
+    } else if (analysis.includes('stark zyklisches verhalten') || 
+               (analysis.includes('bewertung:') && analysis.includes('fail'))) {
+      return 1;
+    }
+  }
+  
+  if (criterion.title === '10. Keine Einmaleffekte') {
+    if (analysis.includes('nachhaltige geschäftsentwicklung') || 
+        (analysis.includes('bewertung:') && analysis.includes('pass'))) {
+      return 3;
+    } else if (analysis.includes('teilweise nachhaltig') || 
+               (analysis.includes('bewertung:') && analysis.includes('warning'))) {
+      return 2;
+    } else if (analysis.includes('stark von einmaleffekten') || 
+               (analysis.includes('bewertung:') && analysis.includes('fail'))) {
       return 1;
     }
   }
@@ -48,7 +120,7 @@ export const deriveScoreFromGptAnalysis = (
     const positiveSignals = [
       'kein turnaround', 'keine umstrukturierung', 'keine restrukturierung', 
       'kein umbau', 'stabil', 'keine umbruchsphase', 'solide', 
-      'keine grundlegende änderung', 'keine neuausrichtung'
+      'keine grundlegende änderung', 'keine neuausrichtung', 'stabiles unternehmen'
     ];
     
     const warningSignals = [
@@ -61,18 +133,40 @@ export const deriveScoreFromGptAnalysis = (
       'grundlegende umstellung', 'signifikante umstrukturierung', 'massiver umbau'
     ];
     
+    if (analysis.includes('bewertung:')) {
+      if (analysis.includes('bewertung: stabil') || analysis.includes('bewertung: pass'))
+        return 3;
+      else if (analysis.includes('bewertung: leichte') || analysis.includes('bewertung: warning'))
+        return 1;
+      else if (analysis.includes('bewertung: klar') || analysis.includes('bewertung: fail'))
+        return 0;
+    }
+    
     const positiveCount = positiveSignals.filter(signal => analysis.includes(signal)).length;
     const warningCount = warningSignals.filter(signal => analysis.includes(signal)).length;
     const negativeCount = negativeSignals.filter(signal => analysis.includes(signal)).length;
     
     if (positiveCount > 0 && warningCount === 0 && negativeCount === 0) {
       return 3;
-    } else if (warningCount === 1 && negativeCount === 0) {
+    } else if (warningCount > 0 && negativeCount === 0) {
       return 1;
-    } else if (warningCount >= 2 || negativeCount >= 1) {
+    } else if (negativeCount > 0) {
       return 0;
     } else if (positiveCount > 0) {
       return 3;
+    }
+  }
+  
+  if (criterion.title === '8. Rationales Verhalten') {
+    if (analysis.includes('rationales verhalten') || 
+        (analysis.includes('bewertung:') && analysis.includes('pass'))) {
+      return 3;
+    } else if (analysis.includes('gemischtes bild') || 
+               (analysis.includes('bewertung:') && analysis.includes('warning'))) {
+      return 2;
+    } else if (analysis.includes('irrationales verhalten') || 
+               (analysis.includes('bewertung:') && analysis.includes('fail'))) {
+      return 1;
     }
   }
   

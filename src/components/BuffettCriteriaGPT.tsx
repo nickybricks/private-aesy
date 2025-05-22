@@ -1,18 +1,23 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BuffettScoreSummary } from './BuffettScoreSummary';
 import { BuffettScoreChart } from './BuffettScoreChart';
 import { BuffettCriterionCard } from './BuffettCriterionCard';
 import { 
   BuffettCriteriaProps,
-  BuffettCriterionProps
+  BuffettCriterionProps,
+  hasInconsistentAnalysis
 } from '@/utils/buffettUtils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 interface BuffettCriteriaGPTProps {
   criteria: BuffettCriteriaProps;
 }
 
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
+  const [inconsistentCriteria, setInconsistentCriteria] = useState<BuffettCriterionProps[]>([]);
+  
   const isBuffettCriterion = (criterion: any): criterion is BuffettCriterionProps => {
     return criterion && 
            typeof criterion.title === 'string' && 
@@ -42,6 +47,14 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     return criterion;
   });
 
+  // Check for inconsistencies on component mount or criteria change
+  useEffect(() => {
+    const inconsistencies = processedCriteria.filter(criterion => 
+      hasInconsistentAnalysis(criterion)
+    );
+    setInconsistentCriteria(inconsistencies);
+  }, [processedCriteria]);
+
   const totalPoints = processedCriteria.reduce((acc, criterion) => {
     if (criterion.status === 'pass') return acc + 3;
     if (criterion.status === 'warning') return acc + 1;
@@ -70,6 +83,16 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       <p className="text-buffett-subtext mb-6">
         Eine umfassende Analyse nach Warren Buffetts 11 Investmentkriterien, unterstützt durch GPT für die qualitative Bewertung.
       </p>
+      
+      {inconsistentCriteria.length > 0 && (
+        <Alert className="mb-6 bg-yellow-50 border-yellow-200">
+          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+          <AlertDescription className="text-yellow-700">
+            Es wurden {inconsistentCriteria.length} Kriterien mit potenziellen Widersprüchen zwischen GPT-Analyse und Bewertung gefunden. 
+            Bitte prüfen Sie die markierten Kriterien.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <BuffettScoreSummary score={finalScore} />
       
