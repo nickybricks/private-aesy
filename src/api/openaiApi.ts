@@ -15,20 +15,19 @@ export const hasOpenAiApiKey = (): boolean => {
 };
 
 // OpenAI API Service
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_API_URL = 'https://api.openai.com/v1/responses';
 
 export interface OpenAIResponse {
   id: string;
-  choices: {
-    message: {
-      role: string;
-      content: string;
-    };
-    finish_reason: string;
-  }[];
+  content: string[];
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
 }
 
-// Function to query the OpenAI API
+// Function to query the OpenAI API using the Responses API with web search
 export const queryGPT = async (prompt: string): Promise<string> => {
   try {
     const apiKey = getOpenAiApiKey();
@@ -40,17 +39,10 @@ export const queryGPT = async (prompt: string): Promise<string> => {
     const response = await axios.post<OpenAIResponse>(
       OPENAI_API_URL,
       {
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: 'Du bist ein Assistent, der Aktienunternehmen nach Warren Buffetts Investmentprinzipien analysiert. Gib strukturierte, prägnante Stichpunkte mit echten Markdown-Formatierungen. Wichtige Fragen müssen mit doppelten Sternchen für Fettdruck (**Frage?**) formatiert werden, gefolgt von einem Zeilenumbruch. Jeder Stichpunkt beginnt mit einem Bindestrich und Leerzeichen (- ). Achte darauf, dass jeder Stichpunkt in einer neuen Zeile beginnt und genügend Zeilenumbrüche zwischen den Abschnitten sind.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
+        model: 'gpt-4o',
+        input: prompt,
+        tools: [{ type: 'web_search_preview' }],
+        tool_choice: { type: 'web_search_preview' }, // Erzwingt Websuche
         max_tokens: 500,
         temperature: 0.3,
       },
@@ -62,7 +54,12 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       }
     );
     
-    return response.data.choices[0].message.content.trim();
+    // Extract content from the response
+    if (response.data && response.data.content && Array.isArray(response.data.content) && response.data.content.length > 0) {
+      return response.data.content.join(' ').trim();
+    }
+    
+    throw new Error('Unerwartetes Antwortformat von der OpenAI-API');
   } catch (error) {
     console.error('Error querying OpenAI:', error);
     if (axios.isAxiosError(error) && error.response?.status === 401) {
