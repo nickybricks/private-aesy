@@ -54,7 +54,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
     }
     
-    // Erweitere den Prompt mit System-Instruktionen (anstatt separaten system-Parameter)
+    // Vollständiger Prompt mit System-Instruktionen
     const fullPrompt = `Als hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien, beantworte folgende Frage: ${prompt}`;
     
     const response = await axios.post<OpenAIResponse>(
@@ -68,8 +68,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
           }
         ],
         tool_choice: { type: 'web_search_preview' }, // Erzwingt Websuche
-        input: fullPrompt,  // Der kombinierte Prompt mit System-Anweisungen
-        
+        input: fullPrompt,
       },
       {
         headers: {
@@ -79,27 +78,53 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       }
     );
     
-    // Extract output text from the response
-    if (response.data && response.data.items) {
-      // Find the message response item
-      const messageItem = response.data.items.find(item => 
-        item.type === 'message' && item.content && item.content.length > 0
-      );
+    // Robuste Extraktion des Antworttextes mit mehreren Fallback-Optionen
+    if (response.data) {
+      // Option 1: Direkt verfügbarer output_text (höchste Priorität)
+      if (response.data.output_text) {
+        console.log('OpenAI response extracted from output_text field');
+        return response.data.output_text.trim();
+      }
       
-      if (messageItem && messageItem.content && messageItem.content.length > 0) {
-        const textContent = messageItem.content[0].text;
-        if (textContent) {
-          return textContent.trim();
+      // Option 2: Antwort in items-Array mit message-Typ suchen
+      if (response.data.items && Array.isArray(response.data.items)) {
+        console.log('OpenAI response: Checking items array with length', response.data.items.length);
+        
+        // Suche nach einem message-Item mit content
+        const messageItem = response.data.items.find(item => 
+          item.type === 'message' && item.content && item.content.length > 0
+        );
+        
+        if (messageItem && messageItem.content) {
+          console.log('OpenAI response: Found message item with content');
+          
+          // Durchsuche alle content-Einträge nach Text
+          for (const contentItem of messageItem.content) {
+            if (contentItem.text) {
+              console.log('OpenAI response extracted from message.content[].text');
+              return contentItem.text.trim();
+            }
+          }
+        }
+        
+        // Option 3: Falls kein message-Item gefunden, versuche alle Items zu durchsuchen
+        for (const item of response.data.items) {
+          if (item.content && Array.isArray(item.content)) {
+            for (const contentItem of item.content) {
+              if (contentItem.text) {
+                console.log('OpenAI response extracted from generic item.content[].text');
+                return contentItem.text.trim();
+              }
+            }
+          }
         }
       }
       
-      // If output_text directly available (some API versions)
-      if (response.data.output_text) {
-        return response.data.output_text.trim();
-      }
+      // Debugging: Gib die Struktur der Antwort aus
+      console.log('OpenAI response structure:', JSON.stringify(response.data, null, 2));
     }
     
-    throw new Error('Unerwartetes Antwortformat von der OpenAI-API');
+    throw new Error('Unerwartetes Antwortformat von der OpenAI-API - keine Textdaten gefunden');
   } catch (error) {
     console.error('Error querying OpenAI:', error);
     if (axios.isAxiosError(error) && error.response?.status === 401) {
