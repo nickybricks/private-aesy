@@ -257,7 +257,7 @@ export const deriveScoreFromGptAnalysisLegacy = (
     }
   }
   
-  if (criterion.title === '11. Keine Turnarounds') {
+  if (criterion.title === '11. Kein Turnarounds') {
     const positiveSignals = [
       'kein turnaround', 'keine umstrukturierung', 'keine restrukturierung', 
       'kein umbau', 'stabil', 'keine umbruchsphase', 'solide', 
@@ -314,14 +314,9 @@ export const deriveScoreFromGptAnalysisLegacy = (
   return undefined;
 };
 
+// This function is no longer needed as we're trusting GPT completely
 export const hasInconsistentAnalysis = (criterion: BuffettCriterionProps): boolean => {
-  if (!criterion.gptAnalysis || criterion.score === undefined || criterion.maxScore === undefined) {
-    return false;
-  }
-  
-  const derivedScore = deriveScoreFromGptAnalysis(criterion);
-  
-  return derivedScore !== undefined && derivedScore !== criterion.score;
+  return false; // Always return false as we're fully trusting GPT's assessment
 };
 
 // Enhanced version to extract key insights and partial fulfillment information

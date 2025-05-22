@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bot, ChevronDown, AlertTriangle } from 'lucide-react';
+import { Bot, ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DCFExplanationTooltip } from './DCFExplanationTooltip';
@@ -12,8 +12,6 @@ import {
   getStatusColor, 
   getStatusBadge, 
   extractKeyInsights,
-  hasInconsistentAnalysis,
-  deriveScoreFromGptAnalysis,
   extractGptAssessmentStatus
 } from '@/utils/buffettUtils';
 import { DCFData } from '@/context/StockContextTypes';
@@ -27,8 +25,6 @@ interface BuffettCriterionCardProps {
 
 export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ criterion, index }) => {
   const { summary, points, partialFulfillment } = extractKeyInsights(criterion.gptAnalysis);
-  const inconsistent = hasInconsistentAnalysis(criterion);
-  const derivedScore = inconsistent ? deriveScoreFromGptAnalysis(criterion) : undefined;
   
   // Calculate partial fulfillment from GPT analysis if not already available
   const gptAssessment = criterion.gptAnalysis ? extractGptAssessmentStatus(criterion.gptAnalysis) : undefined;
@@ -46,27 +42,6 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
           <div className="flex items-center">
             <CardTitle className="text-lg">{criterion.title}</CardTitle>
             <BuffettScoreDisplay criterion={criterion} />
-            
-            {inconsistent && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="ml-2">
-                      <AlertTriangle size={16} className="text-yellow-500" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="max-w-xs">
-                      <p className="font-medium">Mögliche Inkonsistenz erkannt</p>
-                      <p className="text-sm">
-                        Die GPT-Analyse deutet auf {derivedScore === 3 ? 'Erfüllung' : derivedScore === 2 ? 'teilweise Erfüllung' : 'Nichterfüllung'} hin, 
-                        aber der Kriterium-Status ist {criterion.status === 'pass' ? 'Erfüllt' : criterion.status === 'warning' ? 'Teilweise erfüllt' : 'Nicht erfüllt'}.
-                      </p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
             
             {criterion.title === '6. Akzeptable Bewertung' && criterion.dcfData && (
               <DCFExplanationTooltip dcfData={criterion.dcfData as DCFData} />
@@ -98,17 +73,6 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
                 value={(fulfillmentCount / totalCount) * 100} 
                 className="h-2" 
               />
-            </div>
-          )}
-          
-          {inconsistent && (
-            <div className="mt-2 mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-              <div className="flex items-center gap-2">
-                <AlertTriangle size={16} className="text-yellow-500" />
-                <p className="text-sm text-yellow-700">
-                  Die Textanalyse und die Bewertung scheinen widersprüchlich zu sein. Bitte prüfen Sie die Details.
-                </p>
-              </div>
             </div>
           )}
           

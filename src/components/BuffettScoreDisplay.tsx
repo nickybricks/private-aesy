@@ -1,13 +1,11 @@
 
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, AlertCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { 
   BuffettCriterionProps, 
   deriveScoreFromGptAnalysis, 
-  hasInconsistentAnalysis,
   buffettCriteriaWeights,
-  calculateWeightedScore,
   extractGptAssessmentStatus
 } from '@/utils/buffettUtils';
 
@@ -26,8 +24,6 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
   if (score === undefined) {
     return null;
   }
-  
-  const hasInconsistency = hasInconsistentAnalysis(criterion);
   
   // Get the GPT assessment to determine partial fulfillment for warning states
   const gptAssessment = criterion.gptAnalysis ? 
@@ -81,27 +77,6 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-
-      {hasInconsistency && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger className="ml-2">
-              <AlertCircle size={16} className="text-amber-500" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs max-w-xs">
-                Mögliche Inkonsistenz zwischen GPT-Analyse und Bewertung:
-                {criterion.title === '1. Verstehbares Geschäftsmodell' && 
-                  ' Bei "moderater Komplexität" sollten 2/3 Punkte vergeben werden.'}
-                {criterion.title === '11. Keine Turnarounds' && 
-                  ' Bei "leichter Umstrukturierung" sollte 1/3 Punkt vergeben werden.'}
-                {criterion.status === 'warning' && gptAssessment?.partialFulfillment &&
-                  ` Laut GPT sind ${gptAssessment.partialFulfillment} von 3 Teilaspekten erfüllt.`}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
     </div>
   );
 };
