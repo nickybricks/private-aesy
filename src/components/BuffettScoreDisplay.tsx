@@ -2,7 +2,13 @@
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info, AlertCircle } from 'lucide-react';
-import { BuffettCriterionProps, deriveScoreFromGptAnalysis, hasInconsistentAnalysis } from '@/utils/buffettUtils';
+import { 
+  BuffettCriterionProps, 
+  deriveScoreFromGptAnalysis, 
+  hasInconsistentAnalysis,
+  buffettCriteriaWeights,
+  calculateWeightedScore
+} from '@/utils/buffettUtils';
 
 interface ScoreDisplayProps {
   criterion: BuffettCriterionProps;
@@ -22,6 +28,11 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
   
   const hasInconsistency = hasInconsistentAnalysis(criterion);
   
+  // Find criterion weight by matching the title
+  const criterionWeight = buffettCriteriaWeights.find(c => 
+    c.name.includes(criterion.title.replace(/^\d+\.\s+/, '').split(' ')[0])
+  );
+  
   return (
     <div className="inline-flex items-center">
       <TooltipProvider>
@@ -37,13 +48,22 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
             <Info className="h-3 w-3 ml-1 text-gray-400" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
-            <p className="text-xs">
-              Punktzahl basierend auf der Analyse der Unterkategorien dieses Kriteriums.
-              {criterion.title === '1. Verstehbares Geschäftsmodell' && 
-                ' Einfaches Geschäftsmodell = 3/3, moderates = 2/3 und komplexes = 0-1/3 Punkte.'}
-              {criterion.title === '11. Keine Turnarounds' && 
-                ' Hier gilt: Kein Turnaround = 3/3, leichte Umstrukturierung = 1/3, klarer Turnaround = 0/3 Punkte.'}
-            </p>
+            <div>
+              <p className="text-xs">
+                Punktzahl basierend auf der Analyse der Unterkategorien dieses Kriteriums.
+                {criterion.title === '1. Verstehbares Geschäftsmodell' && 
+                  ' Einfaches Geschäftsmodell = 3/3, moderates = 2/3 und komplexes = 0-1/3 Punkte.'}
+                {criterion.title === '11. Keine Turnarounds' && 
+                  ' Hier gilt: Kein Turnaround = 3/3, leichte Umstrukturierung = 1/3, klarer Turnaround = 0/3 Punkte.'}
+              </p>
+              {criterionWeight && (
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  <p className="text-xs font-medium">Gewichtung dieses Kriteriums:</p>
+                  <p className="text-xs">Max. {criterionWeight.weight}% des Gesamtscores</p>
+                  <p className="text-xs">Maximal erreichbare Punkte: {criterionWeight.maxPoints}</p>
+                </div>
+              )}
+            </div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

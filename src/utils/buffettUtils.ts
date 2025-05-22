@@ -197,6 +197,43 @@ export const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   return { summary, points };
 };
 
+// Define criteria weights and max points
+export const buffettCriteriaWeights = [
+  { id: "businessModel", name: "Verständliches Geschäftsmodell", weight: 10, maxPoints: 3 },
+  { id: "economicMoat", name: "Wirtschaftlicher Burggraben (Moat)", weight: 15, maxPoints: 9 },
+  { id: "financialMetrics", name: "Finanzkennzahlen", weight: 12, maxPoints: 9 },
+  { id: "financialStability", name: "Finanzielle Stabilität & Verschuldung", weight: 10, maxPoints: 9 },
+  { id: "management", name: "Qualität des Managements", weight: 12, maxPoints: 12 },
+  { id: "valuation", name: "Bewertung (nicht zu teuer kaufen)", weight: 15, maxPoints: 12 },
+  { id: "longTermOutlook", name: "Langfristiger Ausblick", weight: 8, maxPoints: 3 },
+  { id: "rationalBehavior", name: "Rationalität & Disziplin", weight: 6, maxPoints: 3 },
+  { id: "cyclicalBehavior", name: "Antizyklisches Verhalten", weight: 4, maxPoints: 3 },
+  { id: "oneTimeEffects", name: "Keine Einmaleffekte / nachhaltiges Wachstum", weight: 5, maxPoints: 3 },
+  { id: "turnaround", name: "Kein Turnaround-Fall", weight: 3, maxPoints: 3 }
+];
+
+// Helper function to calculate weighted score
+export const calculateWeightedScore = (
+  criterion: BuffettCriterionProps,
+  criterionId: string
+): { weightedScore: number, weightPercentage: number } => {
+  if (criterion.score === undefined || criterion.maxScore === undefined) {
+    return { weightedScore: 0, weightPercentage: 0 };
+  }
+  
+  const criteriaWeight = buffettCriteriaWeights.find(c => c.id === criterionId);
+  
+  if (!criteriaWeight) {
+    return { weightedScore: 0, weightPercentage: 0 };
+  }
+  
+  const scoreRatio = criterion.score / criterion.maxScore;
+  const weightedScore = scoreRatio * criteriaWeight.weight;
+  const weightPercentage = (scoreRatio * 100).toFixed(0);
+  
+  return { weightedScore, weightPercentage: parseInt(weightPercentage) };
+};
+
 export interface DCFDataProps {
   ufcf: number[];
   wacc: number;

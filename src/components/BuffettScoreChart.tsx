@@ -60,6 +60,9 @@ export const BuffettScoreChart: React.FC<BuffettScoreChartProps> = ({ score }) =
           </div>
         </div>
       </div>
+      <div className="text-xs text-gray-500 mt-2">
+        Diese Analyse basiert auf öffentlich verfügbaren Daten und ist als Informationsquelle, nicht als Anlageempfehlung zu verstehen.
+      </div>
     </div>
   );
 };

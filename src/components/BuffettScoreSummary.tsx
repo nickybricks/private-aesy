@@ -23,6 +23,9 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score 
         score >= 60 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
         'Geringe Übereinstimmung mit Buffetts Investitionskriterien'}
       </p>
+      <p className="text-xs mt-2 text-gray-500">
+        Die Bewertung spiegelt nicht unbedingt die Qualität des Investments wider und stellt keine Anlageempfehlung dar.
+      </p>
     </div>
   );
 };
