@@ -7,7 +7,8 @@ import {
   deriveScoreFromGptAnalysis, 
   hasInconsistentAnalysis,
   buffettCriteriaWeights,
-  calculateWeightedScore
+  calculateWeightedScore,
+  extractGptAssessmentStatus
 } from '@/utils/buffettUtils';
 
 interface ScoreDisplayProps {
@@ -27,6 +28,10 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
   }
   
   const hasInconsistency = hasInconsistentAnalysis(criterion);
+  
+  // Get the GPT assessment to determine partial fulfillment for warning states
+  const gptAssessment = criterion.gptAnalysis ? 
+    extractGptAssessmentStatus(criterion.gptAnalysis) : undefined;
   
   // Find criterion weight by matching the title
   const criterionWeight = buffettCriteriaWeights.find(c => 
@@ -56,6 +61,15 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
                 {criterion.title === '11. Keine Turnarounds' && 
                   ' Hier gilt: Kein Turnaround = 3/3, leichte Umstrukturierung = 1/3, klarer Turnaround = 0/3 Punkte.'}
               </p>
+              
+              {criterion.status === 'warning' && gptAssessment?.partialFulfillment && (
+                <div className="mt-1 pt-1 border-t border-gray-200">
+                  <p className="text-xs">
+                    GPT hat {gptAssessment.partialFulfillment} von 3 Teilkriterien als erfüllt bewertet.
+                  </p>
+                </div>
+              )}
+              
               {criterionWeight && (
                 <div className="mt-2 pt-2 border-t border-gray-200">
                   <p className="text-xs font-medium">Gewichtung dieses Kriteriums:</p>
@@ -81,6 +95,8 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
                   ' Bei "moderater Komplexität" sollten 2/3 Punkte vergeben werden.'}
                 {criterion.title === '11. Keine Turnarounds' && 
                   ' Bei "leichter Umstrukturierung" sollte 1/3 Punkt vergeben werden.'}
+                {criterion.status === 'warning' && gptAssessment?.partialFulfillment &&
+                  ` Laut GPT sind ${gptAssessment.partialFulfillment} von 3 Teilaspekten erfüllt.`}
               </p>
             </TooltipContent>
           </Tooltip>

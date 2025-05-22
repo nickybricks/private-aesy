@@ -13,10 +13,12 @@ import {
   getStatusBadge, 
   extractKeyInsights,
   hasInconsistentAnalysis,
-  deriveScoreFromGptAnalysis
+  deriveScoreFromGptAnalysis,
+  extractGptAssessmentStatus
 } from '@/utils/buffettUtils';
 import { DCFData } from '@/context/StockContextTypes';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Progress } from "@/components/ui/progress";
 
 interface BuffettCriterionCardProps {
   criterion: BuffettCriterionProps;
@@ -24,9 +26,18 @@ interface BuffettCriterionCardProps {
 }
 
 export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ criterion, index }) => {
-  const { summary, points } = extractKeyInsights(criterion.gptAnalysis);
+  const { summary, points, partialFulfillment } = extractKeyInsights(criterion.gptAnalysis);
   const inconsistent = hasInconsistentAnalysis(criterion);
   const derivedScore = inconsistent ? deriveScoreFromGptAnalysis(criterion) : undefined;
+  
+  // Calculate partial fulfillment from GPT analysis if not already available
+  const gptAssessment = criterion.gptAnalysis ? extractGptAssessmentStatus(criterion.gptAnalysis) : undefined;
+  const showPartialFulfillment = criterion.status === 'warning' && 
+    (partialFulfillment || (gptAssessment && gptAssessment.status === 'warning' && gptAssessment.partialFulfillment));
+  
+  const fulfillmentCount = partialFulfillment?.fulfilled || 
+                           (gptAssessment?.partialFulfillment || 0);
+  const totalCount = partialFulfillment?.total || 3; // Default to 3 if not specified
   
   return (
     <Card key={index} className={`border-l-4 ${getStatusColor(criterion.status)}`}>
@@ -76,6 +87,19 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
               <li key={i} className="text-gray-700">{detail}</li>
             ))}
           </ul>
+          
+          {showPartialFulfillment && (
+            <div className="mt-2 mb-3">
+              <div className="flex items-center justify-between mb-1 text-xs text-gray-700">
+                <span>Erfüllte Teilaspekte:</span>
+                <span className="font-medium">{fulfillmentCount} von {totalCount}</span>
+              </div>
+              <Progress 
+                value={(fulfillmentCount / totalCount) * 100} 
+                className="h-2" 
+              />
+            </div>
+          )}
           
           {inconsistent && (
             <div className="mt-2 mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">

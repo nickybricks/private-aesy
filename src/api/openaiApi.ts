@@ -103,6 +103,8 @@ export const analyzeBusinessModel = async (companyName: string, industry: string
     1. Beginne mit der Hauptfrage: **Ist das Geschäftsmodell leicht verständlich?**
     2. Führe 3-4 aussagekräftige Stichpunkte auf, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.
     3. Schließe mit einer klaren Bewertung ab: **Bewertung:** Einfach verständlich (Pass), Moderat komplex (Warning), Zu komplex (Fail).
+    
+    WICHTIG: Falls deine Bewertung "Moderat komplex (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt."
   `;
   
   return await queryGPT(prompt);
@@ -122,6 +124,8 @@ export const analyzeEconomicMoat = async (companyName: string, industry: string,
     1. Beginne mit der Hauptfrage: **Hat das Unternehmen einen starken wirtschaftlichen Burggraben?**
     2. Führe 3-4 aussagekräftige Stichpunkte auf, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.
     3. Schließe mit einer klaren Bewertung ab: **Bewertung:** Starker Moat (Pass), Moderater Moat (Warning), Schwacher/Kein Moat (Fail).
+    
+    WICHTIG: Falls deine Bewertung "Moderater Moat (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt."
   `;
   
   return await queryGPT(prompt);
@@ -138,6 +142,8 @@ export const analyzeManagementQuality = async (companyName: string, ceo: string)
     3. Füge eine dritte wichtige Frage hinzu: **Zeigt es gute Kapitalallokation?**
     4. Beantworte jede Frage mit 1-2 aussagekräftigen Stichpunkten, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.
     5. Schließe mit einer klaren Bewertung ab: **Bewertung:** Gutes Management (Pass), Durchschnittliches Management (Warning), Problematisches Management (Fail).
+    
+    WICHTIG: Falls deine Bewertung "Durchschnittliches Management (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt."
   `;
   
   return await queryGPT(prompt);
@@ -154,6 +160,8 @@ export const analyzeLongTermProspects = async (companyName: string, industry: st
     3. Füge eine dritte wichtige Frage hinzu: **Hat das Unternehmen langfristige Wettbewerbsvorteile?**
     4. Beantworte jede Frage mit 1-2 aussagekräftigen Stichpunkten, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.
     5. Schließe mit einer klaren Bewertung ab: **Bewertung:** Starke Langzeitperspektive (Pass), Moderate Langzeitperspektive (Warning), Schwache Langzeitperspektive (Fail).
+    
+    WICHTIG: Falls deine Bewertung "Moderate Langzeitperspektive (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt."
   `;
   
   return await queryGPT(prompt);
@@ -170,6 +178,8 @@ export const analyzeCyclicalBehavior = async (companyName: string, industry: str
     3. Füge eine dritte wichtige Frage hinzu: **Kauft das Management Aktien zurück, wenn der Markt schwach ist?**
     4. Beantworte jede Frage mit 1-2 aussagekräftigen Stichpunkten, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.
     5. Schließe mit einer klaren Bewertung ab: **Bewertung:** Antizyklisches Verhalten (Pass), Neutrales Verhalten (Warning), Stark zyklisches Verhalten (Fail).
+    
+    WICHTIG: Falls deine Bewertung "Neutrales Verhalten (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt."
   `;
   
   return await queryGPT(prompt);
@@ -186,6 +196,8 @@ export const analyzeOneTimeEffects = async (companyName: string, industry: strin
     3. Füge eine dritte wichtige Frage hinzu: **Ist das Wachstum organisch oder durch Übernahmen/externe Faktoren getrieben?**
     4. Beantworte jede Frage mit 1-2 aussagekräftigen Stichpunkten, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.
     5. Schließe mit einer klaren Bewertung ab: **Bewertung:** Nachhaltige Geschäftsentwicklung (Pass), Teilweise nachhaltig (Warning), Stark von Einmaleffekten abhängig (Fail).
+    
+    WICHTIG: Falls deine Bewertung "Teilweise nachhaltig (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt."
   `;
   
   return await queryGPT(prompt);
@@ -202,6 +214,8 @@ export const analyzeTurnaround = async (companyName: string, industry: string): 
     3. Füge eine dritte wichtige Frage hinzu: **Ist das Unternehmen stabil oder muss es "wieder auf die Beine kommen"?**
     4. Beantworte jede Frage mit 1-2 aussagekräftigen Stichpunkten, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.
     5. Schließe mit einer klaren Bewertung ab: **Bewertung:** Stabiles Unternehmen (Pass), Leichte Umstrukturierung (Warning), Klarer Turnaround-Fall (Fail).
+    
+    WICHTIG: Falls deine Bewertung "Leichte Umstrukturierung (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt."
   `;
   
   return await queryGPT(prompt);
@@ -218,6 +232,8 @@ export const analyzeRationalBehavior = async (companyName: string, industry: str
     3. Füge eine dritte wichtige Frage hinzu: **Werden Ressourcen effizient eingesetzt?**
     4. Beantworte jede Frage mit 1-2 aussagekräftigen Stichpunkten, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.
     5. Schließe mit einer klaren Bewertung ab: **Bewertung:** Rationales Verhalten (Pass), Gemischtes Bild (Warning), Irrationales Verhalten (Fail).
+    
+    WICHTIG: Falls deine Bewertung "Gemischtes Bild (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt."
   `;
   
   return await queryGPT(prompt);
