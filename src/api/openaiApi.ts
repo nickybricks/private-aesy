@@ -78,7 +78,9 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       }
     );
     
-    // Robuste Extraktion des Antworttextes mit mehreren Fallback-Optionen
+    console.log('Raw OpenAI response received:', JSON.stringify(response.data, null, 2));
+    
+    // Verbesserte Extraktion des Antworttextes
     if (response.data) {
       // Option 1: Direkt verfügbarer output_text (höchste Priorität)
       if (response.data.output_text) {
@@ -86,28 +88,47 @@ export const queryGPT = async (prompt: string): Promise<string> => {
         return response.data.output_text.trim();
       }
       
-      // Option 2: Antwort in items-Array mit message-Typ suchen
+      // Option 2: Spezifisch nach message mit output_text content suchen
       if (response.data.items && Array.isArray(response.data.items)) {
         console.log('OpenAI response: Checking items array with length', response.data.items.length);
         
-        // Suche nach einem message-Item mit content
-        const messageItem = response.data.items.find(item => 
-          item.type === 'message' && item.content && item.content.length > 0
+        // Suche nach einem message-Item mit content vom Typ output_text
+        const messageItem = response.data.items.find(item =>
+          item.type === 'message' &&
+          Array.isArray(item.content) &&
+          item.content.some(c => c.type === 'output_text' && !!c.text)
         );
         
         if (messageItem && messageItem.content) {
-          console.log('OpenAI response: Found message item with content');
+          console.log('OpenAI response: Found message item with output_text content');
           
-          // Durchsuche alle content-Einträge nach Text
+          // Durchsuche alle content-Einträge nach output_text Typ
           for (const contentItem of messageItem.content) {
-            if (contentItem.text) {
-              console.log('OpenAI response extracted from message.content[].text');
+            if (contentItem.type === 'output_text' && contentItem.text) {
+              console.log('OpenAI response extracted from message.content[].text with type output_text');
               return contentItem.text.trim();
             }
           }
         }
         
-        // Option 3: Falls kein message-Item gefunden, versuche alle Items zu durchsuchen
+        // Option 3: Nach allgemeinem message-Item mit content suchen
+        const genericMessageItem = response.data.items.find(item =>
+          item.type === 'message' && item.content && item.content.length > 0
+        );
+        
+        if (genericMessageItem && genericMessageItem.content) {
+          console.log('OpenAI response: Found generic message item with content');
+          
+          // Durchsuche alle content-Einträge nach Text
+          for (const contentItem of genericMessageItem.content) {
+            if (contentItem.text) {
+              console.log('OpenAI response extracted from generic message.content[].text');
+              return contentItem.text.trim();
+            }
+          }
+        }
+        
+        // Option 4: Falls kein message-Item gefunden, versuche alle Items zu durchsuchen
         for (const item of response.data.items) {
           if (item.content && Array.isArray(item.content)) {
             for (const contentItem of item.content) {
@@ -121,7 +142,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       }
       
       // Debugging: Gib die Struktur der Antwort aus
-      console.log('OpenAI response structure:', JSON.stringify(response.data, null, 2));
+      console.log('OpenAI response structure (no text found):', JSON.stringify(response.data, null, 2));
     }
     
     throw new Error('Unerwartetes Antwortformat von der OpenAI-API - keine Textdaten gefunden');
