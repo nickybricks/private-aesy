@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 
 // OpenAI API Key - Fest im Code eingebaut
@@ -64,8 +65,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
           }
         ],
         tool_choice: { type: 'web_search_preview' }, // Erzwingt Websuche
-        system: 'Du bist ein hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien.',
-        input: prompt,
+        input: prompt,  // Input statt system und Nachrichtenarray
         temperature: 0.3,
         max_tokens: 500
       },
