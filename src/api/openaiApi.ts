@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // OpenAI API Key - Fest im Code eingebaut
@@ -22,7 +21,16 @@ export interface OpenAIResponse {
   choices: Array<{
     message: {
       content: string;
-      tool_calls?: any[];
+      annotations?: Array<{
+        text: string;
+        start_index: number;
+        end_index: number;
+        type: string;
+        metadata?: {
+          title?: string;
+          url?: string;
+        };
+      }>;
     };
     finish_reason: string;
   }>;
@@ -45,13 +53,14 @@ export const queryGPT = async (prompt: string): Promise<string> => {
     const response = await axios.post<OpenAIResponse>(
       OPENAI_API_URL,
       {
-        model: 'gpt-4o',
+        model: 'gpt-4o-search-preview',
         messages: [
           { role: 'system', content: 'Du bist ein hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien.' },
           { role: 'user', content: prompt }
         ],
-        tools: [{ type: 'web_search_preview' }],
-        tool_choice: { type: 'web_search_preview' }, // Erzwingt Websuche
+        web_search_options: {
+          search_context_size: "medium"  // Ausgewogenes Verhältnis von Geschwindigkeit, Kosten und Qualität
+        },
         max_tokens: 500,
         temperature: 0.3,
       },
