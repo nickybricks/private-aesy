@@ -13,35 +13,38 @@ export const hasOpenAiApiKey = (): boolean => {
   return !!OPENAI_API_KEY && OPENAI_API_KEY.length > 0;
 };
 
-// OpenAI API Service - Updated to use Chat Completions API
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+// OpenAI API Service - Updated to use Responses API
+const OPENAI_API_URL = 'https://api.openai.com/v1/responses';
 
+// Updated interface for OpenAI Responses API
 export interface OpenAIResponse {
   id: string;
-  choices: Array<{
-    message: {
-      content: string;
+  output_text?: string;
+  items?: Array<{
+    type: string;
+    id: string;
+    status: string;
+    role?: string;
+    content?: Array<{
+      type: string;
+      text: string;
       annotations?: Array<{
-        text: string;
+        type: string;
         start_index: number;
         end_index: number;
-        type: string;
-        metadata?: {
-          title?: string;
-          url?: string;
-        };
+        url: string;
+        title: string;
       }>;
-    };
-    finish_reason: string;
+    }>;
   }>;
-  usage: {
+  usage?: {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
   };
 }
 
-// Function to query the OpenAI API using the Chat Completions API with web search
+// Function to query the OpenAI API using the Responses API with web search
 export const queryGPT = async (prompt: string): Promise<string> => {
   try {
     const apiKey = getOpenAiApiKey();
@@ -53,16 +56,18 @@ export const queryGPT = async (prompt: string): Promise<string> => {
     const response = await axios.post<OpenAIResponse>(
       OPENAI_API_URL,
       {
-        model: 'gpt-4o-search-preview',
-        messages: [
-          { role: 'system', content: 'Du bist ein hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien.' },
-          { role: 'user', content: prompt }
+        model: 'gpt-4.1',
+        tools: [
+          {
+            type: 'web_search_preview',
+            search_context_size: 'medium'  // Ausgewogenes Verhältnis von Geschwindigkeit, Kosten und Qualität
+          }
         ],
-        web_search_options: {
-          search_context_size: "medium"  // Ausgewogenes Verhältnis von Geschwindigkeit, Kosten und Qualität
-        },
-        max_tokens: 500,
+        tool_choice: { type: 'web_search_preview' }, // Erzwingt Websuche
+        system: 'Du bist ein hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien.',
+        input: prompt,
         temperature: 0.3,
+        max_tokens: 500
       },
       {
         headers: {
@@ -72,13 +77,24 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       }
     );
     
-    // Extract content from the response
-    if (response.data && 
-        response.data.choices && 
-        response.data.choices.length > 0 && 
-        response.data.choices[0].message && 
-        response.data.choices[0].message.content) {
-      return response.data.choices[0].message.content.trim();
+    // Extract output text from the response
+    if (response.data && response.data.items) {
+      // Find the message response item
+      const messageItem = response.data.items.find(item => 
+        item.type === 'message' && item.content && item.content.length > 0
+      );
+      
+      if (messageItem && messageItem.content && messageItem.content.length > 0) {
+        const textContent = messageItem.content[0].text;
+        if (textContent) {
+          return textContent.trim();
+        }
+      }
+      
+      // If output_text directly available (some API versions)
+      if (response.data.output_text) {
+        return response.data.output_text.trim();
+      }
     }
     
     throw new Error('Unerwartetes Antwortformat von der OpenAI-API');
