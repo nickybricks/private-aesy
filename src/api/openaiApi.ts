@@ -50,8 +50,8 @@ export const queryGPT = async (prompt: string): Promise<string> => {
           { role: 'system', content: 'Du bist ein hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien.' },
           { role: 'user', content: prompt }
         ],
-        tools: [{ type: 'web_search' }],
-        tool_choice: { type: 'web_search' }, // Erzwingt Websuche
+        tools: [{ type: 'web_search_preview' }],
+        tool_choice: { type: 'web_search_preview' }, // Erzwingt Websuche
         max_tokens: 500,
         temperature: 0.3,
       },
