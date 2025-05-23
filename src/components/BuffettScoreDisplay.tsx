@@ -58,18 +58,28 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
             <div>
-              <p className="text-xs">
-                Punktzahl basierend auf der Analyse der Unterkategorien dieses Kriteriums.
-                {criterion.title === '1. Verstehbares Geschäftsmodell' && 
-                  ' Einfaches Geschäftsmodell = 3/3, moderates = 2/3 und komplexes = 0-1/3 Punkte.'}
-                {criterion.title === '11. Keine Turnarounds' && 
-                  ' Hier gilt: Kein Turnaround = 3/3, leichte Umstrukturierung = 1/3, klarer Turnaround = 0/3 Punkte.'}
+              <p className="text-xs mb-2">
+                Bewertung basierend auf der Analyse der Unterkategorien:
               </p>
               
-              {criterion.status === 'warning' && gptAssessment?.partialFulfillment && (
-                <div className="mt-1 pt-1 border-t border-gray-200">
+              {/* Display all 11 criteria with their scores in the tooltip */}
+              <div className="space-y-1 text-xs">
+                {buffettCriteriaWeights.map((cWeight, idx) => (
+                  <div key={idx} className="flex justify-between">
+                    <span>{cWeight.name}</span>
+                    <span className="font-medium">{
+                      criterion.title.startsWith(cWeight.name.split('.')[0]) ? 
+                      `${score}/${criterion.maxScore}` : 
+                      `?/${cWeight.maxPoints}`
+                    }</span>
+                  </div>
+                ))}
+              </div>
+              
+              {criterion.status === 'warning' && gptAssessment?.partialFulfillment !== undefined && (
+                <div className="mt-2 pt-1 border-t border-gray-200">
                   <p className="text-xs">
-                    GPT hat {gptAssessment.partialFulfillment} von 3 Teilkriterien als erfüllt bewertet.
+                    <strong>GPT-Bewertung:</strong> {gptAssessment.partialFulfillment} von {criterion.maxScore} Teilkriterien erfüllt
                   </p>
                 </div>
               )}

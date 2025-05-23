@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bot, ChevronDown } from 'lucide-react';
+import { Bot, ChevronDown, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DCFExplanationTooltip } from './DCFExplanationTooltip';
@@ -83,6 +83,40 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
                 value={(fulfillmentCount / totalCount) * 100} 
                 className="h-2" 
               />
+              
+              {/* Detail partial fulfillment - show which specific criteria are fulfilled */}
+              {criterion.gptAnalysis && points.length > 0 && (
+                <div className="mt-2">
+                  <ul className="space-y-1">
+                    {points.map((point, idx) => {
+                      // Determine if this particular point appears to be fulfilled
+                      const isPositive = 
+                        point.toLowerCase().includes('stark') ||
+                        point.toLowerCase().includes('positiv') ||
+                        point.toLowerCase().includes('erfüllt') ||
+                        point.toLowerCase().includes('gut');
+                      
+                      const isNegative = 
+                        point.toLowerCase().includes('schwach') ||
+                        point.toLowerCase().includes('negativ') ||
+                        point.toLowerCase().includes('nicht erfüllt') ||
+                        point.toLowerCase().includes('schlecht');
+                      
+                      return (
+                        <li key={idx} className="flex items-start">
+                          {isPositive ? 
+                            <CheckCircle className="text-green-500 h-4 w-4 mt-0.5 mr-1 flex-shrink-0" /> :
+                            isNegative ? 
+                              <XCircle className="text-red-500 h-4 w-4 mt-0.5 mr-1 flex-shrink-0" /> :
+                              <AlertCircle className="text-yellow-500 h-4 w-4 mt-0.5 mr-1 flex-shrink-0" />
+                          }
+                          <span className="text-xs">{point}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
           
