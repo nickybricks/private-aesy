@@ -58,17 +58,17 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
   }, [processedCriteria]);
 
   const criteriaWithIds = [
-    { criterion: criteria.businessModel, id: 'businessModel' },
-    { criterion: criteria.economicMoat, id: 'economicMoat' },
-    { criterion: criteria.financialMetrics, id: 'financialMetrics' },
-    { criterion: criteria.financialStability, id: 'financialStability' },
-    { criterion: criteria.management, id: 'management' },
-    { criterion: criteria.valuation, id: 'valuation' },
-    { criterion: criteria.longTermOutlook, id: 'longTermOutlook' },
-    { criterion: criteria.rationalBehavior, id: 'rationalBehavior' },
-    { criterion: criteria.cyclicalBehavior, id: 'cyclicalBehavior' },
-    { criterion: criteria.oneTimeEffects, id: 'oneTimeEffects' },
-    { criterion: criteria.turnaround, id: 'turnaround' }
+    { criterion: criteria.businessModel, id: 'criterion1' },
+    { criterion: criteria.economicMoat, id: 'criterion2' },
+    { criterion: criteria.financialMetrics, id: 'criterion3' },
+    { criterion: criteria.financialStability, id: 'criterion4' },
+    { criterion: criteria.management, id: 'criterion5' },
+    { criterion: criteria.valuation, id: 'criterion6' },
+    { criterion: criteria.longTermOutlook, id: 'criterion7' },
+    { criterion: criteria.rationalBehavior, id: 'criterion8' },
+    { criterion: criteria.cyclicalBehavior, id: 'criterion9' },
+    { criterion: criteria.oneTimeEffects, id: 'criterion10' },
+    { criterion: criteria.turnaround, id: 'criterion11' }
   ];
 
   // Calculate weighted scores
@@ -80,29 +80,15 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
   const totalWeightedScore = weightedScores.reduce((acc, score) => acc + score.weightedScore, 0);
   const buffettScore = Math.round(totalWeightedScore);
 
-  // Old calculation kept for reference or fallback
-  const totalPoints = processedCriteria.reduce((acc, criterion) => {
-    if (criterion.status === 'pass') return acc + 3;
-    if (criterion.status === 'warning') return acc + 1;
-    return acc;
-  }, 0);
-  
-  const maxPoints = processedCriteria.length * 3;
-  const oldBuffettScore = Math.round((totalPoints / maxPoints) * 100);
-
+  // Calculate the total points and max points for the detailed breakdown
   const detailedScores = processedCriteria.filter(c => c.score !== undefined && c.maxScore !== undefined);
-  const hasDetailedScores = detailedScores.length > 0;
+  const totalDetailedScore = detailedScores.reduce((acc, c) => acc + (c.score || 0), 0);
+  const maxDetailedScore = detailedScores.reduce((acc, c) => acc + (c.maxScore || 0), 0);
   
-  const totalDetailedScore = hasDetailedScores ? 
-    detailedScores.reduce((acc, c) => acc + (c.score || 0), 0) : 0;
-  const maxDetailedScore = hasDetailedScores ? 
-    detailedScores.reduce((acc, c) => acc + (c.maxScore || 0), 0) : 0;
-  
-  const detailedBuffettScore = hasDetailedScores && maxDetailedScore > 0 ? 
-    Math.round((totalDetailedScore / maxDetailedScore) * 100) : oldBuffettScore;
-
-  // Use the weighted score as final score
+  // Ensure the displayed percentage matches the weighted calculation
   const finalScore = buffettScore;
+  const detailedScorePercentage = maxDetailedScore > 0 ? 
+    Math.round((totalDetailedScore / maxDetailedScore) * 100) : 0;
 
   return (
     <div>
@@ -136,6 +122,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       </div>
       <div className="mt-6 text-sm text-gray-500">
         <p>Die dargestellte Bewertung ist keine Anlageempfehlung.</p>
+        <p className="mt-1">Detaillierte Punktzahl: {totalDetailedScore}/{maxDetailedScore} ({detailedScorePercentage}%)</p>
       </div>
     </div>
   );

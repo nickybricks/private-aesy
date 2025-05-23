@@ -36,10 +36,7 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
   const criterionWeight = buffettCriteriaWeights.find(c => {
     // First try to match by extracting the criterion number
     if (criterionNumber) {
-      const weightName = c.name.toLowerCase();
-      const titleWithoutNumber = criterion.title.replace(/^\d+\.\s+/, '').toLowerCase();
-      
-      return weightName.includes(titleWithoutNumber.split(' ')[0].toLowerCase());
+      return c.id === `criterion${criterionNumber}`;
     }
     // Fallback to the previous matching logic
     return c.name.includes(criterion.title.replace(/^\d+\.\s+/, '').split(' ')[0]);
