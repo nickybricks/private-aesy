@@ -40,18 +40,20 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score 
                 <p className="text-xs font-medium">Bewertungsskala:</p>
                 <p className="text-xs">≥ 80%: Sehr hohe Buffett-Kompatibilität</p>
                 <p className="text-xs">65-79%: Gute Übereinstimmung</p>
-                <p className="text-xs">< 65%: Eher nicht Buffett-kompatibel</p>
+                <p className="text-xs">{"< 65%: Eher nicht Buffett-kompatibel"}</p>
               </div>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-        <div className="h-2.5 rounded-full" 
-             style={{
-               width: `${Math.min(roundedScore, 100)}%`,
-               backgroundColor: interpretation.color
-             }}></div>
+        <div 
+          className="h-2.5 rounded-full" 
+          style={{
+            width: `${Math.min(roundedScore, 100)}%`,
+            backgroundColor: interpretation.color
+          }}
+        />
       </div>
       <p className="text-sm mt-2 text-gray-600" style={{ color: interpretation.color }}>
         {interpretation.label}
