@@ -24,9 +24,10 @@ interface BuffettCriterionCardProps {
 }
 
 export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ criterion, index }) => {
+  // Parse GPT analysis to extract key information
   const { summary, points, partialFulfillment } = extractKeyInsights(criterion.gptAnalysis);
   
-  // Calculate partial fulfillment from GPT analysis if not already available
+  // Get GPT's assessment of fulfillment
   const gptAssessment = criterion.gptAnalysis ? extractGptAssessmentStatus(criterion.gptAnalysis) : undefined;
   
   // Use GPT's assessment to determine the status for this criterion
@@ -36,11 +37,63 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
   }
   
   const showPartialFulfillment = displayStatus === 'warning' && 
-    (partialFulfillment || (gptAssessment && gptAssessment.status === 'warning' && gptAssessment.partialFulfillment));
+    (partialFulfillment || (gptAssessment && gptAssessment.status === 'warning' && gptAssessment.partialFulfillment !== undefined));
   
   const fulfillmentCount = partialFulfillment?.fulfilled || 
                            (gptAssessment?.partialFulfillment || 0);
-  const totalCount = partialFulfillment?.total || 3; // Default to 3 if not specified
+  const totalCount = 3; // Always 3 subcriteria
+  
+  // Extract assessment details from GPT analysis
+  const criteriaQuestions: {question: string, answer: string, fulfilled: boolean}[] = [];
+  
+  if (criterion.gptAnalysis) {
+    const analysisLines = criterion.gptAnalysis.split('\n');
+    let currentQuestion: string | null = null;
+    let currentAnswer: string | null = null;
+    
+    for (const line of analysisLines) {
+      // Extract questions
+      if (line.includes('Frage') || line.includes('**Frage')) {
+        if (currentQuestion && currentAnswer) {
+          // Save previous question-answer pair
+          const isPositive = 
+            currentAnswer.toLowerCase().includes('ja') ||
+            currentAnswer.toLowerCase().includes('gut') || 
+            currentAnswer.toLowerCase().includes('stark') ||
+            currentAnswer.toLowerCase().includes('✅');
+          
+          criteriaQuestions.push({
+            question: currentQuestion,
+            answer: currentAnswer,
+            fulfilled: isPositive
+          });
+        }
+        
+        // Start new question
+        currentQuestion = line.replace(/^\*\*Frage \d+:\*\*|^\*\*Frage \d+:\s|^Frage \d+:\s/, '').trim();
+        currentAnswer = null;
+      }
+      // Extract answers
+      else if (line.trim().startsWith('-') && currentQuestion) {
+        currentAnswer = line.replace(/^-\s*/, '').trim();
+      }
+    }
+    
+    // Add the last question-answer pair if it exists
+    if (currentQuestion && currentAnswer) {
+      const isPositive = 
+        currentAnswer.toLowerCase().includes('ja') ||
+        currentAnswer.toLowerCase().includes('gut') || 
+        currentAnswer.toLowerCase().includes('stark') ||
+        currentAnswer.toLowerCase().includes('✅');
+      
+      criteriaQuestions.push({
+        question: currentQuestion,
+        answer: currentAnswer,
+        fulfilled: isPositive
+      });
+    }
+  }
   
   return (
     <Card key={index} className={`border-l-4 ${getStatusColor(displayStatus)}`}>
@@ -84,36 +137,22 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
                 className="h-2" 
               />
               
-              {/* Detail partial fulfillment - show which specific criteria are fulfilled */}
-              {criterion.gptAnalysis && points.length > 0 && (
+              {/* Detail which specific subcriteria are fulfilled */}
+              {criteriaQuestions.length > 0 && (
                 <div className="mt-2">
                   <ul className="space-y-1">
-                    {points.map((point, idx) => {
-                      // Determine if this particular point appears to be fulfilled
-                      const isPositive = 
-                        point.toLowerCase().includes('stark') ||
-                        point.toLowerCase().includes('positiv') ||
-                        point.toLowerCase().includes('erfüllt') ||
-                        point.toLowerCase().includes('gut');
-                      
-                      const isNegative = 
-                        point.toLowerCase().includes('schwach') ||
-                        point.toLowerCase().includes('negativ') ||
-                        point.toLowerCase().includes('nicht erfüllt') ||
-                        point.toLowerCase().includes('schlecht');
-                      
-                      return (
-                        <li key={idx} className="flex items-start">
-                          {isPositive ? 
-                            <CheckCircle className="text-green-500 h-4 w-4 mt-0.5 mr-1 flex-shrink-0" /> :
-                            isNegative ? 
-                              <XCircle className="text-red-500 h-4 w-4 mt-0.5 mr-1 flex-shrink-0" /> :
-                              <AlertCircle className="text-yellow-500 h-4 w-4 mt-0.5 mr-1 flex-shrink-0" />
-                          }
-                          <span className="text-xs">{point}</span>
-                        </li>
-                      );
-                    })}
+                    {criteriaQuestions.map((item, idx) => (
+                      <li key={idx} className="flex items-start">
+                        {item.fulfilled ? 
+                          <CheckCircle className="text-green-500 h-4 w-4 mt-0.5 mr-1 flex-shrink-0" /> :
+                          <XCircle className="text-red-500 h-4 w-4 mt-0.5 mr-1 flex-shrink-0" />
+                        }
+                        <div>
+                          <span className="text-xs font-medium">{item.question}</span>
+                          <p className="text-xs text-gray-600">{item.answer}</p>
+                        </div>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               )}

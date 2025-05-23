@@ -18,6 +18,11 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
     return null;
   }
   
+  // Get the GPT assessment to determine partial fulfillment
+  const gptAssessment = criterion.gptAnalysis ? 
+    extractGptAssessmentStatus(criterion.gptAnalysis) : undefined;
+  
+  // Use the provided score or derive it from GPT analysis
   const derivedScore = deriveScoreFromGptAnalysis(criterion);
   const score = criterion.score !== undefined ? criterion.score : derivedScore;
   
@@ -25,21 +30,15 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
     return null;
   }
   
-  // Get the GPT assessment to determine partial fulfillment for warning states
-  const gptAssessment = criterion.gptAnalysis ? 
-    extractGptAssessmentStatus(criterion.gptAnalysis) : undefined;
-  
-  // Extract criterion number for sorting (if present)
+  // Extract criterion number for identifying the weight
   const criterionNumber = criterion.title.match(/^\d+/)?.[0];
   
-  // Find criterion weight by matching the title, now using the extracted number if available
+  // Find criterion weight by matching the criterion number
   const criterionWeight = buffettCriteriaWeights.find(c => {
-    // First try to match by extracting the criterion number
     if (criterionNumber) {
       return c.id === `criterion${criterionNumber}`;
     }
-    // Fallback to the previous matching logic
-    return c.name.includes(criterion.title.replace(/^\d+\.\s+/, '').split(' ')[0]);
+    return false;
   });
   
   return (
@@ -68,7 +67,7 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
                   <div key={idx} className="flex justify-between">
                     <span>{cWeight.name}</span>
                     <span className="font-medium">{
-                      criterion.title.startsWith(cWeight.name.split('.')[0]) ? 
+                      criterionNumber && cWeight.id === `criterion${criterionNumber}` ? 
                       `${score}/${criterion.maxScore}` : 
                       `?/${cWeight.maxPoints}`
                     }</span>
@@ -76,10 +75,10 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
                 ))}
               </div>
               
-              {criterion.status === 'warning' && gptAssessment?.partialFulfillment !== undefined && (
+              {gptAssessment && gptAssessment.status === 'warning' && gptAssessment.partialFulfillment !== undefined && (
                 <div className="mt-2 pt-1 border-t border-gray-200">
                   <p className="text-xs">
-                    <strong>GPT-Bewertung:</strong> {gptAssessment.partialFulfillment} von {criterion.maxScore} Teilkriterien erfüllt
+                    <strong>Erfüllte Teilaspekte:</strong> {gptAssessment.partialFulfillment} von 3 Teilaspekten erfüllt
                   </p>
                 </div>
               )}

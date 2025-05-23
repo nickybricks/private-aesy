@@ -30,7 +30,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score 
               <div className="space-y-1 text-xs">
                 {buffettCriteriaWeights.map((criterion, idx) => (
                   <div key={idx} className="flex justify-between">
-                    <span>{criterion.name.split('.')[0]}. {criterion.name.split('.')[1]}</span>
+                    <span>{criterion.name}</span>
                     <span>{criterion.weight}%</span>
                   </div>
                 ))}

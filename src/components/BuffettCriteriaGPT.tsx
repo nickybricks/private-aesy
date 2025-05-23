@@ -6,7 +6,6 @@ import { BuffettCriterionCard } from './BuffettCriterionCard';
 import { 
   BuffettCriteriaProps,
   BuffettCriterionProps,
-  hasInconsistentAnalysis,
   calculateWeightedScore,
   buffettCriteriaWeights
 } from '@/utils/buffettUtils';
@@ -42,21 +41,9 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.turnaround
   ].filter(isBuffettCriterion);
 
-  const processedCriteria = allCriteria.map(criterion => {
-    if (criterion.score === undefined) {
-      return criterion;
-    }
-    return criterion;
-  });
+  const processedCriteria = allCriteria;
 
-  // Check for inconsistencies on component mount or criteria change
-  useEffect(() => {
-    const inconsistencies = processedCriteria.filter(criterion => 
-      hasInconsistentAnalysis(criterion)
-    );
-    setInconsistentCriteria(inconsistencies);
-  }, [processedCriteria]);
-
+  // Map criteria to their IDs for weighted score calculation
   const criteriaWithIds = [
     { criterion: criteria.businessModel, id: 'criterion1' },
     { criterion: criteria.economicMoat, id: 'criterion2' },
@@ -85,8 +72,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
   const totalDetailedScore = detailedScores.reduce((acc, c) => acc + (c.score || 0), 0);
   const maxDetailedScore = detailedScores.reduce((acc, c) => acc + (c.maxScore || 0), 0);
   
-  // Ensure the displayed percentage matches the weighted calculation
-  const finalScore = buffettScore;
   const detailedScorePercentage = maxDetailedScore > 0 ? 
     Math.round((totalDetailedScore / maxDetailedScore) * 100) : 0;
 
@@ -107,9 +92,9 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
         </Alert>
       )}
       
-      <BuffettScoreSummary score={finalScore} />
+      <BuffettScoreSummary score={buffettScore} />
       
-      <BuffettScoreChart score={finalScore} />
+      <BuffettScoreChart score={buffettScore} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
         {processedCriteria.map((criterion, index) => (
@@ -122,7 +107,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       </div>
       <div className="mt-6 text-sm text-gray-500">
         <p>Die dargestellte Bewertung ist keine Anlageempfehlung.</p>
-        <p className="mt-1">Detaillierte Punktzahl: {totalDetailedScore}/{maxDetailedScore} ({detailedScorePercentage}%)</p>
+        <p className="mt-1">Detaillierte Punktzahl: {totalDetailedScore.toFixed(1)}/{maxDetailedScore} ({detailedScorePercentage}%)</p>
       </div>
     </div>
   );
