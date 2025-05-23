@@ -1,16 +1,12 @@
 
 import React from 'react';
-import { BuffettScoreSummary } from './BuffettScoreSummary';
-import { BuffettScoreChart } from './BuffettScoreChart';
 import { BuffettCriterionCard } from './BuffettCriterionCard';
+import BuffettOverallAnalysis from './BuffettOverallAnalysis';
 import { 
   BuffettCriteriaProps,
   BuffettCriterionProps,
-  calculateTotalBuffettScore,
   deriveScoreFromGptAnalysis
 } from '@/utils/buffettUtils';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
 
 interface BuffettCriteriaGPTProps {
   criteria: BuffettCriteriaProps;
@@ -39,9 +35,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.turnaround
   ].filter(isBuffettCriterion);
 
-  // Calculate the unified Buffett score using the new weighted system
-  const buffettScore = calculateTotalBuffettScore(criteria);
-
   // Calculate detailed scores for display
   const detailedScores = allCriteria.map(criterion => {
     const score = criterion.score !== undefined ? criterion.score : 
@@ -62,10 +55,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
         Eine umfassende Analyse nach Warren Buffetts 11 Investmentkriterien mit gewichteter Bewertung (0-10 Punkte pro Kriterium).
       </p>
       
-      <BuffettScoreSummary score={buffettScore} />
-      
-      <BuffettScoreChart score={buffettScore} />
-      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
         {allCriteria.map((criterion, index) => (
           <BuffettCriterionCard 
@@ -75,10 +64,12 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
           />
         ))}
       </div>
+      
+      <BuffettOverallAnalysis criteria={criteria} />
+      
       <div className="mt-6 text-sm text-gray-500">
         <p>Die dargestellte Bewertung ist keine Anlageempfehlung.</p>
         <p className="mt-1">
-          Gewichteter Buffett-Score: {buffettScore}% | 
           Rohpunktzahl: {totalDetailedScore.toFixed(1)}/{maxDetailedScore} ({detailedScorePercentage}%)
         </p>
       </div>
