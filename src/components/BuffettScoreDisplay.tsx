@@ -29,10 +29,21 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
   const gptAssessment = criterion.gptAnalysis ? 
     extractGptAssessmentStatus(criterion.gptAnalysis) : undefined;
   
-  // Find criterion weight by matching the title
-  const criterionWeight = buffettCriteriaWeights.find(c => 
-    c.name.includes(criterion.title.replace(/^\d+\.\s+/, '').split(' ')[0])
-  );
+  // Extract criterion number for sorting (if present)
+  const criterionNumber = criterion.title.match(/^\d+/)?.[0];
+  
+  // Find criterion weight by matching the title, now using the extracted number if available
+  const criterionWeight = buffettCriteriaWeights.find(c => {
+    // First try to match by extracting the criterion number
+    if (criterionNumber) {
+      const weightName = c.name.toLowerCase();
+      const titleWithoutNumber = criterion.title.replace(/^\d+\.\s+/, '').toLowerCase();
+      
+      return weightName.includes(titleWithoutNumber.split(' ')[0].toLowerCase());
+    }
+    // Fallback to the previous matching logic
+    return c.name.includes(criterion.title.replace(/^\d+\.\s+/, '').split(' ')[0]);
+  });
   
   return (
     <div className="inline-flex items-center">
