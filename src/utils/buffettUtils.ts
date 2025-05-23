@@ -1,4 +1,3 @@
-
 export const getStatusColor = (status: string) => {
   switch (status) {
     case 'pass':
@@ -175,11 +174,13 @@ export const deriveScoreFromGptAnalysis = (
                           analysis.match(/von\s+(\d+)\s+teilaspekten\s+wurden\s+(\d+)\s+erfüllt/i);
   
   if (fulfillmentMatch) {
-    const fulfilled = parseInt(fulfillmentMatch[1], 10);
-    const total = parseInt(fulfillmentMatch[2], 10);
+    const [, fulfilledStr, totalStr] = fulfillmentMatch;
+    const fulfilled = parseInt(fulfilledStr, 10);
+    const total = parseInt(totalStr, 10);
     
     if (!isNaN(fulfilled) && !isNaN(total) && total > 0) {
-      // Convert to 0-10 scale: (fulfilled/total) * 10
+      // Convert to 0-10 scale based on ratio: (fulfilled/total) * 10
+      // This gives a proper score scaling - if 2/3 criteria fulfilled, score is 6.7/10
       return Math.round((fulfilled / total) * 10 * 10) / 10; // Round to 1 decimal place
     }
   }
@@ -199,7 +200,7 @@ export const deriveScoreFromGptAnalysis = (
     // Use partial fulfillment if available
     if (assessment.partialFulfillment !== undefined) {
       const totalSubCriteria = 3; // Standard is 3 sub-criteria
-      // Calculate score based on partial fulfillment
+      // Calculate score based on partial fulfillment ratio
       return Math.round((assessment.partialFulfillment / totalSubCriteria) * 10 * 10) / 10; // Round to 1 decimal place
     }
     return 5; // Default middle score for warning
@@ -267,8 +268,9 @@ export const calculateTotalBuffettScore = (criteria: BuffettCriteriaProps): numb
   let totalMaxWeightedScore = 0;
 
   criteriaArray.forEach(({ criterion, weight }) => {
-    // Get score (0-10) for this criterion
-    const score = criterion.score || deriveScoreFromGptAnalysis(criterion) || 0;
+    // Get score (0-10) for this criterion, preferring explicit score if available
+    const score = criterion.score !== undefined ? criterion.score : 
+                  deriveScoreFromGptAnalysis(criterion) || 0;
     
     // Calculate weighted contribution: score * weight percentage
     const weightedScore = score * (weight.weight / 100);
@@ -315,7 +317,8 @@ export const calculateWeightedScore = (
   criterionId: string
 ): { weightedScore: number, weightPercentage: number } => {
   // Get score (0-10)
-  const score = criterion.score || deriveScoreFromGptAnalysis(criterion) || 0;
+  const score = criterion.score !== undefined ? criterion.score : 
+                deriveScoreFromGptAnalysis(criterion) || 0;
   
   const criteriaWeight = buffettCriteriaWeights.find(c => c.id === criterionId);
   

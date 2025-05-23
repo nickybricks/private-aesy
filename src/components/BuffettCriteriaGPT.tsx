@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { BuffettScoreSummary } from './BuffettScoreSummary';
 import { BuffettScoreChart } from './BuffettScoreChart';
 import { BuffettCriterionCard } from './BuffettCriterionCard';
@@ -44,7 +44,8 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
 
   // Calculate detailed scores for display
   const detailedScores = allCriteria.map(criterion => {
-    const score = criterion.score || deriveScoreFromGptAnalysis(criterion) || 0;
+    const score = criterion.score !== undefined ? criterion.score : 
+                  deriveScoreFromGptAnalysis(criterion) || 0;
     return { criterion, score };
   });
   

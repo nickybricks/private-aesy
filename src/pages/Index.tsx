@@ -52,8 +52,8 @@ const IndexContent: React.FC = () => {
       
       {!isLoading && (
         <>
-          <CriteriaTabsSection />
           <MetricsSection />
+          <CriteriaTabsSection />
           <RatingSection />
           <DataMissingAlert />
         </>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   CheckCircle, 
@@ -9,8 +10,7 @@ import {
   DollarSign,
   Calculator,
   HelpCircle,
-  Info,
-  PieChart
+  Info
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -282,98 +282,6 @@ const BuffettBuyPriceTooltip: React.FC<{
   );
 };
 
-// Score Breakdown Tooltip Component
-const ScoreBreakdownTooltip: React.FC<{
-  buffettScore: number;
-}> = ({ buffettScore }) => {
-  // Beispielhafte Aufschlüsselung der Punkteverteilung
-  const scoreComponents = [
-    { name: "Verständliches Geschäftsmodell", score: 3, total: 3 },
-    { name: "Wirtschaftlicher Burggraben", score: 2, total: 3 },
-    { name: "Finanzkennzahlen", score: 10, total: 12 },
-    { name: "Finanzielle Stabilität", score: 7, total: 9 },
-    { name: "Managementqualität", score: 8, total: 12 },
-    { name: "Bewertung (Preis)", score: 4, total: 12 },
-    { name: "Langfristiger Ausblick", score: 8, total: 12 },
-  ];
-  
-  // Summe zur Überprüfung
-  const totalPoints = scoreComponents.reduce((sum, item) => sum + item.score, 0);
-  const totalPossible = scoreComponents.reduce((sum, item) => sum + item.total, 0);
-  const calculatedScore = Math.round((totalPoints / totalPossible) * 100);
-  
-  return (
-    <div className="space-y-2">
-      <h4 className="font-semibold">Buffett-Score: {buffettScore}%</h4>
-      <p>Die Punktzahl zeigt, wie gut das Unternehmen zu Buffetts Investmentkriterien passt:</p>
-      
-      <div className="space-y-1 mt-2">
-        {scoreComponents.map((comp, index) => (
-          <div key={index} className="flex justify-between text-sm">
-            <span>{comp.name}:</span>
-            <span className="font-medium">{comp.score}/{comp.total} Punkte</span>
-          </div>
-        ))}
-        <div className="border-t border-gray-200 pt-1 mt-1 flex justify-between font-medium">
-          <span>Gesamt:</span>
-          <span>{totalPoints}/{totalPossible} Punkte ({calculatedScore}%)</span>
-        </div>
-      </div>
-      
-      <div className="border-t border-gray-200 pt-2 mt-2">
-        <p className="text-sm text-gray-600">
-          <span className="font-medium">Bewertungsschlüssel:</span><br/>
-          ≥75%: Hervorragende Übereinstimmung mit Buffetts Kriterien<br/>
-          60-74%: Gute Übereinstimmung, nähere Analyse empfohlen<br/>
-          &lt;60%: Schwache Übereinstimmung, entspricht nicht Buffetts Stil
-        </p>
-      </div>
-    </div>
-  );
-};
-
-const BuffettScoreChart: React.FC<{ score: number }> = ({ score }) => {
-  // Berechnet den Umfang des Kreises, der gefüllt werden soll
-  const circumference = 2 * Math.PI * 40; // r = 40
-  const dashoffset = circumference * (1 - score / 100);
-  
-  // Farbe basierend auf Score
-  const getColor = () => {
-    if (score >= 75) return '#10b981'; // grün
-    if (score >= 60) return '#f59e0b'; // gelb
-    return '#ef4444'; // rot
-  };
-  
-  return (
-    <div className="relative w-24 h-24 flex items-center justify-center">
-      <svg className="w-full h-full" viewBox="0 0 100 100">
-        {/* Hintergrundkreis */}
-        <circle
-          cx="50"
-          cy="50"
-          r="40"
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth="10"
-        />
-        {/* Fortschrittskreis */}
-        <circle
-          cx="50"
-          cy="50"
-          r="40"
-          fill="none"
-          stroke={getColor()}
-          strokeWidth="10"
-          strokeDasharray={circumference}
-          strokeDashoffset={dashoffset}
-          transform="rotate(-90 50 50)"
-        />
-      </svg>
-      <div className="absolute text-2xl font-bold">{score}%</div>
-    </div>
-  );
-};
-
 const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   if (!rating) return null;
   
@@ -456,10 +364,11 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     }
   }
   
+  // Verwende neutralere Formulierungen für die Bewertungen
   const ratingTitle = {
-    buy: 'Kaufen',
-    watch: 'Beobachten',
-    avoid: 'Vermeiden'
+    buy: 'Hohe Übereinstimmung',
+    watch: 'Mittlere Übereinstimmung',
+    avoid: 'Niedrige Übereinstimmung'
   }[overall];
   
   const ratingColor = {
@@ -503,15 +412,15 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     }
 
     if (buffettScore >= 75 && marginOfSafety.value > 20 && overall === 'buy') {
-      return "Hohe Qualität (≥75%) + starke Unterbewertung (>20%) = Kaufempfehlung";
+      return "Hohe Qualität (≥75%) + starke Unterbewertung (>20%) = Hohe Übereinstimmung";
     } else if (buffettScore >= 75 && marginOfSafety.value >= 0 && overall === 'watch') {
-      return "Hohe Qualität (≥75%) + faire/leichte Bewertung = Beobachten";
+      return "Hohe Qualität (≥75%) + faire/leichte Bewertung = Mittlere Übereinstimmung";
     } else if (buffettScore >= 75 && marginOfSafety.value < 0 && overall === 'avoid') {
-      return "Hohe Qualität (≥75%), aber überbewertet (<0%) = Vermeiden";
+      return "Hohe Qualität (≥75%), aber überbewertet (<0%) = Niedrige Übereinstimmung";
     } else if (buffettScore >= 60 && buffettScore < 75 && marginOfSafety.value > 10 && overall === 'watch') {
-      return "Mittlere Qualität (60-74%) + Unterbewertung (>10%) = Beobachten (vorsichtiger Kauf)";
+      return "Mittlere Qualität (60-74%) + Unterbewertung (>10%) = Mittlere Übereinstimmung";
     } else if (buffettScore < 60 && overall === 'avoid') {
-      return "Schwache Qualität (<60%) = Vermeiden (unabhängig vom Preis)";
+      return "Schwache Qualität (<60%) = Niedrige Übereinstimmung (unabhängig vom Preis)";
     }
     
     return "Bewertung basierend auf Buffett-Score und Margin of Safety";
@@ -554,39 +463,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         </div>
       </div>
       
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {buffettScore !== undefined && (
-          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <PieChart size={18} className="text-buffett-blue" />
-              <h4 className="font-semibold">Buffett-Kompatibilität</h4>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
-                      <Info size={14} className="text-gray-500" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <ScoreBreakdownTooltip buffettScore={buffettScore} />
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            
-            <div className="flex items-center justify-center mb-3">
-              <BuffettScoreChart score={buffettScore} />
-            </div>
-            
-            <div className="text-sm mt-2 text-gray-600">
-              {buffettScore >= 75 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
-              buffettScore >= 60 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
-              'Geringe Übereinstimmung mit Buffetts Investitionskriterien'}
-            </div>
-          </div>
-        )}
-        
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         {marginOfSafety !== undefined && (
           <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
