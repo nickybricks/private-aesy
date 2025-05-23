@@ -6,8 +6,8 @@ import { BuffettCriterionCard } from './BuffettCriterionCard';
 import { 
   BuffettCriteriaProps,
   BuffettCriterionProps,
-  calculateWeightedScore,
-  buffettCriteriaWeights
+  calculateTotalBuffettScore,
+  deriveScoreFromGptAnalysis
 } from '@/utils/buffettUtils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
@@ -17,8 +17,6 @@ interface BuffettCriteriaGPTProps {
 }
 
 const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => {
-  const [inconsistentCriteria, setInconsistentCriteria] = useState<BuffettCriterionProps[]>([]);
-  
   const isBuffettCriterion = (criterion: any): criterion is BuffettCriterionProps => {
     return criterion && 
            typeof criterion.title === 'string' && 
@@ -41,36 +39,17 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.turnaround
   ].filter(isBuffettCriterion);
 
-  const processedCriteria = allCriteria;
+  // Calculate the unified Buffett score using the new weighted system
+  const buffettScore = calculateTotalBuffettScore(criteria);
 
-  // Map criteria to their IDs for weighted score calculation
-  const criteriaWithIds = [
-    { criterion: criteria.businessModel, id: 'criterion1' },
-    { criterion: criteria.economicMoat, id: 'criterion2' },
-    { criterion: criteria.financialMetrics, id: 'criterion3' },
-    { criterion: criteria.financialStability, id: 'criterion4' },
-    { criterion: criteria.management, id: 'criterion5' },
-    { criterion: criteria.valuation, id: 'criterion6' },
-    { criterion: criteria.longTermOutlook, id: 'criterion7' },
-    { criterion: criteria.rationalBehavior, id: 'criterion8' },
-    { criterion: criteria.cyclicalBehavior, id: 'criterion9' },
-    { criterion: criteria.oneTimeEffects, id: 'criterion10' },
-    { criterion: criteria.turnaround, id: 'criterion11' }
-  ];
-
-  // Calculate weighted scores
-  const weightedScores = criteriaWithIds
-    .filter(({ criterion }) => isBuffettCriterion(criterion) && criterion.score !== undefined && criterion.maxScore !== undefined)
-    .map(({ criterion, id }) => calculateWeightedScore(criterion, id));
+  // Calculate detailed scores for display
+  const detailedScores = allCriteria.map(criterion => {
+    const score = criterion.score || deriveScoreFromGptAnalysis(criterion) || 0;
+    return { criterion, score };
+  });
   
-  // Calculate total weighted score (Buffett compatibility)
-  const totalWeightedScore = weightedScores.reduce((acc, score) => acc + score.weightedScore, 0);
-  const buffettScore = Math.round(totalWeightedScore);
-
-  // Calculate the total points and max points for the detailed breakdown
-  const detailedScores = processedCriteria.filter(c => c.score !== undefined && c.maxScore !== undefined);
-  const totalDetailedScore = detailedScores.reduce((acc, c) => acc + (c.score || 0), 0);
-  const maxDetailedScore = detailedScores.reduce((acc, c) => acc + (c.maxScore || 0), 0);
+  const totalDetailedScore = detailedScores.reduce((acc, { score }) => acc + score, 0);
+  const maxDetailedScore = detailedScores.length * 10; // Each criterion max 10 points
   
   const detailedScorePercentage = maxDetailedScore > 0 ? 
     Math.round((totalDetailedScore / maxDetailedScore) * 100) : 0;
@@ -79,25 +58,15 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     <div>
       <h2 className="text-2xl font-bold mb-4">Buffett-Kriterien Analyse mit GPT</h2>
       <p className="text-buffett-subtext mb-6">
-        Eine umfassende Analyse nach Warren Buffetts 11 Investmentkriterien, unterstützt durch GPT für die qualitative Bewertung.
+        Eine umfassende Analyse nach Warren Buffetts 11 Investmentkriterien mit gewichteter Bewertung (0-10 Punkte pro Kriterium).
       </p>
-      
-      {inconsistentCriteria.length > 0 && (
-        <Alert className="mb-6 bg-yellow-50 border-yellow-200">
-          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          <AlertDescription className="text-yellow-700">
-            Es wurden {inconsistentCriteria.length} Kriterien mit potenziellen Widersprüchen zwischen GPT-Analyse und Bewertung gefunden. 
-            Bitte prüfen Sie die markierten Kriterien.
-          </AlertDescription>
-        </Alert>
-      )}
       
       <BuffettScoreSummary score={buffettScore} />
       
       <BuffettScoreChart score={buffettScore} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        {processedCriteria.map((criterion, index) => (
+        {allCriteria.map((criterion, index) => (
           <BuffettCriterionCard 
             key={index} 
             criterion={criterion} 
@@ -107,7 +76,10 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       </div>
       <div className="mt-6 text-sm text-gray-500">
         <p>Die dargestellte Bewertung ist keine Anlageempfehlung.</p>
-        <p className="mt-1">Detaillierte Punktzahl: {totalDetailedScore.toFixed(1)}/{maxDetailedScore} ({detailedScorePercentage}%)</p>
+        <p className="mt-1">
+          Gewichteter Buffett-Score: {buffettScore}% | 
+          Rohpunktzahl: {totalDetailedScore.toFixed(1)}/{maxDetailedScore} ({detailedScorePercentage}%)
+        </p>
       </div>
     </div>
   );

@@ -38,9 +38,9 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score 
               </div>
               <div className="mt-2 pt-2 border-t border-gray-200">
                 <p className="text-xs font-medium">Bewertungsskala:</p>
-                <p className="text-xs">≥ 80%: Sehr hohe Buffett-Kompatibilität</p>
+                <p className="text-xs">≥ 80%: Sehr hohe Übereinstimmung</p>
                 <p className="text-xs">65-79%: Gute Übereinstimmung</p>
-                <p className="text-xs">{"< 65%: Eher nicht Buffett-kompatibel"}</p>
+                <p className="text-xs">{"< 65%: Niedrige Übereinstimmung"}</p>
               </div>
             </TooltipContent>
           </Tooltip>

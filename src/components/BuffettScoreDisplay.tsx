@@ -5,8 +5,7 @@ import { Info } from 'lucide-react';
 import { 
   BuffettCriterionProps, 
   deriveScoreFromGptAnalysis, 
-  buffettCriteriaWeights,
-  extractGptAssessmentStatus
+  buffettCriteriaWeights
 } from '@/utils/buffettUtils';
 
 interface ScoreDisplayProps {
@@ -14,17 +13,8 @@ interface ScoreDisplayProps {
 }
 
 export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) => {
-  if (criterion.maxScore === undefined) {
-    return null;
-  }
-  
-  // Get the GPT assessment to determine partial fulfillment
-  const gptAssessment = criterion.gptAnalysis ? 
-    extractGptAssessmentStatus(criterion.gptAnalysis) : undefined;
-  
-  // Use the provided score or derive it from GPT analysis
-  const derivedScore = deriveScoreFromGptAnalysis(criterion);
-  const score = criterion.score !== undefined ? criterion.score : derivedScore;
+  // Get score (0-10) from criterion or derive from GPT analysis
+  const score = criterion.score !== undefined ? criterion.score : deriveScoreFromGptAnalysis(criterion);
   
   if (score === undefined) {
     return null;
@@ -42,7 +32,7 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
   });
   
   // Calculate score percentage for color coding
-  const scorePercentage = score / criterion.maxScore;
+  const scorePercentage = score / 10; // Now using 0-10 scale
   
   return (
     <div className="inline-flex items-center">
@@ -54,45 +44,32 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
               scorePercentage >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
               'bg-red-100 text-red-700'
             }`}>
-              {score}/{criterion.maxScore}
+              {score}/10
             </span>
             <Info className="h-3 w-3 ml-1 text-gray-400" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
             <div>
               <p className="text-xs mb-2">
-                Bewertung basierend auf der Analyse der Teilkriterien (0-10 Punkte):
+                Bewertung basierend auf der Analyse (0-10 Punkte):
               </p>
               
-              {/* Display all 11 criteria with their scores in the tooltip */}
-              <div className="space-y-1 text-xs">
-                {buffettCriteriaWeights.map((cWeight, idx) => (
-                  <div key={idx} className="flex justify-between">
-                    <span>{cWeight.name}</span>
-                    <span className="font-medium">{
-                      criterionNumber && cWeight.id === `criterion${criterionNumber}` ? 
-                      `${score}/${criterion.maxScore}` : 
-                      `?/${cWeight.maxPoints}`
-                    }</span>
-                  </div>
-                ))}
-              </div>
-              
-              {gptAssessment && gptAssessment.status === 'warning' && gptAssessment.partialFulfillment !== undefined && (
-                <div className="mt-2 pt-1 border-t border-gray-200">
-                  <p className="text-xs">
-                    <strong>Erfüllte Teilaspekte:</strong> {gptAssessment.partialFulfillment} von 3 Teilaspekten erfüllt
-                  </p>
-                </div>
-              )}
-              
               {criterionWeight && (
-                <div className="mt-2 pt-2 border-t border-gray-200">
-                  <p className="text-xs font-medium">Gewichtung dieses Kriteriums:</p>
-                  <p className="text-xs">{criterionWeight.weight}% des Gesamtscores</p>
-                  <p className="text-xs">Maximal erreichbare Punkte: {criterionWeight.maxPoints}</p>
+                <div className="space-y-1 text-xs">
+                  <p><strong>{criterionWeight.name}</strong></p>
+                  <p>Aktuelle Punktzahl: <span className="font-medium">{score}/10</span></p>
+                  <p>Gewichtung im Gesamtscore: <span className="font-medium">{criterionWeight.weight}%</span></p>
+                  <p>Beitrag zum Gesamtscore: <span className="font-medium">{((score * criterionWeight.weight) / 100).toFixed(1)} Punkte</span></p>
                 </div>
               )}
+              
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <p className="text-xs font-medium">Bewertungsskala:</p>
+                <p className="text-xs">9-10 Punkte: Exzellent</p>
+                <p className="text-xs">7-8 Punkte: Gut</p>
+                <p className="text-xs">5-6 Punkte: Durchschnittlich</p>
+                <p className="text-xs">0-4 Punkte: Schwach</p>
+              </div>
             </div>
           </TooltipContent>
         </Tooltip>

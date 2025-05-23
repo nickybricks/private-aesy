@@ -49,11 +49,11 @@ export const BuffettScoreChart: React.FC<BuffettScoreChartProps> = ({ score }) =
             <div className="mt-4">
               <div className="mb-2 flex items-center">
                 <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: interpretation.color }}></div>
-                <span>Erfüllte Kriterien</span>
+                <span>Gewichtete Übereinstimmung</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 rounded-full bg-gray-200 mr-2"></div>
-                <span>Ausbaufähig</span>
+                <span>Verbesserungspotential</span>
               </div>
             </div>
             <p className="mt-4 text-sm text-gray-600" style={{ color: interpretation.color }}>
@@ -66,7 +66,7 @@ export const BuffettScoreChart: React.FC<BuffettScoreChartProps> = ({ score }) =
         </div>
       </div>
       <div className="text-xs text-gray-500 mt-2">
-        Diese Analyse basiert auf öffentlich verfügbaren Daten und ist als Informationsquelle, nicht als Anlageempfehlung zu verstehen.
+        Berechnung: Gewichtete Summe aller Kriterien (0-10 Punkte) nach Buffetts Prioritäten. Basis sind öffentlich verfügbare Daten.
       </div>
     </div>
   );
