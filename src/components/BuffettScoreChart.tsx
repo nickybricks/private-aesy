@@ -1,16 +1,20 @@
 
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { getBuffettScoreInterpretation } from '@/utils/buffettUtils';
 
 interface BuffettScoreChartProps {
   score: number;
 }
 
 export const BuffettScoreChart: React.FC<BuffettScoreChartProps> = ({ score }) => {
-  const COLORS = ['#10b981', '#f0f0f0'];
+  const roundedScore = Math.round(score * 10) / 10;
+  const interpretation = getBuffettScoreInterpretation(roundedScore);
+  
+  const COLORS = [interpretation.color, '#f0f0f0'];
   const data = [
-    { name: 'Score', value: score },
-    { name: 'Remaining', value: 100 - score },
+    { name: 'Score', value: roundedScore },
+    { name: 'Remaining', value: 100 - roundedScore },
   ];
 
   return (
@@ -40,11 +44,11 @@ export const BuffettScoreChart: React.FC<BuffettScoreChartProps> = ({ score }) =
         </div>
         <div className="w-full md:w-1/2 p-4">
           <div className="text-center md:text-left">
-            <h4 className="text-2xl font-bold">{score}%</h4>
+            <h4 className="text-2xl font-bold">{roundedScore}%</h4>
             <p className="text-gray-500 mb-2">Buffett-Kompatibilität</p>
             <div className="mt-4">
               <div className="mb-2 flex items-center">
-                <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: interpretation.color }}></div>
                 <span>Erfüllte Kriterien</span>
               </div>
               <div className="flex items-center">
@@ -52,10 +56,11 @@ export const BuffettScoreChart: React.FC<BuffettScoreChartProps> = ({ score }) =
                 <span>Ausbaufähig</span>
               </div>
             </div>
-            <p className="mt-4 text-sm text-gray-600">
-              {score >= 75 ? 'Hohe Übereinstimmung mit Buffetts Kriterien' :
-               score >= 60 ? 'Mittlere Übereinstimmung, weitere Analyse empfohlen' :
-               'Geringe Übereinstimmung mit Buffetts Investitionskriterien'}
+            <p className="mt-4 text-sm text-gray-600" style={{ color: interpretation.color }}>
+              {interpretation.label}
+            </p>
+            <p className="text-xs mt-1 text-gray-500">
+              {interpretation.description}
             </p>
           </div>
         </div>

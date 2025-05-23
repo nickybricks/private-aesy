@@ -139,7 +139,7 @@ export const extractGptAssessmentStatus = (
     
     if (assessmentLower.includes('schlecht') || 
         assessmentLower.includes('problem') || 
-        assessmentLower.includes('schwach') || 
+        analysisLower.includes('schwach') || 
         assessmentLower.includes('fehlt') || 
         assessmentLower.includes('nicht erfüllt')) {
       return { status: 'fail' };
@@ -187,12 +187,14 @@ export const deriveScoreFromGptAnalysis = (
   }
   
   if (assessment.status === 'pass') {
-    return criterion.maxScore; // Full score for Pass (typically 3)
+    return criterion.maxScore; // Full score for Pass (typically 10 now)
   } else if (assessment.status === 'fail') {
     return 0; // No points for Fail
   } else if (assessment.status === 'warning') {
     // For Warning, use the extracted partial fulfillment information
-    return assessment.partialFulfillment || 1; // Default to 1 if not specified
+    const partialScore = assessment.partialFulfillment || 1;
+    // Convert from 0-3 scale to 0-10 scale
+    return Math.round((partialScore / 3) * criterion.maxScore);
   }
   
   return undefined;
@@ -213,81 +215,81 @@ export const deriveScoreFromGptAnalysisLegacy = (
         analysis.includes('klar') || 
         analysis.includes('verständlich') || 
         (analysis.includes('bewertung:') && analysis.includes('pass'))) {
-      return 3;
+      return criterion.maxScore;
     } else if (analysis.includes('moderat') || 
                analysis.includes('mittlere komplexität') || 
                (analysis.includes('bewertung:') && analysis.includes('warning'))) {
-      return 2;
+      return Math.round(criterion.maxScore * 0.6);
     } else if (analysis.includes('komplex') || 
                analysis.includes('schwer verständlich') || 
                (analysis.includes('bewertung:') && analysis.includes('fail'))) {
-      return 1;
+      return Math.round(criterion.maxScore * 0.3);
     }
   }
   
   if (criterion.title === '2. Wirtschaftlicher Burggraben') {
     if (analysis.includes('starker moat') || 
         (analysis.includes('bewertung:') && analysis.includes('pass'))) {
-      return 3;
+      return criterion.maxScore;
     } else if (analysis.includes('moderater moat') || 
                (analysis.includes('bewertung:') && analysis.includes('warning'))) {
-      return 2;
+      return Math.round(criterion.maxScore * 0.6);
     } else if (analysis.includes('schwacher moat') || 
                analysis.includes('kein moat') || 
                (analysis.includes('bewertung:') && analysis.includes('fail'))) {
-      return 1;
+      return Math.round(criterion.maxScore * 0.3);
     }
   }
   
   if (criterion.title === '5. Kompetentes Management') {
     if (analysis.includes('gutes management') || 
         (analysis.includes('bewertung:') && analysis.includes('pass'))) {
-      return 3;
+      return criterion.maxScore;
     } else if (analysis.includes('durchschnittliches management') || 
                (analysis.includes('bewertung:') && analysis.includes('warning'))) {
-      return 2;
+      return Math.round(criterion.maxScore * 0.6);
     } else if (analysis.includes('problematisches management') || 
                (analysis.includes('bewertung:') && analysis.includes('fail'))) {
-      return 1;
+      return Math.round(criterion.maxScore * 0.3);
     }
   }
   
   if (criterion.title === '7. Langfristige Perspektive') {
     if (analysis.includes('starke langzeitperspektive') || 
         (analysis.includes('bewertung:') && analysis.includes('pass'))) {
-      return 3;
+      return criterion.maxScore;
     } else if (analysis.includes('moderate langzeitperspektive') || 
                (analysis.includes('bewertung:') && analysis.includes('warning'))) {
-      return 2;
+      return Math.round(criterion.maxScore * 0.6);
     } else if (analysis.includes('schwache langzeitperspektive') || 
                (analysis.includes('bewertung:') && analysis.includes('fail'))) {
-      return 1;
+      return Math.round(criterion.maxScore * 0.3);
     }
   }
   
   if (criterion.title === '9. Antizyklisches Verhalten') {
     if (analysis.includes('antizyklisches verhalten') || 
         (analysis.includes('bewertung:') && analysis.includes('pass'))) {
-      return 3;
+      return criterion.maxScore;
     } else if (analysis.includes('neutrales verhalten') || 
                (analysis.includes('bewertung:') && analysis.includes('warning'))) {
-      return 2;
+      return Math.round(criterion.maxScore * 0.6);
     } else if (analysis.includes('stark zyklisches verhalten') || 
                (analysis.includes('bewertung:') && analysis.includes('fail'))) {
-      return 1;
+      return Math.round(criterion.maxScore * 0.3);
     }
   }
   
   if (criterion.title === '10. Keine Einmaleffekte') {
     if (analysis.includes('nachhaltige geschäftsentwicklung') || 
         (analysis.includes('bewertung:') && analysis.includes('pass'))) {
-      return 3;
+      return criterion.maxScore;
     } else if (analysis.includes('teilweise nachhaltig') || 
                (analysis.includes('bewertung:') && analysis.includes('warning'))) {
-      return 2;
+      return Math.round(criterion.maxScore * 0.6);
     } else if (analysis.includes('stark von einmaleffekten') || 
                (analysis.includes('bewertung:') && analysis.includes('fail'))) {
-      return 1;
+      return Math.round(criterion.maxScore * 0.3);
     }
   }
   
@@ -310,9 +312,9 @@ export const deriveScoreFromGptAnalysisLegacy = (
     
     if (analysis.includes('bewertung:')) {
       if (analysis.includes('bewertung: stabil') || analysis.includes('bewertung: pass'))
-        return 3;
+        return criterion.maxScore;
       else if (analysis.includes('bewertung: leichte') || analysis.includes('bewertung: warning'))
-        return 1;
+        return Math.round(criterion.maxScore * 0.3);
       else if (analysis.includes('bewertung: klar') || analysis.includes('bewertung: fail'))
         return 0;
     }
@@ -322,26 +324,26 @@ export const deriveScoreFromGptAnalysisLegacy = (
     const negativeCount = negativeSignals.filter(signal => analysis.includes(signal)).length;
     
     if (positiveCount > 0 && warningCount === 0 && negativeCount === 0) {
-      return 3;
+      return criterion.maxScore;
     } else if (warningCount > 0 && negativeCount === 0) {
-      return 1;
+      return Math.round(criterion.maxScore * 0.3);
     } else if (negativeCount > 0) {
       return 0;
     } else if (positiveCount > 0) {
-      return 3;
+      return criterion.maxScore;
     }
   }
   
   if (criterion.title === '8. Rationales Verhalten') {
     if (analysis.includes('rationales verhalten') || 
         (analysis.includes('bewertung:') && analysis.includes('pass'))) {
-      return 3;
+      return criterion.maxScore;
     } else if (analysis.includes('gemischtes bild') || 
                (analysis.includes('bewertung:') && analysis.includes('warning'))) {
-      return 2;
+      return Math.round(criterion.maxScore * 0.6);
     } else if (analysis.includes('irrationales verhalten') || 
                (analysis.includes('bewertung:') && analysis.includes('fail'))) {
-      return 1;
+      return Math.round(criterion.maxScore * 0.3);
     }
   }
   
@@ -386,22 +388,86 @@ export const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   return { summary, points, partialFulfillment };
 };
 
-// Define criteria weights and max points
+// New weighted scoring system according to Buffett's priorities
 export const buffettCriteriaWeights = [
-  { id: "criterion1", name: "1. Verständliches Geschäftsmodell", weight: 10, maxPoints: 3 },
-  { id: "criterion2", name: "2. Wirtschaftlicher Burggraben (Moat)", weight: 15, maxPoints: 9 },
-  { id: "criterion3", name: "3. Finanzkennzahlen", weight: 12, maxPoints: 12 },
-  { id: "criterion4", name: "4. Finanzielle Stabilität & Verschuldung", weight: 10, maxPoints: 9 },
-  { id: "criterion5", name: "5. Qualität des Managements", weight: 12, maxPoints: 12 },
-  { id: "criterion6", name: "6. Bewertung (nicht zu teuer kaufen)", weight: 15, maxPoints: 12 },
-  { id: "criterion7", name: "7. Langfristiger Ausblick", weight: 8, maxPoints: 3 },
-  { id: "criterion8", name: "8. Rationalität & Disziplin", weight: 6, maxPoints: 3 },
-  { id: "criterion9", name: "9. Antizyklisches Verhalten", weight: 4, maxPoints: 3 },
-  { id: "criterion10", name: "10. Keine Einmaleffekte / nachhaltiges Wachstum", weight: 5, maxPoints: 3 },
-  { id: "criterion11", name: "11. Kein Turnaround-Fall", weight: 3, maxPoints: 3 }
+  { id: "criterion1", name: "1. Verständliches Geschäftsmodell", weight: 10, maxPoints: 10 },
+  { id: "criterion2", name: "2. Wirtschaftlicher Burggraben (Moat)", weight: 20, maxPoints: 10 },
+  { id: "criterion3", name: "3. Finanzkennzahlen (10 Jahre)", weight: 15, maxPoints: 10 },
+  { id: "criterion4", name: "4. Finanzielle Stabilität & Verschuldung", weight: 10, maxPoints: 10 },
+  { id: "criterion5", name: "5. Qualität des Managements", weight: 10, maxPoints: 10 },
+  { id: "criterion6", name: "6. Bewertung (nicht zu teuer kaufen)", weight: 10, maxPoints: 10 },
+  { id: "criterion7", name: "7. Langfristiger Horizont", weight: 7, maxPoints: 10 },
+  { id: "criterion8", name: "8. Rationalität & Disziplin", weight: 5, maxPoints: 10 },
+  { id: "criterion9", name: "9. Antizyklisches Verhalten", weight: 5, maxPoints: 10 },
+  { id: "criterion10", name: "10. Vergangenheit ≠ Zukunft", weight: 5, maxPoints: 10 },
+  { id: "criterion11", name: "11. Keine Turnarounds", weight: 3, maxPoints: 10 }
 ];
 
-// Helper function to calculate weighted score
+// Calculate total weighted Buffett score
+export const calculateTotalBuffettScore = (criteria: BuffettCriteriaProps): number => {
+  const criteriaArray = [
+    criteria.businessModel,
+    criteria.economicMoat, 
+    criteria.financialMetrics,
+    criteria.financialStability,
+    criteria.management,
+    criteria.valuation,
+    criteria.longTermOutlook,
+    criteria.rationalBehavior,
+    criteria.cyclicalBehavior,
+    criteria.oneTimeEffects,
+    criteria.turnaround
+  ];
+
+  let totalWeightedScore = 0;
+  let totalMaxWeightedScore = 0;
+
+  criteriaArray.forEach((criterion, index) => {
+    const weight = buffettCriteriaWeights[index];
+    const score = criterion.score || deriveScoreFromGptAnalysis(criterion) || 0;
+    const maxScore = criterion.maxScore || 10;
+    
+    // Calculate weighted contribution
+    const normalizedScore = (score / maxScore) * 10; // Normalize to 0-10 scale
+    const weightedScore = normalizedScore * weight.weight;
+    const maxWeightedScore = 10 * weight.weight;
+    
+    totalWeightedScore += weightedScore;
+    totalMaxWeightedScore += maxWeightedScore;
+  });
+
+  // Return percentage
+  return Math.round((totalWeightedScore / totalMaxWeightedScore) * 100);
+};
+
+// Get interpretation of the Buffett score
+export const getBuffettScoreInterpretation = (score: number): { 
+  label: string; 
+  description: string; 
+  color: string 
+} => {
+  if (score >= 80) {
+    return {
+      label: "Sehr hohe Buffett-Kompatibilität",
+      description: "Exzellente Übereinstimmung mit Warren Buffetts Investitionskriterien",
+      color: "#10b981"
+    };
+  } else if (score >= 65) {
+    return {
+      label: "Gute Übereinstimmung",
+      description: "Solide Basis, einzelne Aspekte genau prüfen",
+      color: "#f59e0b"
+    };
+  } else {
+    return {
+      label: "Eher nicht Buffett-kompatibel",
+      description: "Geringe Übereinstimmung mit Buffetts Investitionskriterien",
+      color: "#ef4444"
+    };
+  }
+};
+
+// Helper function to calculate weighted score for individual criterion
 export const calculateWeightedScore = (
   criterion: BuffettCriterionProps,
   criterionId: string

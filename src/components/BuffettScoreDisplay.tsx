@@ -41,14 +41,17 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
     return false;
   });
   
+  // Calculate score percentage for color coding
+  const scorePercentage = score / criterion.maxScore;
+  
   return (
     <div className="inline-flex items-center">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger className="inline-flex items-center ml-2">
             <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-              score / criterion.maxScore >= 0.7 ? 'bg-green-100 text-green-700' :
-              score / criterion.maxScore >= 0.4 ? 'bg-yellow-100 text-yellow-700' :
+              scorePercentage >= 0.8 ? 'bg-green-100 text-green-700' :
+              scorePercentage >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
               'bg-red-100 text-red-700'
             }`}>
               {score}/{criterion.maxScore}
@@ -58,7 +61,7 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
           <TooltipContent className="max-w-xs">
             <div>
               <p className="text-xs mb-2">
-                Bewertung basierend auf der Analyse der Unterkategorien:
+                Bewertung basierend auf der Analyse der Teilkriterien (0-10 Punkte):
               </p>
               
               {/* Display all 11 criteria with their scores in the tooltip */}
@@ -86,7 +89,7 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
               {criterionWeight && (
                 <div className="mt-2 pt-2 border-t border-gray-200">
                   <p className="text-xs font-medium">Gewichtung dieses Kriteriums:</p>
-                  <p className="text-xs">Max. {criterionWeight.weight}% des Gesamtscores</p>
+                  <p className="text-xs">{criterionWeight.weight}% des Gesamtscores</p>
                   <p className="text-xs">Maximal erreichbare Punkte: {criterionWeight.maxPoints}</p>
                 </div>
               )}
