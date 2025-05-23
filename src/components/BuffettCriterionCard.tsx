@@ -28,7 +28,14 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
   
   // Calculate partial fulfillment from GPT analysis if not already available
   const gptAssessment = criterion.gptAnalysis ? extractGptAssessmentStatus(criterion.gptAnalysis) : undefined;
-  const showPartialFulfillment = criterion.status === 'warning' && 
+  
+  // Use GPT's assessment to determine the status for this criterion
+  let displayStatus = criterion.status;
+  if (gptAssessment) {
+    displayStatus = gptAssessment.status;
+  }
+  
+  const showPartialFulfillment = displayStatus === 'warning' && 
     (partialFulfillment || (gptAssessment && gptAssessment.status === 'warning' && gptAssessment.partialFulfillment));
   
   const fulfillmentCount = partialFulfillment?.fulfilled || 
@@ -36,20 +43,23 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
   const totalCount = partialFulfillment?.total || 3; // Default to 3 if not specified
   
   return (
-    <Card key={index} className={`border-l-4 ${getStatusColor(criterion.status)}`}>
+    <Card key={index} className={`border-l-4 ${getStatusColor(displayStatus)}`}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div className="flex items-center">
             <CardTitle className="text-lg">{criterion.title}</CardTitle>
-            <BuffettScoreDisplay criterion={criterion} />
+            <BuffettScoreDisplay criterion={{
+              ...criterion,
+              status: displayStatus // Use the GPT-determined status
+            }} />
             
             {criterion.title === '6. Akzeptable Bewertung' && criterion.dcfData && (
               <DCFExplanationTooltip dcfData={criterion.dcfData as DCFData} />
             )}
           </div>
-          <Badge className={getStatusBadge(criterion.status)}>
-            {criterion.status === 'pass' ? 'Erfüllt' : 
-             criterion.status === 'warning' ? 'Teilweise erfüllt' : 
+          <Badge className={getStatusBadge(displayStatus)}>
+            {displayStatus === 'pass' ? 'Erfüllt' : 
+             displayStatus === 'warning' ? 'Teilweise erfüllt' : 
              'Nicht erfüllt'}
           </Badge>
         </div>
@@ -76,7 +86,7 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
             </div>
           )}
           
-          {criterion.title === '7. Langfristige Perspektive' && criterion.status === 'pass' && (
+          {criterion.title === '7. Langfristige Perspektive' && displayStatus === 'pass' && (
             <div className="mt-2 pt-2 border-t border-gray-100">
               <p className="text-sm text-gray-700 font-medium">Zu beachtende Langzeitrisiken:</p>
               <ul className="list-disc pl-5 space-y-1 mt-1 text-sm text-gray-600">

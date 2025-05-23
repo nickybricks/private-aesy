@@ -94,15 +94,20 @@ export const extractGptAssessmentStatus = (
   // Extract status from the assessment line
   const assessmentLower = assessmentLine.toLowerCase();
   
-  if (assessmentLower.includes('(pass)')) {
+  if (assessmentLower.includes('(pass)') || 
+      assessmentLower.includes('pass') ||
+      assessmentLower.includes('gutes management') ||
+      assessmentLower.includes('stabiles unternehmen')) {
     return { status: 'pass' };
   }
   
-  if (assessmentLower.includes('(fail)')) {
+  if (assessmentLower.includes('(fail)') ||
+      assessmentLower.includes('fail')) {
     return { status: 'fail' };
   }
   
-  if (assessmentLower.includes('(warning)')) {
+  if (assessmentLower.includes('(warning)') ||
+      assessmentLower.includes('warning')) {
     // Look for partial fulfillment information
     let partialFulfillment = extractPartialFulfillment(analysisLower);
     
@@ -110,6 +115,35 @@ export const extractGptAssessmentStatus = (
       status: 'warning',
       partialFulfillment: partialFulfillment || 1  // Default to 1 if not specified
     };
+  }
+  
+  // If no clear pattern is found but we have the word "Bewertung", try to infer
+  if (assessmentLower.includes('bewertung:')) {
+    if (assessmentLower.includes('gut') || 
+        assessmentLower.includes('stark') || 
+        assessmentLower.includes('stabil') ||
+        assessmentLower.includes('rational')) {
+      return { status: 'pass' };
+    }
+    
+    if (assessmentLower.includes('durchschnitt') || 
+        assessmentLower.includes('moderat') || 
+        assessmentLower.includes('teilweise') || 
+        assessmentLower.includes('leicht')) {
+      let partialFulfillment = extractPartialFulfillment(analysisLower);
+      return { 
+        status: 'warning',
+        partialFulfillment: partialFulfillment || 1
+      };
+    }
+    
+    if (assessmentLower.includes('schlecht') || 
+        assessmentLower.includes('problem') || 
+        assessmentLower.includes('schwach') || 
+        assessmentLower.includes('fehlt') || 
+        assessmentLower.includes('nicht erfüllt')) {
+      return { status: 'fail' };
+    }
   }
   
   return undefined;
@@ -153,7 +187,7 @@ export const deriveScoreFromGptAnalysis = (
   }
   
   if (assessment.status === 'pass') {
-    return 3; // Full score for Pass
+    return criterion.maxScore; // Full score for Pass (typically 3)
   } else if (assessment.status === 'fail') {
     return 0; // No points for Fail
   } else if (assessment.status === 'warning') {
