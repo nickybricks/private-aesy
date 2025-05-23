@@ -12,7 +12,8 @@ import {
   getStatusColor, 
   getStatusBadge, 
   extractKeyInsights,
-  extractGptAssessmentStatus
+  extractGptAssessmentStatus,
+  deriveScoreFromGptAnalysis
 } from '@/utils/buffettUtils';
 import { DCFData } from '@/context/StockContextTypes';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -36,12 +37,16 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
     displayStatus = gptAssessment.status;
   }
   
-  const showPartialFulfillment = displayStatus === 'warning' && 
-    (partialFulfillment || (gptAssessment && gptAssessment.status === 'warning' && gptAssessment.partialFulfillment !== undefined));
+  // Calculate the score for this criterion
+  const calculatedScore = deriveScoreFromGptAnalysis(criterion);
+  
+  // Show partial fulfillment visualization if we have the data
+  const showPartialFulfillment = partialFulfillment !== null || 
+    (gptAssessment && gptAssessment.partialFulfillment !== undefined);
   
   const fulfillmentCount = partialFulfillment?.fulfilled || 
-                           (gptAssessment?.partialFulfillment || 0);
-  const totalCount = 3; // Always 3 subcriteria
+                          (gptAssessment?.partialFulfillment || 0);
+  const totalCount = partialFulfillment?.total || 3; // Default to 3 if not specified
   
   // Extract assessment details from GPT analysis
   const criteriaQuestions: {question: string, answer: string, fulfilled: boolean}[] = [];
@@ -103,7 +108,8 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
             <CardTitle className="text-lg">{criterion.title}</CardTitle>
             <BuffettScoreDisplay criterion={{
               ...criterion,
-              status: displayStatus // Use the GPT-determined status
+              status: displayStatus,
+              score: calculatedScore // Use the calculated score
             }} />
             
             {criterion.title === '6. Akzeptable Bewertung' && criterion.dcfData && (
@@ -156,17 +162,6 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
                   </ul>
                 </div>
               )}
-            </div>
-          )}
-          
-          {criterion.title === '7. Langfristige Perspektive' && displayStatus === 'pass' && (
-            <div className="mt-2 pt-2 border-t border-gray-100">
-              <p className="text-sm text-gray-700 font-medium">Zu beachtende Langzeitrisiken:</p>
-              <ul className="list-disc pl-5 space-y-1 mt-1 text-sm text-gray-600">
-                <li>Mögliche ESG-Regulierungen könnten Rüstungsunternehmen beeinflussen</li>
-                <li>Politische Änderungen könnten Verteidigungsbudgets beeinflussen</li>
-                <li>Technologischer Wandel könnte bestehende Produkte obsolet machen</li>
-              </ul>
             </div>
           )}
           

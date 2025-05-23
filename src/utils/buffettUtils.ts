@@ -168,10 +168,11 @@ export const deriveScoreFromGptAnalysis = (
   // Extract how many sub-criteria were fulfilled from GPT analysis
   const analysis = criterion.gptAnalysis.toLowerCase();
   
-  // Look for patterns like "2 von 4 teilaspekten erfüllt" or similar
+  // Look for patterns like "2 von 3 teilaspekten erfüllt" or similar
   const fulfillmentMatch = analysis.match(/(\d+)\s+von\s+(\d+)\s+teilaspekten?\s+erfüllt/i) ||
                           analysis.match(/(\d+)\s+\/\s*(\d+)\s+erfüllt/i) ||
-                          analysis.match(/erfüllt[e]?\s*[:\-]?\s*(\d+)\s*\/\s*(\d+)/i);
+                          analysis.match(/erfüllt[e]?\s*[:\-]?\s*(\d+)\s*\/\s*(\d+)/i) ||
+                          analysis.match(/von\s+(\d+)\s+teilaspekten\s+wurden\s+(\d+)\s+erfüllt/i);
   
   if (fulfillmentMatch) {
     const fulfilled = parseInt(fulfillmentMatch[1], 10);
@@ -179,7 +180,7 @@ export const deriveScoreFromGptAnalysis = (
     
     if (!isNaN(fulfilled) && !isNaN(total) && total > 0) {
       // Convert to 0-10 scale: (fulfilled/total) * 10
-      return Math.round((fulfilled / total) * 10);
+      return Math.round((fulfilled / total) * 10 * 10) / 10; // Round to 1 decimal place
     }
   }
   
@@ -195,11 +196,11 @@ export const deriveScoreFromGptAnalysis = (
   } else if (assessment.status === 'fail') {
     return 0; // No points
   } else if (assessment.status === 'warning') {
-    // Use partial fulfillment if available, otherwise default to 5
+    // Use partial fulfillment if available
     if (assessment.partialFulfillment !== undefined) {
-      // Assume 4 sub-criteria for warning cases if not specified
-      const totalSubCriteria = 4;
-      return Math.round((assessment.partialFulfillment / totalSubCriteria) * 10);
+      const totalSubCriteria = 3; // Standard is 3 sub-criteria
+      // Calculate score based on partial fulfillment
+      return Math.round((assessment.partialFulfillment / totalSubCriteria) * 10 * 10) / 10; // Round to 1 decimal place
     }
     return 5; // Default middle score for warning
   }
@@ -222,12 +223,18 @@ export const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   // Extract partial fulfillment information
   const analysisLower = gptAnalysis.toLowerCase();
   const partialFulfillmentRegex = /(\d+)\s+von\s+(\d+)\s+teilaspekten?\s+erfüllt/i;
-  const match = analysisLower.match(partialFulfillmentRegex);
+  const match = analysisLower.match(partialFulfillmentRegex) || 
+                analysisLower.match(/von\s+(\d+)\s+teilaspekten\s+wurden\s+(\d+)\s+erfüllt/i);
   
   let partialFulfillment = null;
   if (match && match[1] && match[2]) {
-    const fulfilled = parseInt(match[1], 10);
-    const total = parseInt(match[2], 10);
+    // Ensure we get the correct order based on the match pattern
+    const isReversedOrder = analysisLower.includes("von") && analysisLower.includes("wurden");
+    
+    // If format is "von X teilaspekten wurden Y erfüllt", then match[1] is total and match[2] is fulfilled
+    // If format is "Y von X teilaspekten erfüllt", then match[1] is fulfilled and match[2] is total
+    const fulfilled = isReversedOrder ? parseInt(match[2], 10) : parseInt(match[1], 10);
+    const total = isReversedOrder ? parseInt(match[1], 10) : parseInt(match[2], 10);
     
     if (!isNaN(fulfilled) && !isNaN(total) && total > 0) {
       partialFulfillment = {
