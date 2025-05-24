@@ -1,4 +1,3 @@
-
 export const getStatusColor = (status: string) => {
   switch (status) {
     case 'pass':
@@ -165,8 +164,17 @@ export const deriveScoreFromGptAnalysis = (
     return undefined;
   }
   
-  // Extract how many sub-criteria were fulfilled from GPT analysis
   const analysis = criterion.gptAnalysis.toLowerCase();
+  
+  // First, look for explicit numerical scores in the analysis
+  const explicitScoreMatch = analysis.match(/(\d+)\s*\/\s*10|(\d+)\s*punkte?\s*von\s*10|score:\s*(\d+)/i);
+  if (explicitScoreMatch) {
+    const score = parseInt(explicitScoreMatch[1] || explicitScoreMatch[2] || explicitScoreMatch[3], 10);
+    if (!isNaN(score) && score >= 0 && score <= 10) {
+      console.log(`Found explicit score in GPT analysis: ${score}/10`);
+      return score;
+    }
+  }
   
   // Look for patterns like "2 von 3 teilaspekten erfüllt" or similar
   const fulfillmentMatch = analysis.match(/(\d+)\s+von\s+(\d+)\s+teilaspekten?\s+erfüllt/i) ||
@@ -181,32 +189,70 @@ export const deriveScoreFromGptAnalysis = (
     
     if (!isNaN(fulfilled) && !isNaN(total) && total > 0) {
       // Convert to 0-10 scale based on ratio: (fulfilled/total) * 10
-      // This gives a proper score scaling - if 2/3 criteria fulfilled, score is 6.7/10
-      return Math.round((fulfilled / total) * 10 * 10) / 10; // Round to 1 decimal place
+      const score = Math.round((fulfilled / total) * 10 * 10) / 10;
+      console.log(`Derived score from fulfillment ratio: ${fulfilled}/${total} = ${score}/10`);
+      return score;
     }
   }
   
-  // Fallback: Use assessment status if no explicit fulfillment count found
+  // Extract the final assessment from GPT analysis
   const assessment = extractGptAssessmentStatus(criterion.gptAnalysis);
   
   if (!assessment) {
+    console.log('No assessment found in GPT analysis');
     return undefined;
   }
   
+  console.log(`GPT Assessment status: ${assessment.status}`);
+  
+  // Convert assessment status to numerical score
   if (assessment.status === 'pass') {
-    return 10; // Full score
+    // For "pass" status, check for quality indicators to determine exact score
+    if (analysis.includes('exzellent') || analysis.includes('hervorragend') || analysis.includes('sehr gut')) {
+      console.log('Pass with excellent quality indicators: 10/10');
+      return 10;
+    } else if (analysis.includes('gut') || analysis.includes('solid') || analysis.includes('stark')) {
+      console.log('Pass with good quality indicators: 8-9/10');
+      return 9;
+    } else {
+      console.log('Pass with standard quality: 8/10');
+      return 8;
+    }
   } else if (assessment.status === 'fail') {
-    return 0; // No points
+    // For "fail" status, check severity
+    if (analysis.includes('völlig') || analysis.includes('komplett') || analysis.includes('gar nicht')) {
+      console.log('Complete fail: 0/10');
+      return 0;
+    } else if (analysis.includes('schwach') || analysis.includes('unzureichend')) {
+      console.log('Weak performance: 2/10');
+      return 2;
+    } else {
+      console.log('Standard fail: 1/10');
+      return 1;
+    }
   } else if (assessment.status === 'warning') {
-    // Use partial fulfillment if available
+    // For "warning" status, use partial fulfillment if available
     if (assessment.partialFulfillment !== undefined) {
       const totalSubCriteria = 3; // Standard is 3 sub-criteria
-      // Calculate score based on partial fulfillment ratio
-      return Math.round((assessment.partialFulfillment / totalSubCriteria) * 10 * 10) / 10; // Round to 1 decimal place
+      const score = Math.round((assessment.partialFulfillment / totalSubCriteria) * 10 * 10) / 10;
+      console.log(`Warning with partial fulfillment: ${assessment.partialFulfillment}/${totalSubCriteria} = ${score}/10`);
+      return score;
     }
-    return 5; // Default middle score for warning
+    
+    // Check for quality indicators in warning
+    if (analysis.includes('moderat') || analysis.includes('teilweise gut')) {
+      console.log('Warning with moderate quality: 6/10');
+      return 6;
+    } else if (analysis.includes('durchschnittlich') || analysis.includes('neutral')) {
+      console.log('Warning with average quality: 5/10');
+      return 5;
+    } else {
+      console.log('Warning with lower quality: 4/10');
+      return 4;
+    }
   }
   
+  console.log('Could not derive score from GPT analysis');
   return undefined;
 };
 
@@ -227,8 +273,13 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
     return derivedScore;
   }
   
-  // Fallback: 0
-  console.log('Using fallback score: 0');
+  // NO FALLBACK - if we can't derive a score, we need to know about it
+  console.error('WARNING: Could not determine score for criterion:', criterion.title);
+  console.error('GPT Analysis available:', !!criterion.gptAnalysis);
+  console.error('Analysis content:', criterion.gptAnalysis?.substring(0, 200));
+  
+  // Return 0 but log the issue clearly
+  console.log('Returning 0 due to missing score data');
   return 0;
 };
 
