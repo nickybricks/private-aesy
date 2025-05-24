@@ -232,6 +232,12 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
   return 0;
 };
 
+// UNIFIED FUNCTION: Get the max score for any criterion - used everywhere
+export const getUnifiedCriterionMaxScore = (criterion: BuffettCriterionProps): number => {
+  // Use explicit maxScore if available, otherwise default to 10
+  return criterion.maxScore !== undefined ? criterion.maxScore : 10;
+};
+
 // Enhanced version to extract key insights and partial fulfillment information
 export const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   if (!gptAnalysis) return { summary: '', points: [], partialFulfillment: null };
