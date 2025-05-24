@@ -8,14 +8,7 @@ import {
 } from "@/components/ui/tooltip";
 import { HelpCircle } from 'lucide-react';
 
-interface MarginOfSafetyProps {
-  marginOfSafety?: {
-    value: number;
-    status: "pass" | "warning" | "fail";
-  };
-}
-
-const MarginOfSafetyExplanation: React.FC<MarginOfSafetyProps> = ({ marginOfSafety }) => {
+const MarginOfSafetyExplanation: React.FC = () => {
   return (
     <TooltipProvider>
       <Tooltip>
@@ -34,17 +27,6 @@ const MarginOfSafetyExplanation: React.FC<MarginOfSafetyProps> = ({ marginOfSafe
               <li>Reduziert Verlustrisiko</li>
             </ul>
             <p className="text-sm font-medium">Buffett empfiehlt mindestens 20% Sicherheitsmarge.</p>
-            {marginOfSafety && (
-              <p className="text-sm mt-2">
-                Aktuelle Sicherheitsmarge: <span className={`font-medium ${
-                  marginOfSafety.status === 'pass' ? 'text-green-600' :
-                  marginOfSafety.status === 'warning' ? 'text-yellow-600' :
-                  'text-red-600'
-                }`}>
-                  {marginOfSafety.value.toFixed(1)}%
-                </span>
-              </p>
-            )}
           </div>
         </TooltipContent>
       </Tooltip>
