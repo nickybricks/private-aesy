@@ -42,7 +42,7 @@ const BuffettOverallAnalysis: React.FC<BuffettOverallAnalysisProps> = ({ criteri
     <div className="mt-8 pt-8 border-t border-gray-200">
       <h3 className="text-xl font-semibold mb-6">Buffett-Kompatibilität Gesamtbewertung</h3>
       
-      <BuffettScoreSummary score={buffettScore} />
+      <BuffettScoreSummary score={buffettScore} criteria={criteria} />
       
       <BuffettScoreChart score={buffettScore} />
     </div>
