@@ -5,7 +5,8 @@ import {
   buffettCriteriaWeights, 
   getBuffettScoreInterpretation,
   BuffettCriteriaProps,
-  getUnifiedCriterionScore
+  getUnifiedCriterionScore,
+  getUnifiedCriterionMaxScore
 } from '@/utils/buffettUtils';
 import { Info } from 'lucide-react';
 
@@ -15,10 +16,6 @@ interface BuffettScoreSummaryProps {
 }
 
 export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score, criteria }) => {
-  // Round the score to one decimal place for better precision
-  const roundedScore = Math.round(score * 10) / 10;
-  const interpretation = getBuffettScoreInterpretation(roundedScore);
-  
   // Calculate detailed breakdown for each criterion using unified scoring
   const criteriaArray = [
     { criterion: criteria.businessModel, weight: buffettCriteriaWeights[0], name: "1. Verständliches Geschäftsmodell" },
@@ -35,17 +32,19 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
   ];
 
   const detailedBreakdown = criteriaArray.map(({ criterion, weight, name }) => {
-    // Use the unified scoring function
+    // Use the unified scoring functions
     const score = getUnifiedCriterionScore(criterion);
+    const maxScore = getUnifiedCriterionMaxScore(criterion);
     
     const weightedContribution = score * (weight.weight / 100);
-    const maxWeightedContribution = 10 * (weight.weight / 100);
+    const maxWeightedContribution = maxScore * (weight.weight / 100);
     
-    console.log(`BuffettScoreSummary - ${name}: unified score=${score}, weighted=${weightedContribution.toFixed(2)}`);
+    console.log(`BuffettScoreSummary - ${name}: unified score=${score}/${maxScore}, weighted=${weightedContribution.toFixed(2)}`);
     
     return {
       name: name,
       score: score,
+      maxScore: maxScore,
       weight: weight.weight,
       weightedContribution: weightedContribution,
       maxWeightedContribution: maxWeightedContribution
@@ -55,16 +54,17 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
   const totalWeightedScore = detailedBreakdown.reduce((acc, item) => acc + item.weightedContribution, 0);
   const maxTotalWeightedScore = detailedBreakdown.reduce((acc, item) => acc + item.maxWeightedContribution, 0);
   
-  // Recalculate the actual percentage to verify
+  // Calculate the actual percentage from the unified scores
   const actualCalculatedScore = Math.round((totalWeightedScore / maxTotalWeightedScore) * 100 * 10) / 10;
   
-  console.log('BuffettScoreSummary score verification:', {
-    passedScore: roundedScore,
-    actualCalculatedScore,
+  console.log('BuffettScoreSummary unified score calculation:', {
     totalWeightedScore,
     maxTotalWeightedScore,
+    actualCalculatedScore,
     breakdown: detailedBreakdown
   });
+  
+  const interpretation = getBuffettScoreInterpretation(actualCalculatedScore);
   
   return (
     <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -90,7 +90,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
                         {item.name}
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-                        <div>Score: {item.score.toFixed(1)}/10</div>
+                        <div>Score: {item.score.toFixed(1)}/{item.maxScore}</div>
                         <div>Gewichtung: {item.weight}%</div>
                         <div>Beitrag: {item.weightedContribution.toFixed(2)}</div>
                         <div>Max: {item.maxWeightedContribution.toFixed(2)}</div>
