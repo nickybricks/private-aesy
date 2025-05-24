@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -173,7 +172,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, buffettCriteria }
                 {rating.marginOfSafety.value.toFixed(1)}%
               </span>
             </div>
-            <MarginOfSafetyExplanation />
+            <MarginOfSafetyExplanation marginOfSafety={rating.marginOfSafety} />
           </div>
 
           {/* Disclaimer */}
