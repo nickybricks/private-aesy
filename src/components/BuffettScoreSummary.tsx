@@ -19,47 +19,72 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
   const roundedScore = Math.round(score * 10) / 10;
   const interpretation = getBuffettScoreInterpretation(roundedScore);
   
-  // Calculate detailed breakdown for each criterion
+  // Create a function to get the actual displayed score consistently
+  const getDisplayedScore = (criterion: any) => {
+    // First try the explicit score
+    if (criterion.score !== undefined) {
+      return criterion.score;
+    }
+    
+    // Then try to derive from GPT analysis
+    const derivedScore = deriveScoreFromGptAnalysis(criterion);
+    if (derivedScore !== undefined) {
+      return derivedScore;
+    }
+    
+    // Fallback to 0
+    return 0;
+  };
+  
+  // Calculate detailed breakdown for each criterion using the same logic as display
   const criteriaArray = [
-    { criterion: criteria.businessModel, weight: buffettCriteriaWeights[0] },
-    { criterion: criteria.economicMoat, weight: buffettCriteriaWeights[1] },
-    { criterion: criteria.financialMetrics, weight: buffettCriteriaWeights[2] },
-    { criterion: criteria.financialStability, weight: buffettCriteriaWeights[3] },
-    { criterion: criteria.management, weight: buffettCriteriaWeights[4] },
-    { criterion: criteria.valuation, weight: buffettCriteriaWeights[5] },
-    { criterion: criteria.longTermOutlook, weight: buffettCriteriaWeights[6] },
-    { criterion: criteria.rationalBehavior, weight: buffettCriteriaWeights[7] },
-    { criterion: criteria.cyclicalBehavior, weight: buffettCriteriaWeights[8] },
-    { criterion: criteria.oneTimeEffects, weight: buffettCriteriaWeights[9] },
-    { criterion: criteria.turnaround, weight: buffettCriteriaWeights[10] }
+    { criterion: criteria.businessModel, weight: buffettCriteriaWeights[0], name: "1. Verständliches Geschäftsmodell" },
+    { criterion: criteria.economicMoat, weight: buffettCriteriaWeights[1], name: "2. Wirtschaftlicher Burggraben (Moat)" },
+    { criterion: criteria.financialMetrics, weight: buffettCriteriaWeights[2], name: "3. Finanzkennzahlen (10 Jahre)" },
+    { criterion: criteria.financialStability, weight: buffettCriteriaWeights[3], name: "4. Finanzielle Stabilität & Verschuldung" },
+    { criterion: criteria.management, weight: buffettCriteriaWeights[4], name: "5. Qualität des Managements" },
+    { criterion: criteria.valuation, weight: buffettCriteriaWeights[5], name: "6. Bewertung (nicht zu teuer kaufen)" },
+    { criterion: criteria.longTermOutlook, weight: buffettCriteriaWeights[6], name: "7. Langfristiger Horizont" },
+    { criterion: criteria.rationalBehavior, weight: buffettCriteriaWeights[7], name: "8. Rationalität & Disziplin" },
+    { criterion: criteria.cyclicalBehavior, weight: buffettCriteriaWeights[8], name: "9. Antizyklisches Verhalten" },
+    { criterion: criteria.oneTimeEffects, weight: buffettCriteriaWeights[9], name: "10. Vergangenheit ≠ Zukunft" },
+    { criterion: criteria.turnaround, weight: buffettCriteriaWeights[10], name: "11. Keine Turnarounds" }
   ];
 
-  const detailedBreakdown = criteriaArray.map(({ criterion, weight }) => {
-    const score = criterion.score !== undefined ? criterion.score : 
-                  deriveScoreFromGptAnalysis(criterion) || 0;
+  const detailedBreakdown = criteriaArray.map(({ criterion, weight, name }) => {
+    const score = getDisplayedScore(criterion);
     
     const weightedContribution = score * (weight.weight / 100);
     const maxWeightedContribution = 10 * (weight.weight / 100);
-    const contributionPercentage = (weightedContribution / 10) * 100; // How much this criterion contributes to total %
     
     return {
-      name: weight.name,
+      name: name,
       score: score,
       weight: weight.weight,
       weightedContribution: weightedContribution,
-      maxWeightedContribution: maxWeightedContribution,
-      contributionPercentage: contributionPercentage
+      maxWeightedContribution: maxWeightedContribution
     };
   });
   
   const totalWeightedScore = detailedBreakdown.reduce((acc, item) => acc + item.weightedContribution, 0);
   const maxTotalWeightedScore = detailedBreakdown.reduce((acc, item) => acc + item.maxWeightedContribution, 0);
   
+  // Recalculate the actual percentage to verify
+  const actualCalculatedScore = Math.round((totalWeightedScore / maxTotalWeightedScore) * 100 * 10) / 10;
+  
+  console.log('Score verification:', {
+    passedScore: roundedScore,
+    actualCalculatedScore,
+    totalWeightedScore,
+    maxTotalWeightedScore,
+    breakdown: detailedBreakdown
+  });
+  
   return (
     <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
       <div className="flex items-center">
         <h3 className="text-lg font-semibold">
-          Buffett-Kompatibilität: {roundedScore}%
+          Buffett-Kompatibilität: {actualCalculatedScore}%
         </h3>
         <TooltipProvider>
           <Tooltip>
@@ -69,7 +94,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
             <TooltipContent className="max-w-md">
               <div className="space-y-3">
                 <p className="text-xs mb-2 font-medium">
-                  Berechnung der Buffett-Kompatibilität ({roundedScore}%):
+                  Berechnung der Buffett-Kompatibilität ({actualCalculatedScore}%):
                 </p>
                 
                 <div className="space-y-2 text-xs">
@@ -96,7 +121,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
                     Gewichtete Summe: {totalWeightedScore.toFixed(2)} / {maxTotalWeightedScore.toFixed(2)}
                   </div>
                   <div className="text-xs text-gray-700">
-                    Prozent: ({totalWeightedScore.toFixed(2)} / {maxTotalWeightedScore.toFixed(2)}) × 100 = {roundedScore}%
+                    Prozent: ({totalWeightedScore.toFixed(2)} / {maxTotalWeightedScore.toFixed(2)}) × 100 = {actualCalculatedScore}%
                   </div>
                 </div>
                 
@@ -115,7 +140,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
         <div 
           className="h-2.5 rounded-full" 
           style={{
-            width: `${Math.min(roundedScore, 100)}%`,
+            width: `${Math.min(actualCalculatedScore, 100)}%`,
             backgroundColor: interpretation.color
           }}
         />
