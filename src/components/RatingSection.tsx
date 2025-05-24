@@ -5,7 +5,7 @@ import OverallRating from '@/components/OverallRating';
 import { debugDCFData } from '@/utils/currencyConverter';
 
 const RatingSection: React.FC = () => {
-  const { overallRating, isLoading, hasCriticalDataMissing, dcfData, stockInfo } = useStock();
+  const { overallRating, buffettCriteria, isLoading, hasCriticalDataMissing, dcfData, stockInfo } = useStock();
   
   useEffect(() => {
     console.log('RatingSection mounted or dcfData changed');
@@ -52,7 +52,7 @@ const RatingSection: React.FC = () => {
   
   return (
     <div className="mb-8">
-      <OverallRating rating={overallRating} />
+      <OverallRating rating={overallRating} buffettCriteria={buffettCriteria} />
     </div>
   );
 };

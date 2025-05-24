@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown, Minus, Info } from 'lucide-react';
-import { MarginOfSafetyExplanation } from './MarginOfSafetyExplanation';
-import { RatingExplanation } from './RatingExplanation';
+import MarginOfSafetyExplanation from './MarginOfSafetyExplanation';
+import RatingExplanation from './RatingExplanation';
 import { 
   calculateTotalBuffettScore, 
   getBuffettScoreInterpretation,
@@ -16,12 +16,13 @@ import { OverallRatingData } from '@/context/StockContextTypes';
 
 interface OverallRatingProps {
   rating: OverallRatingData;
+  buffettCriteria?: BuffettCriteriaProps;
 }
 
-const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
+const OverallRating: React.FC<OverallRatingProps> = ({ rating, buffettCriteria }) => {
   // Use unified Buffett score calculation if criteria are available
-  const buffettScore = rating.buffettCriteria ? 
-    calculateTotalBuffettScore(rating.buffettCriteria as BuffettCriteriaProps) : 
+  const buffettScore = buffettCriteria ? 
+    calculateTotalBuffettScore(buffettCriteria) : 
     0;
   
   const buffettInterpretation = getBuffettScoreInterpretation(buffettScore);
@@ -95,18 +96,18 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Allgemeine Bewertung</h3>
-              <Badge className={`${getRatingColor(rating.overallRating)} text-white`}>
-                Note {rating.overallRating}
+              <Badge className={`${getRatingColor(rating.overall?.rating || 'F')} text-white`}>
+                Note {rating.overall?.rating || 'F'}
               </Badge>
             </div>
             <p className="text-sm text-gray-600">
-              {getRatingDescription(rating.overallRating)} - {rating.ratingExplanation}
+              {getRatingDescription(rating.overall?.rating || 'F')} - {rating.summary || 'Keine Bewertung verfügbar'}
             </p>
             <RatingExplanation />
           </div>
 
           {/* Buffett Compatibility */}
-          {rating.buffettCriteria && (
+          {buffettCriteria && (
             <div className="space-y-3 pt-4 border-t border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Buffett-Kompatibilität</h3>
@@ -172,7 +173,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                 {rating.marginOfSafety.value.toFixed(1)}%
               </span>
             </div>
-            <MarginOfSafetyExplanation marginOfSafety={rating.marginOfSafety} />
+            <MarginOfSafetyExplanation />
           </div>
 
           {/* Disclaimer */}
