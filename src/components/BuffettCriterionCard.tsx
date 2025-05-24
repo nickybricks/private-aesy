@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +12,7 @@ import {
   getStatusBadge, 
   extractKeyInsights,
   extractGptAssessmentStatus,
-  deriveScoreFromGptAnalysis
+  getUnifiedCriterionScore
 } from '@/utils/buffettUtils';
 import { DCFData } from '@/context/StockContextTypes';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -37,8 +36,10 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
     displayStatus = gptAssessment.status;
   }
   
-  // Calculate the score for this criterion based on the ratio of fulfilled sub-criteria
-  const calculatedScore = deriveScoreFromGptAnalysis(criterion);
+  // Use the unified scoring function to get the consistent score
+  const unifiedScore = getUnifiedCriterionScore(criterion);
+  
+  console.log(`BuffettCriterionCard - ${criterion.title}: unified score=${unifiedScore}`);
   
   // Show partial fulfillment visualization if we have the data
   const showPartialFulfillment = partialFulfillment !== null || 
@@ -47,11 +48,6 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
   const fulfillmentCount = partialFulfillment?.fulfilled || 
                           (gptAssessment?.partialFulfillment || 0);
   const totalCount = partialFulfillment?.total || 3; // Default to 3 if not specified
-  
-  // Convert partial fulfillment ratio to 0-10 score
-  // If 2 out of 3 criteria are fulfilled, that's 2/3 = 0.67, so 6.7 points out of 10
-  const scoreFromPartialFulfillment = fulfillmentCount && totalCount ? 
-    Math.round((fulfillmentCount / totalCount) * 100) / 10 : undefined;
   
   // Extract assessment details from GPT analysis
   const criteriaQuestions: {question: string, answer: string, fulfilled: boolean}[] = [];
@@ -114,7 +110,7 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
             <BuffettScoreDisplay criterion={{
               ...criterion,
               status: displayStatus,
-              score: scoreFromPartialFulfillment || calculatedScore // Use the calculated score from ratio
+              score: unifiedScore // Use the unified score
             }} />
             
             {criterion.title === '6. Akzeptable Bewertung' && criterion.dcfData && (
@@ -148,14 +144,12 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
                 className="h-2" 
               />
               
-              {/* Score from partial fulfillment */}
-              {scoreFromPartialFulfillment !== undefined && (
-                <div className="flex justify-end mt-1">
-                  <span className="text-xs font-medium text-gray-700">
-                    {scoreFromPartialFulfillment}/10 Punkten
-                  </span>
-                </div>
-              )}
+              {/* Score from unified scoring */}
+              <div className="flex justify-end mt-1">
+                <span className="text-xs font-medium text-gray-700">
+                  {unifiedScore.toFixed(1)}/10 Punkten
+                </span>
+              </div>
               
               {/* Detail which specific subcriteria are fulfilled */}
               {criteriaQuestions.length > 0 && (

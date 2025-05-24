@@ -5,7 +5,7 @@ import {
   buffettCriteriaWeights, 
   getBuffettScoreInterpretation,
   BuffettCriteriaProps,
-  deriveScoreFromGptAnalysis
+  getUnifiedCriterionScore
 } from '@/utils/buffettUtils';
 import { Info } from 'lucide-react';
 
@@ -19,24 +19,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
   const roundedScore = Math.round(score * 10) / 10;
   const interpretation = getBuffettScoreInterpretation(roundedScore);
   
-  // Create a function to get the actual displayed score consistently
-  const getDisplayedScore = (criterion: any) => {
-    // First try the explicit score
-    if (criterion.score !== undefined) {
-      return criterion.score;
-    }
-    
-    // Then try to derive from GPT analysis
-    const derivedScore = deriveScoreFromGptAnalysis(criterion);
-    if (derivedScore !== undefined) {
-      return derivedScore;
-    }
-    
-    // Fallback to 0
-    return 0;
-  };
-  
-  // Calculate detailed breakdown for each criterion using the same logic as display
+  // Calculate detailed breakdown for each criterion using unified scoring
   const criteriaArray = [
     { criterion: criteria.businessModel, weight: buffettCriteriaWeights[0], name: "1. Verständliches Geschäftsmodell" },
     { criterion: criteria.economicMoat, weight: buffettCriteriaWeights[1], name: "2. Wirtschaftlicher Burggraben (Moat)" },
@@ -52,10 +35,13 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
   ];
 
   const detailedBreakdown = criteriaArray.map(({ criterion, weight, name }) => {
-    const score = getDisplayedScore(criterion);
+    // Use the unified scoring function
+    const score = getUnifiedCriterionScore(criterion);
     
     const weightedContribution = score * (weight.weight / 100);
     const maxWeightedContribution = 10 * (weight.weight / 100);
+    
+    console.log(`BuffettScoreSummary - ${name}: unified score=${score}, weighted=${weightedContribution.toFixed(2)}`);
     
     return {
       name: name,
@@ -72,7 +58,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
   // Recalculate the actual percentage to verify
   const actualCalculatedScore = Math.round((totalWeightedScore / maxTotalWeightedScore) * 100 * 10) / 10;
   
-  console.log('Score verification:', {
+  console.log('BuffettScoreSummary score verification:', {
     passedScore: roundedScore,
     actualCalculatedScore,
     totalWeightedScore,

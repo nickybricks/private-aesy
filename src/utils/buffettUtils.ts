@@ -1,3 +1,4 @@
+
 export const getStatusColor = (status: string) => {
   switch (status) {
     case 'pass':
@@ -209,6 +210,28 @@ export const deriveScoreFromGptAnalysis = (
   return undefined;
 };
 
+// UNIFIED FUNCTION: Get the displayed score for any criterion - used everywhere
+export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): number => {
+  console.log('getUnifiedCriterionScore called for:', criterion.title);
+  
+  // First priority: explicit score
+  if (criterion.score !== undefined) {
+    console.log('Using explicit score:', criterion.score);
+    return criterion.score;
+  }
+  
+  // Second priority: derive from GPT analysis
+  const derivedScore = deriveScoreFromGptAnalysis(criterion);
+  if (derivedScore !== undefined) {
+    console.log('Using derived score from GPT analysis:', derivedScore);
+    return derivedScore;
+  }
+  
+  // Fallback: 0
+  console.log('Using fallback score: 0');
+  return 0;
+};
+
 // Enhanced version to extract key insights and partial fulfillment information
 export const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   if (!gptAnalysis) return { summary: '', points: [], partialFulfillment: null };
@@ -248,24 +271,9 @@ export const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   return { summary, points, partialFulfillment };
 };
 
-// Calculate total weighted Buffett score using new 0-10 system
+// Calculate total weighted Buffett score using unified scoring system
 export const calculateTotalBuffettScore = (criteria: BuffettCriteriaProps): number => {
-  // Create a function to get the actual displayed score consistently
-  const getDisplayedScore = (criterion: any) => {
-    // First try the explicit score
-    if (criterion.score !== undefined) {
-      return criterion.score;
-    }
-    
-    // Then try to derive from GPT analysis
-    const derivedScore = deriveScoreFromGptAnalysis(criterion);
-    if (derivedScore !== undefined) {
-      return derivedScore;
-    }
-    
-    // Fallback to 0
-    return 0;
-  };
+  console.log('calculateTotalBuffettScore called');
 
   const criteriaArray = [
     { criterion: criteria.businessModel, weight: buffettCriteriaWeights[0] },
@@ -285,19 +293,24 @@ export const calculateTotalBuffettScore = (criteria: BuffettCriteriaProps): numb
   let totalMaxWeightedScore = 0;
 
   criteriaArray.forEach(({ criterion, weight }) => {
-    // Get score (0-10) for this criterion using the same logic as display
-    const score = getDisplayedScore(criterion);
+    // Use the unified scoring function
+    const score = getUnifiedCriterionScore(criterion);
     
     // Calculate weighted contribution: score * weight percentage
     const weightedScore = score * (weight.weight / 100);
     const maxWeightedScore = 10 * (weight.weight / 100);
+    
+    console.log(`${criterion.title}: score=${score}, weight=${weight.weight}%, weighted=${weightedScore.toFixed(2)}`);
     
     totalWeightedScore += weightedScore;
     totalMaxWeightedScore += maxWeightedScore;
   });
 
   // Convert to percentage: (totalWeightedScore / totalMaxWeightedScore) * 100
-  return Math.round((totalWeightedScore / totalMaxWeightedScore) * 100 * 10) / 10;
+  const finalScore = Math.round((totalWeightedScore / totalMaxWeightedScore) * 100 * 10) / 10;
+  console.log(`Total: ${totalWeightedScore.toFixed(2)} / ${totalMaxWeightedScore.toFixed(2)} = ${finalScore}%`);
+  
+  return finalScore;
 };
 
 // Get interpretation of the Buffett score with neutral language
@@ -332,9 +345,8 @@ export const calculateWeightedScore = (
   criterion: BuffettCriterionProps,
   criterionId: string
 ): { weightedScore: number, weightPercentage: number } => {
-  // Get score (0-10)
-  const score = criterion.score !== undefined ? criterion.score : 
-                deriveScoreFromGptAnalysis(criterion) || 0;
+  // Use the unified scoring function
+  const score = getUnifiedCriterionScore(criterion);
   
   const criteriaWeight = buffettCriteriaWeights.find(c => c.id === criterionId);
   
