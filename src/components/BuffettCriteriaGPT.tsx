@@ -5,7 +5,7 @@ import BuffettOverallAnalysis from './BuffettOverallAnalysis';
 import { 
   BuffettCriteriaProps,
   BuffettCriterionProps,
-  deriveScoreFromGptAnalysis
+  getUnifiedCriterionScore
 } from '@/utils/buffettUtils';
 
 interface BuffettCriteriaGPTProps {
@@ -35,10 +35,9 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
     criteria.turnaround
   ].filter(isBuffettCriterion);
 
-  // Calculate detailed scores for display
+  // Calculate scores using the unified system for display consistency  
   const detailedScores = allCriteria.map(criterion => {
-    const score = criterion.score !== undefined ? criterion.score : 
-                  deriveScoreFromGptAnalysis(criterion) || 0;
+    const score = getUnifiedCriterionScore(criterion);
     return { criterion, score };
   });
   
@@ -69,9 +68,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       
       <div className="mt-6 text-sm text-gray-500">
         <p>Die dargestellte Bewertung ist keine Anlageempfehlung.</p>
-        <p className="mt-1">
-          Rohpunktzahl: {totalDetailedScore.toFixed(1)}/{maxDetailedScore} ({detailedScorePercentage}%)
-        </p>
       </div>
     </div>
   );

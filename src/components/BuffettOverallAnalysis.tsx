@@ -5,9 +5,7 @@ import { BuffettScoreChart } from './BuffettScoreChart';
 import { 
   BuffettCriteriaProps,
   BuffettCriterionProps,
-  calculateTotalBuffettScore,
   getUnifiedCriterionScore,
-  getUnifiedCriterionMaxScore,
   buffettCriteriaWeights
 } from '@/utils/buffettUtils';
 
@@ -38,7 +36,7 @@ const BuffettOverallAnalysis: React.FC<BuffettOverallAnalysisProps> = ({ criteri
     criteria.turnaround
   ].filter(isBuffettCriterion);
 
-  // Calculate the unified Buffett score using the same system as the tooltip
+  // Calculate the unified Buffett score consistently across all components
   const criteriaArray = [
     { criterion: criteria.businessModel, weight: buffettCriteriaWeights[0] },
     { criterion: criteria.economicMoat, weight: buffettCriteriaWeights[1] },
@@ -55,31 +53,41 @@ const BuffettOverallAnalysis: React.FC<BuffettOverallAnalysisProps> = ({ criteri
 
   let totalWeightedScore = 0;
   let maxTotalWeightedScore = 0;
+  let totalRawScore = 0;
 
   criteriaArray.forEach(({ criterion, weight }) => {
     const score = getUnifiedCriterionScore(criterion);
-    const maxScore = getUnifiedCriterionMaxScore(criterion);
+    const maxScore = 10; // Always 10 for consistency
     
     const weightedContribution = score * (weight.weight / 100);
     const maxWeightedContribution = maxScore * (weight.weight / 100);
     
     totalWeightedScore += weightedContribution;
     maxTotalWeightedScore += maxWeightedContribution;
+    totalRawScore += score;
   });
 
   const buffettScore = Math.round((totalWeightedScore / maxTotalWeightedScore) * 100 * 10) / 10;
+  const maxRawScore = criteriaArray.length * 10; // 11 criteria * 10 points = 110
 
-  console.log('BuffettOverallAnalysis unified score calculation:', {
+  console.log('BuffettOverallAnalysis unified calculation:', {
     totalWeightedScore,
     maxTotalWeightedScore,
-    buffettScore
+    buffettScore,
+    totalRawScore,
+    maxRawScore
   });
 
   return (
     <div className="mt-8 pt-8 border-t border-gray-200">
       <h3 className="text-xl font-semibold mb-6">Buffett-Kompatibilität Gesamtbewertung</h3>
       
-      <BuffettScoreSummary score={buffettScore} criteria={criteria} />
+      <BuffettScoreSummary 
+        score={buffettScore} 
+        criteria={criteria}
+        rawScore={totalRawScore}
+        maxRawScore={maxRawScore}
+      />
       
       <BuffettScoreChart score={buffettScore} />
     </div>

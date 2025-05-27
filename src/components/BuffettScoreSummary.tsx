@@ -5,17 +5,23 @@ import {
   buffettCriteriaWeights, 
   getBuffettScoreInterpretation,
   BuffettCriteriaProps,
-  getUnifiedCriterionScore,
-  getUnifiedCriterionMaxScore
+  getUnifiedCriterionScore
 } from '@/utils/buffettUtils';
 import { Info } from 'lucide-react';
 
 interface BuffettScoreSummaryProps {
   score: number;
   criteria: BuffettCriteriaProps;
+  rawScore?: number;
+  maxRawScore?: number;
 }
 
-export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score, criteria }) => {
+export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ 
+  score, 
+  criteria, 
+  rawScore, 
+  maxRawScore 
+}) => {
   // Calculate detailed breakdown for each criterion using unified scoring
   const criteriaArray = [
     { criterion: criteria.businessModel, weight: buffettCriteriaWeights[0], name: "1. Verständliches Geschäftsmodell" },
@@ -39,8 +45,6 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
     const weightedContribution = score * (weight.weight / 100);
     const maxWeightedContribution = maxScore * (weight.weight / 100);
     
-    console.log(`BuffettScoreSummary - ${name}: unified score=${score}/${maxScore}, weighted=${weightedContribution.toFixed(2)}`);
-    
     return {
       name: name,
       score: score,
@@ -54,23 +58,30 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
   const totalWeightedScore = detailedBreakdown.reduce((acc, item) => acc + item.weightedContribution, 0);
   const maxTotalWeightedScore = detailedBreakdown.reduce((acc, item) => acc + item.maxWeightedContribution, 0);
   
-  // Calculate the actual percentage from the unified scores
-  const actualCalculatedScore = Math.round((totalWeightedScore / maxTotalWeightedScore) * 100 * 10) / 10;
+  // Use the passed score to ensure consistency
+  const displayScore = score;
   
-  console.log('BuffettScoreSummary unified score calculation:', {
+  // Calculate raw score if not provided
+  const calculatedRawScore = rawScore || detailedBreakdown.reduce((acc, item) => acc + item.score, 0);
+  const calculatedMaxRawScore = maxRawScore || detailedBreakdown.length * 10;
+  const rawScorePercentage = Math.round((calculatedRawScore / calculatedMaxRawScore) * 100);
+  
+  console.log('BuffettScoreSummary calculation:', {
+    displayScore,
     totalWeightedScore,
     maxTotalWeightedScore,
-    actualCalculatedScore,
-    breakdown: detailedBreakdown
+    calculatedRawScore,
+    calculatedMaxRawScore,
+    rawScorePercentage
   });
   
-  const interpretation = getBuffettScoreInterpretation(actualCalculatedScore);
+  const interpretation = getBuffettScoreInterpretation(displayScore);
   
   return (
     <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
       <div className="flex items-center">
         <h3 className="text-lg font-semibold">
-          Buffett-Kompatibilität: {actualCalculatedScore}%
+          Buffett-Kompatibilität: {displayScore}%
         </h3>
         <TooltipProvider>
           <Tooltip>
@@ -80,7 +91,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
             <TooltipContent className="max-w-md">
               <div className="space-y-3">
                 <p className="text-xs mb-2 font-medium">
-                  Berechnung der Buffett-Kompatibilität ({actualCalculatedScore}%):
+                  Berechnung der Buffett-Kompatibilität ({displayScore}%):
                 </p>
                 
                 <div className="space-y-2 text-xs">
@@ -107,7 +118,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
                     Gewichtete Summe: {totalWeightedScore.toFixed(2)} / {maxTotalWeightedScore.toFixed(2)}
                   </div>
                   <div className="text-xs text-gray-700">
-                    Prozent: ({totalWeightedScore.toFixed(2)} / {maxTotalWeightedScore.toFixed(2)}) × 100 = {actualCalculatedScore}%
+                    Prozent: ({totalWeightedScore.toFixed(2)} / {maxTotalWeightedScore.toFixed(2)}) × 100 = {displayScore}%
                   </div>
                 </div>
                 
@@ -126,7 +137,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
         <div 
           className="h-2.5 rounded-full" 
           style={{
-            width: `${Math.min(actualCalculatedScore, 100)}%`,
+            width: `${Math.min(displayScore, 100)}%`,
             backgroundColor: interpretation.color
           }}
         />
@@ -137,6 +148,12 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
       <p className="text-xs mt-1 text-gray-500">
         {interpretation.description}
       </p>
+      
+      {/* Add raw score display for transparency */}
+      <p className="text-xs mt-2 text-gray-500">
+        Rohpunktzahl: {calculatedRawScore.toFixed(1)}/{calculatedMaxRawScore} ({rawScorePercentage}%)
+      </p>
+      
       <p className="text-xs mt-2 text-gray-500">
         Die Bewertung spiegelt nicht unbedingt die Qualität des Investments wider und stellt keine Anlageempfehlung dar.
       </p>
