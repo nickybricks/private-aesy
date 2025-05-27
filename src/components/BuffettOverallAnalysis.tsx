@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { BuffettScoreSummary } from './BuffettScoreSummary';
 import { BuffettScoreChart } from './BuffettScoreChart';
 import { 
   BuffettCriteriaProps,
@@ -80,15 +79,6 @@ const BuffettOverallAnalysis: React.FC<BuffettOverallAnalysisProps> = ({ criteri
 
   return (
     <div className="mt-8 pt-8 border-t border-gray-200">
-      <h3 className="text-xl font-semibold mb-6">Buffett-Kompatibilität Gesamtbewertung</h3>
-      
-      <BuffettScoreSummary 
-        score={buffettScore} 
-        criteria={criteria}
-        rawScore={totalRawScore}
-        maxRawScore={maxRawScore}
-      />
-      
       <BuffettScoreChart score={buffettScore} />
     </div>
   );
