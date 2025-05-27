@@ -19,14 +19,12 @@ interface OverallRatingProps {
     strengths: string[];
     weaknesses: string[];
     recommendation: string;
-    // Optional fields for additional metrics
     buffettScore?: number;
     marginOfSafety?: {
       value: number;
       status: 'pass' | 'warning' | 'fail';
     };
     bestBuyPrice?: number | null;
-    // New fields for price analysis
     currentPrice?: number | null;
     currency?: string;
     intrinsicValue?: number | null;
@@ -38,11 +36,12 @@ interface OverallRatingProps {
   } | null;
 }
 
-// UPDATED: Clear quality thresholds for Buffett score
+// Quality assessment with the new 85% threshold
 const getQualityAssessment = (buffettScore?: number): { 
   isQualityMet: boolean; 
   qualityLabel: string;
   qualityDescription: string;
+  qualityLevel: 'high' | 'medium' | 'low';
 } => {
   const score = buffettScore || 0;
   
@@ -50,24 +49,63 @@ const getQualityAssessment = (buffettScore?: number): {
     return {
       isQualityMet: true,
       qualityLabel: "✅ Qualität erfüllt",
-      qualityDescription: `Exzellente Qualität (${score}% ≥ 85%)`
+      qualityDescription: `Exzellente Qualität (${score}%)`,
+      qualityLevel: 'high'
     };
   } else if (score >= 70) {
     return {
-      isQualityMet: false, // Buffett requires high standards
-      qualityLabel: "⚠️ Qualität teilweise erfüllt",
-      qualityDescription: `Gute Qualität, aber unter Buffett-Standard (${score}% < 85%)`
+      isQualityMet: false,
+      qualityLabel: "⚠️ Qualität knapp nicht erfüllt", 
+      qualityDescription: `Gute Basis, aber unter Buffett-Standard (${score}% < 85%)`,
+      qualityLevel: 'medium'
     };
   } else {
     return {
       isQualityMet: false,
       qualityLabel: "❌ Qualität nicht erfüllt",
-      qualityDescription: `Unzureichende Qualität (${score}% < 70%)`
+      qualityDescription: `Unzureichende Qualität (${score}% < 70%)`,
+      qualityLevel: 'low'
     };
   }
 };
 
-// Utility function to determine Buffett conformity based on both quality and price
+// Generate dynamic summary based on specific criteria
+const generateDynamicSummary = (
+  qualityAssessment: ReturnType<typeof getQualityAssessment>,
+  marginOfSafetyValue?: number,
+  strengths?: string[],
+  weaknesses?: string[]
+): string => {
+  const score = qualityAssessment.qualityLevel;
+  const priceStatus = (marginOfSafetyValue || 0) >= 0 ? 'günstig' : 'überbewertet';
+  
+  // Focus on the most impactful factors
+  if (score === 'high' && priceStatus === 'günstig') {
+    return 'Sowohl Qualität als auch Preis erfüllen Buffetts Kriterien vollständig.';
+  }
+  
+  if (score === 'high' && priceStatus === 'überbewertet') {
+    return 'Hohe Qualität erkannt, aber der aktuelle Preis bietet keine Sicherheitsmarge.';
+  }
+  
+  if (score === 'medium' && priceStatus === 'günstig') {
+    return 'Attraktiver Preis, aber Qualitätskriterien knapp unter Buffetts Standard.';
+  }
+  
+  if (score === 'medium') {
+    return 'Solide Basis mit erkennbaren Stärken, aber wichtige Buffett-Kriterien fehlen noch.';
+  }
+  
+  return 'Wesentliche Verbesserungen in Qualität und/oder Bewertung erforderlich.';
+};
+
+const interpretMarginOfSafety = (value: number): 'pass' | 'warning' | 'fail' => {
+  if (value > 30) return 'pass';
+  if (value >= 10) return 'warning';
+  if (value >= 0) return 'warning';
+  return 'fail';
+};
+
 const determineBuffettConformity = (
   buffettScore?: number,
   marginOfSafetyValue?: number
@@ -79,34 +117,27 @@ const determineBuffettConformity = (
   priceMet: boolean;
   qualityAssessment: ReturnType<typeof getQualityAssessment>;
 } => {
-  const score = buffettScore || 0;
-  const mos = marginOfSafetyValue || 0;
-  
-  // UPDATED: Use new quality assessment logic
-  const qualityAssessment = getQualityAssessment(score);
-  const qualityMet = qualityAssessment.isQualityMet; // Now uses 85% threshold
-  const priceMet = mos >= 0; // Positive margin of safety
-  
-  // True Buffett conformity requires BOTH pillars
+  const qualityAssessment = getQualityAssessment(buffettScore);
+  const qualityMet = qualityAssessment.isQualityMet;
+  const priceMet = (marginOfSafetyValue || 0) >= 0;
   const isBuffettConform = qualityMet && priceMet;
   
   if (isBuffettConform) {
     return { 
       isBuffettConform: true,
       rating: 'buy', 
-      reasoning: 'Erfüllt beide Buffett-Säulen: Hohe Qualität UND attraktiver Preis',
+      reasoning: 'Beide Buffett-Säulen erfüllt',
       qualityMet,
       priceMet,
       qualityAssessment
     };
   }
   
-  // Only one pillar fulfilled
   if (qualityMet && !priceMet) {
     return { 
       isBuffettConform: false,
       rating: 'watch', 
-      reasoning: 'Hohe Qualität, aber überbewertet - warten auf besseren Preis',
+      reasoning: 'Hohe Qualität, aber überbewertet',
       qualityMet,
       priceMet,
       qualityAssessment
@@ -117,14 +148,13 @@ const determineBuffettConformity = (
     return { 
       isBuffettConform: false,
       rating: 'avoid', 
-      reasoning: qualityAssessment.qualityDescription + ' - günstig, aber nicht Buffett-konform',
+      reasoning: qualityAssessment.qualityDescription + ', aber günstiger Preis',
       qualityMet,
       priceMet,
       qualityAssessment
     };
   }
   
-  // Neither pillar fulfilled
   return { 
     isBuffettConform: false,
     rating: 'avoid', 
@@ -135,28 +165,18 @@ const determineBuffettConformity = (
   };
 };
 
-// Function to interpret MoS status properly based on Buffett's standard
-const interpretMarginOfSafety = (value: number): 'pass' | 'warning' | 'fail' => {
-  if (value > 30) return 'pass'; // Strongly undervalued
-  if (value >= 10) return 'warning'; // Slightly undervalued
-  if (value >= 0) return 'warning'; // Fair value (borderline)
-  return 'fail'; // Overvalued
-};
-
 const RatingIcon: React.FC<{ isBuffettConform: boolean; rating: Rating }> = ({ isBuffettConform, rating }) => {
   if (isBuffettConform) {
-    return <CheckCircle size={40} className="text-buffett-green" />;
+    return <CheckCircle size={32} className="text-green-600" />;
   }
   
   switch (rating) {
-    case 'buy':
-      return <CheckCircle size={40} className="text-buffett-green" />;
     case 'watch':
-      return <AlertTriangle size={40} className="text-buffett-yellow" />;
+      return <AlertTriangle size={32} className="text-orange-500" />;
     case 'avoid':
-      return <XCircle size={40} className="text-buffett-red" />;
+      return <XCircle size={32} className="text-red-500" />;
     default:
-      return null;
+      return <CheckCircle size={32} className="text-green-600" />;
   }
 };
 
@@ -164,11 +184,8 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   if (!rating) return null;
   
   let { 
-    overall, 
-    summary, 
     strengths, 
     weaknesses, 
-    recommendation, 
     buffettScore, 
     marginOfSafety, 
     bestBuyPrice,
@@ -182,7 +199,6 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     originalBestBuyPrice
   } = rating;
   
-  // Überprüfe auf fehlende Daten
   const hasMissingPriceData = currentPrice === null || 
                              currentPrice === undefined || 
                              bestBuyPrice === null || 
@@ -195,7 +211,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       { currentPrice, bestBuyPrice, intrinsicValue });
   }
   
-  // Calculate margin of safety if it's not provided but we have the necessary values
+  // Calculate margin of safety if needed
   if (!marginOfSafety && intrinsicValue !== null && intrinsicValue !== undefined && 
       currentPrice !== null && currentPrice !== undefined) {
     const mosValue = ((intrinsicValue - currentPrice) / currentPrice) * 100;
@@ -203,66 +219,12 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       value: mosValue,
       status: interpretMarginOfSafety(mosValue)
     };
-    console.log(`Calculated marginOfSafety: ${mosValue.toFixed(2)}% from intrinsicValue: ${intrinsicValue} and currentPrice: ${currentPrice}`);
-  } else if (marginOfSafety && marginOfSafety.value === 0 && 
-            intrinsicValue !== null && intrinsicValue !== undefined && 
-            currentPrice !== null && currentPrice !== undefined) {
-    const mosValue = ((intrinsicValue - currentPrice) / currentPrice) * 100;
-    marginOfSafety.value = mosValue;
-    marginOfSafety.status = interpretMarginOfSafety(mosValue);
-    console.log(`Updated marginOfSafety from 0 to: ${mosValue.toFixed(2)}%`);
-  }
-  
-  // Override the marginOfSafety status based on the actual value if marginOfSafety exists
-  if (marginOfSafety) {
+  } else if (marginOfSafety) {
     marginOfSafety.status = interpretMarginOfSafety(marginOfSafety.value);
   }
   
-  // Determine true Buffett conformity based on both pillars
   const buffettAnalysis = determineBuffettConformity(buffettScore, marginOfSafety?.value);
-  
-  // Update overall rating based on Buffett analysis
-  overall = buffettAnalysis.rating;
-  
-  // Update summary and recommendation based on Buffett conformity
-  if (buffettAnalysis.isBuffettConform) {
-    summary = "✅ Buffett-konform - beide Säulen erfüllt";
-    recommendation = `Diese Investition erfüllt beide Buffett-Säulen: Hohe Qualität (${buffettScore}%) und attraktiver Preis (Sicherheitsmarge: ${marginOfSafety?.value.toFixed(1)}%). "It's far better to buy a wonderful company at a fair price than a fair company at a wonderful price." - Warren Buffett`;
-  } else {
-    summary = buffettAnalysis.reasoning;
-    
-    if (buffettAnalysis.qualityMet && !buffettAnalysis.priceMet) {
-      recommendation = `Hohe Qualität (${buffettScore}%), aber überbewertet. "Price is what you pay, value is what you get." - Buffett würde bei diesem Preis nicht kaufen. Warten auf Sicherheitsmarge ≥ 0%.`;
-    } else if (!buffettAnalysis.qualityMet && buffettAnalysis.priceMet) {
-      recommendation = `Günstiger Preis, aber ${buffettAnalysis.qualityAssessment.qualityDescription}. Buffett kauft keine Unternehmen unter seinem Qualitätsstandard (≥ 85%).`;
-    } else {
-      recommendation = `${buffettAnalysis.qualityAssessment.qualityDescription} und überbewertet. Beide Buffett-Säulen müssen für eine Investition gegeben sein.`;
-    }
-  }
-  
-  const ratingTitle = buffettAnalysis.isBuffettConform 
-    ? "✅ Buffett-konform" 
-    : {
-        buy: 'Hohe Übereinstimmung',
-        watch: 'Mittlere Übereinstimmung', 
-        avoid: 'Niedrige Übereinstimmung'
-      }[overall];
-  
-  const ratingColor = buffettAnalysis.isBuffettConform
-    ? 'bg-green-50 border-green-300'
-    : {
-        buy: 'bg-buffett-green bg-opacity-10 border-buffett-green',
-        watch: 'bg-buffett-yellow bg-opacity-10 border-buffett-yellow',
-        avoid: 'bg-buffett-red bg-opacity-10 border-buffett-red'
-      }[overall];
-
-  const decisionFactor = buffettAnalysis.isBuffettConform
-    ? 'Beide Buffett-Säulen erfüllt: Qualität + Preis'
-    : buffettAnalysis.qualityMet && !buffettAnalysis.priceMet
-    ? 'Qualität vorhanden, aber Preis zu hoch'
-    : !buffettAnalysis.qualityMet && buffettAnalysis.priceMet
-    ? buffettAnalysis.qualityAssessment.qualityLabel + ', aber Preis attraktiv'
-    : buffettAnalysis.qualityAssessment.qualityLabel + ' und Preis zu hoch';
+  const dynamicSummary = generateDynamicSummary(buffettAnalysis.qualityAssessment, marginOfSafety?.value, strengths, weaknesses);
   
   return (
     <div className="buffett-card animate-fade-in">
@@ -279,51 +241,56 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       
       <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
         Gesamtbewertung
-        <RatingExplanation rating={overall} />
+        <RatingExplanation rating={buffettAnalysis.rating} />
       </h2>
       
-      {/* Buffett Two Pillars Explanation */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h3 className="font-semibold mb-2">🏛️ Warren Buffetts Zwei-Säulen-Prinzip</h3>
-        <p className="text-sm text-gray-700 mb-3">
-          Eine Investitionsentscheidung im Sinne von Warren Buffett braucht immer beide Säulen:
-        </p>
+      {/* Main Two-Pillars Section - Clean and Central */}
+      <div className="mb-8 p-6 bg-blue-50 border-2 border-blue-200 rounded-xl">
+        <div className="flex items-start gap-4 mb-4">
+          <RatingIcon rating={buffettAnalysis.rating} isBuffettConform={buffettAnalysis.isBuffettConform} />
+          <div className="flex-1">
+            <h3 className="text-xl font-bold mb-2">
+              {buffettAnalysis.isBuffettConform ? "✅ Buffett-konform" : "Warren Buffetts Zwei-Säulen-Prinzip"}
+            </h3>
+            <p className="text-gray-700 mb-4">{dynamicSummary}</p>
+          </div>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className={`p-3 rounded border-2 ${buffettAnalysis.qualityMet ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
-            <div className="font-medium mb-1">
+          <div className={`p-4 rounded-lg border-2 ${buffettAnalysis.qualityMet ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
+            <div className="font-semibold mb-2">
               {buffettAnalysis.qualityMet ? '✅' : '❌'} 1. Qualität (das Unternehmen)
             </div>
-            <div className="text-xs text-gray-600">
+            <div className="text-gray-600 mb-1">
               {buffettAnalysis.qualityAssessment.qualityDescription}
             </div>
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-gray-500">
               Standard: ≥ 85% für "Qualität erfüllt"
             </div>
           </div>
-          <div className={`p-3 rounded border-2 ${buffettAnalysis.priceMet ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
-            <div className="font-medium mb-1">
+          
+          <div className={`p-4 rounded-lg border-2 ${buffettAnalysis.priceMet ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
+            <div className="font-semibold mb-2">
               {buffettAnalysis.priceMet ? '✅' : '❌'} 2. Preis (die Bewertung)
             </div>
-            <div className="text-xs text-gray-600">
-              Sicherheitsmarge: {marginOfSafety?.value.toFixed(1)}% {buffettAnalysis.priceMet ? '(≥ 0% erfüllt)' : '(< 0%, nicht erfüllt)'}
+            <div className="text-gray-600 mb-1">
+              Sicherheitsmarge: {marginOfSafety?.value.toFixed(1)}% 
+              {buffettAnalysis.priceMet ? ' (≥ 0% erfüllt)' : ' (< 0%, überbewertet)'}
+            </div>
+            <div className="text-xs text-gray-500">
+              Standard: Positive Sicherheitsmarge
             </div>
           </div>
         </div>
-        <div className="mt-3 text-xs text-gray-600 italic">
-          "It's far better to buy a wonderful company at a fair price than a fair company at a wonderful price." - Warren Buffett
+        
+        <div className="mt-4 pt-4 border-t border-blue-200">
+          <p className="text-xs text-gray-600 italic text-center">
+            "It's far better to buy a wonderful company at a fair price than a fair company at a wonderful price." - Warren Buffett
+          </p>
         </div>
       </div>
       
-      <div className={`rounded-xl p-6 border ${ratingColor} mb-6`}>
-        <div className="flex items-center gap-4">
-          <RatingIcon rating={overall} isBuffettConform={buffettAnalysis.isBuffettConform} />
-          <div className="flex-1">
-            <h3 className="text-xl font-bold">{ratingTitle}</h3>
-            <p className="text-buffett-subtext">{summary}</p>
-          </div>
-        </div>
-      </div>
-      
+      {/* Valuation Metrics */}
       <BuffettValuationMetrics
         marginOfSafety={marginOfSafety}
         bestBuyPrice={bestBuyPrice}
@@ -337,41 +304,47 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         originalBestBuyPrice={originalBestBuyPrice}
       />
       
-      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm mb-6">
-        <h3 className="font-semibold mb-1">Zusammenfassung</h3>
-        <p className="text-buffett-subtext mb-4">{recommendation}</p>
+      {/* Detailed Analysis - Cleaner Layout */}
+      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+        <h3 className="font-semibold mb-4 text-lg">Detailanalyse</h3>
         
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <h4 className="font-semibold text-buffett-green mb-2 flex items-center gap-2">
-              <CheckCircle size={16} className="text-buffett-green" />
+            <h4 className="font-semibold text-green-600 mb-3 flex items-center gap-2">
+              <CheckCircle size={16} className="text-green-600" />
               Stärken
             </h4>
-            <ul className="list-disc pl-5 space-y-1">
+            <ul className="space-y-2">
               {strengths.map((strength, index) => (
-                <li key={index} className="text-sm text-gray-700">{strength}</li>
+                <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                  <span className="text-green-500 mt-1">•</span>
+                  {strength}
+                </li>
               ))}
             </ul>
           </div>
           
           <div>
-            <h4 className="font-semibold text-buffett-red mb-2 flex items-center gap-2">
-              <XCircle size={16} className="text-buffett-red" />
+            <h4 className="font-semibold text-red-600 mb-3 flex items-center gap-2">
+              <XCircle size={16} className="text-red-600" />
               Schwächen
             </h4>
-            <ul className="list-disc pl-5 space-y-1">
+            <ul className="space-y-2">
               {weaknesses.map((weakness, index) => (
-                <li key={index} className="text-sm text-gray-700">{weakness}</li>
+                <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                  <span className="text-red-500 mt-1">•</span>
+                  {weakness}
+                </li>
               ))}
             </ul>
           </div>
         </div>
         
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="flex items-center gap-2">
-            <BarChart3 size={16} className="text-buffett-blue" />
-            <span className="font-medium">Entscheidender Faktor:</span>
-            <span>{decisionFactor}</span>
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <div className="flex items-center gap-2 text-sm">
+            <BarChart3 size={16} className="text-blue-600" />
+            <span className="font-medium">Fazit:</span>
+            <span className="text-gray-700">{buffettAnalysis.reasoning}</span>
           </div>
         </div>
       </div>
