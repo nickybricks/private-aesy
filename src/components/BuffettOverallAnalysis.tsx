@@ -10,7 +10,6 @@ import {
   getUnifiedCriterionMaxScore,
   buffettCriteriaWeights
 } from '@/utils/buffettUtils';
-import { AlertTriangle } from 'lucide-react';
 
 interface BuffettOverallAnalysisProps {
   criteria: BuffettCriteriaProps;
@@ -39,40 +38,40 @@ const BuffettOverallAnalysis: React.FC<BuffettOverallAnalysisProps> = ({ criteri
     criteria.turnaround
   ].filter(isBuffettCriterion);
 
-  // Calculate the unified Buffett score with error handling
-  let buffettScore: number;
-  let scoreError: string | null = null;
+  // Calculate the unified Buffett score using the same system as the tooltip
+  const criteriaArray = [
+    { criterion: criteria.businessModel, weight: buffettCriteriaWeights[0] },
+    { criterion: criteria.economicMoat, weight: buffettCriteriaWeights[1] },
+    { criterion: criteria.financialMetrics, weight: buffettCriteriaWeights[2] },
+    { criterion: criteria.financialStability, weight: buffettCriteriaWeights[3] },
+    { criterion: criteria.management, weight: buffettCriteriaWeights[4] },
+    { criterion: criteria.valuation, weight: buffettCriteriaWeights[5] },
+    { criterion: criteria.longTermOutlook, weight: buffettCriteriaWeights[6] },
+    { criterion: criteria.rationalBehavior, weight: buffettCriteriaWeights[7] },
+    { criterion: criteria.cyclicalBehavior, weight: buffettCriteriaWeights[8] },
+    { criterion: criteria.oneTimeEffects, weight: buffettCriteriaWeights[9] },
+    { criterion: criteria.turnaround, weight: buffettCriteriaWeights[10] }
+  ];
 
-  try {
-    buffettScore = calculateTotalBuffettScore(criteria);
-  } catch (error) {
-    scoreError = error instanceof Error ? error.message : 'Unbekannter Fehler bei der Score-Berechnung';
-    console.error('BuffettOverallAnalysis error:', scoreError);
+  let totalWeightedScore = 0;
+  let maxTotalWeightedScore = 0;
+
+  criteriaArray.forEach(({ criterion, weight }) => {
+    const score = getUnifiedCriterionScore(criterion);
+    const maxScore = getUnifiedCriterionMaxScore(criterion);
     
-    // Show error state
-    return (
-      <div className="mt-8 pt-8 border-t border-gray-200">
-        <h3 className="text-xl font-semibold mb-6">Buffett-Kompatibilität Gesamtbewertung</h3>
-        
-        <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-200">
-          <div className="flex items-center">
-            <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
-            <h3 className="text-lg font-semibold text-red-700">
-              Gesamtbewertung nicht möglich
-            </h3>
-          </div>
-          <div className="mt-2 text-sm text-red-600">
-            <p>Die Buffett-Kompatibilität konnte nicht berechnet werden:</p>
-            <div className="mt-2 text-xs bg-white bg-opacity-50 p-2 rounded">
-              {scoreError}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    const weightedContribution = score * (weight.weight / 100);
+    const maxWeightedContribution = maxScore * (weight.weight / 100);
+    
+    totalWeightedScore += weightedContribution;
+    maxTotalWeightedScore += maxWeightedContribution;
+  });
+
+  const buffettScore = Math.round((totalWeightedScore / maxTotalWeightedScore) * 100 * 10) / 10;
 
   console.log('BuffettOverallAnalysis unified score calculation:', {
+    totalWeightedScore,
+    maxTotalWeightedScore,
     buffettScore
   });
 
