@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   CheckCircle, 
@@ -670,11 +671,18 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
             {bestBuyPrice ? `${bestBuyPrice.toFixed(2)} ${currency}` : 'N/A'}
           </div>
           
-          <div className="text-sm text-gray-600 mb-3 flex-1">
-            {bestBuyPrice && currentPrice 
-              ? `${((currentPrice - bestBuyPrice) / bestBuyPrice * 100).toFixed(1)}% über ideal` 
-              : 'Berechnung nicht möglich'
-            }
+          <div className="text-sm text-gray-600 mb-1 flex-1">
+            {currentPrice !== null && currentPrice !== undefined && !isNaN(Number(currentPrice)) && (
+              <div className="space-y-1">
+                <div>Aktueller Preis: {currentPrice.toFixed(2)} {currency}</div>
+                {bestBuyPrice && (
+                  <div className={`${((currentPrice - bestBuyPrice) / bestBuyPrice * 100) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {((currentPrice - bestBuyPrice) / bestBuyPrice * 100).toFixed(1)}% über ideal
+                  </div>
+                )}
+              </div>
+            )}
+            {(!currentPrice || isNaN(Number(currentPrice))) && 'Berechnung nicht möglich'}
           </div>
           
           <div className="w-full bg-gray-200 rounded-full h-2 mt-auto">
