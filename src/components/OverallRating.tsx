@@ -38,6 +38,35 @@ interface OverallRatingProps {
   } | null;
 }
 
+// UPDATED: Clear quality thresholds for Buffett score
+const getQualityAssessment = (buffettScore?: number): { 
+  isQualityMet: boolean; 
+  qualityLabel: string;
+  qualityDescription: string;
+} => {
+  const score = buffettScore || 0;
+  
+  if (score >= 85) {
+    return {
+      isQualityMet: true,
+      qualityLabel: "✅ Qualität erfüllt",
+      qualityDescription: `Exzellente Qualität (${score}% ≥ 85%)`
+    };
+  } else if (score >= 70) {
+    return {
+      isQualityMet: false, // Buffett requires high standards
+      qualityLabel: "⚠️ Qualität teilweise erfüllt",
+      qualityDescription: `Gute Qualität, aber unter Buffett-Standard (${score}% < 85%)`
+    };
+  } else {
+    return {
+      isQualityMet: false,
+      qualityLabel: "❌ Qualität nicht erfüllt",
+      qualityDescription: `Unzureichende Qualität (${score}% < 70%)`
+    };
+  }
+};
+
 // Utility function to determine Buffett conformity based on both quality and price
 const determineBuffettConformity = (
   buffettScore?: number,
@@ -48,12 +77,14 @@ const determineBuffettConformity = (
   reasoning: string;
   qualityMet: boolean;
   priceMet: boolean;
+  qualityAssessment: ReturnType<typeof getQualityAssessment>;
 } => {
   const score = buffettScore || 0;
   const mos = marginOfSafetyValue || 0;
   
-  // Buffett's two pillars
-  const qualityMet = score >= 80; // High quality threshold
+  // UPDATED: Use new quality assessment logic
+  const qualityAssessment = getQualityAssessment(score);
+  const qualityMet = qualityAssessment.isQualityMet; // Now uses 85% threshold
   const priceMet = mos >= 0; // Positive margin of safety
   
   // True Buffett conformity requires BOTH pillars
@@ -65,7 +96,8 @@ const determineBuffettConformity = (
       rating: 'buy', 
       reasoning: 'Erfüllt beide Buffett-Säulen: Hohe Qualität UND attraktiver Preis',
       qualityMet,
-      priceMet
+      priceMet,
+      qualityAssessment
     };
   }
   
@@ -76,7 +108,8 @@ const determineBuffettConformity = (
       rating: 'watch', 
       reasoning: 'Hohe Qualität, aber überbewertet - warten auf besseren Preis',
       qualityMet,
-      priceMet
+      priceMet,
+      qualityAssessment
     };
   }
   
@@ -84,9 +117,10 @@ const determineBuffettConformity = (
     return { 
       isBuffettConform: false,
       rating: 'avoid', 
-      reasoning: 'Günstig, aber unzureichende Qualität - nicht Buffett-konform',
+      reasoning: qualityAssessment.qualityDescription + ' - günstig, aber nicht Buffett-konform',
       qualityMet,
-      priceMet
+      priceMet,
+      qualityAssessment
     };
   }
   
@@ -94,9 +128,10 @@ const determineBuffettConformity = (
   return { 
     isBuffettConform: false,
     rating: 'avoid', 
-    reasoning: 'Weder Qualitäts- noch Preisanforderungen erfüllt',
+    reasoning: qualityAssessment.qualityDescription + ' und überbewertet',
     qualityMet,
-    priceMet
+    priceMet,
+    qualityAssessment
   };
 };
 
@@ -199,9 +234,9 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     if (buffettAnalysis.qualityMet && !buffettAnalysis.priceMet) {
       recommendation = `Hohe Qualität (${buffettScore}%), aber überbewertet. "Price is what you pay, value is what you get." - Buffett würde bei diesem Preis nicht kaufen. Warten auf Sicherheitsmarge ≥ 0%.`;
     } else if (!buffettAnalysis.qualityMet && buffettAnalysis.priceMet) {
-      recommendation = `Günstiger Preis, aber unzureichende Qualität (${buffettScore}%). Buffett kauft keine Turnarounds oder Unternehmen ohne starken Moat. Qualität muss ≥ 80% erreichen.`;
+      recommendation = `Günstiger Preis, aber ${buffettAnalysis.qualityAssessment.qualityDescription}. Buffett kauft keine Unternehmen unter seinem Qualitätsstandard (≥ 85%).`;
     } else {
-      recommendation = `Weder Qualitäts- (${buffettScore}%) noch Preisanforderungen erfüllt. Beide Buffett-Säulen müssen für eine Investition gegeben sein.`;
+      recommendation = `${buffettAnalysis.qualityAssessment.qualityDescription} und überbewertet. Beide Buffett-Säulen müssen für eine Investition gegeben sein.`;
     }
   }
   
@@ -226,8 +261,8 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     : buffettAnalysis.qualityMet && !buffettAnalysis.priceMet
     ? 'Qualität vorhanden, aber Preis zu hoch'
     : !buffettAnalysis.qualityMet && buffettAnalysis.priceMet
-    ? 'Preis attraktiv, aber Qualität unzureichend'
-    : 'Beide Buffett-Säulen nicht erfüllt';
+    ? buffettAnalysis.qualityAssessment.qualityLabel + ', aber Preis attraktiv'
+    : buffettAnalysis.qualityAssessment.qualityLabel + ' und Preis zu hoch';
   
   return (
     <div className="buffett-card animate-fade-in">
@@ -259,7 +294,10 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
               {buffettAnalysis.qualityMet ? '✅' : '❌'} 1. Qualität (das Unternehmen)
             </div>
             <div className="text-xs text-gray-600">
-              Buffett-Score: {buffettScore}% {buffettAnalysis.qualityMet ? '(≥ 80% erfüllt)' : '(< 80%, nicht erfüllt)'}
+              {buffettAnalysis.qualityAssessment.qualityDescription}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Standard: ≥ 85% für "Qualität erfüllt"
             </div>
           </div>
           <div className={`p-3 rounded border-2 ${buffettAnalysis.priceMet ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>

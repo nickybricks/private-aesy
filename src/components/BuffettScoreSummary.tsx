@@ -16,6 +16,57 @@ interface BuffettScoreSummaryProps {
   maxRawScore?: number;
 }
 
+// NEW: Quality threshold visualization component
+const QualityThresholdScale: React.FC<{ score: number }> = ({ score }) => {
+  const getScalePosition = (value: number) => Math.min(Math.max(value, 0), 100);
+  const currentPosition = getScalePosition(score);
+  
+  return (
+    <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+      <h4 className="text-sm font-medium mb-2">Buffett-Qualitätsskala</h4>
+      <div className="relative">
+        {/* Scale background */}
+        <div className="h-3 bg-gray-200 rounded-full relative overflow-hidden">
+          {/* Color segments */}
+          <div className="absolute left-0 top-0 h-full w-[70%] bg-red-400"></div>
+          <div className="absolute left-[70%] top-0 h-full w-[15%] bg-yellow-400"></div>
+          <div className="absolute left-[85%] top-0 h-full w-[15%] bg-green-400"></div>
+        </div>
+        
+        {/* Current score indicator */}
+        <div 
+          className="absolute top-0 w-2 h-3 bg-gray-800 rounded-sm transform -translate-x-1"
+          style={{ left: `${currentPosition}%` }}
+        />
+        
+        {/* Scale labels */}
+        <div className="flex justify-between text-xs text-gray-600 mt-1">
+          <span>0%</span>
+          <span>50%</span>
+          <span className="text-yellow-600 font-medium">70%</span>
+          <span className="text-green-600 font-medium">85%</span>
+          <span>100%</span>
+        </div>
+        
+        {/* Threshold indicators */}
+        <div className="flex justify-between text-xs mt-1">
+          <span className="text-red-600">❌ Nicht erfüllt</span>
+          <span className="text-yellow-600">⚠️ Teilweise</span>
+          <span className="text-green-600">✅ Erfüllt</span>
+        </div>
+        
+        {/* Current score display */}
+        <div 
+          className="absolute -top-6 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded"
+          style={{ left: `${currentPosition}%` }}
+        >
+          {score}%
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ 
   score, 
   criteria, 
@@ -38,7 +89,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({
   ];
 
   const detailedBreakdown = criteriaArray.map(({ criterion, weight, name }) => {
-    // Use the unified scoring functions with correct 10-point scale
+    // Use the unified scoring function
     const score = getUnifiedCriterionScore(criterion);
     const maxScore = 10; // Always 10 for the new scoring system
     
@@ -123,16 +174,20 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({
                 </div>
                 
                 <div className="mt-2 pt-2 border-t border-gray-200">
-                  <p className="text-xs font-medium">Bewertungsskala (0-10 Punkte pro Kriterium):</p>
-                  <p className="text-xs">≥ 80%: Sehr hohe Übereinstimmung</p>
-                  <p className="text-xs">65-79%: Gute Übereinstimmung</p>
-                  <p className="text-xs">{"< 65%: Niedrige Übereinstimmung"}</p>
+                  <p className="text-xs font-medium">Qualitätsschwellen:</p>
+                  <p className="text-xs">≥ 85%: ✅ Qualität erfüllt</p>
+                  <p className="text-xs">70-84%: ⚠️ Teilweise erfüllt</p>
+                  <p className="text-xs">{"< 70%: ❌ Nicht erfüllt"}</p>
                 </div>
               </div>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
+      
+      {/* NEW: Quality threshold scale */}
+      <QualityThresholdScale score={displayScore} />
+      
       <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
         <div 
           className="h-2.5 rounded-full" 
