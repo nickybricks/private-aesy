@@ -1,4 +1,3 @@
-
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
@@ -309,12 +308,19 @@ export const useStockSearch = () => {
             console.log(`Calculated margin of safety: ${marginOfSafety}%`);
           }
           
-          enrichedCriteria = enrichCriteriaWithFinancialScores(
-            rawCriteria,
-            metricsData.metrics,
-            marginOfSafety
-          );
-          console.log('Enriched criteria with financial scores:', JSON.stringify(enrichedCriteria, null, 2));
+          // Type-safe enrichment - ensure we pass the correct types
+          try {
+            enrichedCriteria = enrichCriteriaWithFinancialScores(
+              rawCriteria,
+              metricsData.metrics,
+              marginOfSafety
+            );
+            console.log('Enriched criteria with financial scores:', JSON.stringify(enrichedCriteria, null, 2));
+          } catch (error) {
+            console.error('Error enriching criteria with financial scores:', error);
+            // If enrichment fails, use the raw criteria
+            enrichedCriteria = rawCriteria;
+          }
         }
         
         toast({
