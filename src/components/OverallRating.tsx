@@ -183,10 +183,12 @@ const RatingIcon: React.FC<{ isBuffettConform: boolean; rating: Rating }> = ({ i
 };
 
 // Buffett Score Tooltip Content
-const BuffettScoreTooltip: React.FC<{ 
+interface BuffettScoreTooltipProps {
   score: number;
   qualityAssessment: ReturnType<typeof getQualityAssessment>;
-}> = ({ score, qualityAssessment }) => {
+}
+
+const BuffettScoreTooltip: React.FC<BuffettScoreTooltipProps> = ({ score, qualityAssessment }) => {
   return (
     <div className="space-y-3 max-w-md">
       <h4 className="font-semibold">Buffett-Kompatibilität: {score}%</h4>
