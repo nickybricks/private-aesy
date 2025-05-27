@@ -38,37 +38,66 @@ interface OverallRatingProps {
   } | null;
 }
 
-// Utility function to determine the correct rating based on Buffett score and MoS
-const determineRating = (
+// Utility function to determine Buffett conformity based on both quality and price
+const determineBuffettConformity = (
   buffettScore?: number,
   marginOfSafetyValue?: number
-): { rating: Rating; reasoning: string } => {
-  // Default values if not provided
+): { 
+  isBuffettConform: boolean;
+  rating: Rating; 
+  reasoning: string;
+  qualityMet: boolean;
+  priceMet: boolean;
+} => {
   const score = buffettScore || 0;
   const mos = marginOfSafetyValue || 0;
   
-  // High quality (Buffett score ≥75%)
-  if (score >= 75) {
-    if (mos > 20) {
-      return { rating: 'buy', reasoning: 'Hohe Qualität und stark unterbewertet' };
-    } else if (mos >= 0) {
-      return { rating: 'watch', reasoning: 'Hohe Qualität, aber fair oder nur leicht unterbewertet' };
-    } else {
-      return { rating: 'avoid', reasoning: 'Hohe Qualität, aber aktuell zu teuer' };
-    }
+  // Buffett's two pillars
+  const qualityMet = score >= 80; // High quality threshold
+  const priceMet = mos >= 0; // Positive margin of safety
+  
+  // True Buffett conformity requires BOTH pillars
+  const isBuffettConform = qualityMet && priceMet;
+  
+  if (isBuffettConform) {
+    return { 
+      isBuffettConform: true,
+      rating: 'buy', 
+      reasoning: 'Erfüllt beide Buffett-Säulen: Hohe Qualität UND attraktiver Preis',
+      qualityMet,
+      priceMet
+    };
   }
-  // Medium quality (Buffett score 60-74%)
-  else if (score >= 60) {
-    if (mos > 10) {
-      return { rating: 'watch', reasoning: 'Mittlere Qualität, nur mit Vorsicht kaufen' };
-    } else {
-      return { rating: 'avoid', reasoning: 'Mittlere Qualität, nicht ausreichend unterbewertet' };
-    }
+  
+  // Only one pillar fulfilled
+  if (qualityMet && !priceMet) {
+    return { 
+      isBuffettConform: false,
+      rating: 'watch', 
+      reasoning: 'Hohe Qualität, aber überbewertet - warten auf besseren Preis',
+      qualityMet,
+      priceMet
+    };
   }
-  // Low quality (Buffett score <60%)
-  else {
-    return { rating: 'avoid', reasoning: 'Schwache Übereinstimmung mit Buffetts Kriterien' };
+  
+  if (!qualityMet && priceMet) {
+    return { 
+      isBuffettConform: false,
+      rating: 'avoid', 
+      reasoning: 'Günstig, aber unzureichende Qualität - nicht Buffett-konform',
+      qualityMet,
+      priceMet
+    };
   }
+  
+  // Neither pillar fulfilled
+  return { 
+    isBuffettConform: false,
+    rating: 'avoid', 
+    reasoning: 'Weder Qualitäts- noch Preisanforderungen erfüllt',
+    qualityMet,
+    priceMet
+  };
 };
 
 // Function to interpret MoS status properly based on Buffett's standard
@@ -79,7 +108,11 @@ const interpretMarginOfSafety = (value: number): 'pass' | 'warning' | 'fail' => 
   return 'fail'; // Overvalued
 };
 
-const RatingIcon: React.FC<{ rating: Rating }> = ({ rating }) => {
+const RatingIcon: React.FC<{ isBuffettConform: boolean; rating: Rating }> = ({ isBuffettConform, rating }) => {
+  if (isBuffettConform) {
+    return <CheckCircle size={40} className="text-buffett-green" />;
+  }
+  
   switch (rating) {
     case 'buy':
       return <CheckCircle size={40} className="text-buffett-green" />;
@@ -128,7 +161,6 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   }
   
   // Calculate margin of safety if it's not provided but we have the necessary values
-  // Using Buffett's formula: MoS = (Intrinsic Value - Market Price) / Market Price
   if (!marginOfSafety && intrinsicValue !== null && intrinsicValue !== undefined && 
       currentPrice !== null && currentPrice !== undefined) {
     const mosValue = ((intrinsicValue - currentPrice) / currentPrice) * 100;
@@ -136,15 +168,14 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       value: mosValue,
       status: interpretMarginOfSafety(mosValue)
     };
-    console.log(`Calculated marginOfSafety: ${mosValue.toFixed(2)}% from intrinsicValue: ${intrinsicValue} and currentPrice: ${currentPrice} (using Market Price as denominator)`);
+    console.log(`Calculated marginOfSafety: ${mosValue.toFixed(2)}% from intrinsicValue: ${intrinsicValue} and currentPrice: ${currentPrice}`);
   } else if (marginOfSafety && marginOfSafety.value === 0 && 
             intrinsicValue !== null && intrinsicValue !== undefined && 
             currentPrice !== null && currentPrice !== undefined) {
-    // Recalculate if it's 0 but we have the values to calculate it properly
     const mosValue = ((intrinsicValue - currentPrice) / currentPrice) * 100;
     marginOfSafety.value = mosValue;
     marginOfSafety.status = interpretMarginOfSafety(mosValue);
-    console.log(`Updated marginOfSafety from 0 to: ${mosValue.toFixed(2)}% using intrinsicValue: ${intrinsicValue} and currentPrice: ${currentPrice} (using Market Price as denominator)`);
+    console.log(`Updated marginOfSafety from 0 to: ${mosValue.toFixed(2)}%`);
   }
   
   // Override the marginOfSafety status based on the actual value if marginOfSafety exists
@@ -152,71 +183,51 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     marginOfSafety.status = interpretMarginOfSafety(marginOfSafety.value);
   }
   
-  // Re-determine the overall rating based on buffettScore and marginOfSafety
-  if (buffettScore !== undefined && marginOfSafety !== undefined) {
-    const newRatingData = determineRating(buffettScore, marginOfSafety.value);
-    overall = newRatingData.rating;
+  // Determine true Buffett conformity based on both pillars
+  const buffettAnalysis = determineBuffettConformity(buffettScore, marginOfSafety?.value);
+  
+  // Update overall rating based on Buffett analysis
+  overall = buffettAnalysis.rating;
+  
+  // Update summary and recommendation based on Buffett conformity
+  if (buffettAnalysis.isBuffettConform) {
+    summary = "✅ Buffett-konform - beide Säulen erfüllt";
+    recommendation = `Diese Investition erfüllt beide Buffett-Säulen: Hohe Qualität (${buffettScore}%) und attraktiver Preis (Sicherheitsmarge: ${marginOfSafety?.value.toFixed(1)}%). "It's far better to buy a wonderful company at a fair price than a fair company at a wonderful price." - Warren Buffett`;
+  } else {
+    summary = buffettAnalysis.reasoning;
     
-    // Update summary based on the new rating logic
-    summary = newRatingData.reasoning;
-    
-    // Update recommendation based on new rating
-    if (overall === 'buy') {
-      recommendation = `Basierend auf der hohen Buffett-Kompatibilität (${buffettScore}%) und der attraktiven Unterbewertung (MoS: ${marginOfSafety.value.toFixed(1)}%) wird ein Kauf empfohlen. Der aktuelle Preis bietet eine ausreichende Sicherheitsmarge zum inneren Wert.`;
-    } else if (overall === 'watch') {
-      recommendation = `Die Aktie zeigt ${buffettScore >= 75 ? 'sehr gute' : 'solide'} Fundamentaldaten (${buffettScore}%), aber ${marginOfSafety.value >= 0 ? 'bietet nicht genug Sicherheitsmarge' : 'ist zu teuer'}. Es wird empfohlen, die Aktie auf die Beobachtungsliste zu setzen und bei einem günstigeren Kurs erneut zu prüfen.`;
+    if (buffettAnalysis.qualityMet && !buffettAnalysis.priceMet) {
+      recommendation = `Hohe Qualität (${buffettScore}%), aber überbewertet. "Price is what you pay, value is what you get." - Buffett würde bei diesem Preis nicht kaufen. Warten auf Sicherheitsmarge ≥ 0%.`;
+    } else if (!buffettAnalysis.qualityMet && buffettAnalysis.priceMet) {
+      recommendation = `Günstiger Preis, aber unzureichende Qualität (${buffettScore}%). Buffett kauft keine Turnarounds oder Unternehmen ohne starken Moat. Qualität muss ≥ 80% erreichen.`;
     } else {
-      if (buffettScore < 60) {
-        recommendation = `Die Aktie erfüllt zu wenige von Buffetts Qualitätskriterien (${buffettScore}%). Unabhängig vom Preis sollte nach Alternativen mit besseren Fundamentaldaten gesucht werden.`;
-      } else {
-        recommendation = `Trotz ${buffettScore >= 75 ? 'sehr guter' : 'solider'} Fundamentaldaten (${buffettScore}%) ist die Aktie mit einer negativen Sicherheitsmarge von ${Math.abs(marginOfSafety.value).toFixed(1)}% zu teuer. Ein Kauf ist erst bei deutlich niedrigeren Kursen zu empfehlen.`;
-      }
+      recommendation = `Weder Qualitäts- (${buffettScore}%) noch Preisanforderungen erfüllt. Beide Buffett-Säulen müssen für eine Investition gegeben sein.`;
     }
   }
   
-  // Verwende neutralere Formulierungen für die Bewertungen
-  const ratingTitle = {
-    buy: 'Hohe Übereinstimmung',
-    watch: 'Mittlere Übereinstimmung',
-    avoid: 'Niedrige Übereinstimmung'
-  }[overall];
+  const ratingTitle = buffettAnalysis.isBuffettConform 
+    ? "✅ Buffett-konform" 
+    : {
+        buy: 'Hohe Übereinstimmung',
+        watch: 'Mittlere Übereinstimmung', 
+        avoid: 'Niedrige Übereinstimmung'
+      }[overall];
   
-  const ratingColor = {
-    buy: 'bg-buffett-green bg-opacity-10 border-buffett-green',
-    watch: 'bg-buffett-yellow bg-opacity-10 border-buffett-yellow',
-    avoid: 'bg-buffett-red bg-opacity-10 border-buffett-red'
-  }[overall];
+  const ratingColor = buffettAnalysis.isBuffettConform
+    ? 'bg-green-50 border-green-300'
+    : {
+        buy: 'bg-buffett-green bg-opacity-10 border-buffett-green',
+        watch: 'bg-buffett-yellow bg-opacity-10 border-buffett-yellow',
+        avoid: 'bg-buffett-red bg-opacity-10 border-buffett-red'
+      }[overall];
 
-  const decisionFactor = overall === 'avoid' && marginOfSafety && marginOfSafety.value < 0 
-    ? 'Preis ist zu hoch für ein Investment' 
-    : overall === 'avoid' && buffettScore && buffettScore < 60
-    ? 'Zu wenige Buffett-Kriterien erfüllt'
-    : overall === 'watch'
-    ? 'Fundamentalwerte gut, aber nicht optimal bewertet'
-    : 'Preis und Qualität im Einklang';
-  
-  // Funktion, die die Rating-Logik erklärt
-  const explainRatingLogic = () => {
-    if (buffettScore === undefined || marginOfSafety === undefined) {
-      return null;
-    }
-
-    if (buffettScore >= 75 && marginOfSafety.value > 20 && overall === 'buy') {
-      return "Hohe Qualität (≥75%) + starke Unterbewertung (>20%) = Hohe Übereinstimmung";
-    } else if (buffettScore >= 75 && marginOfSafety.value >= 0 && overall === 'watch') {
-      return "Hohe Qualität (≥75%) + faire/leichte Bewertung = Mittlere Übereinstimmung";
-    } else if (buffettScore >= 75 && marginOfSafety.value < 0 && overall === 'avoid') {
-      return "Hohe Qualität (≥75%), aber überbewertet (<0%) = Niedrige Übereinstimmung";
-    } else if (buffettScore >= 60 && buffettScore < 75 && marginOfSafety.value > 10 && overall === 'watch') {
-      return "Mittlere Qualität (60-74%) + Unterbewertung (>10%) = Mittlere Übereinstimmung";
-    } else if (buffettScore < 60 && overall === 'avoid') {
-      return "Schwache Qualität (<60%) = Niedrige Übereinstimmung (unabhängig vom Preis)";
-    }
-    
-    return "Bewertung basierend auf Buffett-Score und Margin of Safety";
-  };
-  
-  const ratingLogic = explainRatingLogic();
+  const decisionFactor = buffettAnalysis.isBuffettConform
+    ? 'Beide Buffett-Säulen erfüllt: Qualität + Preis'
+    : buffettAnalysis.qualityMet && !buffettAnalysis.priceMet
+    ? 'Qualität vorhanden, aber Preis zu hoch'
+    : !buffettAnalysis.qualityMet && buffettAnalysis.priceMet
+    ? 'Preis attraktiv, aber Qualität unzureichend'
+    : 'Beide Buffett-Säulen nicht erfüllt';
   
   return (
     <div className="buffett-card animate-fade-in">
@@ -236,19 +247,41 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         <RatingExplanation rating={overall} />
       </h2>
       
+      {/* Buffett Two Pillars Explanation */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <h3 className="font-semibold mb-2">🏛️ Warren Buffetts Zwei-Säulen-Prinzip</h3>
+        <p className="text-sm text-gray-700 mb-3">
+          Eine Investitionsentscheidung im Sinne von Warren Buffett braucht immer beide Säulen:
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className={`p-3 rounded border-2 ${buffettAnalysis.qualityMet ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
+            <div className="font-medium mb-1">
+              {buffettAnalysis.qualityMet ? '✅' : '❌'} 1. Qualität (das Unternehmen)
+            </div>
+            <div className="text-xs text-gray-600">
+              Buffett-Score: {buffettScore}% {buffettAnalysis.qualityMet ? '(≥ 80% erfüllt)' : '(< 80%, nicht erfüllt)'}
+            </div>
+          </div>
+          <div className={`p-3 rounded border-2 ${buffettAnalysis.priceMet ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
+            <div className="font-medium mb-1">
+              {buffettAnalysis.priceMet ? '✅' : '❌'} 2. Preis (die Bewertung)
+            </div>
+            <div className="text-xs text-gray-600">
+              Sicherheitsmarge: {marginOfSafety?.value.toFixed(1)}% {buffettAnalysis.priceMet ? '(≥ 0% erfüllt)' : '(< 0%, nicht erfüllt)'}
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 text-xs text-gray-600 italic">
+          "It's far better to buy a wonderful company at a fair price than a fair company at a wonderful price." - Warren Buffett
+        </div>
+      </div>
+      
       <div className={`rounded-xl p-6 border ${ratingColor} mb-6`}>
         <div className="flex items-center gap-4">
-          <RatingIcon rating={overall} />
+          <RatingIcon rating={overall} isBuffettConform={buffettAnalysis.isBuffettConform} />
           <div className="flex-1">
             <h3 className="text-xl font-bold">{ratingTitle}</h3>
             <p className="text-buffett-subtext">{summary}</p>
-            
-            {ratingLogic && (
-              <div className="mt-2 text-sm p-2 bg-white bg-opacity-50 rounded-md">
-                <p className="font-medium">Bewertungslogik:</p>
-                <p>{ratingLogic}</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
