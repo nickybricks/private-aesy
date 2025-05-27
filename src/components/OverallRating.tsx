@@ -4,9 +4,12 @@ import {
   CheckCircle, 
   AlertTriangle, 
   XCircle,
-  BarChart3
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 import RatingExplanation from './RatingExplanation';
 import BuffettValuationMetrics from './BuffettValuationMetrics';
 
@@ -180,6 +183,40 @@ const RatingIcon: React.FC<{ isBuffettConform: boolean; rating: Rating }> = ({ i
   }
 };
 
+// Buffett Score Tooltip Content
+const BuffettScoreTooltip: React.FC<{ 
+  score: number;
+  qualityAssessment: ReturnType<typeof getQualityAssessment>;
+}> = ({ score, qualityAssessment }) => {
+  return (
+    <div className="space-y-3 max-w-md">
+      <h4 className="font-semibold">Buffett-Kompatibilität: {score}%</h4>
+      <p>Die Bewertung basiert auf 11 Kriterien nach Warren Buffetts Investmentphilosophie.</p>
+      
+      <div className="space-y-2 text-sm">
+        <div className="font-medium">Qualitätsschwellen:</div>
+        <div className="flex items-center gap-2">
+          <span className="text-green-600">✅ ≥ 85%:</span>
+          <span>Qualität erfüllt</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-yellow-600">⚠️ 70-84%:</span>
+          <span>Teilweise erfüllt</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-red-600">❌ < 70%:</span>
+          <span>Nicht erfüllt</span>
+        </div>
+      </div>
+      
+      <div className="pt-2 border-t border-gray-200">
+        <p className="text-sm font-medium">Aktuelle Bewertung:</p>
+        <p className="text-sm">{qualityAssessment.qualityDescription}</p>
+      </div>
+    </div>
+  );
+};
+
 const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   if (!rating) return null;
   
@@ -244,8 +281,117 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         <RatingExplanation rating={buffettAnalysis.rating} />
       </h2>
       
-      {/* Main Two-Pillars Section - Clean and Central */}
-      <div className="mb-8 p-6 bg-blue-50 border-2 border-blue-200 rounded-xl">
+      {/* Three Metrics Section */}
+      <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Buffett Score */}
+        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp size={18} className="text-blue-600" />
+            <h4 className="font-semibold">Kriterienbewertung</h4>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <Info size={14} className="text-gray-500" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <BuffettScoreTooltip 
+                    score={buffettScore || 0} 
+                    qualityAssessment={buffettAnalysis.qualityAssessment}
+                  />
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          
+          <div className="text-2xl font-bold mb-2"
+               style={{
+                 color: (buffettScore || 0) >= 85 ? '#10b981' :
+                        (buffettScore || 0) >= 70 ? '#f59e0b' : '#ef4444'
+               }}>
+            {(buffettScore || 0).toFixed(1)}%
+          </div>
+          
+          <div className="text-sm text-gray-600 mb-3">
+            {buffettAnalysis.qualityAssessment.qualityDescription}
+          </div>
+          
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="h-2 rounded-full" 
+              style={{
+                width: `${Math.min(buffettScore || 0, 100)}%`,
+                backgroundColor: (buffettScore || 0) >= 85 ? '#10b981' :
+                                (buffettScore || 0) >= 70 ? '#f59e0b' : '#ef4444'
+              }}
+            />
+          </div>
+        </div>
+        
+        {/* Margin of Safety and Best Buy Price using existing component */}
+        <BuffettValuationMetrics
+          marginOfSafety={marginOfSafety}
+          bestBuyPrice={bestBuyPrice}
+          currentPrice={currentPrice}
+          currency={currency}
+          intrinsicValue={intrinsicValue}
+          targetMarginOfSafety={targetMarginOfSafety}
+          originalCurrency={originalCurrency}
+          originalPrice={originalPrice}
+          originalIntrinsicValue={originalIntrinsicValue}
+          originalBestBuyPrice={originalBestBuyPrice}
+        />
+      </div>
+      
+      {/* Detailed Analysis - Cleaner Layout */}
+      <div className="mb-8 bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+        <h3 className="font-semibold mb-4 text-lg">Detailanalyse</h3>
+        
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div>
+            <h4 className="font-semibold text-green-600 mb-3 flex items-center gap-2">
+              <CheckCircle size={16} className="text-green-600" />
+              Stärken
+            </h4>
+            <ul className="space-y-2">
+              {strengths.map((strength, index) => (
+                <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                  <span className="text-green-500 mt-1">•</span>
+                  {strength}
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-red-600 mb-3 flex items-center gap-2">
+              <XCircle size={16} className="text-red-600" />
+              Schwächen
+            </h4>
+            <ul className="space-y-2">
+              {weaknesses.map((weakness, index) => (
+                <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                  <span className="text-red-500 mt-1">•</span>
+                  {weakness}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <div className="flex items-center gap-2 text-sm">
+            <BarChart3 size={16} className="text-blue-600" />
+            <span className="font-medium">Fazit:</span>
+            <span className="text-gray-700">{buffettAnalysis.reasoning}</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Main Two-Pillars Section - Clean and Central - Moved to End */}
+      <div className="p-6 bg-blue-50 border-2 border-blue-200 rounded-xl">
         <div className="flex items-start gap-4 mb-4">
           <RatingIcon rating={buffettAnalysis.rating} isBuffettConform={buffettAnalysis.isBuffettConform} />
           <div className="flex-1">
@@ -287,65 +433,6 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           <p className="text-xs text-gray-600 italic text-center">
             "It's far better to buy a wonderful company at a fair price than a fair company at a wonderful price." - Warren Buffett
           </p>
-        </div>
-      </div>
-      
-      {/* Valuation Metrics */}
-      <BuffettValuationMetrics
-        marginOfSafety={marginOfSafety}
-        bestBuyPrice={bestBuyPrice}
-        currentPrice={currentPrice}
-        currency={currency}
-        intrinsicValue={intrinsicValue}
-        targetMarginOfSafety={targetMarginOfSafety}
-        originalCurrency={originalCurrency}
-        originalPrice={originalPrice}
-        originalIntrinsicValue={originalIntrinsicValue}
-        originalBestBuyPrice={originalBestBuyPrice}
-      />
-      
-      {/* Detailed Analysis - Cleaner Layout */}
-      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-        <h3 className="font-semibold mb-4 text-lg">Detailanalyse</h3>
-        
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <h4 className="font-semibold text-green-600 mb-3 flex items-center gap-2">
-              <CheckCircle size={16} className="text-green-600" />
-              Stärken
-            </h4>
-            <ul className="space-y-2">
-              {strengths.map((strength, index) => (
-                <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                  <span className="text-green-500 mt-1">•</span>
-                  {strength}
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold text-red-600 mb-3 flex items-center gap-2">
-              <XCircle size={16} className="text-red-600" />
-              Schwächen
-            </h4>
-            <ul className="space-y-2">
-              {weaknesses.map((weakness, index) => (
-                <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                  <span className="text-red-500 mt-1">•</span>
-                  {weakness}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <div className="flex items-center gap-2 text-sm">
-            <BarChart3 size={16} className="text-blue-600" />
-            <span className="font-medium">Fazit:</span>
-            <span className="text-gray-700">{buffettAnalysis.reasoning}</span>
-          </div>
         </div>
       </div>
     </div>
