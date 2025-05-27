@@ -157,12 +157,12 @@ export const extractPartialFulfillment = (analysisLower: string): number | undef
   return undefined;
 };
 
-// SIMPLIFIED: Convert GPT assessment directly to 0-10 score 
+// Convert GPT assessment directly to 0-10 score - NO FALLBACKS
 export const deriveScoreFromGptAnalysis = (
   criterion: BuffettCriterionProps
-): number | undefined => {
+): number => {
   if (!criterion.gptAnalysis) {
-    return undefined;
+    throw new Error(`Keine GPT-Analyse verfügbar für Kriterium: ${criterion.title}`);
   }
   
   const analysis = criterion.gptAnalysis.toLowerCase();
@@ -171,8 +171,7 @@ export const deriveScoreFromGptAnalysis = (
   const assessment = extractGptAssessmentStatus(criterion.gptAnalysis);
   
   if (!assessment) {
-    console.log('No assessment found in GPT analysis for:', criterion.title);
-    return undefined;
+    throw new Error(`GPT-Bewertung konnte nicht extrahiert werden für Kriterium: ${criterion.title}. GPT-Analyse: ${criterion.gptAnalysis.substring(0, 100)}...`);
   }
   
   console.log(`GPT Assessment for ${criterion.title}: ${assessment.status}`);
@@ -201,13 +200,10 @@ export const deriveScoreFromGptAnalysis = (
       }
     }
     
-    // Default warning score if no specific fulfillment mentioned
-    console.log('Warning status without specific fulfillment: 5/10 points');
-    return 5;
+    throw new Error(`Warning-Bewertung ohne erkennbare Teilerfüllung für Kriterium: ${criterion.title}. Erwartetes Format: "Von X Teilaspekten wurden Y erfüllt."`);
   }
   
-  console.log('Could not derive score from GPT analysis');
-  return undefined;
+  throw new Error(`Unbekannter Bewertungsstatus für Kriterium: ${criterion.title}: ${assessment.status}`);
 };
 
 // Calculate score for criteria 3, 4, and 6 based on financial metrics (not GPT)
@@ -215,6 +211,10 @@ export const calculateFinancialMetricScore = (
   criterionNumber: number,
   financialData: any
 ): number => {
+  if (!financialData) {
+    throw new Error(`Keine Finanzdaten verfügbar für Kriterium ${criterionNumber}`);
+  }
+  
   switch (criterionNumber) {
     case 3: // Finanzkennzahlen
       // Buffett Richtwerte für Kriterium 3:
@@ -223,10 +223,9 @@ export const calculateFinancialMetricScore = (
       // - Gewinnmarge: ≥ 15% = gut, 10-15% = ok, < 10% = schlecht
       // - EPS Wachstum: ≥ 10% = gut, 5-10% = ok, < 5% = schlecht
       
-      if (!financialData) return 0;
-      
       let score = 0;
       let criteriaCount = 0;
+      let missingMetrics = [];
       
       // ROE Check
       if (financialData.roe !== undefined) {
@@ -234,6 +233,8 @@ export const calculateFinancialMetricScore = (
         if (financialData.roe >= 15) score += 2.5;
         else if (financialData.roe >= 10) score += 1.5;
         else score += 0;
+      } else {
+        missingMetrics.push('ROE');
       }
       
       // ROA Check  
@@ -242,6 +243,8 @@ export const calculateFinancialMetricScore = (
         if (financialData.roa >= 10) score += 2.5;
         else if (financialData.roa >= 5) score += 1.5;
         else score += 0;
+      } else {
+        missingMetrics.push('ROA');
       }
       
       // Profit Margin Check
@@ -250,6 +253,8 @@ export const calculateFinancialMetricScore = (
         if (financialData.profitMargin >= 15) score += 2.5;
         else if (financialData.profitMargin >= 10) score += 1.5;
         else score += 0;
+      } else {
+        missingMetrics.push('Profit Margin');
       }
       
       // EPS Growth Check (durchschnittliches Wachstum)
@@ -258,9 +263,15 @@ export const calculateFinancialMetricScore = (
         if (financialData.epsGrowth >= 10) score += 2.5;
         else if (financialData.epsGrowth >= 5) score += 1.5;
         else score += 0;
+      } else {
+        missingMetrics.push('EPS Growth');
       }
       
-      return criteriaCount > 0 ? Math.round((score / criteriaCount) * 4) / 4 : 0;
+      if (criteriaCount === 0) {
+        throw new Error(`Alle erforderlichen Finanzkennzahlen fehlen für Kriterium 3: ${missingMetrics.join(', ')}`);
+      }
+      
+      return Math.round((score / criteriaCount) * 4) / 4;
       
     case 4: // Finanzielle Stabilität
       // Buffett Richtwerte für Kriterium 4:
@@ -268,10 +279,9 @@ export const calculateFinancialMetricScore = (
       // - Current Ratio: > 1.5 = gut, 1-1.5 = ok, < 1 = schlecht
       // - Quick Ratio: > 1 = gut, 0.8-1 = ok, < 0.8 = schlecht
       
-      if (!financialData) return 0;
-      
       let stabilityScore = 0;
       let stabilityCriteriaCount = 0;
+      let missingStabilityMetrics = [];
       
       // Debt to EBITDA Check
       if (financialData.debtToEbitda !== undefined) {
@@ -279,6 +289,8 @@ export const calculateFinancialMetricScore = (
         if (financialData.debtToEbitda < 2) stabilityScore += 3.33;
         else if (financialData.debtToEbitda <= 3) stabilityScore += 1.67;
         else stabilityScore += 0;
+      } else {
+        missingStabilityMetrics.push('Debt to EBITDA');
       }
       
       // Current Ratio Check
@@ -287,6 +299,8 @@ export const calculateFinancialMetricScore = (
         if (financialData.currentRatio > 1.5) stabilityScore += 3.33;
         else if (financialData.currentRatio >= 1) stabilityScore += 1.67;
         else stabilityScore += 0;
+      } else {
+        missingStabilityMetrics.push('Current Ratio');
       }
       
       // Quick Ratio Check
@@ -295,13 +309,20 @@ export const calculateFinancialMetricScore = (
         if (financialData.quickRatio > 1) stabilityScore += 3.33;
         else if (financialData.quickRatio >= 0.8) stabilityScore += 1.67;
         else stabilityScore += 0;
+      } else {
+        missingStabilityMetrics.push('Quick Ratio');
       }
       
-      return stabilityCriteriaCount > 0 ? Math.round(stabilityScore / stabilityCriteriaCount * 10) / 10 : 0;
+      if (stabilityCriteriaCount === 0) {
+        throw new Error(`Alle erforderlichen Stabilitätskennzahlen fehlen für Kriterium 4: ${missingStabilityMetrics.join(', ')}`);
+      }
+      
+      return Math.round(stabilityScore / stabilityCriteriaCount * 10) / 10;
       
     case 6: // Bewertung
-      // Bereits implementiert in DCF/Valuation logic
-      if (!financialData?.marginOfSafety) return 0;
+      if (!financialData?.marginOfSafety) {
+        throw new Error('Margin of Safety Daten fehlen für Kriterium 6');
+      }
       
       const mos = financialData.marginOfSafety;
       if (mos >= 30) return 10;
@@ -311,11 +332,11 @@ export const calculateFinancialMetricScore = (
       return 0;
       
     default:
-      return 0;
+      throw new Error(`Unbekanntes Finanzkriterium: ${criterionNumber}`);
   }
 };
 
-// UNIFIED FUNCTION: Get the displayed score for any criterion - used everywhere
+// UNIFIED FUNCTION: Get the displayed score for any criterion - NO FALLBACKS
 export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): number => {
   console.log('getUnifiedCriterionScore called for:', criterion.title);
   
@@ -329,6 +350,8 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
       console.log(`Using financial score for criterion ${criterionNum}:`, criterion.financialScore);
       return criterion.financialScore;
     }
+    
+    throw new Error(`Financial Score fehlt für Finanzkriterium ${criterionNum}: ${criterion.title}`);
   }
   
   // For all other criteria, use explicit score first
@@ -337,18 +360,10 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
     return criterion.score;
   }
   
-  // Then derive from GPT analysis (simplified logic)
+  // Then derive from GPT analysis (NO FALLBACK)
   const derivedScore = deriveScoreFromGptAnalysis(criterion);
-  if (derivedScore !== undefined) {
-    console.log('Using derived score from GPT analysis:', derivedScore);
-    return derivedScore;
-  }
-  
-  // FALLBACK: 0 only if absolutely no data available
-  console.error('WARNING: Could not determine score for criterion:', criterion.title);
-  console.error('GPT Analysis available:', !!criterion.gptAnalysis);
-  
-  return 0;
+  console.log('Using derived score from GPT analysis:', derivedScore);
+  return derivedScore;
 };
 
 // UNIFIED FUNCTION: Get the max score for any criterion - used everywhere
@@ -396,7 +411,7 @@ export const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   return { summary, points, partialFulfillment };
 };
 
-// Calculate total weighted Buffett score using unified scoring system
+// Calculate total weighted Buffett score using unified scoring system - NO FALLBACKS
 export const calculateTotalBuffettScore = (criteria: BuffettCriteriaProps): number => {
   console.log('calculateTotalBuffettScore called');
 
@@ -416,20 +431,29 @@ export const calculateTotalBuffettScore = (criteria: BuffettCriteriaProps): numb
 
   let totalWeightedScore = 0;
   let totalMaxWeightedScore = 0;
+  let errors = [];
 
   criteriaArray.forEach(({ criterion, weight }) => {
-    // Use the unified scoring function
-    const score = getUnifiedCriterionScore(criterion);
-    
-    // Calculate weighted contribution: score * weight percentage
-    const weightedScore = score * (weight.weight / 100);
-    const maxWeightedScore = 10 * (weight.weight / 100);
-    
-    console.log(`${criterion.title}: score=${score}, weight=${weight.weight}%, weighted=${weightedScore.toFixed(2)}`);
-    
-    totalWeightedScore += weightedScore;
-    totalMaxWeightedScore += maxWeightedScore;
+    try {
+      // Use the unified scoring function - will throw error if no score available
+      const score = getUnifiedCriterionScore(criterion);
+      
+      // Calculate weighted contribution: score * weight percentage
+      const weightedScore = score * (weight.weight / 100);
+      const maxWeightedScore = 10 * (weight.weight / 100);
+      
+      console.log(`${criterion.title}: score=${score}, weight=${weight.weight}%, weighted=${weightedScore.toFixed(2)}`);
+      
+      totalWeightedScore += weightedScore;
+      totalMaxWeightedScore += maxWeightedScore;
+    } catch (error) {
+      errors.push(`Fehler bei ${criterion.title}: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`);
+    }
   });
+
+  if (errors.length > 0) {
+    throw new Error(`Berechnung des Buffett-Scores fehlgeschlagen:\n${errors.join('\n')}`);
+  }
 
   // Convert to percentage: (totalWeightedScore / totalMaxWeightedScore) * 100
   const finalScore = Math.round((totalWeightedScore / totalMaxWeightedScore) * 100 * 10) / 10;
@@ -465,18 +489,18 @@ export const getBuffettScoreInterpretation = (score: number): {
   }
 };
 
-// Helper function to calculate weighted score for individual criterion
+// Helper function to calculate weighted score for individual criterion - NO FALLBACKS
 export const calculateWeightedScore = (
   criterion: BuffettCriterionProps,
   criterionId: string
 ): { weightedScore: number, weightPercentage: number } => {
-  // Use the unified scoring function
+  // Use the unified scoring function - will throw error if no score available
   const score = getUnifiedCriterionScore(criterion);
   
   const criteriaWeight = buffettCriteriaWeights.find(c => c.id === criterionId);
   
   if (!criteriaWeight) {
-    return { weightedScore: 0, weightPercentage: 0 };
+    throw new Error(`Gewichtung nicht gefunden für Kriterium: ${criterionId}`);
   }
   
   // Calculate weighted contribution
