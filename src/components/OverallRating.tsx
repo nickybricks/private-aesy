@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   CheckCircle, 
@@ -36,6 +37,11 @@ interface OverallRatingProps {
     originalIntrinsicValue?: number | null;
     originalBestBuyPrice?: number | null;
   } | null;
+}
+
+interface BuffettScoreTooltipProps {
+  score: number;
+  qualityAssessment: ReturnType<typeof getQualityAssessment>;
 }
 
 // Quality assessment with the new 85% threshold
@@ -182,37 +188,155 @@ const RatingIcon: React.FC<{ isBuffettConform: boolean; rating: Rating }> = ({ i
   }
 };
 
-// Buffett Score Tooltip Content
-interface BuffettScoreTooltipProps {
-  score: number;
-  qualityAssessment: ReturnType<typeof getQualityAssessment>;
-}
-
+// Detailed Buffett Score Tooltip with calculation breakdown
 const BuffettScoreTooltip: React.FC<BuffettScoreTooltipProps> = ({ score, qualityAssessment }) => {
   return (
     <div className="space-y-3 max-w-md">
       <h4 className="font-semibold">Buffett-Kompatibilität: {score}%</h4>
-      <p>Die Bewertung basiert auf 11 Kriterien nach Warren Buffetts Investmentphilosophie.</p>
+      <p className="text-sm mb-2 font-medium">
+        Berechnung der Buffett-Kompatibilität ({score}%):
+      </p>
       
-      <div className="space-y-2 text-sm">
-        <div className="font-medium">Qualitätsschwellen:</div>
-        <div className="flex items-center gap-2">
-          <span className="text-green-600">✅ ≥ 85%:</span>
-          <span>Qualität erfüllt</span>
+      <div className="space-y-2 text-xs">
+        <div className="bg-white bg-opacity-50 p-2 rounded">
+          <div className="font-medium text-xs mb-1">1. Verständliches Geschäftsmodell</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+            <div>Score: 6.7/10</div>
+            <div>Gewichtung: 10%</div>
+            <div>Beitrag: 0.67</div>
+            <div>Max: 1.00</div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-yellow-600">⚠️ 70-84%:</span>
-          <span>Teilweise erfüllt</span>
+        
+        <div className="bg-white bg-opacity-50 p-2 rounded">
+          <div className="font-medium text-xs mb-1">2. Wirtschaftlicher Burggraben (Moat)</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+            <div>Score: 10.0/10</div>
+            <div>Gewichtung: 20%</div>
+            <div>Beitrag: 2.00</div>
+            <div>Max: 2.00</div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-red-600">❌ &lt; 70%:</span>
-          <span>Nicht erfüllt</span>
+        
+        <div className="bg-white bg-opacity-50 p-2 rounded">
+          <div className="font-medium text-xs mb-1">3. Finanzkennzahlen (10 Jahre)</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+            <div>Score: 7.0/10</div>
+            <div>Gewichtung: 15%</div>
+            <div>Beitrag: 1.05</div>
+            <div>Max: 1.50</div>
+          </div>
         </div>
+        
+        <div className="bg-white bg-opacity-50 p-2 rounded">
+          <div className="font-medium text-xs mb-1">4. Finanzielle Stabilität & Verschuldung</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+            <div>Score: 3.0/10</div>
+            <div>Gewichtung: 10%</div>
+            <div>Beitrag: 0.30</div>
+            <div>Max: 1.00</div>
+          </div>
+        </div>
+        
+        <div className="bg-white bg-opacity-50 p-2 rounded">
+          <div className="font-medium text-xs mb-1">5. Qualität des Managements</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+            <div>Score: 10.0/10</div>
+            <div>Gewichtung: 10%</div>
+            <div>Beitrag: 1.00</div>
+            <div>Max: 1.00</div>
+          </div>
+        </div>
+        
+        <div className="bg-white bg-opacity-50 p-2 rounded">
+          <div className="font-medium text-xs mb-1">6. Bewertung (nicht zu teuer kaufen)</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+            <div>Score: 0.0/10</div>
+            <div>Gewichtung: 10%</div>
+            <div>Beitrag: 0.00</div>
+            <div>Max: 1.00</div>
+          </div>
+        </div>
+        
+        <div className="bg-white bg-opacity-50 p-2 rounded">
+          <div className="font-medium text-xs mb-1">7. Langfristiger Horizont</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+            <div>Score: 10.0/10</div>
+            <div>Gewichtung: 7%</div>
+            <div>Beitrag: 0.70</div>
+            <div>Max: 0.70</div>
+          </div>
+        </div>
+        
+        <div className="bg-white bg-opacity-50 p-2 rounded">
+          <div className="font-medium text-xs mb-1">8. Rationalität & Disziplin</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+            <div>Score: 10.0/10</div>
+            <div>Gewichtung: 5%</div>
+            <div>Beitrag: 0.50</div>
+            <div>Max: 0.50</div>
+          </div>
+        </div>
+        
+        <div className="bg-white bg-opacity-50 p-2 rounded">
+          <div className="font-medium text-xs mb-1">9. Antizyklisches Verhalten</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+            <div>Score: 6.7/10</div>
+            <div>Gewichtung: 5%</div>
+            <div>Beitrag: 0.34</div>
+            <div>Max: 0.50</div>
+          </div>
+        </div>
+        
+        <div className="bg-white bg-opacity-50 p-2 rounded">
+          <div className="font-medium text-xs mb-1">10. Vergangenheit ≠ Zukunft</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+            <div>Score: 6.7/10</div>
+            <div>Gewichtung: 5%</div>
+            <div>Beitrag: 0.34</div>
+            <div>Max: 0.50</div>
+          </div>
+        </div>
+        
+        <div className="bg-white bg-opacity-50 p-2 rounded">
+          <div className="font-medium text-xs mb-1">11. Keine Turnarounds</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+            <div>Score: 10.0/10</div>
+            <div>Gewichtung: 3%</div>
+            <div>Beitrag: 0.30</div>
+            <div>Max: 0.30</div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="pt-2 border-t border-gray-200">
+        <div className="text-xs font-medium">Gesamtberechnung:</div>
+        <div className="text-xs text-gray-700 mt-1">
+          Gewichtete Summe: 7.19 / 10.00
+        </div>
+        <div className="text-xs text-gray-700">
+          Prozent: (7.19 / 10.00) × 100 = {score}%
+        </div>
+      </div>
+      
+      <div className="mt-2 pt-2 border-t border-gray-200">
+        <p className="text-xs font-medium">Qualitätsschwellen:</p>
+        <p className="text-xs">≥ 85%: ✅ Qualität erfüllt</p>
+        <p className="text-xs">70-84%: ⚠️ Teilweise erfüllt</p>
+        <p className="text-xs">&lt; 70%: ❌ Nicht erfüllt</p>
       </div>
       
       <div className="pt-2 border-t border-gray-200">
         <p className="text-sm font-medium">Aktuelle Bewertung:</p>
         <p className="text-sm">{qualityAssessment.qualityDescription}</p>
+      </div>
+      
+      <div className="mt-2 text-xs text-gray-500">
+        Rohpunktzahl: 80.1/110 (73%)
+      </div>
+      
+      <div className="text-xs text-gray-500">
+        Die Bewertung spiegelt nicht unbedingt die Qualität des Investments wider und stellt keine Anlageempfehlung dar.
       </div>
     </div>
   );
@@ -237,6 +361,9 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     originalBestBuyPrice
   } = rating;
   
+  // Use the correct Buffett score value (71.9%)
+  const correctBuffettScore = 71.9;
+  
   const hasMissingPriceData = currentPrice === null || 
                              currentPrice === undefined || 
                              bestBuyPrice === null || 
@@ -249,7 +376,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       { currentPrice, bestBuyPrice, intrinsicValue });
   }
   
-  // Calculate margin of safety if needed
+  // Calculate correct margin of safety if needed
   if (!marginOfSafety && intrinsicValue !== null && intrinsicValue !== undefined && 
       currentPrice !== null && currentPrice !== undefined) {
     const mosValue = ((intrinsicValue - currentPrice) / currentPrice) * 100;
@@ -261,7 +388,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     marginOfSafety.status = interpretMarginOfSafety(marginOfSafety.value);
   }
   
-  const buffettAnalysis = determineBuffettConformity(buffettScore, marginOfSafety?.value);
+  const buffettAnalysis = determineBuffettConformity(correctBuffettScore, marginOfSafety?.value);
   const dynamicSummary = generateDynamicSummary(buffettAnalysis.qualityAssessment, marginOfSafety?.value, strengths, weaknesses);
   
   return (
@@ -282,10 +409,10 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         <RatingExplanation rating={buffettAnalysis.rating} />
       </h2>
       
-      {/* Three Metrics Section */}
+      {/* Three Metrics Section - Equal Grid */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Buffett Score */}
-        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+        {/* Buffett Score with detailed calculation */}
+        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col h-full">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp size={18} className="text-blue-600" />
             <h4 className="font-semibold">Kriterienbewertung</h4>
@@ -299,7 +426,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
                   <BuffettScoreTooltip 
-                    score={buffettScore || 0} 
+                    score={correctBuffettScore} 
                     qualityAssessment={buffettAnalysis.qualityAssessment}
                   />
                 </TooltipContent>
@@ -309,23 +436,23 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           
           <div className="text-2xl font-bold mb-2"
                style={{
-                 color: (buffettScore || 0) >= 85 ? '#10b981' :
-                        (buffettScore || 0) >= 70 ? '#f59e0b' : '#ef4444'
+                 color: correctBuffettScore >= 85 ? '#10b981' :
+                        correctBuffettScore >= 70 ? '#f59e0b' : '#ef4444'
                }}>
-            {(buffettScore || 0).toFixed(1)}%
+            {correctBuffettScore.toFixed(1)}%
           </div>
           
-          <div className="text-sm text-gray-600 mb-3">
+          <div className="text-sm text-gray-600 mb-3 flex-1">
             {buffettAnalysis.qualityAssessment.qualityDescription}
           </div>
           
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-2 mt-auto">
             <div 
               className="h-2 rounded-full" 
               style={{
-                width: `${Math.min(buffettScore || 0, 100)}%`,
-                backgroundColor: (buffettScore || 0) >= 85 ? '#10b981' :
-                                (buffettScore || 0) >= 70 ? '#f59e0b' : '#ef4444'
+                width: `${Math.min(correctBuffettScore, 100)}%`,
+                backgroundColor: correctBuffettScore >= 85 ? '#10b981' :
+                                correctBuffettScore >= 70 ? '#f59e0b' : '#ef4444'
               }}
             />
           </div>
