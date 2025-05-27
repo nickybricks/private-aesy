@@ -15,6 +15,7 @@ interface ScoreDisplayProps {
 export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) => {
   // Use the unified scoring function consistently
   const score = getUnifiedCriterionScore(criterion);
+  const maxScore = 10; // Always 10 for the new scoring system
   
   if (score === undefined || score === null) {
     return null;
@@ -32,7 +33,7 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
   });
   
   // Calculate score percentage for color coding
-  const scorePercentage = score / 10; // Using 0-10 scale
+  const scorePercentage = score / maxScore; // Using 0-10 scale
   
   // Calculate weighted contribution
   const weightedContribution = criterionWeight ? 
@@ -68,7 +69,7 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
               )}
               
               <div className="mt-2 pt-2 border-t border-gray-200">
-                <p className="text-xs font-medium">Bewertungsskala:</p>
+                <p className="text-xs font-medium">Bewertungsskala (0-10 Punkte):</p>
                 <p className="text-xs">Pass: 10/10 Punkte</p>
                 <p className="text-xs">Warning: Je nach Erfüllungsgrad (z.B. 2/3 = 6,7/10)</p>
                 <p className="text-xs">Fail: 0/10 Punkte</p>

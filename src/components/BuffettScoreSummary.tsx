@@ -32,9 +32,9 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
   ];
 
   const detailedBreakdown = criteriaArray.map(({ criterion, weight, name }) => {
-    // Use the unified scoring functions
+    // Use the unified scoring functions with correct 10-point scale
     const score = getUnifiedCriterionScore(criterion);
-    const maxScore = getUnifiedCriterionMaxScore(criterion);
+    const maxScore = 10; // Always 10 for the new scoring system
     
     const weightedContribution = score * (weight.weight / 100);
     const maxWeightedContribution = maxScore * (weight.weight / 100);
@@ -90,7 +90,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
                         {item.name}
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-                        <div>Score: {item.score.toFixed(1)}/{item.maxScore}</div>
+                        <div>Score: {item.score.toFixed(1)}/10</div>
                         <div>Gewichtung: {item.weight}%</div>
                         <div>Beitrag: {item.weightedContribution.toFixed(2)}</div>
                         <div>Max: {item.maxWeightedContribution.toFixed(2)}</div>
@@ -112,7 +112,7 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({ score,
                 </div>
                 
                 <div className="mt-2 pt-2 border-t border-gray-200">
-                  <p className="text-xs font-medium">Bewertungsskala:</p>
+                  <p className="text-xs font-medium">Bewertungsskala (0-10 Punkte pro Kriterium):</p>
                   <p className="text-xs">≥ 80%: Sehr hohe Übereinstimmung</p>
                   <p className="text-xs">65-79%: Gute Übereinstimmung</p>
                   <p className="text-xs">{"< 65%: Niedrige Übereinstimmung"}</p>
