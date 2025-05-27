@@ -205,7 +205,7 @@ const BuffettScoreTooltip: React.FC<BuffettScoreTooltipProps> = ({ score, qualit
           <span>Teilweise erfüllt</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-red-600">❌ < 70%:</span>
+          <span className="text-red-600">❌ &lt; 70%:</span>
           <span>Nicht erfüllt</span>
         </div>
       </div>
