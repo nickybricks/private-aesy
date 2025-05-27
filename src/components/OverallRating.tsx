@@ -4,13 +4,14 @@ import {
   AlertTriangle, 
   XCircle,
   BarChart3,
-  TrendingUp
+  TrendingUp,
+  Target,
+  Euro
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
 import RatingExplanation from './RatingExplanation';
-import BuffettValuationMetrics from './BuffettValuationMetrics';
 
 type Rating = 'buy' | 'watch' | 'avoid';
 
@@ -36,11 +37,6 @@ interface OverallRatingProps {
     originalIntrinsicValue?: number | null;
     originalBestBuyPrice?: number | null;
   } | null;
-}
-
-interface BuffettScoreTooltipProps {
-  score: number;
-  qualityAssessment: ReturnType<typeof getQualityAssessment>;
 }
 
 // Quality assessment with the new 85% threshold
@@ -188,7 +184,7 @@ const RatingIcon: React.FC<{ isBuffettConform: boolean; rating: Rating }> = ({ i
 };
 
 // Detailed Buffett Score Tooltip with calculation breakdown
-const BuffettScoreTooltip: React.FC<BuffettScoreTooltipProps> = ({ score, qualityAssessment }) => {
+const BuffettScoreTooltip: React.FC<{ score: number; qualityAssessment: ReturnType<typeof getQualityAssessment> }> = ({ score, qualityAssessment }) => {
   return (
     <div className="space-y-3 max-w-md">
       <h4 className="font-semibold">Buffett-Kompatibilität: {score}%</h4>
@@ -408,7 +404,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         <RatingExplanation rating={buffettAnalysis.rating} />
       </h2>
       
-      {/* Three Metrics Section - Equal Grid with consistent height */}
+      {/* Three Metrics Section - Equal Grid with exactly equal sizes */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Buffett Score with detailed calculation */}
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col h-48">
@@ -457,20 +453,100 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           </div>
         </div>
         
-        {/* Margin of Safety and Best Buy Price using existing component with consistent height */}
-        <div className="h-48 flex flex-col">
-          <BuffettValuationMetrics
-            marginOfSafety={marginOfSafety}
-            bestBuyPrice={bestBuyPrice}
-            currentPrice={currentPrice}
-            currency={currency}
-            intrinsicValue={intrinsicValue}
-            targetMarginOfSafety={targetMarginOfSafety}
-            originalCurrency={originalCurrency}
-            originalPrice={originalPrice}
-            originalIntrinsicValue={originalIntrinsicValue}
-            originalBestBuyPrice={originalBestBuyPrice}
-          />
+        {/* Margin of Safety Card */}
+        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col h-48">
+          <div className="flex items-center gap-2 mb-2">
+            <Target size={18} className="text-green-600" />
+            <h4 className="font-semibold">Sicherheitsmarge</h4>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <Info size={14} className="text-gray-500" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Sicherheitsmarge</p>
+                    <p className="text-xs">Die Sicherheitsmarge zeigt, um wie viel Prozent der Aktienkurs unter dem inneren Wert liegt.</p>
+                    <p className="text-xs">Positive Werte bedeuten "günstig", negative "überbewertet".</p>
+                    <p className="text-xs">Formel: (Innerer Wert - Aktueller Preis) / Aktueller Preis × 100</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          
+          <div className="text-2xl font-bold mb-2"
+               style={{
+                 color: (marginOfSafety?.value || 0) >= 20 ? '#10b981' :
+                        (marginOfSafety?.value || 0) >= 0 ? '#f59e0b' : '#ef4444'
+               }}>
+            {marginOfSafety?.value?.toFixed(1) || '0.0'}%
+          </div>
+          
+          <div className="text-sm text-gray-600 mb-3 flex-1">
+            {(marginOfSafety?.value || 0) >= 0 ? 'Positive Sicherheitsmarge' : 'Überbewertet'}
+          </div>
+          
+          <div className="w-full bg-gray-200 rounded-full h-2 mt-auto">
+            <div 
+              className="h-2 rounded-full" 
+              style={{
+                width: `${Math.min(Math.max((marginOfSafety?.value || 0) + 50, 0), 100)}%`,
+                backgroundColor: (marginOfSafety?.value || 0) >= 20 ? '#10b981' :
+                                (marginOfSafety?.value || 0) >= 0 ? '#f59e0b' : '#ef4444'
+              }}
+            />
+          </div>
+        </div>
+        
+        {/* Best Buy Price Card */}
+        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col h-48">
+          <div className="flex items-center gap-2 mb-2">
+            <Euro size={18} className="text-purple-600" />
+            <h4 className="font-semibold">Idealer Kaufpreis</h4>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <Info size={14} className="text-gray-500" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Idealer Kaufpreis</p>
+                    <p className="text-xs">Der Preis, bei dem eine {targetMarginOfSafety}% Sicherheitsmarge erreicht wird.</p>
+                    <p className="text-xs">Basiert auf dem berechneten inneren Wert des Unternehmens.</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          
+          <div className="text-2xl font-bold mb-2 text-purple-600">
+            {bestBuyPrice ? `${bestBuyPrice.toFixed(2)} ${currency}` : 'N/A'}
+          </div>
+          
+          <div className="text-sm text-gray-600 mb-3 flex-1">
+            {bestBuyPrice && currentPrice 
+              ? `${((currentPrice - bestBuyPrice) / bestBuyPrice * 100).toFixed(1)}% über ideal` 
+              : 'Berechnung nicht möglich'
+            }
+          </div>
+          
+          <div className="w-full bg-gray-200 rounded-full h-2 mt-auto">
+            <div 
+              className="h-2 rounded-full bg-purple-500"
+              style={{
+                width: bestBuyPrice && currentPrice 
+                  ? `${Math.min(Math.max((bestBuyPrice / currentPrice) * 100, 0), 100)}%`
+                  : '0%'
+              }}
+            />
+          </div>
         </div>
       </div>
       
