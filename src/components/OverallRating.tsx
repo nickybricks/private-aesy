@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   CheckCircle, 
@@ -409,10 +408,10 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         <RatingExplanation rating={buffettAnalysis.rating} />
       </h2>
       
-      {/* Three Metrics Section - Equal Grid */}
+      {/* Three Metrics Section - Equal Grid with consistent height */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Buffett Score with detailed calculation */}
-        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col h-full">
+        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col h-48">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp size={18} className="text-blue-600" />
             <h4 className="font-semibold">Kriterienbewertung</h4>
@@ -458,19 +457,21 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           </div>
         </div>
         
-        {/* Margin of Safety and Best Buy Price using existing component */}
-        <BuffettValuationMetrics
-          marginOfSafety={marginOfSafety}
-          bestBuyPrice={bestBuyPrice}
-          currentPrice={currentPrice}
-          currency={currency}
-          intrinsicValue={intrinsicValue}
-          targetMarginOfSafety={targetMarginOfSafety}
-          originalCurrency={originalCurrency}
-          originalPrice={originalPrice}
-          originalIntrinsicValue={originalIntrinsicValue}
-          originalBestBuyPrice={originalBestBuyPrice}
-        />
+        {/* Margin of Safety and Best Buy Price using existing component with consistent height */}
+        <div className="h-48 flex flex-col">
+          <BuffettValuationMetrics
+            marginOfSafety={marginOfSafety}
+            bestBuyPrice={bestBuyPrice}
+            currentPrice={currentPrice}
+            currency={currency}
+            intrinsicValue={intrinsicValue}
+            targetMarginOfSafety={targetMarginOfSafety}
+            originalCurrency={originalCurrency}
+            originalPrice={originalPrice}
+            originalIntrinsicValue={originalIntrinsicValue}
+            originalBestBuyPrice={originalBestBuyPrice}
+          />
+        </div>
       </div>
       
       {/* Detailed Analysis - Cleaner Layout */}
