@@ -186,7 +186,8 @@ export const calculateFinancialMetricScore = (
   financialData: any
 ): number => {
   if (!financialData) {
-    throw new Error(`Finanzdaten fehlen für Kriterium ${criterionNumber}`);
+    console.warn(`Keine Finanzdaten für Kriterium ${criterionNumber} - verwende GPT-basierte Bewertung`);
+    return 5; // Default fallback score
   }
 
   switch (criterionNumber) {
@@ -233,7 +234,8 @@ export const calculateFinancialMetricScore = (
       }
       
       if (criteriaCount === 0) {
-        throw new Error('Keine Finanzkennzahlen für Kriterium 3 verfügbar');
+        console.warn('Keine Finanzkennzahlen für Kriterium 3 verfügbar - verwende Fallback');
+        return 5; // Fallback score
       }
       
       return Math.round((score / criteriaCount) * 4) / 4;
@@ -272,14 +274,16 @@ export const calculateFinancialMetricScore = (
       }
       
       if (stabilityCriteriaCount === 0) {
-        throw new Error('Keine Stabilitätskennzahlen für Kriterium 4 verfügbar');
+        console.warn('Keine Stabilitätskennzahlen für Kriterium 4 verfügbar - verwende Fallback');
+        return 5; // Fallback score
       }
       
       return Math.round(stabilityScore / stabilityCriteriaCount * 10) / 10;
       
     case 6: // Bewertung
       if (!financialData?.marginOfSafety) {
-        throw new Error('Margin of Safety fehlt für Bewertungskriterium 6');
+        console.warn('Margin of Safety fehlt für Bewertungskriterium 6 - verwende Fallback');
+        return 5; // Fallback score
       }
       
       const mos = financialData.marginOfSafety;
@@ -290,7 +294,8 @@ export const calculateFinancialMetricScore = (
       return 0;
       
     default:
-      throw new Error(`Unbekanntes Finanzkriterium: ${criterionNumber}`);
+      console.warn(`Unbekanntes Finanzkriterium: ${criterionNumber} - verwende Fallback`);
+      return 5; // Fallback score
   }
 };
 
@@ -303,12 +308,22 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
   const criterionNum = criterionNumber ? parseInt(criterionNumber, 10) : 0;
   
   if ([3, 4, 6].includes(criterionNum)) {
-    // For financial criteria, use financial data if available
+    // For financial criteria, use financial score if available
     if (criterion.financialScore !== undefined) {
       console.log(`Using financial score for criterion ${criterionNum}:`, criterion.financialScore);
       return criterion.financialScore;
     } else {
-      throw new Error(`Financial Score fehlt für Finanzkriterium ${criterionNum}: ${criterion.title}`);
+      // If financialScore is missing, try to calculate it or fall back to GPT
+      console.warn(`Financial Score fehlt für Kriterium ${criterionNum} - verwende GPT-basierte Bewertung als Fallback`);
+      
+      if (criterion.gptAnalysis) {
+        const derivedScore = deriveScoreFromGptAnalysis(criterion);
+        console.log(`Using derived GPT score as fallback for financial criterion ${criterionNum}:`, derivedScore);
+        return derivedScore;
+      } else {
+        console.warn(`Keine GPT-Analyse verfügbar für Kriterium ${criterionNum} - verwende Standard-Score`);
+        return 5; // Default fallback score
+      }
     }
   }
   
@@ -319,9 +334,15 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
   }
   
   // Then derive from GPT analysis (this should now always give 10 for Pass)
-  const derivedScore = deriveScoreFromGptAnalysis(criterion);
-  console.log('Using derived score from GPT analysis:', derivedScore);
-  return derivedScore;
+  if (criterion.gptAnalysis) {
+    const derivedScore = deriveScoreFromGptAnalysis(criterion);
+    console.log('Using derived score from GPT analysis:', derivedScore);
+    return derivedScore;
+  }
+  
+  // Final fallback
+  console.warn(`Keine Bewertung verfügbar für ${criterion.title} - verwende Standard-Score`);
+  return 5;
 };
 
 // UNIFIED FUNCTION: Get the max score for any criterion - used everywhere
