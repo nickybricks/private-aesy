@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   CheckCircle, 
@@ -505,7 +506,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
         {/* Best Buy Price Card */}
         <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col h-48">
           <div className="flex items-center gap-2 mb-2">
-            <Euro size={18} className="text-purple-600" />
+            <Euro size={18} className="text-blue-600" />
             <h4 className="font-semibold">Idealer Kaufpreis</h4>
             
             <TooltipProvider>
@@ -526,7 +527,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
             </TooltipProvider>
           </div>
           
-          <div className="text-2xl font-bold mb-2 text-purple-600">
+          <div className="text-2xl font-bold mb-2 text-blue-600">
             {bestBuyPrice ? `${bestBuyPrice.toFixed(2)} ${currency}` : 'N/A'}
           </div>
           
@@ -539,7 +540,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           
           <div className="w-full bg-gray-200 rounded-full h-2 mt-auto">
             <div 
-              className="h-2 rounded-full bg-purple-500"
+              className="h-2 rounded-full bg-blue-500"
               style={{
                 width: bestBuyPrice && currentPrice 
                   ? `${Math.min(Math.max((bestBuyPrice / currentPrice) * 100, 0), 100)}%`
