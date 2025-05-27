@@ -65,10 +65,6 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
       </div>
       
       <BuffettOverallAnalysis criteria={criteria} />
-      
-      <div className="mt-6 text-sm text-gray-500">
-        <p>Die dargestellte Bewertung ist keine Anlageempfehlung.</p>
-      </div>
     </div>
   );
 };
