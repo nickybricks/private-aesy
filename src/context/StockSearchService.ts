@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { shouldConvertCurrency, debugDCFData } from '@/utils/currencyConverter';
 import { processFinancialMetrics, calculateBuffettBuyPrice } from './StockDataProcessor';
 import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
+import { enrichCriteriaWithFinancialScores } from '@/utils/buffettUtils';
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { StockInfo } from '@/types/stock';
@@ -145,14 +146,14 @@ export const useStockSearch = () => {
       
       // Parallele Ausführung aller API-Aufrufe, einschließlich des neuen DCF-Aufrufs
       try {
-        const [criteria, rawMetricsData, rating, customDcfData] = await Promise.all([
+        const [rawCriteria, rawMetricsData, rating, customDcfData] = await Promise.all([
           analyzeBuffettCriteria(ticker),
           getFinancialMetrics(ticker),
           getOverallRating(ticker),
           fetchCustomDCF(ticker)
         ]);
         
-        console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
+        console.log('Raw Buffett Criteria (before enrichment):', JSON.stringify(rawCriteria, null, 2));
         console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
         console.log('Overall Rating:', JSON.stringify(rating, null, 2));
         console.log('Custom DCF Data:', JSON.stringify(customDcfData, null, 2));
@@ -298,6 +299,24 @@ export const useStockSearch = () => {
           throw new Error('Keine Rating-Daten verfügbar');
         }
         
+        // IMPORTANT: Enrich criteria with financial scores BEFORE returning
+        let enrichedCriteria = rawCriteria;
+        if (metricsData && metricsData.metrics) {
+          // Calculate margin of safety for criterion 6
+          let marginOfSafety = undefined;
+          if (updatedRating && info && info.price && extractedDcfData && extractedDcfData.intrinsicValue) {
+            marginOfSafety = ((extractedDcfData.intrinsicValue - info.price) / extractedDcfData.intrinsicValue) * 100;
+            console.log(`Calculated margin of safety: ${marginOfSafety}%`);
+          }
+          
+          enrichedCriteria = enrichCriteriaWithFinancialScores(
+            rawCriteria,
+            metricsData.metrics,
+            marginOfSafety
+          );
+          console.log('Enriched criteria with financial scores:', JSON.stringify(enrichedCriteria, null, 2));
+        }
+        
         toast({
           title: "Analyse abgeschlossen",
           description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
@@ -316,7 +335,7 @@ export const useStockSearch = () => {
           info, 
           stockCurrency, 
           criticalDataMissing, 
-          criteria, 
+          criteria: enrichedCriteria, // Use enriched criteria
           metricsData, 
           rating: updatedRating,
           dcfData: extractedDcfData

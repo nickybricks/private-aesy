@@ -157,7 +157,7 @@ export const extractPartialFulfillment = (analysisLower: string): number | undef
   return undefined;
 };
 
-// Convert GPT assessment directly to 0-10 score - NO FALLBACKS
+// Convert GPT assessment directly to 0-10 score
 export const deriveScoreFromGptAnalysis = (
   criterion: BuffettCriterionProps
 ): number => {
@@ -176,7 +176,6 @@ export const deriveScoreFromGptAnalysis = (
   
   console.log(`GPT Assessment for ${criterion.title}: ${assessment.status}`);
   
-  // SIMPLIFIED SCORING based on user requirements:
   if (assessment.status === 'pass') {
     console.log('Pass status: 10/10 points');
     return 10; // (Pass) = 10/10
@@ -206,11 +205,13 @@ export const deriveScoreFromGptAnalysis = (
   throw new Error(`Unbekannter Bewertungsstatus für Kriterium: ${criterion.title}: ${assessment.status}`);
 };
 
-// Calculate score for criteria 3, 4, and 6 based on financial metrics (not GPT)
+// Calculate score for criteria 3, 4, and 6 based on financial metrics
 export const calculateFinancialMetricScore = (
   criterionNumber: number,
   financialData: any
 ): number => {
+  console.log(`calculateFinancialMetricScore called for criterion ${criterionNumber} with data:`, financialData);
+  
   if (!financialData) {
     throw new Error(`Keine Finanzdaten verfügbar für Kriterium ${criterionNumber}`);
   }
@@ -230,94 +231,110 @@ export const calculateFinancialMetricScore = (
       // ROE Check
       if (financialData.roe !== undefined) {
         criteriaCount++;
-        if (financialData.roe >= 15) score += 2.5;
-        else if (financialData.roe >= 10) score += 1.5;
+        const roePercent = financialData.roe * 100; // Convert to percentage
+        if (roePercent >= 15) score += 2.5;
+        else if (roePercent >= 10) score += 1.5;
         else score += 0;
+        console.log(`ROE: ${roePercent}% -> points: ${roePercent >= 15 ? 2.5 : roePercent >= 10 ? 1.5 : 0}`);
       } else {
         missingMetrics.push('ROE');
       }
       
-      // ROA Check  
-      if (financialData.roa !== undefined) {
+      // Net Margin Check (using netMargin as profit margin)
+      if (financialData.netMargin !== undefined) {
         criteriaCount++;
-        if (financialData.roa >= 10) score += 2.5;
-        else if (financialData.roa >= 5) score += 1.5;
+        const marginPercent = financialData.netMargin * 100; // Convert to percentage
+        if (marginPercent >= 15) score += 2.5;
+        else if (marginPercent >= 10) score += 1.5;
         else score += 0;
+        console.log(`Net Margin: ${marginPercent}% -> points: ${marginPercent >= 15 ? 2.5 : marginPercent >= 10 ? 1.5 : 0}`);
       } else {
-        missingMetrics.push('ROA');
+        missingMetrics.push('Net Margin');
       }
       
-      // Profit Margin Check
-      if (financialData.profitMargin !== undefined) {
+      // EPS Check - using current EPS as baseline
+      if (financialData.eps !== undefined && financialData.historicalData?.eps) {
         criteriaCount++;
-        if (financialData.profitMargin >= 15) score += 2.5;
-        else if (financialData.profitMargin >= 10) score += 1.5;
-        else score += 0;
+        const epsData = financialData.historicalData.eps;
+        if (epsData.length >= 2) {
+          const currentEps = epsData[0].value;
+          const previousEps = epsData[1].value;
+          const epsGrowth = ((currentEps - previousEps) / previousEps) * 100;
+          
+          if (epsGrowth >= 10) score += 2.5;
+          else if (epsGrowth >= 5) score += 1.5;
+          else score += 0;
+          console.log(`EPS Growth: ${epsGrowth.toFixed(1)}% -> points: ${epsGrowth >= 10 ? 2.5 : epsGrowth >= 5 ? 1.5 : 0}`);
+        } else {
+          missingMetrics.push('EPS Historical Data');
+        }
       } else {
-        missingMetrics.push('Profit Margin');
+        missingMetrics.push('EPS');
       }
       
-      // EPS Growth Check (durchschnittliches Wachstum)
-      if (financialData.epsGrowth !== undefined) {
+      // ROIC Check
+      if (financialData.roic !== undefined) {
         criteriaCount++;
-        if (financialData.epsGrowth >= 10) score += 2.5;
-        else if (financialData.epsGrowth >= 5) score += 1.5;
+        const roicPercent = financialData.roic * 100; // Convert to percentage
+        if (roicPercent >= 15) score += 2.5;
+        else if (roicPercent >= 10) score += 1.5;
         else score += 0;
+        console.log(`ROIC: ${roicPercent}% -> points: ${roicPercent >= 15 ? 2.5 : roicPercent >= 10 ? 1.5 : 0}`);
       } else {
-        missingMetrics.push('EPS Growth');
+        missingMetrics.push('ROIC');
       }
       
       if (criteriaCount === 0) {
         throw new Error(`Alle erforderlichen Finanzkennzahlen fehlen für Kriterium 3: ${missingMetrics.join(', ')}`);
       }
       
-      return Math.round((score / criteriaCount) * 4) / 4;
+      const finalScore = Math.round((score / criteriaCount) * 4 * 10) / 10;
+      console.log(`Criterion 3 final score: ${finalScore}/10 (${score}/${criteriaCount} metrics)`);
+      return finalScore;
       
     case 4: // Finanzielle Stabilität
       // Buffett Richtwerte für Kriterium 4:
       // - Schulden zu EBITDA: < 2 = sehr gut, 2-3 = ok, > 3 = schlecht
-      // - Current Ratio: > 1.5 = gut, 1-1.5 = ok, < 1 = schlecht
-      // - Quick Ratio: > 1 = gut, 0.8-1 = ok, < 0.8 = schlecht
+      // - Schulden zu Vermögen: < 30% = gut, 30-50% = ok, > 50% = schlecht
+      // - Zinslast: Interest Coverage > 5 = gut, 2-5 = ok, < 2 = schlecht
       
       let stabilityScore = 0;
       let stabilityCriteriaCount = 0;
       let missingStabilityMetrics = [];
       
-      // Debt to EBITDA Check
-      if (financialData.debtToEbitda !== undefined) {
+      // Debt to Assets Check
+      if (financialData.debtToAssets !== undefined) {
         stabilityCriteriaCount++;
-        if (financialData.debtToEbitda < 2) stabilityScore += 3.33;
-        else if (financialData.debtToEbitda <= 3) stabilityScore += 1.67;
+        const debtRatioPercent = financialData.debtToAssets * 100;
+        if (debtRatioPercent < 30) stabilityScore += 3.33;
+        else if (debtRatioPercent <= 50) stabilityScore += 1.67;
         else stabilityScore += 0;
+        console.log(`Debt to Assets: ${debtRatioPercent}% -> points: ${debtRatioPercent < 30 ? 3.33 : debtRatioPercent <= 50 ? 1.67 : 0}`);
       } else {
-        missingStabilityMetrics.push('Debt to EBITDA');
+        missingStabilityMetrics.push('Debt to Assets');
       }
       
-      // Current Ratio Check
-      if (financialData.currentRatio !== undefined) {
+      // Interest Coverage Check
+      if (financialData.interestCoverage !== undefined) {
         stabilityCriteriaCount++;
-        if (financialData.currentRatio > 1.5) stabilityScore += 3.33;
-        else if (financialData.currentRatio >= 1) stabilityScore += 1.67;
+        if (financialData.interestCoverage > 5) stabilityScore += 3.33;
+        else if (financialData.interestCoverage >= 2) stabilityScore += 1.67;
         else stabilityScore += 0;
+        console.log(`Interest Coverage: ${financialData.interestCoverage} -> points: ${financialData.interestCoverage > 5 ? 3.33 : financialData.interestCoverage >= 2 ? 1.67 : 0}`);
       } else {
-        missingStabilityMetrics.push('Current Ratio');
+        missingStabilityMetrics.push('Interest Coverage');
       }
       
-      // Quick Ratio Check
-      if (financialData.quickRatio !== undefined) {
-        stabilityCriteriaCount++;
-        if (financialData.quickRatio > 1) stabilityScore += 3.33;
-        else if (financialData.quickRatio >= 0.8) stabilityScore += 1.67;
-        else stabilityScore += 0;
-      } else {
-        missingStabilityMetrics.push('Quick Ratio');
-      }
+      // Add a third criterion if available (current ratio or similar)
+      // For now, we'll use the average of the two above
       
       if (stabilityCriteriaCount === 0) {
         throw new Error(`Alle erforderlichen Stabilitätskennzahlen fehlen für Kriterium 4: ${missingStabilityMetrics.join(', ')}`);
       }
       
-      return Math.round(stabilityScore / stabilityCriteriaCount * 10) / 10;
+      const stabilityFinalScore = Math.round(stabilityScore / stabilityCriteriaCount * 10) / 10;
+      console.log(`Criterion 4 final score: ${stabilityFinalScore}/10 (${stabilityScore}/${stabilityCriteriaCount} metrics)`);
+      return stabilityFinalScore;
       
     case 6: // Bewertung
       if (!financialData?.marginOfSafety) {
@@ -325,18 +342,22 @@ export const calculateFinancialMetricScore = (
       }
       
       const mos = financialData.marginOfSafety;
-      if (mos >= 30) return 10;
-      if (mos >= 20) return 8;
-      if (mos >= 10) return 6;
-      if (mos >= 0) return 4;
-      return 0;
+      let valuationScore;
+      if (mos >= 30) valuationScore = 10;
+      else if (mos >= 20) valuationScore = 8;
+      else if (mos >= 10) valuationScore = 6;
+      else if (mos >= 0) valuationScore = 4;
+      else valuationScore = 0;
+      
+      console.log(`Criterion 6 - Margin of Safety: ${mos}% -> score: ${valuationScore}/10`);
+      return valuationScore;
       
     default:
       throw new Error(`Unbekanntes Finanzkriterium: ${criterionNumber}`);
   }
 };
 
-// UNIFIED FUNCTION: Get the displayed score for any criterion - NO FALLBACKS
+// UNIFIED FUNCTION: Get the displayed score for any criterion
 export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): number => {
   console.log('getUnifiedCriterionScore called for:', criterion.title);
   
@@ -351,7 +372,7 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
       return criterion.financialScore;
     }
     
-    throw new Error(`Financial Score fehlt für Finanzkriterium ${criterionNum}: ${criterion.title}`);
+    throw new Error(`Financial Score fehlt für Finanzkriterium ${criterionNum}: ${criterion.title}. Stelle sicher, dass calculateFinancialMetricScore() für dieses Kriterium aufgerufen wird.`);
   }
   
   // For all other criteria, use explicit score first
@@ -360,13 +381,13 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
     return criterion.score;
   }
   
-  // Then derive from GPT analysis (NO FALLBACK)
+  // Then derive from GPT analysis
   const derivedScore = deriveScoreFromGptAnalysis(criterion);
   console.log('Using derived score from GPT analysis:', derivedScore);
   return derivedScore;
 };
 
-// UNIFIED FUNCTION: Get the max score for any criterion - used everywhere
+// UNIFIED FUNCTION: Get the max score for any criterion
 export const getUnifiedCriterionMaxScore = (criterion: BuffettCriterionProps): number => {
   // Use explicit maxScore if available, otherwise default to 10
   return criterion.maxScore !== undefined ? criterion.maxScore : 10;
@@ -411,7 +432,7 @@ export const extractKeyInsights = (gptAnalysis: string | null | undefined) => {
   return { summary, points, partialFulfillment };
 };
 
-// Calculate total weighted Buffett score using unified scoring system - NO FALLBACKS
+// Calculate total weighted Buffett score using unified scoring system
 export const calculateTotalBuffettScore = (criteria: BuffettCriteriaProps): number => {
   console.log('calculateTotalBuffettScore called');
 
@@ -489,7 +510,7 @@ export const getBuffettScoreInterpretation = (score: number): {
   }
 };
 
-// Helper function to calculate weighted score for individual criterion - NO FALLBACKS
+// Helper function to calculate weighted score for individual criterion
 export const calculateWeightedScore = (
   criterion: BuffettCriterionProps,
   criterionId: string
@@ -510,6 +531,59 @@ export const calculateWeightedScore = (
   return { weightedScore, weightPercentage };
 };
 
+// Function to add financial scores to criteria objects
+export const enrichCriteriaWithFinancialScores = (
+  criteria: BuffettCriteriaProps,
+  financialData: any,
+  marginOfSafety?: number
+): BuffettCriteriaProps => {
+  console.log('enrichCriteriaWithFinancialScores called with:', { financialData, marginOfSafety });
+  
+  const enrichedCriteria = { ...criteria };
+  
+  try {
+    // Calculate financial score for criterion 3
+    const criterion3Score = calculateFinancialMetricScore(3, financialData);
+    enrichedCriteria.financialMetrics = {
+      ...enrichedCriteria.financialMetrics,
+      financialScore: criterion3Score
+    };
+    console.log(`Added financial score to criterion 3: ${criterion3Score}`);
+  } catch (error) {
+    console.error('Error calculating financial score for criterion 3:', error);
+  }
+  
+  try {
+    // Calculate financial score for criterion 4
+    const criterion4Score = calculateFinancialMetricScore(4, financialData);
+    enrichedCriteria.financialStability = {
+      ...enrichedCriteria.financialStability,
+      financialScore: criterion4Score
+    };
+    console.log(`Added financial score to criterion 4: ${criterion4Score}`);
+  } catch (error) {
+    console.error('Error calculating financial score for criterion 4:', error);
+  }
+  
+  try {
+    // Calculate financial score for criterion 6 if margin of safety is available
+    if (marginOfSafety !== undefined) {
+      const criterion6Score = calculateFinancialMetricScore(6, { marginOfSafety });
+      enrichedCriteria.valuation = {
+        ...enrichedCriteria.valuation,
+        financialScore: criterion6Score
+      };
+      console.log(`Added financial score to criterion 6: ${criterion6Score}`);
+    } else {
+      console.warn('Margin of safety not available for criterion 6');
+    }
+  } catch (error) {
+    console.error('Error calculating financial score for criterion 6:', error);
+  }
+  
+  return enrichedCriteria;
+};
+
 export interface DCFDataProps {
   ufcf: number[];
   wacc: number;
@@ -528,7 +602,7 @@ export interface BuffettCriterionProps {
   gptAnalysis?: string | null;
   score?: number;
   maxScore?: number;
-  financialScore?: number; // NEW: For criteria 3, 4, 6 based on financial metrics
+  financialScore?: number; // For criteria 3, 4, 6 based on financial metrics
   dcfData?: DCFDataProps;
   partialFulfillment?: {
     fulfilled: number;
