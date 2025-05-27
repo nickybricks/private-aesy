@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   CheckCircle, 
@@ -182,6 +181,140 @@ const RatingIcon: React.FC<{ isBuffettConform: boolean; rating: Rating }> = ({ i
     default:
       return <CheckCircle size={32} className="text-green-600" />;
   }
+};
+
+// Diese Funktion erstellt den detaillierten Tooltip für die DCF-Berechnung
+const IntrinsicValueTooltip: React.FC<{
+  intrinsicValue: number | null | undefined;
+  currency: string;
+  originalCurrency?: string;
+  originalIntrinsicValue?: number | null;
+}> = ({ intrinsicValue, currency, originalCurrency, originalIntrinsicValue }) => {
+  if (!intrinsicValue || isNaN(Number(intrinsicValue))) {
+    return (
+      <div className="space-y-2">
+        <h4 className="font-semibold">DCF-Berechnung nicht möglich</h4>
+        <p>Für dieses Wertpapier liegen nicht genügend Daten vor, um einen inneren Wert zu ermitteln. Eine DCF-Berechnung kann nicht durchgeführt werden.</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-2 max-w-2xl">
+      <h4 className="font-semibold">Detaillierte DCF-Berechnung</h4>
+      <p>Der innere Wert von <strong>{intrinsicValue.toFixed(2)} {currency}</strong> wurde mittels einer Discounted Cash Flow (DCF) Berechnung ermittelt.</p>
+      
+      <div className="text-sm text-gray-600 mt-2">
+        <p className="italic">
+          Hinweis: Der intrinsische Wert wurde durch ein detailliertes DCF-Modell berechnet, das auf den historischen und prognostizierten Finanzdaten des Unternehmens basiert.
+          Für eine detaillierte Aufschlüsselung der Berechnung nutzen Sie bitte das DCF-Tool.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// Diese Funktion erstellt den detaillierten Tooltip für die MoS-Berechnung mit aktuellen Werten
+const MarginOfSafetyTooltip: React.FC<{
+  targetMarginOfSafety: number;
+  intrinsicValue?: number | null;
+  currentPrice?: number | null;
+  currency?: string;
+  marginOfSafetyValue?: number;
+}> = ({ targetMarginOfSafety, intrinsicValue, currentPrice, currency, marginOfSafetyValue }) => {
+  const hasRealData = intrinsicValue !== null && 
+                     intrinsicValue !== undefined && 
+                     !isNaN(Number(intrinsicValue)) && 
+                     currentPrice !== null && 
+                     currentPrice !== undefined && 
+                     !isNaN(Number(currentPrice)) && 
+                     currency;
+  
+  return (
+    <div className="space-y-2">
+      <h4 className="font-semibold">Sicherheitsmarge (Margin of Safety)</h4>
+      <p>Die Sicherheitsmarge zeigt, um wie viel Prozent der Aktienkurs unter dem inneren Wert liegt.</p>
+      <ul className="list-disc pl-4 text-sm">
+        <li>Schützt vor Bewertungsfehlern</li>
+        <li>Erhöht langfristiges Renditepotential</li>
+        <li>Reduziert Verlustrisiko</li>
+      </ul>
+      
+      <div className="border-t border-gray-200 pt-2 mt-2">
+        <h5 className="font-medium mb-1">Berechnung der Margin of Safety:</h5>
+        <p className="text-sm mb-2">Formel: (Innerer Wert - Aktueller Preis) / Aktueller Preis × 100</p>
+        
+        {hasRealData && intrinsicValue !== null && currentPrice !== null ? (
+          <div className="space-y-1 text-sm">
+            <p><span className="font-medium">Innerer Wert:</span> {intrinsicValue.toFixed(2)} {currency}</p>
+            <p><span className="font-medium">Aktueller Preis:</span> {currentPrice.toFixed(2)} {currency}</p>
+            <p><span className="font-medium">Berechnung:</span> ({intrinsicValue.toFixed(2)} - {currentPrice.toFixed(2)}) / {currentPrice.toFixed(2)} × 100</p>
+            <p className={`font-medium ${marginOfSafetyValue && marginOfSafetyValue > 0 ? 'text-buffett-green' : 'text-buffett-red'}`}>
+              <span className="font-medium">Ergebnis:</span> {marginOfSafetyValue?.toFixed(1)}%
+              {marginOfSafetyValue && marginOfSafetyValue > 0 ? ' (Unterbewertet)' : ' (Überbewertet)'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-1 text-sm">
+            <p className="text-gray-600">Für eine konkrete Berechnung werden Daten zum inneren Wert und aktuellen Preis benötigt.</p>
+          </div>
+        )}
+        
+        <p className="text-sm font-medium mt-2">Positive Werte bedeuten "günstig", negative "überbewertet".</p>
+      </div>
+    </div>
+  );
+};
+
+// Diese Funktion erstellt den detaillierten Tooltip für die Buffett-Kaufpreis Erklärung
+const BuffettBuyPriceTooltip: React.FC<{
+  intrinsicValue: number | null | undefined;
+  bestBuyPrice: number | null;
+  targetMarginOfSafety: number;
+  currency: string;
+}> = ({ intrinsicValue, bestBuyPrice, targetMarginOfSafety, currency }) => {
+  if (bestBuyPrice === null || bestBuyPrice === undefined || isNaN(Number(bestBuyPrice))) {
+    return (
+      <div className="space-y-2">
+        <h4 className="font-semibold">Buffett-Kaufpreis nicht verfügbar</h4>
+        <p>Für dieses Wertpapier liegen nicht genügend Daten vor, um einen Buffett-Kaufpreis zu berechnen.</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-2">
+      <h4 className="font-semibold">Der Buffett-Kaufpreis</h4>
+      <p>Der Buffett-Kaufpreis ist der maximale Preis, zu dem Warren Buffett die Aktie als attraktive Investition betrachten würde.</p>
+      
+      <div className="border border-gray-200 rounded-md p-2 bg-gray-50 mt-2">
+        <h5 className="font-medium mb-1 text-sm">Berechnung:</h5>
+        <div className="text-sm">
+          <div className="flex items-center mb-1">
+            <div className="font-medium w-1/2">Innerer Wert:</div>
+            <div>{intrinsicValue && !isNaN(Number(intrinsicValue)) ? `${Number(intrinsicValue).toFixed(2)} ${currency}` : 'Berechnet aus DCF-Modell'}</div>
+          </div>
+          <div className="flex items-center mb-1">
+            <div className="font-medium w-1/2">Margin of Safety:</div>
+            <div>{targetMarginOfSafety}%</div>
+          </div>
+          <div className="flex items-center mb-1">
+            <div className="font-medium w-1/2">Berechnung:</div>
+            <div>{intrinsicValue && !isNaN(Number(intrinsicValue)) ? `${Number(intrinsicValue).toFixed(2)} ${currency} × (1 - ${targetMarginOfSafety}%)` : 'Innerer Wert × (1 - Margin of Safety)'}</div>
+          </div>
+          <div className="flex items-center font-medium text-buffett-blue">
+            <div className="w-1/2">Buffett-Kaufpreis:</div>
+            <div>{bestBuyPrice.toFixed(2)} {currency}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="border-t border-gray-200 pt-2 mt-2">
+        <p className="font-medium text-sm">Buffett's Prinzip:</p>
+        <p className="text-sm">Eine Aktie sollte nur gekauft werden, wenn sie deutlich unter ihrem inneren Wert gehandelt wird. Der Buffett-Kaufpreis stellt diese Grenze dar - kaufe nur unter diesem Preis.</p>
+      </div>
+    </div>
+  );
 };
 
 // Detailed Buffett Score Tooltip with calculation breakdown
@@ -372,20 +505,24 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       { currentPrice, bestBuyPrice, intrinsicValue });
   }
   
-  // Calculate correct margin of safety if needed
-  if (!marginOfSafety && intrinsicValue !== null && intrinsicValue !== undefined && 
-      currentPrice !== null && currentPrice !== undefined) {
+  // Calculate correct margin of safety if needed or missing
+  let calculatedMarginOfSafety = marginOfSafety;
+  if ((!marginOfSafety || marginOfSafety.value === 0) && 
+      intrinsicValue !== null && intrinsicValue !== undefined && 
+      currentPrice !== null && currentPrice !== undefined &&
+      !isNaN(Number(intrinsicValue)) && !isNaN(Number(currentPrice))) {
     const mosValue = ((intrinsicValue - currentPrice) / currentPrice) * 100;
-    marginOfSafety = {
+    calculatedMarginOfSafety = {
       value: mosValue,
       status: interpretMarginOfSafety(mosValue)
     };
+    console.log(`Calculated Margin of Safety: ${mosValue.toFixed(1)}%`);
   } else if (marginOfSafety) {
-    marginOfSafety.status = interpretMarginOfSafety(marginOfSafety.value);
+    calculatedMarginOfSafety.status = interpretMarginOfSafety(marginOfSafety.value);
   }
   
-  const buffettAnalysis = determineBuffettConformity(correctBuffettScore, marginOfSafety?.value);
-  const dynamicSummary = generateDynamicSummary(buffettAnalysis.qualityAssessment, marginOfSafety?.value, strengths, weaknesses);
+  const buffettAnalysis = determineBuffettConformity(correctBuffettScore, calculatedMarginOfSafety?.value);
+  const dynamicSummary = generateDynamicSummary(buffettAnalysis.qualityAssessment, calculatedMarginOfSafety?.value, strengths, weaknesses);
   
   return (
     <div className="buffett-card animate-fade-in">
@@ -468,12 +605,13 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Sicherheitsmarge</p>
-                    <p className="text-xs">Die Sicherheitsmarge zeigt, um wie viel Prozent der Aktienkurs unter dem inneren Wert liegt.</p>
-                    <p className="text-xs">Positive Werte bedeuten "günstig", negative "überbewertet".</p>
-                    <p className="text-xs">Formel: (Innerer Wert - Aktueller Preis) / Aktueller Preis × 100</p>
-                  </div>
+                  <MarginOfSafetyTooltip 
+                    targetMarginOfSafety={targetMarginOfSafety}
+                    intrinsicValue={intrinsicValue}
+                    currentPrice={currentPrice}
+                    currency={currency}
+                    marginOfSafetyValue={calculatedMarginOfSafety?.value}
+                  />
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -481,23 +619,23 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
           
           <div className="text-2xl font-bold mb-2"
                style={{
-                 color: (marginOfSafety?.value || 0) >= 20 ? '#10b981' :
-                        (marginOfSafety?.value || 0) >= 0 ? '#f59e0b' : '#ef4444'
+                 color: (calculatedMarginOfSafety?.value || 0) >= 20 ? '#10b981' :
+                        (calculatedMarginOfSafety?.value || 0) >= 0 ? '#f59e0b' : '#ef4444'
                }}>
-            {marginOfSafety?.value?.toFixed(1) || '0.0'}%
+            {calculatedMarginOfSafety?.value?.toFixed(1) || '0.0'}%
           </div>
           
           <div className="text-sm text-gray-600 mb-3 flex-1">
-            {(marginOfSafety?.value || 0) >= 0 ? 'Positive Sicherheitsmarge' : 'Überbewertet'}
+            {(calculatedMarginOfSafety?.value || 0) >= 0 ? 'Positive Sicherheitsmarge' : 'Überbewertet'}
           </div>
           
           <div className="w-full bg-gray-200 rounded-full h-2 mt-auto">
             <div 
               className="h-2 rounded-full" 
               style={{
-                width: `${Math.min(Math.max((marginOfSafety?.value || 0) + 50, 0), 100)}%`,
-                backgroundColor: (marginOfSafety?.value || 0) >= 20 ? '#10b981' :
-                                (marginOfSafety?.value || 0) >= 0 ? '#f59e0b' : '#ef4444'
+                width: `${Math.min(Math.max((calculatedMarginOfSafety?.value || 0) + 50, 0), 100)}%`,
+                backgroundColor: (calculatedMarginOfSafety?.value || 0) >= 20 ? '#10b981' :
+                                (calculatedMarginOfSafety?.value || 0) >= 0 ? '#f59e0b' : '#ef4444'
               }}
             />
           </div>
@@ -517,11 +655,12 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Idealer Kaufpreis</p>
-                    <p className="text-xs">Der Preis, bei dem eine {targetMarginOfSafety}% Sicherheitsmarge erreicht wird.</p>
-                    <p className="text-xs">Basiert auf dem berechneten inneren Wert des Unternehmens.</p>
-                  </div>
+                  <BuffettBuyPriceTooltip 
+                    intrinsicValue={intrinsicValue}
+                    bestBuyPrice={bestBuyPrice}
+                    targetMarginOfSafety={targetMarginOfSafety}
+                    currency={currency}
+                  />
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -626,7 +765,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
               {buffettAnalysis.priceMet ? '✅' : '❌'} 2. Preis (die Bewertung)
             </div>
             <div className="text-gray-600 mb-1">
-              Sicherheitsmarge: {marginOfSafety?.value.toFixed(1)}% 
+              Sicherheitsmarge: {calculatedMarginOfSafety?.value.toFixed(1)}% 
               {buffettAnalysis.priceMet ? ' (≥ 0% erfüllt)' : ' (< 0%, überbewertet)'}
             </div>
             <div className="text-xs text-gray-500">
