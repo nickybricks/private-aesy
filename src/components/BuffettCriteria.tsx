@@ -20,12 +20,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { extractGptAssessmentStatus } from '@/utils/buffettUtils';
 
 interface CriteriaResult {
   status: 'pass' | 'warning' | 'fail';
   title: string;
   description: string;
   details: string[];
+  gptAnalysis?: string | null;
 }
 
 interface BuffettCriteriaProps {
@@ -169,14 +171,23 @@ const CriterionCard: React.FC<{
   criterion: CriteriaResult,
   index: number
 }> = ({ name, criterion, index }) => {
-  const { status, title, description, details } = criterion;
+  const { title, description, details } = criterion;
+  
+  // Use GPT analysis status if available, otherwise fall back to original status
+  let displayStatus = criterion.status;
+  if (criterion.gptAnalysis) {
+    const gptAssessment = extractGptAssessmentStatus(criterion.gptAnalysis);
+    if (gptAssessment) {
+      displayStatus = gptAssessment.status;
+    }
+  }
   
   // Status-basierte Farben für die Karte
   const cardBorderColor = {
     pass: "border-green-300",
     warning: "border-yellow-300",
     fail: "border-red-300"
-  }[status];
+  }[displayStatus];
   
   const criteriaExplanation = getCriteriaExplanation(name);
   const scoringExplanation = getScoringExplanation(name);
@@ -191,8 +202,8 @@ const CriterionCard: React.FC<{
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="text-xl font-semibold">{title}</h3>
-            <StatusIcon status={status} />
-            <StatusBadge status={status} />
+            <StatusIcon status={displayStatus} />
+            <StatusBadge status={displayStatus} />
             
             <TooltipProvider>
               <Tooltip>
