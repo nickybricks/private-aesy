@@ -1,4 +1,3 @@
-
 export const getStatusColor = (status: string) => {
   switch (status) {
     case 'pass':
@@ -157,7 +156,7 @@ export const extractPartialFulfillment = (analysisLower: string): number | undef
   return undefined;
 };
 
-// SIMPLIFIED: Convert GPT assessment directly to 0-10 score 
+// CORRECTED: Convert GPT assessment directly to 0-10 score 
 export const deriveScoreFromGptAnalysis = (
   criterion: BuffettCriterionProps
 ): number | undefined => {
@@ -177,7 +176,7 @@ export const deriveScoreFromGptAnalysis = (
   
   console.log(`GPT Assessment for ${criterion.title}: ${assessment.status}`);
   
-  // SIMPLIFIED SCORING based on user requirements:
+  // CORRECTED SCORING based on user requirements:
   if (assessment.status === 'pass') {
     console.log('Pass status: 10/10 points');
     return 10; // (Pass) = 10/10
@@ -315,7 +314,7 @@ export const calculateFinancialMetricScore = (
   }
 };
 
-// UNIFIED FUNCTION: Get the displayed score for any criterion - used everywhere
+// CORRECTED UNIFIED FUNCTION: Get the displayed score for any criterion - used everywhere
 export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): number => {
   console.log('getUnifiedCriterionScore called for:', criterion.title);
   
@@ -331,17 +330,17 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
     }
   }
   
-  // For all other criteria, use explicit score first
-  if (criterion.score !== undefined) {
-    console.log('Using explicit score:', criterion.score);
-    return criterion.score;
-  }
-  
-  // Then derive from GPT analysis (simplified logic)
+  // For all other criteria, prefer derived GPT score over explicit score
   const derivedScore = deriveScoreFromGptAnalysis(criterion);
   if (derivedScore !== undefined) {
     console.log('Using derived score from GPT analysis:', derivedScore);
     return derivedScore;
+  }
+  
+  // Then use explicit score if available
+  if (criterion.score !== undefined) {
+    console.log('Using explicit score:', criterion.score);
+    return criterion.score;
   }
   
   // FALLBACK: 0 only if absolutely no data available
