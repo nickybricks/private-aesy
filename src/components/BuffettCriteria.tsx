@@ -254,11 +254,11 @@ const CriterionCard: React.FC<{
                 const foundMetric = metricsToCheck.find(metric => detail.includes(metric));
                 const hasMetricExplanation = foundMetric && getMetricExplanation(foundMetric);
                 
-                // FIXED: Fix double USD issue
+                // FIXED: Fix double USD issue more thoroughly
                 let displayDetail = detail;
-                if (detail.includes("USD USD")) {
-                  displayDetail = detail.replace("USD USD", "USD");
-                }
+                // Remove any instance of double currency symbols
+                displayDetail = displayDetail.replace(/(\b[A-Z]{3})\s+\1\b/g, '$1'); // Removes "USD USD", "EUR EUR", etc.
+                displayDetail = displayDetail.replace(/USD USD/g, 'USD'); // Specific fallback for USD
                 
                 return (
                   <li key={idx} className="flex items-start gap-2">
