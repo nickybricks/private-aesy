@@ -173,31 +173,29 @@ const CriterionCard: React.FC<{
 }> = ({ name, criterion, index }) => {
   const { title, description, details } = criterion;
   
-  // Use GPT analysis status if available, otherwise fall back to original status
+  // CORRECTED: Use GPT analysis status if available, otherwise fall back to original status
   let displayStatus = criterion.status;
-  if (criterion.gptAnalysis) {
+  
+  // For financialMetrics (Criterion 3), force warning status if GPT analysis indicates partial fulfillment
+  if (name === 'financialMetrics' && criterion.gptAnalysis) {
+    const analysisLower = criterion.gptAnalysis.toLowerCase();
+    
+    // Look for patterns indicating partial fulfillment (2 von 3 erfüllt)
+    if (analysisLower.includes('2 von 3') || 
+        analysisLower.includes('von 3 teilaspekten wurden 2 erfüllt') ||
+        analysisLower.includes('eps-wachstum nicht erfüllt') ||
+        (analysisLower.includes('roe') && analysisLower.includes('nettomarge') && 
+         analysisLower.includes('eps') && analysisLower.includes('nicht erfüllt'))) {
+      displayStatus = 'warning'; // Force warning status for partial fulfillment
+      console.log('Forcing warning status for financial metrics due to partial fulfillment');
+    }
+  }
+  
+  // If no specific override, try to get GPT assessment
+  if (displayStatus === criterion.status && criterion.gptAnalysis) {
     const gptAssessment = extractGptAssessmentStatus(criterion.gptAnalysis);
     if (gptAssessment) {
-      // CORRECTED: For criterion 3, check for partial fulfillment pattern more thoroughly
-      if (name === 'financialMetrics') {
-        const analysisLower = criterion.gptAnalysis.toLowerCase();
-        // Look for patterns indicating partial fulfillment
-        if (analysisLower.includes('2 von 3') || 
-            analysisLower.includes('von 3 teilaspekten wurden 2 erfüllt') ||
-            analysisLower.includes('eps-wachstum nicht erfüllt') ||
-            (analysisLower.includes('roe') && analysisLower.includes('nettomarge') && analysisLower.includes('eps-wachstum') && analysisLower.includes('nicht'))) {
-          displayStatus = 'warning'; // Force warning status for partial fulfillment
-        } else {
-          displayStatus = gptAssessment.status;
-        }
-      } else {
-        displayStatus = gptAssessment.status;
-      }
-      
-      // Special handling for partial fulfillment - if GPT says warning, it should be warning regardless of points
-      if (gptAssessment.status === 'warning') {
-        displayStatus = 'warning';
-      }
+      displayStatus = gptAssessment.status;
     }
   }
   
