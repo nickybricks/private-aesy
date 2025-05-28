@@ -193,7 +193,7 @@ export const deriveScoreFromGptAnalysis = (
       const fulfilled = parseInt(fulfillmentMatch[2], 10);
       
       if (!isNaN(fulfilled) && !isNaN(total) && total > 0) {
-        // Calculate score: (fulfilled/total) * 10
+        // Calculate score: (fulfilled/total) * 10, round to 1 decimal
         const score = Math.round((fulfilled / total) * 10 * 10) / 10;
         console.log(`Warning with partial fulfillment: ${fulfilled}/${total} = ${score}/10`);
         return score;
@@ -334,6 +334,14 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
   const derivedScore = deriveScoreFromGptAnalysis(criterion);
   if (derivedScore !== undefined) {
     console.log('Using derived score from GPT analysis:', derivedScore);
+    
+    // CORRECTED: Check if score should be warning based on range 
+    // If score is between 0.1 and 9.9 (exclusive), it should be warning status
+    if (derivedScore > 0 && derivedScore < 10) {
+      // This should be a warning status, not pass
+      console.log('Score indicates partial fulfillment - should be warning status');
+    }
+    
     return derivedScore;
   }
   

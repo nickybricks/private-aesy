@@ -178,7 +178,19 @@ const CriterionCard: React.FC<{
   if (criterion.gptAnalysis) {
     const gptAssessment = extractGptAssessmentStatus(criterion.gptAnalysis);
     if (gptAssessment) {
-      displayStatus = gptAssessment.status;
+      // CORRECTED: If GPT analysis shows partial fulfillment (like 2/3), status should be warning
+      if (gptAssessment.partialFulfillment !== undefined) {
+        const fulfillmentRatio = gptAssessment.partialFulfillment / 3; // Assuming 3 total aspects
+        if (fulfillmentRatio < 1 && fulfillmentRatio > 0) {
+          displayStatus = 'warning'; // Force warning status for partial fulfillment
+        } else if (fulfillmentRatio === 1) {
+          displayStatus = 'pass';
+        } else {
+          displayStatus = 'fail';
+        }
+      } else {
+        displayStatus = gptAssessment.status;
+      }
     }
   }
   
@@ -237,11 +249,24 @@ const CriterionCard: React.FC<{
                 const foundMetric = metricsToCheck.find(metric => detail.includes(metric));
                 const hasMetricExplanation = foundMetric && getMetricExplanation(foundMetric);
                 
+                // CORRECTED: Fix double USD issue and add note for EPS
+                let displayDetail = detail;
+                if (detail.includes("USD USD")) {
+                  displayDetail = detail.replace("USD USD", "USD");
+                }
+                
                 return (
                   <li key={idx} className="flex items-start gap-2">
                     <span className="text-buffett-subtext mt-0.5">•</span>
                     <div>
-                      <span>{detail}</span>
+                      <span>{displayDetail}</span>
+                      
+                      {/* Add note for EPS */}
+                      {detail.includes("Gewinn pro Aktie:") && (
+                        <div className="text-sm text-gray-600 mt-1">
+                          → Hinweis: Keine feste Schwelle, dient nur zur Einordnung der Profitabilität
+                        </div>
+                      )}
                       
                       {hasMetricExplanation && (
                         <TooltipProvider>
