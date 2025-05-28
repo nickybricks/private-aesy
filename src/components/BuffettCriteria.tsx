@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Check, 
@@ -177,8 +178,18 @@ const CriterionCard: React.FC<{
   if (criterion.gptAnalysis) {
     const gptAssessment = extractGptAssessmentStatus(criterion.gptAnalysis);
     if (gptAssessment) {
-      // CORRECTED: For all criteria, use GPT analysis status directly
-      displayStatus = gptAssessment.status;
+      // CORRECTED: For criterion 3, check for partial fulfillment pattern
+      if (name === 'financialMetrics' && gptAssessment.status === 'pass') {
+        // Check if GPT analysis mentions "2 von 3" or similar partial fulfillment
+        const analysisLower = criterion.gptAnalysis.toLowerCase();
+        if (analysisLower.includes('2 von 3') || analysisLower.includes('von 3 teilaspekten wurden 2 erfüllt')) {
+          displayStatus = 'warning'; // Force warning status for partial fulfillment
+        } else {
+          displayStatus = gptAssessment.status;
+        }
+      } else {
+        displayStatus = gptAssessment.status;
+      }
       
       // Special handling for partial fulfillment - if GPT says warning, it should be warning regardless of points
       if (gptAssessment.status === 'warning') {
