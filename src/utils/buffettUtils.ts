@@ -218,11 +218,13 @@ export const calculateFinancialMetricScore = (
   
   switch (criterionNumber) {
     case 3: // Finanzkennzahlen (10 Jahre Rückblick)
-      // KORRIGIERT: MaxScore auf 10 gesetzt für 3 bewertbare Metriken (ohne EPS)
+      // KORRIGIERT: MaxScore ist IMMER 10 für 3 bewertbare Metriken (ohne EPS)
       // Bewertbare Metriken: ROE, Nettomarge, EPS-Wachstum
       // Nicht bewertbar: EPS (Gewinn pro Aktie) - nur zur Information
       let totalScore = 0;
-      const maxPossibleScore = 10; // 3 Metriken × 3.33 Punkte ≈ 10 Punkte
+      const maxPossibleScore = 10; // FEST auf 10 gesetzt
+      
+      console.log('WICHTIG: Kriterium 3 hat IMMER maxScore = 10');
       
       // ROE Bewertung (3.33 Punkte möglich)
       if (metrics.roe !== undefined && metrics.roe !== null) {
@@ -378,6 +380,15 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
 
 // UNIFIED FUNCTION: Get the max score for any criterion - used everywhere
 export const getUnifiedCriterionMaxScore = (criterion: BuffettCriterionProps): number => {
+  // WICHTIG: Für Kriterium 3 ist maxScore IMMER 10
+  const criterionNumber = criterion.title.match(/^\d+/)?.[0];
+  const criterionNum = criterionNumber ? parseInt(criterionNumber, 10) : 0;
+  
+  if (criterionNum === 3) {
+    console.log('Kriterium 3: Setze maxScore fest auf 10');
+    return 10; // FEST auf 10 für Kriterium 3
+  }
+  
   // Use explicit maxScore if available, otherwise default to 10
   return criterion.maxScore !== undefined ? criterion.maxScore : 10;
 };

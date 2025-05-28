@@ -9,15 +9,19 @@ export const processFinancialMetrics = (rawData: any, reportedCurrency: string, 
 
   console.log('Processing financial metrics with currencies:', { reportedCurrency, priceCurrency });
   
-  // KORRIGIERT: Verhindere doppelte Währungszeichen bereits bei der Verarbeitung
+  // KORRIGIERT: Verbesserte Währungsbereinigung - verhindert alle doppelten Währungszeichen
   const cleanCurrencyValue = (value: number, currency: string): string => {
     if (value === null || value === undefined || isNaN(value)) {
       return 'N/A';
     }
     
-    // Stelle sicher, dass die Währung nur einmal erscheint
-    const cleanCurrency = currency?.toUpperCase() || 'USD';
-    return `${value} ${cleanCurrency}`;
+    // Stelle sicher, dass die Währung nur einmal erscheint und richtig formatiert ist
+    const cleanCurrency = currency?.toUpperCase()?.trim() || 'USD';
+    const formattedValue = `${value} ${cleanCurrency}`;
+    
+    console.log(`cleanCurrencyValue: input=${value}, currency=${currency}, output=${formattedValue}`);
+    
+    return formattedValue;
   };
 
   const processedMetrics = {
@@ -30,6 +34,7 @@ export const processFinancialMetrics = (rawData: any, reportedCurrency: string, 
 
   console.log('Processed EPS value:', processedMetrics.eps);
   console.log('Original EPS from raw data:', rawData.metrics.eps);
+  console.log('Price currency used for EPS:', priceCurrency);
 
   return {
     metrics: processedMetrics,
