@@ -249,27 +249,27 @@ const CriterionCard: React.FC<{
             <h4 className="font-medium mb-2">Details:</h4>
             <ul className="space-y-2">
               {details.map((detail, idx) => {
-                // DEBUG: Log the original detail before any processing
-                console.log(`DEBUG - Original detail ${idx}:`, detail);
+                console.log(`Processing detail ${idx}:`, detail);
                 
                 // Check if detail contains metrics that need explanation
                 const metricsToCheck = ["ROE", "ROIC", "Nettomarge", "Schulden zu EBITDA", "EPS", "KGV", "P/B", "Turnaround"];
                 const foundMetric = metricsToCheck.find(metric => detail.includes(metric));
                 const hasMetricExplanation = foundMetric && getMetricExplanation(foundMetric);
                 
-                // Check if this is an EPS detail BEFORE any modifications
+                // KORRIGIERT: Prüfe auf EPS BEVOR die Daten verändert werden
                 const isEpsDetail = detail.includes("Gewinn pro Aktie:");
-                console.log(`DEBUG - Is EPS detail: ${isEpsDetail}`, detail);
                 
-                // Process the detail for display (remove double currency symbols)
+                // KORRIGIERT: Entferne doppelte Währungszeichen systematischer
                 let displayDetail = detail;
                 
-                // Remove any instance of double currency symbols
-                displayDetail = displayDetail.replace(/(\b[A-Z]{3})\s+\1\b/g, '$1'); // Removes "USD USD", "EUR EUR", etc.
-                displayDetail = displayDetail.replace(/USD USD/g, 'USD'); // Specific fallback for USD
+                // Entferne alle Varianten von doppelten Währungszeichen
+                displayDetail = displayDetail.replace(/(\b[A-Z]{3})\s+\1\b/g, '$1'); // "USD USD" -> "USD"
+                displayDetail = displayDetail.replace(/([A-Z]{3})\s*([A-Z]{3})\b/g, (match, curr1, curr2) => {
+                  // Wenn beide Währungen gleich sind, behalte nur eine
+                  return curr1 === curr2 ? curr1 : match;
+                });
                 
-                // DEBUG: Log after currency cleanup
-                console.log(`DEBUG - After currency cleanup:`, displayDetail);
+                console.log(`Detail nach Bereinigung:`, displayDetail);
                 
                 return (
                   <li key={idx} className="flex items-start gap-2">
@@ -277,7 +277,7 @@ const CriterionCard: React.FC<{
                     <div>
                       <span>{displayDetail}</span>
                       
-                      {/* Add note for EPS - DEBUG this rendering */}
+                      {/* KORRIGIERT: EPS-Hinweis wird immer angezeigt wenn es ein EPS-Detail ist */}
                       {isEpsDetail && (
                         <div className="text-sm text-gray-600 mt-1">
                           → Hinweis: Keine feste Schwelle, dient nur zur Einordnung der Profitabilität

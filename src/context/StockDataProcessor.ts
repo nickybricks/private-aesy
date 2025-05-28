@@ -1,58 +1,42 @@
-
 /**
  * Processes financial metrics data and adds additional information
  */
-export const processFinancialMetrics = (data: any, reportedCurrency: string, stockCurrency: string) => {
-  if (!data) return null;
+export const processFinancialMetrics = (rawData: any, reportedCurrency: string, priceCurrency: string) => {
+  if (!rawData || !rawData.metrics) {
+    console.log('No financial metrics data available');
+    return null;
+  }
+
+  console.log('Processing financial metrics with currencies:', { reportedCurrency, priceCurrency });
   
-  // Process all metrics
-  const processedData = {
-    ...data,
-    reportedCurrency: reportedCurrency || data.reportedCurrency || stockCurrency,
+  // KORRIGIERT: Verhindere doppelte Währungszeichen bereits bei der Verarbeitung
+  const cleanCurrencyValue = (value: number, currency: string): string => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return 'N/A';
+    }
+    
+    // Stelle sicher, dass die Währung nur einmal erscheint
+    const cleanCurrency = currency?.toUpperCase() || 'USD';
+    return `${value} ${cleanCurrency}`;
   };
 
-  // Calculate any needed derivatives
-  if (processedData.metrics) {
-    for (const metric of processedData.metrics) {
-      // Keep original values for potential conversion
-      if (metric.value !== undefined && metric.value !== null) {
-        metric.originalValue = metric.value;
-      }
-    }
-  }
+  const processedMetrics = {
+    ...rawData.metrics,
+    // WICHTIG: EPS wird speziell behandelt - nur zur Information, nicht zur Bewertung
+    eps: rawData.metrics.eps !== null && rawData.metrics.eps !== undefined 
+      ? cleanCurrencyValue(rawData.metrics.eps, priceCurrency)
+      : 'N/A'
+  };
 
-  // Process historical data
-  if (processedData.historicalData) {
-    // Keep original values for potential conversions
-    if (processedData.historicalData.revenue) {
-      for (const item of processedData.historicalData.revenue) {
-        if (item.value !== undefined) {
-          item.originalValue = item.value;
-          item.originalCurrency = reportedCurrency;
-        }
-      }
-    }
-    
-    if (processedData.historicalData.earnings) {
-      for (const item of processedData.historicalData.earnings) {
-        if (item.value !== undefined) {
-          item.originalValue = item.value;
-          item.originalCurrency = reportedCurrency;
-        }
-      }
-    }
-    
-    if (processedData.historicalData.eps) {
-      for (const item of processedData.historicalData.eps) {
-        if (item.value !== undefined) {
-          item.originalValue = item.value;
-          item.originalCurrency = reportedCurrency;
-        }
-      }
-    }
-  }
+  console.log('Processed EPS value:', processedMetrics.eps);
+  console.log('Original EPS from raw data:', rawData.metrics.eps);
 
-  return processedData;
+  return {
+    metrics: processedMetrics,
+    historicalData: rawData.historicalData || [],
+    reportedCurrency,
+    priceCurrency
+  };
 };
 
 /**

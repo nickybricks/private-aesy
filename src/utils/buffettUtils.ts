@@ -212,87 +212,105 @@ export const deriveScoreFromGptAnalysis = (
 // Calculate score for criteria 3, 4, and 6 based on financial metrics (not GPT)
 export const calculateFinancialMetricScore = (
   criterionNumber: number,
-  financialData: any
+  metrics: any
 ): number => {
+  console.log(`Calculating score for criterion ${criterionNumber}:`, metrics);
+  
   switch (criterionNumber) {
-    case 3: // Finanzkennzahlen
-      // Buffett Richtwerte für Kriterium 3:
-      // - ROE: ≥ 15% = gut, 10-15% = ok, < 10% = schlecht
-      // - ROA: ≥ 10% = gut, 5-10% = ok, < 5% = schlecht  
-      // - Gewinnmarge: ≥ 15% = gut, 10-15% = ok, < 10% = schlecht
-      // - EPS Wachstum: ≥ 10% = gut, 5-10% = ok, < 5% = schlecht
+    case 3: // Finanzkennzahlen (10 Jahre Rückblick)
+      // KORRIGIERT: MaxScore auf 10 gesetzt für 3 bewertbare Metriken (ohne EPS)
+      // Bewertbare Metriken: ROE, Nettomarge, EPS-Wachstum
+      // Nicht bewertbar: EPS (Gewinn pro Aktie) - nur zur Information
+      let totalScore = 0;
+      const maxPossibleScore = 10; // 3 Metriken × 3.33 Punkte ≈ 10 Punkte
       
-      if (!financialData) return 0;
-      
-      let score = 0;
-      let criteriaCount = 0;
-      
-      // ROE Check
-      if (financialData.roe !== undefined) {
-        criteriaCount++;
-        if (financialData.roe >= 15) score += 2.5;
-        else if (financialData.roe >= 10) score += 1.5;
-        else score += 0;
+      // ROE Bewertung (3.33 Punkte möglich)
+      if (metrics.roe !== undefined && metrics.roe !== null) {
+        if (metrics.roe >= 15) {
+          totalScore += 3.33; // Buffett bevorzugt >15%
+          console.log(`ROE ${metrics.roe}% >= 15%: +3.33 points`);
+        } else if (metrics.roe >= 10) {
+          totalScore += 2; // Akzeptabel
+          console.log(`ROE ${metrics.roe}% >= 10%: +2 points`);
+        } else if (metrics.roe >= 5) {
+          totalScore += 1; // Schwach
+          console.log(`ROE ${metrics.roe}% >= 5%: +1 points`);
+        } else {
+          console.log(`ROE ${metrics.roe}% < 5%: +0 points`);
+        }
       }
       
-      // ROA Check  
-      if (financialData.roa !== undefined) {
-        criteriaCount++;
-        if (financialData.roa >= 10) score += 2.5;
-        else if (financialData.roa >= 5) score += 1.5;
-        else score += 0;
+      // Nettomarge Bewertung (3.33 Punkte möglich)
+      if (metrics.netProfitMargin !== undefined && metrics.netProfitMargin !== null) {
+        if (metrics.netProfitMargin >= 15) {
+          totalScore += 3.33; // Buffett bevorzugt >15%
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 15%: +3.33 points`);
+        } else if (metrics.netProfitMargin >= 10) {
+          totalScore += 2; // Akzeptabel
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 10%: +2 points`);
+        } else if (metrics.netProfitMargin >= 5) {
+          totalScore += 1; // Schwach
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 5%: +1 points`);
+        } else {
+          console.log(`Nettomarge ${metrics.netProfitMargin}% < 5%: +0 points`);
+        }
       }
       
-      // Profit Margin Check
-      if (financialData.profitMargin !== undefined) {
-        criteriaCount++;
-        if (financialData.profitMargin >= 15) score += 2.5;
-        else if (financialData.profitMargin >= 10) score += 1.5;
-        else score += 0;
+      // EPS-Wachstum Bewertung (3.34 Punkte möglich)
+      if (metrics.epsGrowth !== undefined && metrics.epsGrowth !== null) {
+        if (metrics.epsGrowth >= 10) {
+          totalScore += 3.34; // Buffett bevorzugt >10%
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 10%: +3.34 points`);
+        } else if (metrics.epsGrowth >= 5) {
+          totalScore += 2; // Akzeptabel
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 5%: +2 points`);
+        } else if (metrics.epsGrowth >= 0) {
+          totalScore += 1; // Schwaches Wachstum
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 0%: +1 points`);
+        } else {
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% < 0%: +0 points`);
+        }
       }
       
-      // EPS Growth Check (durchschnittliches Wachstum)
-      if (financialData.epsGrowth !== undefined) {
-        criteriaCount++;
-        if (financialData.epsGrowth >= 10) score += 2.5;
-        else if (financialData.epsGrowth >= 5) score += 1.5;
-        else score += 0;
-      }
+      // WICHTIG: EPS-Wert (Gewinn pro Aktie) wird NICHT bewertet
+      // Er dient nur zur Information und Einordnung der Profitabilität
+      console.log(`Financial metrics total score: ${totalScore}/${maxPossibleScore}`);
+      console.log(`HINWEIS: EPS-Wert wird nicht bewertet - nur zur Information`);
       
-      return criteriaCount > 0 ? Math.round((score / criteriaCount) * 4) / 4 : 0;
-      
+      return Math.round(totalScore * 100) / 100; // Runde auf 2 Dezimalstellen
+
     case 4: // Finanzielle Stabilität
       // Buffett Richtwerte für Kriterium 4:
       // - Schulden zu EBITDA: < 2 = sehr gut, 2-3 = ok, > 3 = schlecht
       // - Current Ratio: > 1.5 = gut, 1-1.5 = ok, < 1 = schlecht
       // - Quick Ratio: > 1 = gut, 0.8-1 = ok, < 0.8 = schlecht
       
-      if (!financialData) return 0;
+      if (!metrics) return 0;
       
       let stabilityScore = 0;
       let stabilityCriteriaCount = 0;
       
       // Debt to EBITDA Check
-      if (financialData.debtToEbitda !== undefined) {
+      if (metrics.debtToEbitda !== undefined) {
         stabilityCriteriaCount++;
-        if (financialData.debtToEbitda < 2) stabilityScore += 3.33;
-        else if (financialData.debtToEbitda <= 3) stabilityScore += 1.67;
+        if (metrics.debtToEbitda < 2) stabilityScore += 3.33;
+        else if (metrics.debtToEbitda <= 3) stabilityScore += 1.67;
         else stabilityScore += 0;
       }
       
       // Current Ratio Check
-      if (financialData.currentRatio !== undefined) {
+      if (metrics.currentRatio !== undefined) {
         stabilityCriteriaCount++;
-        if (financialData.currentRatio > 1.5) stabilityScore += 3.33;
-        else if (financialData.currentRatio >= 1) stabilityScore += 1.67;
+        if (metrics.currentRatio > 1.5) stabilityScore += 3.33;
+        else if (metrics.currentRatio >= 1) stabilityScore += 1.67;
         else stabilityScore += 0;
       }
       
       // Quick Ratio Check
-      if (financialData.quickRatio !== undefined) {
+      if (metrics.quickRatio !== undefined) {
         stabilityCriteriaCount++;
-        if (financialData.quickRatio > 1) stabilityScore += 3.33;
-        else if (financialData.quickRatio >= 0.8) stabilityScore += 1.67;
+        if (metrics.quickRatio > 1) stabilityScore += 3.33;
+        else if (metrics.quickRatio >= 0.8) stabilityScore += 1.67;
         else stabilityScore += 0;
       }
       
@@ -300,9 +318,9 @@ export const calculateFinancialMetricScore = (
       
     case 6: // Bewertung
       // Bereits implementiert in DCF/Valuation logic
-      if (!financialData?.marginOfSafety) return 0;
+      if (!metrics?.marginOfSafety) return 0;
       
-      const mos = financialData.marginOfSafety;
+      const mos = metrics.marginOfSafety;
       if (mos >= 30) return 10;
       if (mos >= 20) return 8;
       if (mos >= 10) return 6;
