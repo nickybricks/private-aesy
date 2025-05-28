@@ -173,7 +173,7 @@ const CriterionCard: React.FC<{
 }> = ({ name, criterion, index }) => {
   const { title, description, details } = criterion;
   
-  // CORRECTED: Use GPT analysis status if available, otherwise fall back to original status
+  // FIXED: Proper status determination for financial metrics
   let displayStatus = criterion.status;
   
   // For financialMetrics (Criterion 3), force warning status if GPT analysis indicates partial fulfillment
@@ -254,7 +254,7 @@ const CriterionCard: React.FC<{
                 const foundMetric = metricsToCheck.find(metric => detail.includes(metric));
                 const hasMetricExplanation = foundMetric && getMetricExplanation(foundMetric);
                 
-                // CORRECTED: Fix double USD issue
+                // FIXED: Fix double USD issue
                 let displayDetail = detail;
                 if (detail.includes("USD USD")) {
                   displayDetail = detail.replace("USD USD", "USD");
