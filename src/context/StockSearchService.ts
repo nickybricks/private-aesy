@@ -1,4 +1,3 @@
-
 import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverallRating } from '@/api/stockApi';
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
@@ -101,6 +100,35 @@ const fetchCustomDCF = async (ticker: string) => {
   }
 };
 
+// NEUE FUNKTION: Korrigiere Kriterium 3 Daten
+const correctFinancialMetricsCriterion = (criteria: any) => {
+  if (!criteria || !criteria.financialMetrics) {
+    return criteria;
+  }
+  
+  console.log('Correcting financial metrics criterion data...');
+  
+  // Korrigiere maxScore auf 10
+  criteria.financialMetrics.maxScore = 10;
+  console.log('Set financialMetrics maxScore to 10');
+  
+  // Korrigiere doppelte Währungszeichen in details
+  if (criteria.financialMetrics.details && Array.isArray(criteria.financialMetrics.details)) {
+    criteria.financialMetrics.details = criteria.financialMetrics.details.map((detail: string) => {
+      // Entferne doppelte Währungszeichen wie "USD USD" -> "USD"
+      const correctedDetail = detail.replace(/(\b[A-Z]{3})\s+\1\b/g, '$1');
+      
+      if (detail !== correctedDetail) {
+        console.log(`Corrected detail: "${detail}" -> "${correctedDetail}"`);
+      }
+      
+      return correctedDetail;
+    });
+  }
+  
+  return criteria;
+};
+
 export const useStockSearch = () => {
   const { toast } = useToast();
   
@@ -145,14 +173,17 @@ export const useStockSearch = () => {
       
       // Parallele Ausführung aller API-Aufrufe, einschließlich des neuen DCF-Aufrufs
       try {
-        const [criteria, rawMetricsData, rating, customDcfData] = await Promise.all([
+        const [rawCriteria, rawMetricsData, rating, customDcfData] = await Promise.all([
           analyzeBuffettCriteria(ticker),
           getFinancialMetrics(ticker),
           getOverallRating(ticker),
           fetchCustomDCF(ticker)
         ]);
         
-        console.log('Buffett Criteria:', JSON.stringify(criteria, null, 2));
+        // KORRIGIERE KRITERIEN-DATEN VOR DER WEITEREN VERARBEITUNG
+        const criteria = correctFinancialMetricsCriterion(rawCriteria);
+        
+        console.log('Buffett Criteria (corrected):', JSON.stringify(criteria, null, 2));
         console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
         console.log('Overall Rating:', JSON.stringify(rating, null, 2));
         console.log('Custom DCF Data:', JSON.stringify(customDcfData, null, 2));
