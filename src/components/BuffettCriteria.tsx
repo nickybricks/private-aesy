@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Check, 
@@ -178,18 +177,12 @@ const CriterionCard: React.FC<{
   if (criterion.gptAnalysis) {
     const gptAssessment = extractGptAssessmentStatus(criterion.gptAnalysis);
     if (gptAssessment) {
-      // CORRECTED: If GPT analysis shows partial fulfillment (like 2/3), status should be warning
-      if (gptAssessment.partialFulfillment !== undefined) {
-        const fulfillmentRatio = gptAssessment.partialFulfillment / 3; // Assuming 3 total aspects
-        if (fulfillmentRatio < 1 && fulfillmentRatio > 0) {
-          displayStatus = 'warning'; // Force warning status for partial fulfillment
-        } else if (fulfillmentRatio === 1) {
-          displayStatus = 'pass';
-        } else {
-          displayStatus = 'fail';
-        }
-      } else {
-        displayStatus = gptAssessment.status;
+      // CORRECTED: For all criteria, use GPT analysis status directly
+      displayStatus = gptAssessment.status;
+      
+      // Special handling for partial fulfillment - if GPT says warning, it should be warning regardless of points
+      if (gptAssessment.status === 'warning') {
+        displayStatus = 'warning';
       }
     }
   }
@@ -249,7 +242,7 @@ const CriterionCard: React.FC<{
                 const foundMetric = metricsToCheck.find(metric => detail.includes(metric));
                 const hasMetricExplanation = foundMetric && getMetricExplanation(foundMetric);
                 
-                // CORRECTED: Fix double USD issue and add note for EPS
+                // CORRECTED: Fix double USD issue
                 let displayDetail = detail;
                 if (detail.includes("USD USD")) {
                   displayDetail = detail.replace("USD USD", "USD");
