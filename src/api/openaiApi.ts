@@ -95,16 +95,31 @@ export const queryGPT = async (prompt: string): Promise<string> => {
 export const analyzeBusinessModel = async (companyName: string, industry: string, description: string): Promise<string> => {
   const prompt = `
     Analysiere das Geschäftsmodell von ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Verstehbares Geschäftsmodell".
-    
+
     Hier ist eine kurze Beschreibung des Unternehmens:
     ${description}
     
-    Gib strukturierte Stichpunkte mit diesen Anforderungen:
-    1. Beginne mit der Hauptfrage: **Ist das Geschäftsmodell leicht verständlich?**
-    2. Führe 3-4 aussagekräftige Stichpunkte auf, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.
-    3. Schließe mit einer klaren Bewertung ab: **Bewertung:** Einfach verständlich (Pass), Moderat komplex (Warning), Zu komplex (Fail).
+    Beurteile ausschließlich die Verständlichkeit des **Kerngeschäftsmodells** – also: Wie verdient das Unternehmen Geld?
     
-    WICHTIG: Falls deine Bewertung "Moderat komplex (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt."
+    ⚠️ Berücksichtige **nicht**:
+    - Markenvielfalt
+    - internationale Märkte
+    - technische Begriffe
+    - Prozesse oder Skalierung
+    
+    📌 Warren Buffett fragt: „Kann ich in 1–2 Sätzen erklären, wie dieses Unternehmen Geld verdient – und versteht das auch ein 12-Jähriger?“
+    
+    —
+    
+    Gib dann strukturierte Stichpunkte mit diesen Anforderungen:
+    
+    1. Beginne mit der Hauptfrage: **Ist das Geschäftsmodell leicht verständlich?**
+    2. Führe 3 klare Stichpunkte auf, die jeweils mit "- " beginnen und das **Geschäftsmodell in einfachen Worten** erklären.
+    3. Schließe mit einer klaren Bewertung ab:  
+    **Bewertung:** Einfach verständlich (Pass), Moderat komplex (Warning), Zu komplex (Fail)
+    
+    **Falls die Bewertung "Moderat komplex (Warning)" lautet**, gib zusätzlich an:  
+    → **Von 3 Teilaspekten wurden X erfüllt.**
   `;
   
   return await queryGPT(prompt);
@@ -113,19 +128,35 @@ export const analyzeBusinessModel = async (companyName: string, industry: string
 // Function to analyze economic moat using GPT
 export const analyzeEconomicMoat = async (companyName: string, industry: string, grossMargin: number, operatingMargin: number, roic: number): Promise<string> => {
   const prompt = `
-    Analysiere den wirtschaftlichen Burggraben (Economic Moat) von ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterien.
-    
-    Hier sind einige Kennzahlen:
+    Analysiere den wirtschaftlichen Burggraben (Moat) von ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterien.
+
+    Hier sind quantitative Kennzahlen:
     - Bruttomarge: ${grossMargin.toFixed(2)}%
     - Betriebsmarge: ${operatingMargin.toFixed(2)}%
     - ROIC: ${roic.toFixed(2)}%
     
-    Gib strukturierte Stichpunkte mit diesen Anforderungen:
-    1. Beginne mit der Hauptfrage: **Hat das Unternehmen einen starken wirtschaftlichen Burggraben?**
-    2. Führe 3-4 aussagekräftige Stichpunkte auf, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.
-    3. Schließe mit einer klaren Bewertung ab: **Bewertung:** Starker Moat (Pass), Moderater Moat (Warning), Schwacher/Kein Moat (Fail).
+    1. Berücksichtige bei deiner Einschätzung folgende qualitative Moat-Faktoren:
+       - **Netzwerkeffekt**
+       - **Markenstärke / Kundenbindung**
+       - **Skaleneffekte / Effizienz**
+       - **Kosten- oder Technologievorteile**
     
-    WICHTIG: Falls deine Bewertung "Moderater Moat (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt."
+    2. Berücksichtige außerdem die Kennzahlen:
+       - Bruttomarge > 40 % = positiv
+       - Betriebsmarge > 20 % = positiv
+       - ROIC > 15 % = positiv
+    
+    3. Beurteile, wie viele dieser 3 Teilaspekte (qualitativ & quantitativ gemischt) erfüllt sind.
+    
+    Gib strukturierte Stichpunkte mit folgenden Anforderungen:
+    - 3 konkrete Moat-Aspekte, jeweils beginnend mit "- "
+    - Jeder Aspekt soll **klar als erfüllt oder nicht erfüllt erkennbar** sein
+    
+    Am Ende:
+    - **Zähle genau auf:** "Von 3 Teilaspekten wurden X erfüllt."
+    - **Gib eine klare Bewertung ab:**  
+    **Bewertung:** Starker Moat (Pass), Moderater Moat (Warning), Schwacher/Kein Moat (Fail)
+
   `;
   
   return await queryGPT(prompt);
@@ -140,10 +171,10 @@ export const analyzeManagementQuality = async (companyName: string, ceo: string)
     1. Beginne mit der Hauptfrage: **Ist das Management ehrlich und transparent?**
     2. Füge eine zweite wichtige Frage hinzu: **Handelt es zum Wohle der Aktionäre?**
     3. Füge eine dritte wichtige Frage hinzu: **Zeigt es gute Kapitalallokation?**
-    4. Beantworte jede Frage mit 1-2 aussagekräftigen Stichpunkten, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.
+    4. Beantworte jede Frage mit 1-2 aussagekräftigen Stichpunkten, die jeweils mit "- " beginnen und in einer neuen Zeile stehen.  
     5. Schließe mit einer klaren Bewertung ab: **Bewertung:** Gutes Management (Pass), Durchschnittliches Management (Warning), Problematisches Management (Fail).
     
-    WICHTIG: Falls deine Bewertung "Durchschnittliches Management (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt."
+    WICHTIG: Falls deine Bewertung "Durchschnittliches Management (Warning)" lautet, gib zusätzlich an, wie viele von 3 Teilaspekten als erfüllt gelten, z.B.: "Von 3 Teilaspekten wurden 2 erfüllt." Erlkäre auch, welche Aspelkte erfüllt wurden und welche nicht.
   `;
   
   return await queryGPT(prompt);
