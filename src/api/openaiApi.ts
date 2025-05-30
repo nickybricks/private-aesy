@@ -327,7 +327,7 @@ export const analyzeTurnaround = async (companyName: string, industry: string): 
       **Leichte Umstrukturierung (Warning)**  
       **Klarer Turnaround-Fall (Fail)**
 
-;
+`;
   
   return await queryGPT(prompt);
 };
