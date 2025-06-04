@@ -615,7 +615,6 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       details: [
         `Hauptgeschäftsbereich: ${companyProfile.industry || 'Unbekannt'}`,
         `Sektor: ${companyProfile.sector || 'Unbekannt'}`,
-        `Gründungsjahr: ${companyProfile.ipoDate ? new Date(companyProfile.ipoDate).getFullYear() : 'N/A'}`,
         `Beschreibung: ${companyProfile.description ? companyProfile.description.substring(0, 200) + '...' : 'Keine Beschreibung verfügbar'}`
       ],
       gptAnalysis: businessModelGptAnalysis,
