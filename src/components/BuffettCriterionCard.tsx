@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,16 +31,34 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
   // Get GPT's assessment of fulfillment
   const gptAssessment = criterion.gptAnalysis ? extractGptAssessmentStatus(criterion.gptAnalysis) : undefined;
   
-  // Use GPT's assessment to determine the status for this criterion
-  let displayStatus = criterion.status;
-  if (gptAssessment) {
-    displayStatus = gptAssessment.status;
-  }
-  
   // Use the unified scoring function to get the consistent score
   const unifiedScore = getUnifiedCriterionScore(criterion);
   
   console.log(`BuffettCriterionCard - ${criterion.title}: unified score=${unifiedScore}`);
+  
+  // Determine status: Use GPT assessment if available, otherwise derive from score for financial criteria
+  let displayStatus = criterion.status;
+  
+  if (gptAssessment) {
+    displayStatus = gptAssessment.status;
+  } else {
+    // For financial criteria (3, 4, 6) without GPT analysis, determine status from score
+    const criterionNumber = criterion.title.match(/^\d+/)?.[0];
+    const criterionNum = criterionNumber ? parseInt(criterionNumber, 10) : 0;
+    
+    if ([3, 4, 6].includes(criterionNum)) {
+      // Determine status based on score for financial criteria
+      if (unifiedScore >= 10) {
+        displayStatus = 'pass';
+      } else if (unifiedScore >= 7) {
+        displayStatus = 'warning';
+      } else {
+        displayStatus = 'fail';
+      }
+      
+      console.log(`Financial criterion ${criterionNum}: score=${unifiedScore}, status=${displayStatus}`);
+    }
+  }
   
   // Show partial fulfillment visualization if we have the data
   const showPartialFulfillment = partialFulfillment !== null || 
