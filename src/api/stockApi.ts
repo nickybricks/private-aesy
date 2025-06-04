@@ -642,7 +642,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       description: `Die Finanzkennzahlen von ${companyProfile.companyName} sind ${financialMetricsStatus === 'pass' ? 'stark' : financialMetricsStatus === 'warning' ? 'moderat' : 'schwach'}.`,
       details: [
         `Eigenkapitalrendite (ROE): ${roe.toFixed(2)}% (Buffett bevorzugt >15%)`,
-        `Nettomarge: ${netMargin.toFixed(2)}% (Buffett bevorzugt >10%)`,
+        `Nettomarge: ${netMargin.toFixed(2)}% (Buffett bevorzugt >15%)`,
         `EPS-Wachstum (3 Jahre): ${epsGrowth.toFixed(2)}% (Buffett bevorzugt >10%)`,
         `Gewinn pro Aktie: ${latestIncomeStatement && latestIncomeStatement.eps ? Number(latestIncomeStatement.eps).toFixed(2) + ' ' + companyProfile.currency : 'N/A'} ${companyProfile.currency || 'USD'}`
       ],
