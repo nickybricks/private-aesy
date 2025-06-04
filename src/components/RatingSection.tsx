@@ -5,7 +5,7 @@ import OverallRating from '@/components/OverallRating';
 import { debugDCFData } from '@/utils/currencyConverter';
 
 const RatingSection: React.FC = () => {
-  const { overallRating, isLoading, hasCriticalDataMissing, dcfData, stockInfo } = useStock();
+  const { overallRating, isLoading, hasCriticalDataMissing, dcfData, stockInfo, buffettCriteria } = useStock();
   
   useEffect(() => {
     console.log('RatingSection mounted or dcfData changed');
@@ -50,9 +50,15 @@ const RatingSection: React.FC = () => {
   
   if (isLoading || hasCriticalDataMissing || !overallRating) return null;
   
+  // Create enhanced rating object with criteria data
+  const enhancedRating = overallRating ? {
+    ...overallRating,
+    criteria: buffettCriteria
+  } : null;
+  
   return (
     <div className="mb-8">
-      <OverallRating rating={overallRating} />
+      <OverallRating rating={enhancedRating} />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   CheckCircle, 
@@ -13,6 +12,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
 import RatingExplanation from './RatingExplanation';
+import { 
+  BuffettCriteriaProps,
+  getUnifiedCriterionScore,
+  buffettCriteriaWeights
+} from '@/utils/buffettUtils';
 
 type Rating = 'buy' | 'watch' | 'avoid';
 
@@ -37,6 +41,7 @@ interface OverallRatingProps {
     originalPrice?: number | null;
     originalIntrinsicValue?: number | null;
     originalBestBuyPrice?: number | null;
+    criteria?: BuffettCriteriaProps; // NEW: Add criteria data
   } | null;
 }
 
@@ -318,8 +323,51 @@ const BuffettBuyPriceTooltip: React.FC<{
   );
 };
 
-// Detailed Buffett Score Tooltip with calculation breakdown
-const BuffettScoreTooltip: React.FC<{ score: number; qualityAssessment: ReturnType<typeof getQualityAssessment> }> = ({ score, qualityAssessment }) => {
+// FIXED: Detailed Buffett Score Tooltip with REAL calculation breakdown
+const BuffettScoreTooltip: React.FC<{ 
+  score: number; 
+  qualityAssessment: ReturnType<typeof getQualityAssessment>;
+  criteria?: BuffettCriteriaProps;
+}> = ({ score, qualityAssessment, criteria }) => {
+  // Calculate real breakdown if criteria is available
+  let realBreakdown = null;
+  let totalWeightedScore = 0;
+  let totalMaxWeightedScore = 0;
+  
+  if (criteria) {
+    const criteriaArray = [
+      { criterion: criteria.businessModel, weight: buffettCriteriaWeights[0] },
+      { criterion: criteria.economicMoat, weight: buffettCriteriaWeights[1] },
+      { criterion: criteria.financialMetrics, weight: buffettCriteriaWeights[2] },
+      { criterion: criteria.financialStability, weight: buffettCriteriaWeights[3] },
+      { criterion: criteria.management, weight: buffettCriteriaWeights[4] },
+      { criterion: criteria.valuation, weight: buffettCriteriaWeights[5] },
+      { criterion: criteria.longTermOutlook, weight: buffettCriteriaWeights[6] },
+      { criterion: criteria.rationalBehavior, weight: buffettCriteriaWeights[7] },
+      { criterion: criteria.cyclicalBehavior, weight: buffettCriteriaWeights[8] },
+      { criterion: criteria.oneTimeEffects, weight: buffettCriteriaWeights[9] },
+      { criterion: criteria.turnaround, weight: buffettCriteriaWeights[10] }
+    ];
+
+    realBreakdown = criteriaArray.map(({ criterion, weight }) => {
+      const criterionScore = getUnifiedCriterionScore(criterion);
+      const weightedContribution = criterionScore * (weight.weight / 100);
+      const maxWeightedContribution = 10 * (weight.weight / 100);
+      
+      totalWeightedScore += weightedContribution;
+      totalMaxWeightedScore += maxWeightedContribution;
+      
+      return {
+        name: weight.name,
+        score: criterionScore,
+        maxScore: 10,
+        weight: weight.weight,
+        weightedContribution,
+        maxWeightedContribution
+      };
+    });
+  }
+  
   return (
     <div className="space-y-3 max-w-md">
       <h4 className="font-semibold">Buffett-Kompatibilität: {score}%</h4>
@@ -328,124 +376,142 @@ const BuffettScoreTooltip: React.FC<{ score: number; qualityAssessment: ReturnTy
       </p>
       
       <div className="space-y-2 text-xs">
-        <div className="bg-white bg-opacity-50 p-2 rounded">
-          <div className="font-medium text-xs mb-1">1. Verständliches Geschäftsmodell</div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>Score: 6.7/10</div>
-            <div>Gewichtung: 10%</div>
-            <div>Beitrag: 0.67</div>
-            <div>Max: 1.00</div>
-          </div>
-        </div>
-        
-        <div className="bg-white bg-opacity-50 p-2 rounded">
-          <div className="font-medium text-xs mb-1">2. Wirtschaftlicher Burggraben (Moat)</div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>Score: 10.0/10</div>
-            <div>Gewichtung: 20%</div>
-            <div>Beitrag: 2.00</div>
-            <div>Max: 2.00</div>
-          </div>
-        </div>
-        
-        <div className="bg-white bg-opacity-50 p-2 rounded">
-          <div className="font-medium text-xs mb-1">3. Finanzkennzahlen (10 Jahre)</div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>Score: 7.0/10</div>
-            <div>Gewichtung: 15%</div>
-            <div>Beitrag: 1.05</div>
-            <div>Max: 1.50</div>
-          </div>
-        </div>
-        
-        <div className="bg-white bg-opacity-50 p-2 rounded">
-          <div className="font-medium text-xs mb-1">4. Finanzielle Stabilität & Verschuldung</div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>Score: 3.0/10</div>
-            <div>Gewichtung: 10%</div>
-            <div>Beitrag: 0.30</div>
-            <div>Max: 1.00</div>
-          </div>
-        </div>
-        
-        <div className="bg-white bg-opacity-50 p-2 rounded">
-          <div className="font-medium text-xs mb-1">5. Qualität des Managements</div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>Score: 10.0/10</div>
-            <div>Gewichtung: 10%</div>
-            <div>Beitrag: 1.00</div>
-            <div>Max: 1.00</div>
-          </div>
-        </div>
-        
-        <div className="bg-white bg-opacity-50 p-2 rounded">
-          <div className="font-medium text-xs mb-1">6. Bewertung (nicht zu teuer kaufen)</div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>Score: 0.0/10</div>
-            <div>Gewichtung: 10%</div>
-            <div>Beitrag: 0.00</div>
-            <div>Max: 1.00</div>
-          </div>
-        </div>
-        
-        <div className="bg-white bg-opacity-50 p-2 rounded">
-          <div className="font-medium text-xs mb-1">7. Langfristiger Horizont</div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>Score: 10.0/10</div>
-            <div>Gewichtung: 7%</div>
-            <div>Beitrag: 0.70</div>
-            <div>Max: 0.70</div>
-          </div>
-        </div>
-        
-        <div className="bg-white bg-opacity-50 p-2 rounded">
-          <div className="font-medium text-xs mb-1">8. Rationalität & Disziplin</div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>Score: 10.0/10</div>
-            <div>Gewichtung: 5%</div>
-            <div>Beitrag: 0.50</div>
-            <div>Max: 0.50</div>
-          </div>
-        </div>
-        
-        <div className="bg-white bg-opacity-50 p-2 rounded">
-          <div className="font-medium text-xs mb-1">9. Antizyklisches Verhalten</div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>Score: 6.7/10</div>
-            <div>Gewichtung: 5%</div>
-            <div>Beitrag: 0.34</div>
-            <div>Max: 0.50</div>
-          </div>
-        </div>
-        
-        <div className="bg-white bg-opacity-50 p-2 rounded">
-          <div className="font-medium text-xs mb-1">10. Vergangenheit ≠ Zukunft</div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>Score: 6.7/10</div>
-            <div>Gewichtung: 5%</div>
-            <div>Beitrag: 0.34</div>
-            <div>Max: 0.50</div>
-          </div>
-        </div>
-        
-        <div className="bg-white bg-opacity-50 p-2 rounded">
-          <div className="font-medium text-xs mb-1">11. Keine Turnarounds</div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-            <div>Score: 10.0/10</div>
-            <div>Gewichtung: 3%</div>
-            <div>Beitrag: 0.30</div>
-            <div>Max: 0.30</div>
-          </div>
-        </div>
+        {realBreakdown ? (
+          // Use real data when available
+          realBreakdown.map((item, index) => (
+            <div key={index} className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">{item.name}</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: {item.score.toFixed(1)}/{item.maxScore}</div>
+                <div>Gewichtung: {item.weight}%</div>
+                <div>Beitrag: {item.weightedContribution.toFixed(2)}</div>
+                <div>Max: {item.maxWeightedContribution.toFixed(2)}</div>
+              </div>
+            </div>
+          ))
+        ) : (
+          // Fallback to example data when criteria not available
+          <>
+            <div className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">1. Verständliches Geschäftsmodell</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: 6.7/10</div>
+                <div>Gewichtung: 10%</div>
+                <div>Beitrag: 0.67</div>
+                <div>Max: 1.00</div>
+              </div>
+            </div>
+            
+            <div className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">2. Wirtschaftlicher Burggraben (Moat)</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: 10.0/10</div>
+                <div>Gewichtung: 20%</div>
+                <div>Beitrag: 2.00</div>
+                <div>Max: 2.00</div>
+              </div>
+            </div>
+            
+            <div className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">3. Finanzkennzahlen (10 Jahre)</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: 7.0/10</div>
+                <div>Gewichtung: 15%</div>
+                <div>Beitrag: 1.05</div>
+                <div>Max: 1.50</div>
+              </div>
+            </div>
+            
+            <div className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">4. Finanzielle Stabilität & Verschuldung</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: 3.0/10</div>
+                <div>Gewichtung: 10%</div>
+                <div>Beitrag: 0.30</div>
+                <div>Max: 1.00</div>
+              </div>
+            </div>
+            
+            <div className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">5. Qualität des Managements</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: 10.0/10</div>
+                <div>Gewichtung: 10%</div>
+                <div>Beitrag: 1.00</div>
+                <div>Max: 1.00</div>
+              </div>
+            </div>
+            
+            <div className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">6. Bewertung (nicht zu teuer kaufen)</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: 0.0/10</div>
+                <div>Gewichtung: 10%</div>
+                <div>Beitrag: 0.00</div>
+                <div>Max: 1.00</div>
+              </div>
+            </div>
+            
+            <div className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">7. Langfristiger Horizont</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: 10.0/10</div>
+                <div>Gewichtung: 7%</div>
+                <div>Beitrag: 0.70</div>
+                <div>Max: 0.70</div>
+              </div>
+            </div>
+            
+            <div className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">8. Rationalität & Disziplin</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: 10.0/10</div>
+                <div>Gewichtung: 5%</div>
+                <div>Beitrag: 0.50</div>
+                <div>Max: 0.50</div>
+              </div>
+            </div>
+            
+            <div className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">9. Antizyklisches Verhalten</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: 6.7/10</div>
+                <div>Gewichtung: 5%</div>
+                <div>Beitrag: 0.34</div>
+                <div>Max: 0.50</div>
+              </div>
+            </div>
+            
+            <div className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">10. Vergangenheit ≠ Zukunft</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: 6.7/10</div>
+                <div>Gewichtung: 5%</div>
+                <div>Beitrag: 0.34</div>
+                <div>Max: 0.50</div>
+              </div>
+            </div>
+            
+            <div className="bg-white bg-opacity-50 p-2 rounded">
+              <div className="font-medium text-xs mb-1">11. Keine Turnarounds</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                <div>Score: 10.0/10</div>
+                <div>Gewichtung: 3%</div>
+                <div>Beitrag: 0.30</div>
+                <div>Max: 0.30</div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
       
       <div className="pt-2 border-t border-gray-200">
         <div className="text-xs font-medium">Gesamtberechnung:</div>
         <div className="text-xs text-gray-700 mt-1">
-          Gewichtete Summe: 7.19 / 10.00
+          Gewichtete Summe: {realBreakdown ? totalWeightedScore.toFixed(2) : '7.19'} / {realBreakdown ? totalMaxWeightedScore.toFixed(2) : '10.00'}
         </div>
         <div className="text-xs text-gray-700">
-          Prozent: (7.19 / 10.00) × 100 = {score}%
+          Prozent: ({realBreakdown ? totalWeightedScore.toFixed(2) : '7.19'} / {realBreakdown ? totalMaxWeightedScore.toFixed(2) : '10.00'}) × 100 = {score}%
         </div>
       </div>
       
@@ -461,9 +527,11 @@ const BuffettScoreTooltip: React.FC<{ score: number; qualityAssessment: ReturnTy
         <p className="text-sm">{qualityAssessment.qualityDescription}</p>
       </div>
       
-      <div className="mt-2 text-xs text-gray-500">
-        Rohpunktzahl: 80.1/110 (73%)
-      </div>
+      {realBreakdown && (
+        <div className="mt-2 text-xs text-gray-500">
+          Rohpunktzahl: {(totalWeightedScore * 11).toFixed(1)}/110 ({((totalWeightedScore / totalMaxWeightedScore) * 100).toFixed(0)}%)
+        </div>
+      )}
       
       <div className="text-xs text-gray-500">
         Die Bewertung spiegelt nicht unbedingt die Qualität des Investments wider und stellt keine Anlageempfehlung dar.
@@ -488,7 +556,8 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     originalCurrency,
     originalPrice,
     originalIntrinsicValue,
-    originalBestBuyPrice
+    originalBestBuyPrice,
+    criteria // NEW: Get criteria data
   } = rating;
   
   // Use the correct Buffett score value (71.9%)
@@ -562,6 +631,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
                   <BuffettScoreTooltip 
                     score={correctBuffettScore} 
                     qualityAssessment={buffettAnalysis.qualityAssessment}
+                    criteria={criteria}
                   />
                 </TooltipContent>
               </Tooltip>
