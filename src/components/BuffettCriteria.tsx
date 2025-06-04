@@ -139,7 +139,7 @@ const getMetricExplanation = (metricName: string) => {
     },
     "Nettomarge": {
       description: "Gewinn nach Steuern pro Euro Umsatz",
-      buffettGuideline: "Buffett bevorzugt >10%, höhere Margen = besserer Burggraben"
+      buffettGuideline: "Buffett bevorzugt >15%, höhere Margen = besserer Burggraben"
     },
     "Schulden zu EBITDA": {
       description: "Zeigt, wie schnell Schulden aus Gewinnen zurückgezahlt werden könnten",
