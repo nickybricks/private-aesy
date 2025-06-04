@@ -129,36 +129,6 @@ const correctFinancialMetricsCriterion = (criteria: any) => {
   return criteria;
 };
 
-// NEUE FUNKTION: Entferne Gründungsjahr aus allen Kriterien
-const removeFoundingYearFromCriteria = (criteria: any) => {
-  if (!criteria) {
-    return criteria;
-  }
-  
-  console.log('Removing founding year from all criteria...');
-  
-  // Durchlaufe alle Kriterien
-  Object.keys(criteria).forEach(key => {
-    const criterion = criteria[key];
-    if (criterion && criterion.details && Array.isArray(criterion.details)) {
-      // Entferne alle Details, die "Gründungsjahr" enthalten
-      criterion.details = criterion.details.filter((detail: string) => {
-        const shouldRemove = detail.toLowerCase().includes('gründungsjahr') || 
-                           detail.toLowerCase().includes('founded') ||
-                           detail.toLowerCase().includes('established');
-        
-        if (shouldRemove) {
-          console.log(`Removed founding year detail: "${detail}"`);
-        }
-        
-        return !shouldRemove;
-      });
-    }
-  });
-  
-  return criteria;
-};
-
 export const useStockSearch = () => {
   const { toast } = useToast();
   
@@ -211,12 +181,9 @@ export const useStockSearch = () => {
         ]);
         
         // KORRIGIERE KRITERIEN-DATEN VOR DER WEITEREN VERARBEITUNG
-        let criteria = correctFinancialMetricsCriterion(rawCriteria);
+        const criteria = correctFinancialMetricsCriterion(rawCriteria);
         
-        // ENTFERNE GRÜNDUNGSJAHR AUS ALLEN KRITERIEN
-        criteria = removeFoundingYearFromCriteria(criteria);
-        
-        console.log('Buffett Criteria (corrected and without founding year):', JSON.stringify(criteria, null, 2));
+        console.log('Buffett Criteria (corrected):', JSON.stringify(criteria, null, 2));
         console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
         console.log('Overall Rating:', JSON.stringify(rating, null, 2));
         console.log('Custom DCF Data:', JSON.stringify(customDcfData, null, 2));
