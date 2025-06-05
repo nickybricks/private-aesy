@@ -278,6 +278,8 @@ export const calculateFinancialMetricScore = (
 
   const finalScore = Math.min(10, Math.round(totalScore * 100) / 100);
   console.log(`Final totalScore (gerundet, max 10): ${finalScore}`);
+  console.log(`✅ Final calculated totalScore for criterion 3:`, totalScore);
+
   return finalScore;
 
 

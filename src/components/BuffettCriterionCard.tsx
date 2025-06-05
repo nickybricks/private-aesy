@@ -30,7 +30,9 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
   
   // Get GPT's assessment of fulfillment
   const gptAssessment = criterion.gptAnalysis ? extractGptAssessmentStatus(criterion.gptAnalysis) : undefined;
-  
+
+  console.log("▶️ getUnifiedCriterionScore called for:", criterion.title, criterion);
+
   // Use the unified scoring function to get the consistent score
   const unifiedScore = getUnifiedCriterionScore(criterion);
   
@@ -47,6 +49,8 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
     const criterionNum = criterionNumber ? parseInt(criterionNumber, 10) : 0;
     
     if ([3, 4, 6].includes(criterionNum)) {
+      console.log(`📊 Checking if financial metrics available for criterion ${criterionNum}`, criterion.metrics);
+
       // Determine status based on score for financial criteria
       if (unifiedScore >= 10) {
         displayStatus = 'pass';
@@ -57,6 +61,7 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
       }
       
       console.log(`Financial criterion ${criterionNum}: score=${unifiedScore}, status=${displayStatus}`);
+
     }
   }
   
