@@ -47,8 +47,8 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
     const criterionNum = criterionNumber ? parseInt(criterionNumber, 10) : 0;
     
     if ([3, 4, 6].includes(criterionNum)) {
-      // FIXED: Verwende exakte Schwellenwerte um Rundungsfehler zu vermeiden
-      if (unifiedScore === 10) {
+      // Determine status based on score for financial criteria
+      if (unifiedScore >= 10) {
         displayStatus = 'pass';
       } else if (unifiedScore >= 7) {
         displayStatus = 'warning';
@@ -128,7 +128,7 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
             <CardTitle className="text-lg">{criterion.title}</CardTitle>
             <BuffettScoreDisplay criterion={{
               ...criterion,
-              status: displayStatus, // FIXED: Verwende den berechneten displayStatus
+              status: displayStatus,
               score: unifiedScore // Use the unified score
             }} />
             
