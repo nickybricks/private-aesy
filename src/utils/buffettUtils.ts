@@ -338,52 +338,6 @@ export const calculateFinancialMetricScore = (
 // CORRECTED UNIFIED FUNCTION: Get the displayed score for any criterion - used everywhere
 export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): number => {
   console.log('getUnifiedCriterionScore called for:', criterion.title);
-
-  // Extrahiere Kriteriumsnummer aus Titel (z. B. "3. Finanzkennzahlen …" → 3)
-  const criterionNumber = criterion.title.match(/^\d+/)?.[0];
-  const criterionNum = criterionNumber ? parseInt(criterionNumber, 10) : 0;
-
-  // Für Kriterien 3, 4, 6 zuerst prüfen, ob financialScore vorhanden ist
-  if ([3, 4, 6].includes(criterionNum)) {
-    if (criterion.financialScore !== undefined) {
-      console.log(`➡️ Verwende vorhandenen financialScore für Kriterium ${criterionNum}:`, criterion.financialScore);
-      return criterion.financialScore;
-    }
-
-    // Falls nicht vorhanden: Versuche aus metrics zu berechnen
-    if (criterion.metrics) {
-      console.log(`🔄 Berechne financialScore für Kriterium ${criterionNum} aus metrics…`);
-      const calculatedScore = calculateFinancialMetricScore(criterionNum, criterion.metrics);
-      console.log(`✅ Berechnet: ${calculatedScore} Punkte`);
-      return calculatedScore;
-    } else {
-      console.warn(`⚠️ Keine metrics vorhanden für Kriterium ${criterionNum}, Rückgabe 0`);
-      return 0;
-    }
-  }
-
-  // Für GPT-Kriterien: bevorzugt GPT-Auswertung verwenden
-  const derivedScore = deriveScoreFromGptAnalysis(criterion);
-  if (derivedScore !== undefined) {
-    console.log('📘 Verwende GPT Score:', derivedScore);
-    return derivedScore;
-  }
-
-  // Fallback: expliziter score (falls vorhanden)
-  if (criterion.score !== undefined) {
-    console.log('📗 Verwende expliziten Score:', criterion.score);
-    return criterion.score;
-  }
-
-  // Gar nichts verfügbar → 0 zurückgeben
-  console.error('❌ Kein Score ermittelbar für:', criterion.title);
-  return 0;
-};
-
-
-
-
-  console.log('getUnifiedCriterionScore called for:', criterion.title);
   
   // First check if this is a financial metric criterion (3, 4, or 6)
   const criterionNumber = criterion.title.match(/^\d+/)?.[0];
