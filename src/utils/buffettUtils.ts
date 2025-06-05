@@ -215,6 +215,8 @@ export const calculateFinancialMetricScore = (
   metrics: any
 ): number => {
   console.log(`Calculating score for criterion ${criterionNumber}:`, metrics);
+
+    console.log('✅ calculateFinancialMetricScore() wurde aufgerufen mit:', criterionNumber, metrics);
   
   switch (criterionNumber) {
     case 3: // Finanzkennzahlen (10 Jahre Rückblick)
