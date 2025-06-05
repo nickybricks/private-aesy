@@ -47,10 +47,10 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
     const criterionNum = criterionNumber ? parseInt(criterionNumber, 10) : 0;
     
     if ([3, 4, 6].includes(criterionNum)) {
-      const rounded = Math.round(score * 10) / 10;
-      if (rounded >= 9.99) {
+      // Determine status based on score for financial criteria
+      if (unifiedScore >= 10) {
         displayStatus = 'pass';
-      } else if (rounded >= 7) {
+      } else if (unifiedScore >= 7) {
         displayStatus = 'warning';
       } else {
         displayStatus = 'fail';

@@ -218,48 +218,85 @@ export const calculateFinancialMetricScore = (
   
   switch (criterionNumber) {
     case 3: // Finanzkennzahlen (10 Jahre Rückblick)
+      // KORRIGIERT: MaxScore ist IMMER 10 für 3 bewertbare Metriken (ohne EPS)
+      // Bewertbare Metriken: ROE, Nettomarge, EPS-Wachstum
+      // Nicht bewertbar: EPS (Gewinn pro Aktie) - nur zur Information
       let totalScore = 0;
-      const roeWeight = 10 / 3;
-      const marginWeight = 10 / 3;
-      const epsWeight = 10 / 3;
-    
-      // ROE
+      const maxPossibleScore = 10; // FEST auf 10 gesetzt
+      
+      console.log('WICHTIG: Kriterium 3 hat IMMER maxScore = 10');
+      
+      // ROE Bewertung (3.33 Punkte möglich)
       if (metrics.roe !== undefined && metrics.roe !== null) {
         if (metrics.roe >= 15) {
-          totalScore += roeWeight;
+          totalScore += 3.33; // Buffett bevorzugt >15%
+          console.log(`ROE ${metrics.roe}% >= 15%: +3.33 points`);
         } else if (metrics.roe >= 10) {
-          totalScore += roeWeight * 0.6;
+          totalScore += 2; // Akzeptabel
+          console.log(`ROE ${metrics.roe}% >= 10%: +2 points`);
         } else if (metrics.roe >= 5) {
-          totalScore += roeWeight * 0.3;
+          totalScore += 1; // Schwach
+          console.log(`ROE ${metrics.roe}% >= 5%: +1 points`);
+        } else {
+          console.log(`ROE ${metrics.roe}% < 5%: +0 points`);
         }
       }
-    
-      // Nettomarge
+      if (metrics.roe >= 15) {
+        totalScore += 3.33;
+        console.log("ROE erfüllt: +3.33 → totalScore:", totalScore);
+      }
+
+      // Nettomarge Bewertung (3.33 Punkte möglich)
       if (metrics.netProfitMargin !== undefined && metrics.netProfitMargin !== null) {
         if (metrics.netProfitMargin >= 15) {
-          totalScore += marginWeight;
+          totalScore += 3.33; // Buffett bevorzugt >15%
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 15%: +3.33 points`);
         } else if (metrics.netProfitMargin >= 10) {
-          totalScore += marginWeight * 0.6;
+          totalScore += 2; // Akzeptabel
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 10%: +2 points`);
         } else if (metrics.netProfitMargin >= 5) {
-          totalScore += marginWeight * 0.3;
+          totalScore += 1; // Schwach
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 5%: +1 points`);
+        } else {
+          console.log(`Nettomarge ${metrics.netProfitMargin}% < 5%: +0 points`);
         }
       }
-    
-      // EPS-Wachstum
+      
+      if (metrics.roe >= 15) {
+        totalScore += 3.33;
+        console.log("ROE erfüllt: +3.33 → totalScore:", totalScore);
+      }
+      
+      // EPS-Wachstum Bewertung (3.34 Punkte möglich)
       if (metrics.epsGrowth !== undefined && metrics.epsGrowth !== null) {
         if (metrics.epsGrowth >= 10) {
-          totalScore += epsWeight;
+          totalScore += 3.34; // Buffett bevorzugt >10%
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 10%: +3.34 points`);
         } else if (metrics.epsGrowth >= 5) {
-          totalScore += epsWeight * 0.6;
+          totalScore += 2; // Akzeptabel
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 5%: +2 points`);
         } else if (metrics.epsGrowth >= 0) {
-          totalScore += epsWeight * 0.3;
+          totalScore += 1; // Schwaches Wachstum
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 0%: +1 points`);
+        } else {
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% < 0%: +0 points`);
         }
       }
-    
-      // Finaler Rückgabewert auf 2 Dezimalstellen begrenzt
-      return parseFloat(totalScore.toFixed(2));
-
+      if (metrics.roe >= 15) {
+        totalScore += 3.33;
+        console.log("ROE erfüllt: +3.33 → totalScore:", totalScore);
+      }
       
+      // WICHTIG: EPS-Wert (Gewinn pro Aktie) wird NICHT bewertet
+      // Er dient nur zur Information und Einordnung der Profitabilität
+      console.log(`Financial metrics total score: ${totalScore}/${maxPossibleScore}`);
+      console.log(`HINWEIS: EPS-Wert wird nicht bewertet - nur zur Information`);
+      
+      return Math.min(10, Math.round(totalScore * 100) / 100);
+      console.log("Final totalScore vor Rundung:", totalScore);
+
+
+
     case 4: // Finanzielle Stabilität
       // Buffett Richtwerte für Kriterium 4:
       // - Schulden zu EBITDA: < 2 = sehr gut, 2-3 = ok, > 3 = schlecht
