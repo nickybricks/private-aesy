@@ -241,7 +241,11 @@ export const calculateFinancialMetricScore = (
           console.log(`ROE ${metrics.roe}% < 5%: +0 points`);
         }
       }
-      
+      if (metrics.roe >= 15) {
+        totalScore += 3.33;
+        console.log("ROE erfüllt: +3.33 → totalScore:", totalScore);
+      }
+
       // Nettomarge Bewertung (3.33 Punkte möglich)
       if (metrics.netProfitMargin !== undefined && metrics.netProfitMargin !== null) {
         if (metrics.netProfitMargin >= 15) {
@@ -256,6 +260,11 @@ export const calculateFinancialMetricScore = (
         } else {
           console.log(`Nettomarge ${metrics.netProfitMargin}% < 5%: +0 points`);
         }
+      }
+      
+      if (metrics.roe >= 15) {
+        totalScore += 3.33;
+        console.log("ROE erfüllt: +3.33 → totalScore:", totalScore);
       }
       
       // EPS-Wachstum Bewertung (3.34 Punkte möglich)
@@ -273,6 +282,10 @@ export const calculateFinancialMetricScore = (
           console.log(`EPS-Wachstum ${metrics.epsGrowth}% < 0%: +0 points`);
         }
       }
+      if (metrics.roe >= 15) {
+        totalScore += 3.33;
+        console.log("ROE erfüllt: +3.33 → totalScore:", totalScore);
+      }
       
       // WICHTIG: EPS-Wert (Gewinn pro Aktie) wird NICHT bewertet
       // Er dient nur zur Information und Einordnung der Profitabilität
@@ -280,6 +293,8 @@ export const calculateFinancialMetricScore = (
       console.log(`HINWEIS: EPS-Wert wird nicht bewertet - nur zur Information`);
       
       return Math.min(10, Math.round(totalScore * 100) / 100);
+      console.log("Final totalScore vor Rundung:", totalScore);
+
 
 
     case 4: // Finanzielle Stabilität
