@@ -138,36 +138,45 @@ export const analyzeBusinessModel = async (companyName: string, industry: string
 // Function to analyze economic moat using GPT
 export const analyzeEconomicMoat = async (companyName: string, industry: string, grossMargin: number, operatingMargin: number, roic: number): Promise<string> => {
   const prompt = `
-    Analysiere den wirtschaftlichen Burggraben (Moat) von ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterien.
+   Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Wirtschaftlicher Burggraben (Moat)".
 
     Hier sind quantitative Kennzahlen:
     - Bruttomarge: ${grossMargin.toFixed(2)}%
     - Betriebsmarge: ${operatingMargin.toFixed(2)}%
     - ROIC: ${roic.toFixed(2)}%
     
-    1. Berücksichtige bei deiner Einschätzung folgende qualitative Moat-Faktoren:
-       - **Netzwerkeffekt**
-       - **Markenstärke / Kundenbindung**
-       - **Skaleneffekte / Effizienz**
-       - **Kosten- oder Technologievorteile**
+    Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
     
-    2. Berücksichtige außerdem die Kennzahlen:
-       - Bruttomarge > 40 % = positiv
-       - Betriebsmarge > 20 % = positiv
-       - ROIC > 15 % = positiv
+    1. Hat das Unternehmen strukturelle Wettbewerbsvorteile (z. B. Netzwerkeffekt, Marke, Technologievorsprung)?
+    2. Werden diese Vorteile durch die Kennzahlen gestützt?
+    3. Ist der Burggraben gegenüber Wettbewerbern langfristig verteidigbar?
     
-    3. Beurteile, wie viele dieser 3 Teilaspekte (qualitativ & quantitativ gemischt) erfüllt sind.
+    Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
     
-    Gib strukturierte Stichpunkte mit folgenden Anforderungen:
-    - 3 konkrete Moat-Aspekte, jeweils beginnend mit "- "
-    - Jeder Aspekt soll **klar als erfüllt oder nicht erfüllt erkennbar** sein
+    **1. Hat das Unternehmen strukturelle Wettbewerbsvorteile (z. B. Netzwerkeffekt, Marke, Technologievorsprung)?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Am Ende:
-    - Zähle exakt: „Von 3 Teilaspekten wurden X erfüllt“
-    - **Gib eine klare Bewertung ab:**  
-    **Bewertung:** Starker Moat (Pass), Moderater Moat (Warning), Schwacher/Kein Moat (Fail)
-
-  `;
+    **2. Werden diese Vorteile durch die Kennzahlen gestützt?**  
+    - [Aussage 1]  
+    - [Aussage 2]
+    
+    **3. Ist der Burggraben gegenüber Wettbewerbern langfristig verteidigbar?**  
+    - [Aussage 1]  
+    - [Aussage 2]
+    
+    **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    
+    Hinweise:
+    - Verwende exakt die Formulierung am Ende:  
+      **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    - Bewertungstext **muss** eine der folgenden Optionen sein:
+      - Starker Moat (Pass)
+      - Moderater Moat (Warning)
+      - Schwacher/Kein Moat (Fail)
+    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.“)
+    - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
+    `;
   
   return await queryGPT(prompt);
 };
@@ -175,36 +184,41 @@ export const analyzeEconomicMoat = async (companyName: string, industry: string,
 // Function to analyze management quality using GPT
 export const analyzeManagementQuality = async (companyName: string, ceo: string): Promise<string> => {
   const prompt = `
-    Analysiere die Qualität des Managements von ${companyName} unter CEO ${ceo || 'dem aktuellen Management'} nach Warren Buffetts Kriterien.
+    Analysiere ${companyName} unter CEO ${ceo || 'dem aktuellen Management'} nach Warren Buffetts Kriterium "Qualität des Managements".
 
-    Fokussiere dich auf die folgenden drei Kernfragen:
+    Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
     
-    1. **Ist das Management ehrlich und transparent?**
-    2. **Handelt es im Sinne der Aktionäre?**
-    3. **Zeigt es eine gute Kapitalallokation?**
+    1. Ist das Management ehrlich und transparent?
+    2. Handelt es im Sinne der Aktionäre?
+    3. Zeigt es eine disziplinierte Kapitalallokation?
     
-    💡 Bewerte jeden Aspekt unabhängig und mit Blick auf Buffetts Philosophie:
-    - Ehrlich = klare Kommunikation, transparente Zahlen, kein unnötiges Marketing
-    - Aktionärsorientiert = Rückkäufe, Dividenden, langfristiger Fokus
-    - Kapitalallokation = Investitionen, Übernahmen, Eigenkapitalverwendung
+    Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
     
-    Wenn der CEO neu ist und noch keine klare Kapitalallokation erkennbar ist, bewerte neutral (nicht erfüllt, aber auch kein Minuspunkt). Schreibe in diesem Fall: "Noch nicht bewertbar – neutral".
+    **1. Ist das Management ehrlich und transparent?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    ⚠️ Berücksichtige Buffett's Ansatz: „Wenn ich nichts Negatives sehe, ist das Management okay – nicht jedes Unternehmen braucht einen Superstar.“
+    **2. Handelt es im Sinne der Aktionäre?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    —
+    **3. Zeigt es eine disziplinierte Kapitalallokation?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Gib zu jedem Teilaspekt:
-    - 1–2 Stichpunkte
-    - Markiere am Ende jeden Punkt mit: **(Erfüllt)**, **(Nicht erfüllt)** oder **(Neutral)**
+    **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
     
-    Am Ende:
-    - Zähle exakt: „Von 3 Teilaspekten wurden X erfüllt“
-    
-    - Gib eine klare Bewertung ab:  
-    **Bewertung:** Gutes Management (Pass), Durchschnittliches Management (Warning), Problematisches Management (Fail)
-
-  `;
+    Hinweise:
+    - Verwende exakt die Formulierung am Ende:  
+      **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    - Bewertungstext **muss** eine der folgenden Optionen sein:
+      - Gutes Management (Pass)
+      - Durchschnittliches Management (Warning)
+      - Problematisches Management (Fail)
+    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.“)
+    - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
+    - Wenn der CEO neu ist und keine Kapitalallokation erkennbar ist, schreibe bei Punkt 3: "Noch nicht bewertbar – neutral".
+    `;
   
   return await queryGPT(prompt);
 };
@@ -212,31 +226,40 @@ export const analyzeManagementQuality = async (companyName: string, ceo: string)
 // Function to analyze long-term prospects using GPT
 export const analyzeLongTermProspects = async (companyName: string, industry: string, sector: string): Promise<string> => {
   const prompt = `
-    Analysiere die langfristigen Perspektiven von ${companyName} (Branche: ${industry}, Sektor: ${sector}) nach Warren Buffetts Kriterium "Langfristiger Horizont".
+    Analysiere ${companyName} (Branche: ${industry}, Sektor: ${sector}) nach Warren Buffetts Kriterium "Langfristiger Horizont".
     
-    Beantworte die folgenden drei Kernfragen aus Sicht eines langfristigen Investors:
+    Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
     
-    1. **Wird das Unternehmen mit seinem aktuellen Geschäftsmodell auch in 20 Jahren noch eine relevante Rolle spielen?**
-       → Berücksichtige dabei nur die Stabilität und den Bedarf der Kernleistung – nicht aktuelle Marktanteile.
+    1. Wird das Unternehmen mit seinem aktuellen Geschäftsmodell auch in 20 Jahren noch eine relevante Rolle spielen?
+    2. Wird die Branche durch langfristige Megatrends getragen?
+    3. Verfügt das Unternehmen über eine glaubwürdige Zukunftsstrategie?
     
-    2. **Wird die Branche des Unternehmens durch nachhaltige Megatrends getragen (z. B. Digitalisierung, Demografie, Regulierung, Automatisierung)?**
-       → Nenne konkrete Megatrends, die das Geschäftsmodell langfristig stützen.
+    Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
     
-    3. **Hat das Unternehmen eine glaubwürdige Strategie, um auf Veränderungen im Markt langfristig zu reagieren (z. B. Innovationskraft, Plattformstrategie, Technologieführerschaft)?**
+    **1. Wird das Unternehmen mit seinem aktuellen Geschäftsmodell auch in 20 Jahren noch eine relevante Rolle spielen?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    —
+    **2. Wird die Branche durch langfristige Megatrends getragen?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Gib zu jeder Frage:
-    - 1–2 kurze, konkrete Stichpunkte
-    - Markiere am Ende jeden Aspekt als: **(Erfüllt)**, **(Nicht erfüllt)** oder **(Unklar)**
+    **3. Verfügt das Unternehmen über eine glaubwürdige Zukunftsstrategie?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Am Ende:
-    - Zähle die Bewertung zusammen:  
-      **Von 3 Teilaspekten: 3 erfüllt** (Beispiel)
-    - Gib eine klare Bewertung ab:  
-      **Bewertung:** Starke Langzeitperspektive (Pass), Moderate Langzeitperspektive (Warning), Schwache Langzeitperspektive (Fail)
-
-  `;
+    **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    
+    Hinweise:
+    - Verwende exakt die Formulierung am Ende:  
+      **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    - Bewertungstext **muss** eine der folgenden Optionen sein:
+      - Starke Langzeitperspektive (Pass)
+      - Moderate Langzeitperspektive (Warning)
+      - Schwache Langzeitperspektive (Fail)
+    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.“)
+    - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
+    `;
   
   return await queryGPT(prompt);
 };
@@ -244,33 +267,40 @@ export const analyzeLongTermProspects = async (companyName: string, industry: st
 // Function to analyze cyclical behavior using GPT
 export const analyzeCyclicalBehavior = async (companyName: string, industry: string): Promise<string> => {
   const prompt = `
-    Analysiere das Verhalten von ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium „Antizyklisches Verhalten“.
+    Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Rationalität & Disziplin".
     
-    Fokussiere dich nicht nur auf die zyklische Natur des Geschäftsmodells, sondern vor allem auf das **Verhalten des Managements in Krisenzeiten**.
+    Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
     
-    Beantworte diese drei Fragen:
+    1. Handelt das Management diszipliniert und langfristig denkend?
+    2. Gab es in der Vergangenheit überteuerte Übernahmen oder strategische Sprunghaftigkeit?
+    3. Werden Ressourcen sinnvoll und effizient eingesetzt?
     
-    1. **Ist das Geschäftsmodell grundsätzlich zyklisch oder antizyklisch?**
-       → Nur informativ, kein automatischer Punktabzug – zyklisch ist erlaubt
+    Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
     
-    2. **Wie verhält sich das Unternehmen in Krisen oder wirtschaftlichen Abschwüngen?**
-       → Achte auf Stabilität, langfristige Planung, Zurückhaltung bei Expansionen, keine Panikreaktionen
+    **1. Handelt das Management diszipliniert und langfristig denkend?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    3. **Kauft das Unternehmen gezielt Aktien zurück, wenn der Markt schwach ist?**
-       → Das ist für Buffett ein Zeichen von Antizyklik und rationaler Kapitalallokation
+    **2. Gab es in der Vergangenheit überteuerte Übernahmen oder strategische Sprunghaftigkeit?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Für jede Frage:
-    - Gib 1–2 Stichpunkte
-    - Bewerte mit: **(Erfüllt)**, **(Nicht erfüllt)** oder **(Neutral)**
+    **3. Werden Ressourcen sinnvoll und effizient eingesetzt?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Am Ende:
-    - Zähle exakt: „Von 3 Teilaspekten wurden X erfüllt“
-    - Bewertung:  
-    **Antizyklisches Verhalten (Pass)**  
-    **Neutrales Verhalten (Warning)**  
-    **Zyklisches Verhalten (Fail)**
-
-  `;
+    **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    
+    Hinweise:
+    - Verwende exakt die Formulierung am Ende:  
+      **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    - Bewertungstext **muss** eine der folgenden Optionen sein:
+      - Rationales Verhalten (Pass)
+      - Gemischtes Bild (Warning)
+      - Irrationales Verhalten (Fail)
+    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.“)
+    - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
+    `;
   
   return await queryGPT(prompt);
 };
@@ -278,32 +308,40 @@ export const analyzeCyclicalBehavior = async (companyName: string, industry: str
 // Function to analyze if success is based on one-time effects
 export const analyzeOneTimeEffects = async (companyName: string, industry: string): Promise<string> => {
   const prompt = `
-    Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium „Vergangenheit ≠ Zukunft“.
-
-    Bewerte dabei nicht, **ob das Wachstum spektakulär war**, sondern ob der bisherige Erfolg **dauerhaft wiederholbar und nachhaltig** ist.
+    Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Antizyklisches Verhalten".
     
-    Beantworte diese 3 konkreten Fragen:
+    Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
     
-    1. **Beruhte der bisherige Erfolg auf einmaligen oder außergewöhnlichen Effekten, die sich voraussichtlich nicht wiederholen?**  
-       → Beispiele: Sondergewinne, steuerliche Vorteile, extreme Sondereffekte (nicht: Megatrends wie Corona-Digitalisierung)
+    1. Ist das Geschäftsmodell grundsätzlich zyklisch oder antizyklisch?
+    2. Wie verhält sich das Unternehmen in wirtschaftlichen Krisen oder Abschwüngen?
+    3. Kauft das Management gezielt Aktien zurück, wenn der Markt schwach ist?
     
-    2. **Gab es starke Wachstumsphasen, die vor allem durch untypische externe Faktoren (z. B. Marktverzerrung, kurzfristige Regulierung, aggressive Subventionen) erklärt werden können?**  
-       → Achtung: Wettbewerb oder Regulierung allein zählen **nicht** als negativ
+    Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
     
-    3. **Ist das Wachstum dauerhaft möglich – basierend auf einem stabilen, nachvollziehbaren Geschäftsmodell (egal ob organisch oder durch Übernahmen)?**
+    **1. Ist das Geschäftsmodell grundsätzlich zyklisch oder antizyklisch?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Für jeden Punkt:
-    - Antworte mit 1–2 Stichpunkten
-    - Kennzeichne am Ende jeden Punkt mit: (Erfüllt), (Nicht erfüllt), (Neutral)
+    **2. Wie verhält sich das Unternehmen in wirtschaftlichen Krisen oder Abschwüngen?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Am Ende:
-    - Zähle: „Von 3 Teilaspekten wurden X erfüllt“
-    - Gib eine Bewertung:  
-      **Nachhaltige Geschäftsentwicklung (Pass)**  
-      **Teilweise nachhaltig (Warning)**  
-      **Erfolg stark von Einmaleffekten abhängig (Fail)**
-
-  `;
+    **3. Kauft das Management gezielt Aktien zurück, wenn der Markt schwach ist?**  
+    - [Aussage 1]  
+    - [Aussage 2]
+    
+    **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    
+    Hinweise:
+    - Verwende exakt die Formulierung am Ende:  
+      **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    - Bewertungstext **muss** eine der folgenden Optionen sein:
+      - Antizyklisches Verhalten (Pass)
+      - Neutrales Verhalten (Warning)
+      - Stark zyklisches Verhalten (Fail)
+    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.“)
+    - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
+    `;
   
   return await queryGPT(prompt);
 };
@@ -311,32 +349,40 @@ export const analyzeOneTimeEffects = async (companyName: string, industry: strin
 // Function to analyze if the company is a turnaround case
 export const analyzeTurnaround = async (companyName: string, industry: string): Promise<string> => {
   const prompt = `
-    Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium „Keine Turnarounds“.
-
-    Warren Buffett vermeidet Unternehmen, die sich **in echter Schieflage** befinden und „wieder auf die Beine kommen“ müssen – **nicht** Unternehmen mit normalen Veränderungen oder Strategieanpassungen.
+    Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Vergangenheit ≠ Zukunft".
     
-    Beantworte die folgenden Fragen aus dieser Perspektive:
+    Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
     
-    1. **Gibt es Hinweise auf operative Probleme, Verluste oder strategische Verzweiflung, die auf einen echten Turnaround hindeuten?**
-       → Achte auf Entlassungen, Desinvestitionen, panische Strategieänderungen
+    1. Beruhte der bisherige Erfolg auf einmaligen oder außergewöhnlichen Effekten?
+    2. Gab es starke Wachstumsphasen durch untypische externe Faktoren?
+    3. Ist das Wachstum langfristig wiederholbar und basiert auf einem stabilen Geschäftsmodell?
     
-    2. **Gab es kürzlich eine tiefgreifende Restrukturierung oder einen CEO-Wechsel mit radikaler Neuausrichtung?**
-       → Normale Führungswechsel zählen **nicht automatisch** als negativ
+    Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
     
-    3. **Ist das Unternehmen stabil und profitabel – oder kämpft es darum, wieder Vertrauen, Kunden oder Marktanteile zu gewinnen?**
+    **1. Beruhte der bisherige Erfolg auf einmaligen oder außergewöhnlichen Effekten?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Für jede Frage:
-    - Beantworte mit 1–2 Stichpunkten
-    - Kennzeichne jede Antwort mit: (Erfüllt), (Nicht erfüllt), (Neutral)
+    **2. Gab es starke Wachstumsphasen durch untypische externe Faktoren?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Am Ende:
-    - Zähle exakt: „Von 3 Teilaspekten wurden X erfüllt“
-    - Gib eine klare Bewertung:
-      **Stabiles Unternehmen (Pass)**  
-      **Leichte Umstrukturierung (Warning)**  
-      **Klarer Turnaround-Fall (Fail)**
-
-`;
+    **3. Ist das Wachstum langfristig wiederholbar und basiert auf einem stabilen Geschäftsmodell?**  
+    - [Aussage 1]  
+    - [Aussage 2]
+    
+    **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    
+    Hinweise:
+    - Verwende exakt die Formulierung am Ende:  
+      **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    - Bewertungstext **muss** eine der folgenden Optionen sein:
+      - Nachhaltige Geschäftsentwicklung (Pass)
+      - Teilweise nachhaltig (Warning)
+      - Stark von Einmaleffekten abhängig (Fail)
+    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.“)
+    - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
+    `;
   
   return await queryGPT(prompt);
 };
@@ -344,29 +390,40 @@ export const analyzeTurnaround = async (companyName: string, industry: string): 
 // Function to analyze rational behavior
 export const analyzeRationalBehavior = async (companyName: string, industry: string): Promise<string> => {
   const prompt = `
-    Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Rationalität & Disziplin".
-
-    Fokussiere dich auf diese 3 Fragen – aus Sicht von Warren Buffett:
+    Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Keine Turnarounds".
     
-    1. **Handelt das Management diszipliniert und langfristig denkend?**
-       → Achte auf Fokus auf Kernbereiche, langfristige Strategien, keine Modetrends
+    Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
     
-    2. **Gab es in der Vergangenheit überteuerte Übernahmen, unklare Strategiewechsel oder panikartige Reaktionen?**
-       → Nur solche Handlungen gelten als irrational
+    1. Gibt es Hinweise auf operative Probleme oder strategische Verzweiflung?
+    2. Gab es kürzlich eine tiefgreifende Restrukturierung oder einen CEO-Wechsel mit radikaler Neuausrichtung?
+    3. Ist das Unternehmen stabil und profitabel – oder kämpft es darum, wieder Vertrauen oder Marktanteile zu gewinnen?
     
-    3. **Werden Ressourcen sinnvoll eingesetzt (z. B. F&E, Rückkäufe, Personal, CapEx)?**
-       → Achte auf Kostenkontrolle, Investitionsqualität, keine Verschwendung
+    Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
     
-    Für jede Frage:
-    - Antworte mit 1–2 Stichpunkten
-    - Beende jede Antwort mit (Erfüllt), (Nicht erfüllt) oder (Unklar)
+    **1. Gibt es Hinweise auf operative Probleme oder strategische Verzweiflung?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Am Ende:
-    - Zähle exakt: „Von 3 Teilaspekten wurden X erfüllt“
-    - Gib eine klare Bewertung ab:  
-    **Bewertung:** Rationales Verhalten (Pass), Gemischtes Bild (Warning), Irrationales Verhalten (Fail)
-
-  `;
+    **2. Gab es kürzlich eine tiefgreifende Restrukturierung oder einen CEO-Wechsel mit radikaler Neuausrichtung?**  
+    - [Aussage 1]  
+    - [Aussage 2]
+    
+    **3. Ist das Unternehmen stabil und profitabel – oder kämpft es darum, wieder Vertrauen oder Marktanteile zu gewinnen?**  
+    - [Aussage 1]  
+    - [Aussage 2]
+    
+    **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    
+    Hinweise:
+    - Verwende exakt die Formulierung am Ende:  
+      **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    - Bewertungstext **muss** eine der folgenden Optionen sein:
+      - Stabiles Unternehmen (Pass)
+      - Leichte Umstrukturierung (Warning)
+      - Klarer Turnaround-Fall (Fail)
+    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.“)
+    - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
+    `;
   
   return await queryGPT(prompt);
 };
