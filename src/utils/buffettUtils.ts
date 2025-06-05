@@ -225,61 +225,80 @@ export const calculateFinancialMetricScore = (
       const maxPossibleScore = 10; // FEST auf 10 gesetzt
       
       console.log('WICHTIG: Kriterium 3 hat IMMER maxScore = 10');
+      console.log('=== DEBUG: KRITERIUM 3 SCORE CALCULATION START ===');
       
       // ROE Bewertung (3.33 Punkte möglich)
       if (metrics.roe !== undefined && metrics.roe !== null) {
+        let roeScore = 0;
         if (metrics.roe >= 15) {
-          totalScore += 3.33; // Buffett bevorzugt >15%
-          console.log(`ROE ${metrics.roe}% >= 15%: +3.33 points`);
+          roeScore = 3.33; // Buffett bevorzugt >15%
+          console.log(`ROE ${metrics.roe}% >= 15%: +${roeScore} points`);
         } else if (metrics.roe >= 10) {
-          totalScore += 2; // Akzeptabel
-          console.log(`ROE ${metrics.roe}% >= 10%: +2 points`);
+          roeScore = 2; // Akzeptabel
+          console.log(`ROE ${metrics.roe}% >= 10%: +${roeScore} points`);
         } else if (metrics.roe >= 5) {
-          totalScore += 1; // Schwach
-          console.log(`ROE ${metrics.roe}% >= 5%: +1 points`);
+          roeScore = 1; // Schwach
+          console.log(`ROE ${metrics.roe}% >= 5%: +${roeScore} points`);
         } else {
           console.log(`ROE ${metrics.roe}% < 5%: +0 points`);
         }
+        totalScore += roeScore;
+        console.log(`DEBUG: Nach ROE - totalScore = ${totalScore}`);
       }
       
       // Nettomarge Bewertung (3.33 Punkte möglich)
       if (metrics.netProfitMargin !== undefined && metrics.netProfitMargin !== null) {
+        let netMarginScore = 0;
         if (metrics.netProfitMargin >= 15) {
-          totalScore += 3.33; // Buffett bevorzugt >15%
-          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 15%: +3.33 points`);
+          netMarginScore = 3.33; // Buffett bevorzugt >15%
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 15%: +${netMarginScore} points`);
         } else if (metrics.netProfitMargin >= 10) {
-          totalScore += 2; // Akzeptabel
-          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 10%: +2 points`);
+          netMarginScore = 2; // Akzeptabel
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 10%: +${netMarginScore} points`);
         } else if (metrics.netProfitMargin >= 5) {
-          totalScore += 1; // Schwach
-          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 5%: +1 points`);
+          netMarginScore = 1; // Schwach
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 5%: +${netMarginScore} points`);
         } else {
           console.log(`Nettomarge ${metrics.netProfitMargin}% < 5%: +0 points`);
         }
+        totalScore += netMarginScore;
+        console.log(`DEBUG: Nach Nettomarge - totalScore = ${totalScore}`);
       }
       
       // EPS-Wachstum Bewertung (3.34 Punkte möglich)
       if (metrics.epsGrowth !== undefined && metrics.epsGrowth !== null) {
+        let epsGrowthScore = 0;
         if (metrics.epsGrowth >= 10) {
-          totalScore += 3.34; // Buffett bevorzugt >10%
-          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 10%: +3.34 points`);
+          epsGrowthScore = 3.34; // Buffett bevorzugt >10%
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 10%: +${epsGrowthScore} points`);
         } else if (metrics.epsGrowth >= 5) {
-          totalScore += 2; // Akzeptabel
-          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 5%: +2 points`);
+          epsGrowthScore = 2; // Akzeptabel
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 5%: +${epsGrowthScore} points`);
         } else if (metrics.epsGrowth >= 0) {
-          totalScore += 1; // Schwaches Wachstum
-          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 0%: +1 points`);
+          epsGrowthScore = 1; // Schwaches Wachstum
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 0%: +${epsGrowthScore} points`);
         } else {
           console.log(`EPS-Wachstum ${metrics.epsGrowth}% < 0%: +0 points`);
         }
+        totalScore += epsGrowthScore;
+        console.log(`DEBUG: Nach EPS-Wachstum - totalScore = ${totalScore}`);
       }
       
       // WICHTIG: EPS-Wert (Gewinn pro Aktie) wird NICHT bewertet
       // Er dient nur zur Information und Einordnung der Profitabilität
       console.log(`HINWEIS: EPS-Wert wird nicht bewertet - nur zur Information`);
       
-      return Math.round(totalScore * 100) / 100; // Runde auf 2 Dezimalstellen
-      console.log(`Financial metrics total score: ${totalScore}/${maxPossibleScore}`);
+      console.log(`DEBUG: Vor Rundung - totalScore = ${totalScore} (exakter Wert)`);
+      console.log(`DEBUG: totalScore type: ${typeof totalScore}`);
+      console.log(`DEBUG: totalScore * 100 = ${totalScore * 100}`);
+      console.log(`DEBUG: Math.round(totalScore * 100) = ${Math.round(totalScore * 100)}`);
+      console.log(`DEBUG: Math.round(totalScore * 100) / 100 = ${Math.round(totalScore * 100) / 100}`);
+      
+      const finalScore = Math.round(totalScore * 100) / 100; // Runde auf 2 Dezimalstellen
+      console.log(`DEBUG: Nach Rundung - finalScore = ${finalScore}`);
+      console.log(`=== DEBUG: KRITERIUM 3 SCORE CALCULATION END ===`);
+      
+      return finalScore;
 
     case 4: // Finanzielle Stabilität
       // Buffett Richtwerte für Kriterium 4:
