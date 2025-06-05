@@ -276,10 +276,10 @@ export const calculateFinancialMetricScore = (
       
       // WICHTIG: EPS-Wert (Gewinn pro Aktie) wird NICHT bewertet
       // Er dient nur zur Information und Einordnung der Profitabilität
-      console.log(`Financial metrics total score: ${totalScore}/${maxPossibleScore}`);
       console.log(`HINWEIS: EPS-Wert wird nicht bewertet - nur zur Information`);
       
       return Math.round(totalScore * 100) / 100; // Runde auf 2 Dezimalstellen
+      console.log(`Financial metrics total score: ${totalScore}/${maxPossibleScore}`);
 
     case 4: // Finanzielle Stabilität
       // Buffett Richtwerte für Kriterium 4:
