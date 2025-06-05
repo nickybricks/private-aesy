@@ -62,7 +62,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
           }
         ],
         temperature: 0.7,
-        max_tokens: 500
+        max_tokens: 300
       },
       {
         headers: {
@@ -94,33 +94,43 @@ export const queryGPT = async (prompt: string): Promise<string> => {
 // Function to analyze business model using GPT
 export const analyzeBusinessModel = async (companyName: string, industry: string, description: string): Promise<string> => {
   const prompt = `
-    Analysiere das Geschäftsmodell von ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Verstehbares Geschäftsmodell".
+    Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Verstehbares Geschäftsmodell".
 
     Hier ist eine kurze Beschreibung des Unternehmens:
     ${description}
     
-    Beurteile ausschließlich die Verständlichkeit des **Kerngeschäftsmodells** – also: Wie verdient das Unternehmen Geld?
+    Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
     
-    ⚠️ Berücksichtige **nicht**:
-    - Markenvielfalt
-    - internationale Märkte
-    - technische Begriffe
-    - Prozesse oder Skalierung
+    1. Wird klar, womit das Unternehmen Geld verdient?
+    2. Ist das Geschäftsmodell einfach in wenigen Sätzen erklärbar?
+    3. Ist das Geschäftsmodell auch für Laien oder junge Menschen verständlich?
     
-    📌 Warren Buffett fragt: „Kann ich in 1–2 Sätzen erklären, wie dieses Unternehmen Geld verdient – und versteht das auch ein 12-Jähriger?“
+    Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
     
-    —
+    **1. Wird klar, womit das Unternehmen Geld verdient?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    Gib dann strukturierte Stichpunkte mit diesen Anforderungen:
+    **2. Ist das Geschäftsmodell einfach in wenigen Sätzen erklärbar?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    1. Beginne mit der Hauptfrage: **Ist das Geschäftsmodell leicht verständlich?**
-    2. Führe 3 klare Stichpunkte auf, die jeweils mit "- " beginnen und das **Geschäftsmodell in einfachen Worten** erklären.
-    3. Schließe mit einer klaren Bewertung ab:  
-    **Bewertung:** Einfach verständlich (Pass), Moderat komplex (Warning), Zu komplex (Fail)
+    **3. Ist das Geschäftsmodell auch für Laien oder junge Menschen verständlich?**  
+    - [Aussage 1]  
+    - [Aussage 2]
     
-    **Falls die Bewertung "Moderat komplex (Warning)" lautet**, gib zusätzlich an:  
-    → **Von 3 Teilaspekten wurden X erfüllt.**
-  `;
+    **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    
+    Hinweise:
+    - Verwende exakt die Formulierung am Ende:  
+      **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    - Bewertungstext **muss** eine der folgenden Optionen sein:
+      - Einfach verständlich (Pass)
+      - Moderat komplex (Warning)
+      - Zu komplex (Fail)
+    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.“)
+    - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
+    `;
   
   return await queryGPT(prompt);
 };
@@ -153,7 +163,7 @@ export const analyzeEconomicMoat = async (companyName: string, industry: string,
     - Jeder Aspekt soll **klar als erfüllt oder nicht erfüllt erkennbar** sein
     
     Am Ende:
-    - **Zähle genau auf:** "Von 3 Teilaspekten wurden X erfüllt."
+    - Zähle exakt: „Von 3 Teilaspekten wurden X erfüllt“
     - **Gib eine klare Bewertung ab:**  
     **Bewertung:** Starker Moat (Pass), Moderater Moat (Warning), Schwacher/Kein Moat (Fail)
 
@@ -189,8 +199,7 @@ export const analyzeManagementQuality = async (companyName: string, ceo: string)
     - Markiere am Ende jeden Punkt mit: **(Erfüllt)**, **(Nicht erfüllt)** oder **(Neutral)**
     
     Am Ende:
-    - Zähle exakt auf:  
-    **"Von 3 Teilaspekten: 2 erfüllt, 1 neutral."**
+    - Zähle exakt: „Von 3 Teilaspekten wurden X erfüllt“
     
     - Gib eine klare Bewertung ab:  
     **Bewertung:** Gutes Management (Pass), Durchschnittliches Management (Warning), Problematisches Management (Fail)
@@ -255,7 +264,7 @@ export const analyzeCyclicalBehavior = async (companyName: string, industry: str
     - Bewerte mit: **(Erfüllt)**, **(Nicht erfüllt)** oder **(Neutral)**
     
     Am Ende:
-    - Zähle: „Von 3 Teilaspekten: X erfüllt“
+    - Zähle exakt: „Von 3 Teilaspekten wurden X erfüllt“
     - Bewertung:  
     **Antizyklisches Verhalten (Pass)**  
     **Neutrales Verhalten (Warning)**  
@@ -321,7 +330,7 @@ export const analyzeTurnaround = async (companyName: string, industry: string): 
     - Kennzeichne jede Antwort mit: (Erfüllt), (Nicht erfüllt), (Neutral)
     
     Am Ende:
-    - Zähle: „Von 3 Teilaspekten: X erfüllt“
+    - Zähle exakt: „Von 3 Teilaspekten wurden X erfüllt“
     - Gib eine klare Bewertung:
       **Stabiles Unternehmen (Pass)**  
       **Leichte Umstrukturierung (Warning)**  
