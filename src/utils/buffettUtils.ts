@@ -375,17 +375,28 @@ export const calculateFinancialMetricScore = (
 
 // CORRECTED UNIFIED FUNCTION: Get the displayed score for any criterion - used everywhere
 export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): number => {
-  console.log('getUnifiedCriterionScore called for:', criterion.title);
+  console.log('=== getUnifiedCriterionScore DEBUG START ===');
+  console.log('Criterion title:', criterion.title);
+  console.log('Criterion score (explicit):', criterion.score);
+  console.log('Criterion financialScore:', criterion.financialScore);
+  console.log('Criterion gptAnalysis available:', !!criterion.gptAnalysis);
   
   // First check if this is a financial metric criterion (3, 4, or 6)
   const criterionNumber = criterion.title.match(/^\d+/)?.[0];
   const criterionNum = criterionNumber ? parseInt(criterionNumber, 10) : 0;
   
+  console.log('Detected criterion number:', criterionNum);
+  
   if ([3, 4, 6].includes(criterionNum)) {
+    console.log(`=== FINANCIAL CRITERION ${criterionNum} DETECTED ===`);
+    
     // For financial criteria, use financial data if available
     if (criterion.financialScore !== undefined) {
       console.log(`Using financial score for criterion ${criterionNum}:`, criterion.financialScore);
       return criterion.financialScore;
+    } else {
+      console.log(`No financialScore available for criterion ${criterionNum}`);
+      console.log('Available criterion properties:', Object.keys(criterion));
     }
   }
   
@@ -407,6 +418,8 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
   // Then use explicit score if available
   if (criterion.score !== undefined) {
     console.log('Using explicit score:', criterion.score);
+    console.log('WHY IS EXPLICIT SCORE USED? financialScore was:', criterion.financialScore);
+    console.log('WHY IS EXPLICIT SCORE USED? derivedScore was:', derivedScore);
     return criterion.score;
   }
   
