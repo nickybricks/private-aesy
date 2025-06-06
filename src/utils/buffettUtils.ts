@@ -390,12 +390,18 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
   if ([3, 4, 6].includes(criterionNum)) {
     console.log(`=== FINANCIAL CRITERION ${criterionNum} DETECTED ===`);
     
+    // WARNUNG: Wenn bei Finanzkriterium score gesetzt ist, aber financialScore fehlt
+    if (criterion.score !== undefined && criterion.financialScore === undefined) {
+      console.warn(`⚠️ WARNUNG: financialScore fehlt, aber score ist gesetzt für Kriterium: ${criterion.title}`);
+      console.warn('Dies sollte nicht passieren - stockApi.ts sollte nur financialScore setzen!');
+    }
+    
     // For financial criteria, use financial data if available
     if (criterion.financialScore !== undefined) {
-      console.log(`Using financial score for criterion ${criterionNum}:`, criterion.financialScore);
+      console.log(`✅ Using financialScore for criterion ${criterionNum}:`, criterion.financialScore);
       return criterion.financialScore;
     } else {
-      console.log(`No financialScore available for criterion ${criterionNum}`);
+      console.log(`❌ No financialScore available for criterion ${criterionNum}`);
       console.log('Available criterion properties:', Object.keys(criterion));
     }
   }
