@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { 
   analyzeBusinessModel, 
@@ -477,7 +478,7 @@ export const getOverallRating = async (ticker: string) => {
     const isFinanciallyStable = criteria.financialStability.status === 'pass';
     
     // Komplexes Geschäftsmodell könnte ein Problem sein
-    const isBusinessModelComplex = criteria.businessModel.status === 'warning' || criteria.businessModel.status === 'fail';
+    const isBusinessModelComplex = criteria.businessModel.status !== 'pass';
     
     if (passCount >= 6 && criteria.valuation.status !== 'fail') {
       overall = 'buy';
@@ -537,7 +538,7 @@ export const getOverallRating = async (ticker: string) => {
     
     if (criteria.longTermOutlook.status === 'pass') {
       strengths.push('Vielversprechende langfristige Perspektiven');
-    } else if (criteria.longTermOutlook.status === 'warning' || criteria.longTermOutlook.status === 'fail') {
+    } else {
       weaknesses.push('Unsichere langfristige Perspektiven oder regulatorische Risiken');
     }
     
