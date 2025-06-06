@@ -67,6 +67,700 @@ export const fetchStockInfo = async (ticker: string) => {
   };
 };
 
+// Funktion, um Buffett-Kriterien zu analysieren
+export const analyzeBuffettCriteria = async (ticker: string) => {
+  console.log(`Analyzing ${ticker} with Buffett criteria`);
+  
+  // Standardisieren des Tickers für die API
+  const standardizedTicker = ticker.trim().toUpperCase();
+  
+  // Verschiedene Finanzdaten abrufen
+  const [ratios, keyMetrics, profile, incomeStatements, balanceSheets] = await Promise.all([
+    fetchFromFMP(`/ratios/${standardizedTicker}`),
+    fetchFromFMP(`/key-metrics/${standardizedTicker}`),
+    fetchFromFMP(`/profile/${standardizedTicker}`),
+    fetchFromFMP(`/income-statement/${standardizedTicker}`),
+    fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}`)
+  ]);
+  
+  // Überprüfen, ob Daten zurückgegeben wurden
+  if (!ratios || ratios.length === 0 || !keyMetrics || keyMetrics.length === 0 || !profile || profile.length === 0) {
+    throw new Error(`Keine ausreichenden Finanzkennzahlen gefunden für ${standardizedTicker}`);
+  }
+  
+  // Die neuesten Daten verwenden
+  const latestRatios = ratios[0];
+  const latestMetrics = keyMetrics[0];
+  const companyProfile = profile[0];
+  const latestIncomeStatement = incomeStatements && incomeStatements.length > 0 ? incomeStatements[0] : null;
+  const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
+  
+  // Sicherstellen, dass alle erforderlichen Werte existieren
+  // Falls nicht, Standardwerte oder 0 verwenden
+  const safeValue = (value: any) => (value !== undefined && value !== null && !isNaN(Number(value))) ? Number(value) : 0;
+  
+  // Business Model Analyse - FIXED LOGIC
+  // Improved logic to classify business model based on GPT analysis
+  let businessModelStatus = companyProfile.description && companyProfile.description.length > 100 ? 'pass' : 'warning';
+  let businessModelScore = 0;
+  const businessModelMaxScore = 3;
+  
+  // GPT-basierte Analyse des Geschäftsmodells
+  let businessModelGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      businessModelGptAnalysis = await analyzeBusinessModel(
+        companyProfile.companyName, 
+        companyProfile.industry || 'Unbekannt', 
+        companyProfile.description || 'Keine Beschreibung verfügbar'
+      );
+      
+      // FIXED: Automatically classify based on GPT response with accurate scoring
+      if (businessModelGptAnalysis) {
+        if (businessModelGptAnalysis.toLowerCase().includes('einfach') || 
+            businessModelGptAnalysis.toLowerCase().includes('klar') || 
+            businessModelGptAnalysis.toLowerCase().includes('verständlich')) {
+          businessModelStatus = 'pass';
+          businessModelScore = 3; // Full score for simple business models
+        } else if (businessModelGptAnalysis.toLowerCase().includes('moderat') || 
+                  businessModelGptAnalysis.toLowerCase().includes('teilweise')) {
+          businessModelStatus = 'warning';
+          businessModelScore = 2; // Moderate score for moderately complex models
+        } else if (businessModelGptAnalysis.toLowerCase().includes('komplex') || 
+                  businessModelGptAnalysis.toLowerCase().includes('schwer verständlich')) {
+          businessModelStatus = 'fail';
+          businessModelScore = 0; // Zero score for complex business models
+        }
+      }
+    } catch (error) {
+      console.error('Error analyzing business model with GPT:', error);
+      businessModelGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // Verbesserte Berechnungen für finanzielle Kennzahlen
+  
+  // Bruttomarge direkt aus Ratios oder berechnen
+  const grossMargin = safeValue(latestRatios.grossProfitMargin) * 100;
+  
+  // Operative Marge direkt aus Ratios oder berechnen
+  const operatingMargin = safeValue(latestRatios.operatingProfitMargin) * 100;
+  
+  // ROIC direkt aus Metriken oder berechnen
+  let roic = safeValue(latestMetrics.roic) * 100;
+  
+  // Economic Moat scoring
+  let economicMoatScore = 0;
+  const economicMoatMaxScore = 9; // 3 points each for gross margin, operating margin, ROIC
+  
+  // Gross Margin scoring (0-3 points)
+  if (grossMargin > 40) economicMoatScore += 3;
+  else if (grossMargin > 30) economicMoatScore += 2;
+  else if (grossMargin > 20) economicMoatScore += 1;
+  
+  // Operating Margin scoring (0-3 points)
+  if (operatingMargin > 20) economicMoatScore += 3;
+  else if (operatingMargin > 15) economicMoatScore += 2;
+  else if (operatingMargin > 10) economicMoatScore += 1;
+  
+  // ROIC scoring (0-3 points)
+  if (roic > 15) economicMoatScore += 3;
+  else if (roic > 10) economicMoatScore += 2;
+  else if (roic > 7) economicMoatScore += 1;
+  
+  // Economic Moat status based on score
+  let economicMoatStatus = 'fail';
+  if (economicMoatScore >= 7) {
+    economicMoatStatus = 'pass';
+  } else if (economicMoatScore >= 4) {
+    economicMoatStatus = 'warning';
+  }
+  
+  // GPT-basierte Analyse des wirtschaftlichen Burggrabens
+  let economicMoatGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      economicMoatGptAnalysis = await analyzeEconomicMoat(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt',
+        grossMargin,
+        operatingMargin,
+        roic
+      );
+    } catch (error) {
+      console.error('Error analyzing economic moat with GPT:', error);
+      economicMoatGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // Verbesserte ROE Berechnung
+  let roe = safeValue(latestRatios.returnOnEquity) * 100;
+  if (roe === 0 && latestIncomeStatement && latestBalanceSheet) {
+    const netIncome = safeValue(latestIncomeStatement.netIncome);
+    const equity = safeValue(latestBalanceSheet.totalStockholdersEquity);
+    if (equity > 0) {
+      roe = (netIncome / equity) * 100;
+    }
+  }
+  
+  // Verbesserte Nettomarge Berechnung
+  let netMargin = safeValue(latestRatios.netProfitMargin) * 100;
+  if (netMargin === 0 && latestIncomeStatement) {
+    const netIncome = safeValue(latestIncomeStatement.netIncome);
+    const revenue = safeValue(latestIncomeStatement.revenue);
+    if (revenue > 0) {
+      netMargin = (netIncome / revenue) * 100;
+    }
+  }
+  
+  // Financial Metrics scoring
+  let financialMetricsScore = 0;
+  const financialMetricsMaxScore = 9; // 3 points each for ROE, net margin, EPS growth
+  
+  // ROE scoring (0-3 points)
+  if (roe > 15) financialMetricsScore += 3;
+  else if (roe > 10) financialMetricsScore += 2;
+  else if (roe > 7) financialMetricsScore += 1;
+  
+  // Net Margin scoring (0-3 points)
+  if (netMargin > 10) financialMetricsScore += 3;
+  else if (netMargin > 5) financialMetricsScore += 2;
+  else if (netMargin > 3) financialMetricsScore += 1;
+  
+  // EPS Growth (simplified calculation)
+  let epsGrowth = 0;
+  if (incomeStatements && incomeStatements.length > 3) {
+    const current = safeValue(incomeStatements[0].eps) || 0;
+    const past = safeValue(incomeStatements[3].eps) || 0;
+    
+    if (past > 0) {
+      epsGrowth = ((current - past) / past) * 100;
+    }
+  }
+  
+  // EPS Growth scoring (0-3 points)
+  if (epsGrowth > 15) financialMetricsScore += 3;
+  else if (epsGrowth > 10) financialMetricsScore += 2;
+  else if (epsGrowth > 5) financialMetricsScore += 1;
+  
+  // Financial Metrics status based on score
+  let financialMetricsStatus = 'fail';
+  if (financialMetricsScore >= 7) {
+    financialMetricsStatus = 'pass';
+  } else if (financialMetricsScore >= 4) {
+    financialMetricsStatus = 'warning';
+  }
+  
+  // Verbesserte Verschuldungsquote Berechnung
+  let debtToAssets = safeValue(latestRatios.debtToAssets) * 100;
+  if (debtToAssets === 0 && latestBalanceSheet) {
+    const totalDebt = safeValue(latestBalanceSheet.totalDebt) || 
+                     (safeValue(latestBalanceSheet.shortTermDebt) + safeValue(latestBalanceSheet.longTermDebt));
+    const totalAssets = safeValue(latestBalanceSheet.totalAssets);
+    if (totalAssets > 0) {
+      debtToAssets = (totalDebt / totalAssets) * 100;
+    }
+  }
+  
+  // Verbesserte Zinsdeckungsgrad Berechnung
+  let interestCoverage = safeValue(latestRatios.interestCoverage);
+  if (interestCoverage === 0 && latestIncomeStatement) {
+    const ebit = safeValue(latestIncomeStatement.ebitda) - safeValue(latestIncomeStatement.depreciationAndAmortization);
+    const interestExpense = safeValue(latestIncomeStatement.interestExpense);
+    if (interestExpense !== 0) {
+      interestCoverage = ebit / Math.abs(interestExpense);
+    }
+  }
+  
+  // Verbesserte Current Ratio Berechnung
+  let currentRatio = safeValue(latestRatios.currentRatio);
+  if (currentRatio === 0 && latestBalanceSheet) {
+    const currentAssets = safeValue(latestBalanceSheet.totalCurrentAssets);
+    const currentLiabilities = safeValue(latestBalanceSheet.totalCurrentLiabilities);
+    if (currentLiabilities > 0) {
+      currentRatio = currentAssets / currentLiabilities;
+    }
+  }
+  
+  // Verbesserte Debt to EBITDA Berechnung
+  let debtToEBITDA = safeValue(latestRatios.debtToEBITDA);
+  if (debtToEBITDA === 0 && latestIncomeStatement && latestBalanceSheet) {
+    const totalDebt = safeValue(latestBalanceSheet.totalDebt) || 
+                     (safeValue(latestBalanceSheet.shortTermDebt) + safeValue(latestBalanceSheet.longTermDebt));
+    const ebitda = safeValue(latestIncomeStatement.ebitda);
+    if (ebitda > 0) {
+      debtToEBITDA = totalDebt / ebitda;
+    }
+  }
+  
+  // Financial Stability scoring
+  let financialStabilityScore = 0;
+  const financialStabilityMaxScore = 9; // 3 points each for debt-to-assets, interest coverage, current ratio
+  
+  // Debt to Assets scoring (0-3 points)
+  if (debtToAssets < 30) financialStabilityScore += 3;
+  else if (debtToAssets < 50) financialStabilityScore += 2;
+  else if (debtToAssets < 70) financialStabilityScore += 1;
+  
+  // Interest Coverage scoring (0-3 points)
+  if (interestCoverage > 7) financialStabilityScore += 3;
+  else if (interestCoverage > 5) financialStabilityScore += 2;
+  else if (interestCoverage > 3) financialStabilityScore += 1;
+  
+  // Current Ratio scoring (0-3 points)
+  if (currentRatio > 2) financialStabilityScore += 3;
+  else if (currentRatio > 1.5) financialStabilityScore += 2;
+  else if (currentRatio > 1) financialStabilityScore += 1;
+  
+  // Financial Stability status based on score
+  let financialStabilityStatus = 'fail';
+  if (financialStabilityScore >= 7) {
+    financialStabilityStatus = 'pass';
+  } else if (financialStabilityScore >= 4) {
+    financialStabilityStatus = 'warning';
+  }
+  
+  // Management Qualität - FIXED LOGIC
+  let managementStatus = 'warning'; // Default is warning until proven otherwise
+  let managementScore = 1; // Default moderate score
+  const managementMaxScore = 3;
+  
+  // GPT-basierte Analyse der Managementqualität
+  let managementGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      managementGptAnalysis = await analyzeManagementQuality(
+        companyProfile.companyName,
+        companyProfile.ceo || 'Unbekannt'
+      );
+      
+      // FIXED: Score based on GPT analysis, but more conservative
+      if (managementGptAnalysis) {
+        if (managementGptAnalysis.toLowerCase().includes('exzellent') || 
+            managementGptAnalysis.toLowerCase().includes('hervorragend') || 
+            managementGptAnalysis.toLowerCase().includes('stark aktionärsorientiert')) {
+          managementStatus = 'pass';
+          managementScore = 3;
+        } else if (managementGptAnalysis.toLowerCase().includes('gut') || 
+                  managementGptAnalysis.toLowerCase().includes('solide') || 
+                  managementGptAnalysis.toLowerCase().includes('effektiv')) {
+          managementStatus = 'warning';
+          managementScore = 2;
+        } else if (managementGptAnalysis.toLowerCase().includes('bedenken') || 
+                  managementGptAnalysis.toLowerCase().includes('problematisch') || 
+                  managementGptAnalysis.toLowerCase().includes('schwach')) {
+          managementStatus = 'fail';
+          managementScore = 0;
+        }
+      }
+    } catch (error) {
+      console.error('Error analyzing management quality with GPT:', error);
+      managementGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // Verbesserte KGV Berechnung
+  let pe = safeValue(latestRatios.priceEarningsRatio);
+  
+  // Verbesserte Dividendenrendite Berechnung
+  let dividendYield = safeValue(latestRatios.dividendYield) * 100;
+  
+  // Kurs zu Buchwert Berechnung
+  let priceToBook = safeValue(latestRatios.priceToBookRatio);
+  
+  // Kurs zu Cashflow Berechnung
+  let priceToCashFlow = safeValue(latestRatios.priceCashFlowRatio);
+  
+  // Valuation scoring
+  let valuationScore = 0;
+  const valuationMaxScore = 12; // 3 points each for PE, dividend yield, P/B, P/CF
+  
+  // Adjust the thresholds based on moat status
+  const hasStrongMoat = economicMoatStatus === 'pass';
+  
+  // PE scoring (0-3 points)
+  if (pe < 15) valuationScore += 3;
+  else if (pe < 20 || (hasStrongMoat && pe < 25)) valuationScore += 2;
+  else if (pe < 25 || (hasStrongMoat && pe < 30)) valuationScore += 1;
+  
+  // Dividend Yield scoring (0-3 points)
+  if (dividendYield > 3) valuationScore += 3;
+  else if (dividendYield > 2) valuationScore += 2;
+  else if (dividendYield > 1) valuationScore += 1;
+  
+  // P/B scoring (0-3 points) with explanations
+  if (priceToBook < 1.5) valuationScore += 3; // Unter 1,5 gilt als günstig
+  else if (priceToBook < 3 || (hasStrongMoat && priceToBook < 4)) valuationScore += 2; // 1,5-3,0 als akzeptabel bei starkem Moat
+  else if (priceToBook < 5 && hasStrongMoat) valuationScore += 1; // Höhere Werte nur mit starkem Moat akzeptabel
+  
+  // P/CF scoring (0-3 points) with explanations
+  if (priceToCashFlow < 10) valuationScore += 3; // Unter 10 gilt als günstig
+  else if (priceToCashFlow < 15 || (hasStrongMoat && priceToCashFlow < 20)) valuationScore += 2; // 10-20 als fair bewertet
+  else if (priceToCashFlow < 25 && hasStrongMoat) valuationScore += 1; // Höhere Werte nur mit starkem Moat akzeptabel
+  
+  // Valuation status based on score
+  let valuationStatus = 'fail';
+  if (valuationScore >= 9) {
+    valuationStatus = 'pass';
+  } else if (valuationScore >= 5) {
+    valuationStatus = 'warning';
+  }
+  
+  // Langfristiger Horizont
+  const sector = companyProfile.sector || 'Unbekannt';
+  
+  // Long-term Outlook scoring
+  let longTermScore = 0;
+  const longTermMaxScore = 3;
+  
+  // Sector-based initial scoring
+  const stableSectors = [
+    'Consumer Defensive', 'Healthcare', 'Utilities', 
+    'Financial Services', 'Technology', 'Communication Services'
+  ];
+  
+  if (stableSectors.includes(sector)) {
+    longTermScore = 2; // Start with 2 points for stable sectors
+  } else {
+    longTermScore = 1; // Start with 1 point for other sectors
+  }
+  
+  // GPT-basierte Analyse der langfristigen Perspektiven
+  let longTermGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      longTermGptAnalysis = await analyzeLongTermProspects(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt',
+        sector
+      );
+    } catch (error) {
+      console.error('Error analyzing long-term prospects with GPT:', error);
+      longTermGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // Adjust long-term score based on GPT analysis
+  if (longTermGptAnalysis) {
+    if (longTermGptAnalysis.toLowerCase().includes('stark') || 
+        longTermGptAnalysis.toLowerCase().includes('positiv') || 
+        longTermGptAnalysis.toLowerCase().includes('vorteilhaft')) {
+      longTermScore = Math.min(longTermScore + 1, 3);
+    } else if (longTermGptAnalysis.toLowerCase().includes('risik') || 
+               longTermGptAnalysis.toLowerCase().includes('bedenken') || 
+               longTermGptAnalysis.toLowerCase().includes('problem')) {
+      longTermScore = Math.max(longTermScore - 1, 0);
+    }
+    
+    // Check for regulatory risks
+    if (longTermGptAnalysis.toLowerCase().includes('regulat') || 
+        longTermGptAnalysis.toLowerCase().includes('politik') || 
+        longTermGptAnalysis.toLowerCase().includes('gesetz')) {
+      longTermScore = Math.max(longTermScore - 1, 0);
+    }
+  }
+  
+  let longTermStatus = 'warning';
+  if (longTermScore >= 2) {
+    longTermStatus = 'pass';
+  } else if (longTermScore <= 0) {
+    longTermStatus = 'fail';
+  }
+  
+  // GPT-basierte Analyse des rationalen Verhaltens
+  let rationalBehaviorGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      rationalBehaviorGptAnalysis = await analyzeRationalBehavior(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing rational behavior with GPT:', error);
+      rationalBehaviorGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // Rational Behavior based on GPT analysis
+  let rationalBehaviorScore = 1; // Default to midpoint
+  const rationalBehaviorMaxScore = 3;
+  let rationalBehaviorStatus = 'warning'; // Default to warning
+  
+  if (rationalBehaviorGptAnalysis) {
+    if (rationalBehaviorGptAnalysis.toLowerCase().includes('rational') || 
+        rationalBehaviorGptAnalysis.toLowerCase().includes('disziplinier') || 
+        rationalBehaviorGptAnalysis.toLowerCase().includes('effizient')) {
+      rationalBehaviorScore = 3;
+      rationalBehaviorStatus = 'pass';
+    } else if (rationalBehaviorGptAnalysis.toLowerCase().includes('irrational') || 
+               rationalBehaviorGptAnalysis.toLowerCase().includes('risiko') || 
+               rationalBehaviorGptAnalysis.toLowerCase().includes('fehler')) {
+      rationalBehaviorScore = 0;
+      rationalBehaviorStatus = 'fail';
+    }
+  }
+  
+  // GPT-basierte Analyse des antizyklischen Verhaltens
+  let cyclicalBehaviorGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      cyclicalBehaviorGptAnalysis = await analyzeCyclicalBehavior(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing cyclical behavior with GPT:', error);
+      cyclicalBehaviorGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // Cyclical Behavior based on GPT analysis
+  let cyclicalBehaviorScore = 1; // Default to midpoint
+  const cyclicalBehaviorMaxScore = 3;
+  let cyclicalBehaviorStatus = 'warning'; // Default to warning
+  
+  if (cyclicalBehaviorGptAnalysis) {
+    if (cyclicalBehaviorGptAnalysis.toLowerCase().includes('antizyklisch') || 
+        cyclicalBehaviorGptAnalysis.toLowerCase().includes('nutzt schwäche') || 
+        cyclicalBehaviorGptAnalysis.toLowerCase().includes('opportun')) {
+      cyclicalBehaviorScore = 3;
+      cyclicalBehaviorStatus = 'pass';
+    } else if (cyclicalBehaviorGptAnalysis.toLowerCase().includes('trends folg') || 
+               cyclicalBehaviorGptAnalysis.toLowerCase().includes('reaktiv') || 
+               cyclicalBehaviorGptAnalysis.toLowerCase().includes('nicht antizyklisch')) {
+      cyclicalBehaviorScore = 0;
+      cyclicalBehaviorStatus = 'fail';
+    }
+  }
+  
+  // GPT-basierte Analyse der Einmaleffekte
+  let oneTimeEffectsGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      oneTimeEffectsGptAnalysis = await analyzeOneTimeEffects(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing one-time effects with GPT:', error);
+      oneTimeEffectsGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // One-Time Effects based on GPT analysis
+  let oneTimeEffectsScore = 1; // Default to midpoint
+  const oneTimeEffectsMaxScore = 3;
+  let oneTimeEffectsStatus = 'warning'; // Default to warning
+  
+  if (oneTimeEffectsGptAnalysis) {
+    if (oneTimeEffectsGptAnalysis.toLowerCase().includes('nachhaltig') || 
+        oneTimeEffectsGptAnalysis.toLowerCase().includes('keine einmaleffekte') || 
+        oneTimeEffectsGptAnalysis.toLowerCase().includes('kontinuierlich')) {
+      oneTimeEffectsScore = 3;
+      oneTimeEffectsStatus = 'pass';
+    } else if (oneTimeEffectsGptAnalysis.toLowerCase().includes('einmaleffekt') || 
+               oneTimeEffectsGptAnalysis.toLowerCase().includes('nicht nachhaltig') || 
+               oneTimeEffectsGptAnalysis.toLowerCase().includes('problematisch')) {
+      oneTimeEffectsScore = 0;
+      oneTimeEffectsStatus = 'fail';
+    }
+  }
+  
+  // GPT-basierte Analyse, ob es sich um einen Turnaround-Fall handelt
+  let turnaroundGptAnalysis = null;
+  if (hasOpenAiApiKey()) {
+    try {
+      turnaroundGptAnalysis = await analyzeTurnaround(
+        companyProfile.companyName,
+        companyProfile.industry || 'Unbekannt'
+      );
+    } catch (error) {
+      console.error('Error analyzing turnaround with GPT:', error);
+      turnaroundGptAnalysis = 'GPT-Analyse nicht verfügbar.';
+    }
+  }
+  
+  // Turnaround Analysis based on GPT analysis
+  let turnaroundScore = 1; // Default to midpoint
+  const turnaroundMaxScore = 3;
+  let turnaroundStatus = 'warning'; // Default to warning
+  
+  if (turnaroundGptAnalysis) {
+    // Check for turnaround indicators
+    const turnaroundKeywords = ['turnaround', 'umstrukturierung', 'restrukturierung', 'sanierung', 'neuausrichtung'];
+    const hasTurnaroundIndication = turnaroundKeywords.some(keyword => 
+      turnaroundGptAnalysis.toLowerCase().includes(keyword)
+    );
+    
+    // FIX: Corrected logic - no turnaround should be positive in Buffett's view
+    if (hasTurnaroundIndication) {
+      // This is negative in Buffett's view
+      turnaroundScore = 0;
+      turnaroundStatus = 'fail';
+    } else if (turnaroundGptAnalysis.toLowerCase().includes('kein turnaround') || 
+               turnaroundGptAnalysis.toLowerCase().includes('etabliert') || 
+               turnaroundGptAnalysis.toLowerCase().includes('stabil')) {
+      // This is positive in Buffett's view - giving full points for stable companies
+      turnaroundScore = 3;
+      turnaroundStatus = 'pass';
+    }
+  }
+  
+  // Erstellen des Analyseobjekts mit verbesserten Kennzahlen und Punktwerten
+  return {
+    businessModel: {
+      status: businessModelStatus,
+      title: '1. Verstehbares Geschäftsmodell',
+      description: `${companyProfile.companyName} ist tätig im Bereich ${companyProfile.industry || 'Unbekannt'}.`,
+      details: [
+        `Hauptgeschäftsbereich: ${companyProfile.industry || 'Unbekannt'}`,
+        `Sektor: ${companyProfile.sector || 'Unbekannt'}`,
+        `Beschreibung: ${companyProfile.description ? companyProfile.description.substring(0, 200) + '...' : 'Keine Beschreibung verfügbar'}`
+      ],
+      gptAnalysis: businessModelGptAnalysis,
+      score: businessModelScore,
+      maxScore: businessModelMaxScore
+    },
+    economicMoat: {
+      status: economicMoatStatus,
+      title: '2. Wirtschaftlicher Burggraben (Moat)',
+      description: `${companyProfile.companyName} zeigt ${economicMoatStatus === 'pass' ? 'starke' : economicMoatStatus === 'warning' ? 'moderate' : 'schwache'} Anzeichen eines wirtschaftlichen Burggrabens.`,
+      details: [
+        `Bruttomarge: ${grossMargin.toFixed(2)}% (Buffett bevorzugt >40%)`,
+        `Operative Marge: ${operatingMargin.toFixed(2)}% (Buffett bevorzugt >20%)`,
+        `ROIC: ${roic.toFixed(2)}% (Buffett bevorzugt >15%)`,
+        `Marktposition: ${companyProfile.isActivelyTrading ? 'Aktiv am Markt' : 'Eingeschränkte Marktpräsenz'}`
+      ],
+      gptAnalysis: economicMoatGptAnalysis,
+      score: economicMoatScore,
+      maxScore: economicMoatMaxScore
+    },
+    financialMetrics: {
+      status: financialMetricsStatus,
+      title: '3. Finanzkennzahlen (10 Jahre Rückblick)',
+      description: `Die Finanzkennzahlen von ${companyProfile.companyName} sind ${financialMetricsStatus === 'pass' ? 'stark' : financialMetricsStatus === 'warning' ? 'moderat' : 'schwach'}.`,
+      details: [
+        `Eigenkapitalrendite (ROE): ${roe.toFixed(2)}% (Buffett bevorzugt >15%)`,
+        `Nettomarge: ${netMargin.toFixed(2)}% (Buffett bevorzugt >15%)`,
+        `EPS-Wachstum (3 Jahre): ${epsGrowth.toFixed(2)}% (Buffett bevorzugt >10%)`,
+        `Gewinn pro Aktie: ${latestIncomeStatement && latestIncomeStatement.eps ? Number(latestIncomeStatement.eps).toFixed(2) + ' ' + companyProfile.currency : 'N/A'} ${companyProfile.currency || 'USD'}`
+      ],
+      score: financialMetricsScore,
+      maxScore: financialMetricsMaxScore
+    },
+    financialStability: {
+      status: financialStabilityStatus,
+      title: '4. Finanzielle Stabilität & Verschuldung',
+      description: `${companyProfile.companyName} zeigt ${financialStabilityStatus === 'pass' ? 'starke' : financialStabilityStatus === 'warning' ? 'moderate' : 'schwache'} finanzielle Stabilität.`,
+      details: [
+        `Schulden zu Vermögen: ${debtToAssets.toFixed(2)}% (Buffett bevorzugt <50%)`,
+        `Zinsdeckungsgrad: ${interestCoverage.toFixed(2)} (Buffett bevorzugt >5)`,
+        `Current Ratio: ${currentRatio.toFixed(2)} (Buffett bevorzugt >1.5)`,
+        `Schulden zu EBITDA: ${debtToEBITDA.toFixed(2)} (niedriger ist besser)`
+      ],
+      score: financialStabilityScore,
+      maxScore: financialStabilityMaxScore
+    },
+    management: {
+      status: managementStatus,
+      title: '5. Qualität des Managements',
+      description: `Die Qualität des Managements wird als ${managementStatus === 'pass' ? 'gut' : managementStatus === 'warning' ? 'moderat' : 'schwach'} eingestuft.`,
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie Insider-Beteiligungen, Kapitalallokation und Kommunikation',
+        `CEO: ${companyProfile.ceo || 'Keine Informationen verfügbar'}`,
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: managementGptAnalysis,
+      score: managementScore,
+      maxScore: managementMaxScore
+    },
+    valuation: {
+      status: valuationStatus,
+      title: '6. Bewertung (nicht zu teuer kaufen)',
+      description: `${companyProfile.companyName} ist aktuell ${valuationStatus === 'pass' ? 'angemessen' : valuationStatus === 'warning' ? 'moderat' : 'hoch'} bewertet.`,
+      details: [
+        `KGV (P/E): ${pe.toFixed(2)} (Buffett bevorzugt <15)`,
+        `Dividendenrendite: ${dividendYield.toFixed(2)}% (Buffett bevorzugt >2%)`,
+        `Kurs zu Buchwert (P/B): ${priceToBook.toFixed(2)} (Unter 1,5 gilt als günstig, 1,5-3,0 als akzeptabel bei starkem Moat)`,
+        `Kurs zu Cashflow (P/CF): ${priceToCashFlow.toFixed(2)} (Unter 10 gilt als günstig, 10-20 als fair bewertet)`
+      ],
+      score: valuationScore,
+      maxScore: valuationMaxScore
+    },
+    longTermOutlook: {
+      status: longTermStatus,
+      title: '7. Langfristiger Horizont',
+      description: `${companyProfile.companyName} operiert in einer Branche mit ${longTermStatus === 'pass' ? 'guten' : longTermStatus === 'warning' ? 'modernen' : 'unsicheren'} langfristigen Aussichten.`,
+      details: [
+        `Branche: ${companyProfile.industry || 'Unbekannt'}`,
+        `Sektor: ${sector}`,
+        `Börsennotiert seit: ${companyProfile.ipoDate ? new Date(companyProfile.ipoDate).toLocaleDateString() : 'N/A'}`,
+        'Eine tiefere Analyse der langfristigen Branchentrends wird empfohlen'
+      ],
+      gptAnalysis: longTermGptAnalysis,
+      score: longTermScore,
+      maxScore: longTermMaxScore
+    },
+    rationalBehavior: {
+      status: rationalBehaviorStatus,
+      title: '8. Rationalität & Disziplin',
+      description: `${companyProfile.companyName} zeigt ${rationalBehaviorStatus === 'pass' ? 'überwiegend rationales' : rationalBehaviorStatus === 'warning' ? 'teilweise rationales' : 'tendenziell irrationales'} Geschäftsverhalten.`,
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie Kapitalallokation, Akquisitionen und Ausgaben',
+        'Analysieren Sie, ob das Management bewusst und diszipliniert handelt',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: rationalBehaviorGptAnalysis,
+      score: rationalBehaviorScore,
+      maxScore: rationalBehaviorMaxScore
+    },
+    cyclicalBehavior: {
+      status: cyclicalBehaviorStatus,
+      title: '9. Antizyklisches Verhalten',
+      description: `${companyProfile.companyName} zeigt ${cyclicalBehaviorStatus === 'pass' ? 'klare Anzeichen antizyklischen' : cyclicalBehaviorStatus === 'warning' ? 'teilweise antizyklisches' : 'wenig antizyklisches'} Verhaltens.`,
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie das Verhalten in Marktkrisen',
+        'Analysieren Sie, ob das Unternehmen kauft, wenn andere verkaufen',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: cyclicalBehaviorGptAnalysis,
+      score: cyclicalBehaviorScore,
+      maxScore: cyclicalBehaviorMaxScore
+    },
+    oneTimeEffects: {
+      status: oneTimeEffectsStatus,
+      title: '10. Vergangenheit ≠ Zukunft',
+      description: `${companyProfile.companyName} zeigt ${oneTimeEffectsStatus === 'pass' ? 'nachhaltige Erfolge ohne wesentliche Einmaleffekte' : oneTimeEffectsStatus === 'warning' ? 'teilweise nachhaltige Ergebnisse' : 'mögliche Einflüsse von Einmaleffekten'}.`,
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie einmalige Ereignisse, die Ergebnisse beeinflusst haben',
+        'Analysieren Sie, ob das Wachstum organisch oder durch Übernahmen getrieben ist',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: oneTimeEffectsGptAnalysis,
+      score: oneTimeEffectsScore,
+      maxScore: oneTimeEffectsMaxScore
+    },
+    turnaround: {
+      status: turnaroundStatus,
+      title: '11. Keine Turnarounds',
+      description: `${companyProfile.companyName} ist ${turnaroundStatus === 'pass' ? 'kein Turnaround-Fall' : turnaroundStatus === 'warning' ? 'möglicherweise in einer Umstrukturierungsphase' : 'ein erkennbarer Turnaround-Fall'}.`,
+      details: [
+        'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
+        'Beachten Sie Anzeichen für Restrukturierung oder Sanierung',
+        'Analysieren Sie, ob das Unternehmen sich in einer Erholungsphase befindet',
+        'Diese Bewertung sollte durch persönliche Recherche ergänzt werden'
+      ],
+      gptAnalysis: turnaroundGptAnalysis,
+      score: turnaroundScore,
+      maxScore: turnaroundMaxScore
+    }
+  };
+};
+
 // Funktion, um Finanzkennzahlen zu holen
 export const getFinancialMetrics = async (ticker: string) => {
   console.log(`Getting financial metrics for ${ticker}`);
@@ -318,60 +1012,6 @@ export const getFinancialMetrics = async (ticker: string) => {
         }));
     }
 
-    // Calculate additional metrics needed for analysis
-    let epsGrowth = null;
-    let debtToEbitda = null;
-    let currentRatio = null;
-    let quickRatio = null;
-    let marginOfSafety = null;
-
-    // EPS Growth calculation from historical data
-    if (historicalData.eps.length >= 2) {
-      const currentEps = historicalData.eps[0].value;
-      const previousEps = historicalData.eps[1].value;
-      if (currentEps && previousEps && previousEps !== 0) {
-        epsGrowth = ((currentEps - previousEps) / Math.abs(previousEps)) * 100;
-      }
-    }
-
-    // Debt to EBITDA calculation
-    if (latestIncomeStatement && latestBalanceSheet) {
-      const ebitda = latestIncomeStatement.ebitda;
-      let totalDebt = 0;
-      
-      if (latestBalanceSheet.totalDebt !== undefined) {
-        totalDebt = latestBalanceSheet.totalDebt;
-      } else {
-        totalDebt = (latestBalanceSheet.shortTermDebt || 0) + (latestBalanceSheet.longTermDebt || 0);
-      }
-      
-      if (ebitda && ebitda > 0 && totalDebt > 0) {
-        debtToEbitda = totalDebt / ebitda;
-      }
-    }
-
-    // Current Ratio calculation
-    if (latestBalanceSheet && latestBalanceSheet.totalCurrentAssets && latestBalanceSheet.totalCurrentLiabilities) {
-      if (latestBalanceSheet.totalCurrentLiabilities > 0) {
-        currentRatio = latestBalanceSheet.totalCurrentAssets / latestBalanceSheet.totalCurrentLiabilities;
-      }
-    }
-
-    // Quick Ratio calculation
-    if (latestBalanceSheet) {
-      const quickAssets = (latestBalanceSheet.cashAndCashEquivalents || 0) + 
-                         (latestBalanceSheet.shortTermInvestments || 0) + 
-                         (latestBalanceSheet.netReceivables || 0);
-      const currentLiabilities = latestBalanceSheet.totalCurrentLiabilities;
-      
-      if (currentLiabilities && currentLiabilities > 0) {
-        quickRatio = quickAssets / currentLiabilities;
-      }
-    }
-
-    // Margin of Safety placeholder - would need DCF calculation
-    marginOfSafety = 0; // Default value, should be calculated with DCF
-
     return {
       // Rendite-Kennzahlen
       eps,
@@ -382,13 +1022,6 @@ export const getFinancialMetrics = async (ticker: string) => {
       // Schulden-Kennzahlen
       debtToAssets,
       interestCoverage,
-      
-      // Additional metrics for Buffett analysis
-      epsGrowth,
-      debtToEbitda,
-      currentRatio,
-      quickRatio,
-      marginOfSafety,
       
       // Add the reported currency to the returned object
       reportedCurrency,
@@ -436,13 +1069,8 @@ export const getOverallRating = async (ticker: string) => {
     
     for (const criterion of allCriteria) {
       // Fix the type error by checking if score and maxScore exist
-      if ('financialScore' in criterion && 'maxScore' in criterion && 
-          typeof criterion.financialScore === 'number' && typeof criterion.maxScore === 'number') {
-        detailedTotalScore += criterion.financialScore;
-        detailedMaxScore += criterion.maxScore;
-        hasDetailedScores = true;
-      } else if ('score' in criterion && 'maxScore' in criterion && 
-          typeof criterion.score === 'number' && typeof criterion.maxScore === 'number') {
+      if ('score' in criterion && 'maxScore' in criterion && 
+          criterion.score !== undefined && criterion.maxScore !== undefined) {
         detailedTotalScore += criterion.score;
         detailedMaxScore += criterion.maxScore;
         hasDetailedScores = true;
@@ -477,7 +1105,7 @@ export const getOverallRating = async (ticker: string) => {
     const isFinanciallyStable = criteria.financialStability.status === 'pass';
     
     // Komplexes Geschäftsmodell könnte ein Problem sein
-    const isBusinessModelComplex = criteria.businessModel.status !== 'pass';
+    const isBusinessModelComplex = criteria.businessModel.status === 'warning' || criteria.businessModel.status === 'fail';
     
     if (passCount >= 6 && criteria.valuation.status !== 'fail') {
       overall = 'buy';
@@ -499,7 +1127,7 @@ export const getOverallRating = async (ticker: string) => {
       strengths.push('Klares, verständliches Geschäftsmodell');
     } else if (criteria.businessModel.status === 'warning') {
       weaknesses.push('Moderat komplexes Geschäftsmodell, das tiefere Analyse erfordert');
-    } else {
+    } else if (criteria.businessModel.status === 'fail') {
       weaknesses.push('Komplexes oder schwer verständliches Geschäftsmodell');
     }
     
@@ -507,7 +1135,7 @@ export const getOverallRating = async (ticker: string) => {
       strengths.push('Starker wirtschaftlicher Burggraben (Moat) mit überlegenen Margen');
     } else if (criteria.economicMoat.status === 'warning') {
       strengths.push('Moderater wirtschaftlicher Burggraben vorhanden');
-    } else {
+    } else if (criteria.economicMoat.status === 'fail') {
       weaknesses.push('Kein erkennbarer wirtschaftlicher Burggraben gegenüber Wettbewerbern');
     }
     
@@ -515,7 +1143,7 @@ export const getOverallRating = async (ticker: string) => {
       strengths.push('Hervorragende Finanzkennzahlen (ROE, Nettomarge)');
     } else if (criteria.financialMetrics.status === 'warning') {
       strengths.push('Solide, aber nicht herausragende Finanzkennzahlen');
-    } else {
+    } else if (criteria.financialMetrics.status === 'fail') {
       weaknesses.push('Unterdurchschnittliche Finanzkennzahlen');
     }
     
@@ -523,7 +1151,7 @@ export const getOverallRating = async (ticker: string) => {
       strengths.push('Solide finanzielle Stabilität mit geringer Verschuldung');
     } else if (criteria.financialStability.status === 'warning') {
       weaknesses.push('Moderate Bedenken bezüglich der finanziellen Stabilität');
-    } else {
+    } else if (criteria.financialStability.status === 'fail') {
       weaknesses.push('Erhebliche Bedenken hinsichtlich finanzieller Stabilität oder hoher Verschuldung');
     }
     
@@ -531,21 +1159,19 @@ export const getOverallRating = async (ticker: string) => {
       strengths.push('Attraktive Bewertung (KGV, KBV, PCF und Dividendenrendite)');
     } else if (criteria.valuation.status === 'warning') {
       weaknesses.push('Faire, aber nicht besonders günstige Bewertung');
-    } else {
+    } else if (criteria.valuation.status === 'fail') {
       weaknesses.push('Hohe Bewertung im Verhältnis zu den fundamentalen Daten');
     }
     
     if (criteria.longTermOutlook.status === 'pass') {
       strengths.push('Vielversprechende langfristige Perspektiven');
-    } else {
+    } else if (criteria.longTermOutlook.status === 'warning' || criteria.longTermOutlook.status === 'fail') {
       weaknesses.push('Unsichere langfristige Perspektiven oder regulatorische Risiken');
     }
     
     if (criteria.management.status === 'pass') {
       strengths.push('Qualitativ hochwertiges und aktionärsfreundliches Management');
-    } else if (criteria.management.status === 'warning') {
-      weaknesses.push('Bedenken bezüglich der Qualität oder Aktionärsfreundlichkeit des Managements');
-    } else {
+    } else if (criteria.management.status === 'fail') {
       weaknesses.push('Bedenken bezüglich der Qualität oder Aktionärsfreundlichkeit des Managements');
     }
     
@@ -602,311 +1228,6 @@ Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen
     };
   } catch (error) {
     console.error('Error generating overall rating:', error);
-    throw error;
-  }
-};
-
-export const analyzeBuffettCriteria = async (ticker: string) => {
-  try {
-    const metrics = await getFinancialMetrics(ticker);
-
-    console.log('=== BUFFETT CRITERIA ANALYSIS START ===');
-    console.log('Ticker:', ticker);
-    console.log('Raw metrics:', metrics);
-
-    // Calculate financial metrics scores for criteria 3, 4, 6
-    let financialMetricsScore = 0;
-    let financialStabilityScore = 0;
-    let valuationScore = 0;
-
-    // CRITERION 3: Financial Metrics (10 Jahre Rückblick)
-    console.log('=== KRITERIUM 3: FINANZKENNZAHLEN BERECHNUNG ===');
-    
-    if (metrics?.roe !== undefined && metrics?.roe !== null) {
-      const roeValue = Number(metrics.roe);
-      if (!isNaN(roeValue) && isFinite(roeValue)) {
-        console.log(`ROE: ${roeValue}%`);
-        if (roeValue >= 15) {
-          financialMetricsScore += 3.33; // Exzellent
-          console.log('ROE >= 15%: +3.33 Punkte');
-        } else if (roeValue >= 10) {
-          financialMetricsScore += 2; // Akzeptabel
-          console.log('ROE >= 10%: +2 Punkte');
-        } else if (roeValue >= 5) {
-          financialMetricsScore += 1; // Schwach
-          console.log('ROE >= 5%: +1 Punkt');
-        }
-      }
-    }
-
-    // Use netMargin instead of netProfitMargin
-    if (metrics?.netMargin !== undefined && metrics?.netMargin !== null) {
-      const netMarginValue = Number(metrics.netMargin);
-      if (!isNaN(netMarginValue) && isFinite(netMarginValue)) {
-        console.log(`Nettomarge: ${netMarginValue}%`);
-        if (netMarginValue >= 15) {
-          financialMetricsScore += 3.33; // Exzellent
-          console.log('Nettomarge >= 15%: +3.33 Punkte');
-        } else if (netMarginValue >= 10) {
-          financialMetricsScore += 2; // Akzeptabel
-          console.log('Nettomarge >= 10%: +2 Punkte');
-        } else if (netMarginValue >= 5) {
-          financialMetricsScore += 1; // Schwach
-          console.log('Nettomarge >= 5%: +1 Punkt');
-        }
-      }
-    }
-
-    if (metrics?.epsGrowth !== undefined && metrics?.epsGrowth !== null) {
-      const epsGrowthValue = Number(metrics.epsGrowth);
-      if (!isNaN(epsGrowthValue) && isFinite(epsGrowthValue)) {
-        console.log(`EPS-Wachstum: ${epsGrowthValue}%`);
-        if (epsGrowthValue >= 10) {
-          financialMetricsScore += 3.34; // Exzellent (3.34 um auf 10 zu kommen)
-          console.log('EPS-Wachstum >= 10%: +3.34 Punkte');
-        } else if (epsGrowthValue >= 5) {
-          financialMetricsScore += 2; // Akzeptabel
-          console.log('EPS-Wachstum >= 5%: +2 Punkte');
-        } else if (epsGrowthValue >= 0) {
-          financialMetricsScore += 1; // Schwaches Wachstum
-          console.log('EPS-Wachstum >= 0%: +1 Punkt');
-        }
-      }
-    }
-
-    // Runde auf 2 Dezimalstellen für saubere Anzeige
-    financialMetricsScore = Math.round(financialMetricsScore * 100) / 100;
-    console.log(`KRITERIUM 3 FINALSCORE: ${financialMetricsScore}/10`);
-
-    // CRITERION 4: Financial Stability
-    console.log('=== KRITERIUM 4: FINANZIELLE STABILITÄT BERECHNUNG ===');
-    
-    if (metrics?.debtToEbitda !== undefined && metrics?.debtToEbitda !== null) {
-      const debtToEbitdaValue = Number(metrics.debtToEbitda);
-      if (!isNaN(debtToEbitdaValue) && isFinite(debtToEbitdaValue)) {
-        console.log(`Debt-to-EBITDA: ${debtToEbitdaValue}`);
-        if (debtToEbitdaValue < 2) {
-          financialStabilityScore += 3.33; // Sehr gut
-          console.log('Debt-to-EBITDA < 2: +3.33 Punkte');
-        } else if (debtToEbitdaValue <= 3) {
-          financialStabilityScore += 1.67; // Okay
-          console.log('Debt-to-EBITDA <= 3: +1.67 Punkte');
-        }
-      }
-    }
-
-    if (metrics?.currentRatio !== undefined && metrics?.currentRatio !== null) {
-      const currentRatioValue = Number(metrics.currentRatio);
-      if (!isNaN(currentRatioValue) && isFinite(currentRatioValue)) {
-        console.log(`Current Ratio: ${currentRatioValue}`);
-        if (currentRatioValue > 1.5) {
-          financialStabilityScore += 3.33; // Gut
-          console.log('Current Ratio > 1.5: +3.33 Punkte');
-        } else if (currentRatioValue >= 1) {
-          financialStabilityScore += 1.67; // Okay
-          console.log('Current Ratio >= 1: +1.67 Punkte');
-        }
-      }
-    }
-
-    if (metrics?.quickRatio !== undefined && metrics?.quickRatio !== null) {
-      const quickRatioValue = Number(metrics.quickRatio);
-      if (!isNaN(quickRatioValue) && isFinite(quickRatioValue)) {
-        console.log(`Quick Ratio: ${quickRatioValue}`);
-        if (quickRatioValue > 1) {
-          financialStabilityScore += 3.34; // Gut (3.34 um auf 10 zu kommen)
-          console.log('Quick Ratio > 1: +3.34 Punkte');
-        } else if (quickRatioValue >= 0.8) {
-          financialStabilityScore += 1.67; // Okay
-          console.log('Quick Ratio >= 0.8: +1.67 Punkte');
-        }
-      }
-    }
-
-    financialStabilityScore = Math.round(financialStabilityScore * 100) / 100;
-    console.log(`KRITERIUM 4 FINALSCORE: ${financialStabilityScore}/10`);
-
-    // CRITERION 6: Valuation (from DCF/Margin of Safety)
-    console.log('=== KRITERIUM 6: BEWERTUNG BERECHNUNG ===');
-    
-    if (metrics?.marginOfSafety !== undefined && metrics?.marginOfSafety !== null) {
-      const marginOfSafetyValue = Number(metrics.marginOfSafety);
-      if (!isNaN(marginOfSafetyValue) && isFinite(marginOfSafetyValue)) {
-        console.log(`Margin of Safety: ${marginOfSafetyValue}%`);
-        if (marginOfSafetyValue >= 30) {
-          valuationScore = 10; // Exzellent
-          console.log('Margin of Safety >= 30%: 10 Punkte');
-        } else if (marginOfSafetyValue >= 20) {
-          valuationScore = 8; // Sehr gut
-          console.log('Margin of Safety >= 20%: 8 Punkte');
-        } else if (marginOfSafetyValue >= 10) {
-          valuationScore = 6; // Gut
-          console.log('Margin of Safety >= 10%: 6 Punkte');
-        } else if (marginOfSafetyValue >= 0) {
-          valuationScore = 4; // Akzeptabel
-          console.log('Margin of Safety >= 0%: 4 Punkte');
-        } else {
-          valuationScore = 0; // Überbewertet
-          console.log('Margin of Safety < 0%: 0 Punkte');
-        }
-      }
-    }
-
-    console.log(`KRITERIUM 6 FINALSCORE: ${valuationScore}/10`);
-
-    // Set maxScore always to 10 for all criteria
-    const financialMetricsMaxScore = 10;
-    const financialStabilityMaxScore = 10;
-    const valuationMaxScore = 10;
-
-    console.log('=== FINAL SCORES SUMMARY ===');
-    console.log(`Kriterium 3 (Finanzkennzahlen): ${financialMetricsScore}/${financialMetricsMaxScore}`);
-    console.log(`Kriterium 4 (Finanzielle Stabilität): ${financialStabilityScore}/${financialStabilityMaxScore}`);
-    console.log(`Kriterium 6 (Bewertung): ${valuationScore}/${valuationMaxScore}`);
-
-    // Generate descriptions and details for financial criteria
-    const financialMetricsDetails = [
-      metrics?.roe ? `ROE: ${metrics.roe.toFixed(1)}%` : 'ROE: Nicht verfügbar',
-      metrics?.netMargin ? `Nettomarge: ${metrics.netMargin.toFixed(1)}%` : 'Nettomarge: Nicht verfügbar',
-      metrics?.epsGrowth ? `EPS-Wachstum: ${metrics.epsGrowth.toFixed(1)}%` : 'EPS-Wachstum: Nicht verfügbar',
-      metrics?.eps ? `EPS: ${metrics.eps.toFixed(2)} ${metrics.reportedCurrency || 'USD'}` : 'EPS: Nicht verfügbar'
-    ];
-
-    const financialStabilityDetails = [
-      metrics?.debtToEbitda ? `Verschuldung/EBITDA: ${metrics.debtToEbitda.toFixed(1)}` : 'Verschuldung/EBITDA: Nicht verfügbar',
-      metrics?.currentRatio ? `Current Ratio: ${metrics.currentRatio.toFixed(2)}` : 'Current Ratio: Nicht verfügbar',
-      metrics?.quickRatio ? `Quick Ratio: ${metrics.quickRatio.toFixed(2)}` : 'Quick Ratio: Nicht verfügbar'
-    ];
-
-    const valuationDetails = [
-      metrics?.marginOfSafety ? `Sicherheitsmarge: ${metrics.marginOfSafety.toFixed(1)}%` : 'Sicherheitsmarge: Nicht verfügbar',
-      'Intrinsischer Wert: Nicht verfügbar'
-    ];
-
-    // Status calculation based on scores
-    const getStatus = (score: number): 'pass' | 'warning' | 'fail' => {
-      if (score >= 8) return 'pass';
-      if (score >= 5) return 'warning';
-      return 'fail';
-    };
-
-    return {
-      businessModel: {
-        title: "1. Verständliches Geschäftsmodell",
-        status: "warning" as const,
-        description: "Das Geschäftsmodell sollte einfach und verständlich sein",
-        details: [
-          "Klares und nachhaltiges Geschäftsmodell",
-          "Vorhersagbare Einnahmequellen",
-          "Verständliche Produkte und Dienstleistungen"
-        ],
-        maxScore: 10
-      },
-      economicMoat: {
-        title: "2. Wirtschaftlicher Burggraben (Moat)",
-        status: "warning" as const,
-        description: "Nachhaltige Wettbewerbsvorteile des Unternehmens",
-        details: [
-          "Markenbekanntheit und Kundentreue",
-          "Hohe Wechselkosten für Kunden", 
-          "Netzwerkeffekte oder Skalenvorteile"
-        ],
-        maxScore: 10
-      },
-      financialMetrics: {
-        title: "3. Finanzkennzahlen (10 Jahre)",
-        status: getStatus(financialMetricsScore),
-        description: "Konsistent starke finanzielle Performance über 10 Jahre",
-        details: financialMetricsDetails,
-        financialScore: financialMetricsScore,
-        maxScore: financialMetricsMaxScore
-      },
-      financialStability: {
-        title: "4. Finanzielle Stabilität & Verschuldung",
-        status: getStatus(financialStabilityScore),
-        description: "Solide Bilanz mit angemessener Verschuldung",
-        details: financialStabilityDetails,
-        financialScore: financialStabilityScore,
-        maxScore: financialStabilityMaxScore
-      },
-      management: {
-        title: "5. Qualität des Managements",
-        status: "warning" as const,
-        description: "Kompetente und vertrauenswürdige Unternehmensführung",
-        details: [
-          "Langfristige Denkweise des Managements",
-          "Transparente Kommunikation mit Aktionären",
-          "Vernünftige Vergütungsstrukturen"
-        ],
-        maxScore: 10
-      },
-      valuation: {
-        title: "6. Bewertung (nicht zu teuer kaufen)",
-        status: getStatus(valuationScore),
-        description: "Attraktive Bewertung mit ausreichender Sicherheitsmarge",
-        details: valuationDetails,
-        financialScore: valuationScore,
-        maxScore: valuationMaxScore
-      },
-      longTermOutlook: {
-        title: "7. Langfristiger Horizont",
-        status: "warning" as const,
-        description: "Fokus auf langfristige Wertsteigerung",
-        details: [
-          "Nachhaltiges Geschäftsmodell",
-          "Reinvestition in das Geschäft",
-          "Langfristige Wachstumsperspektiven"
-        ],
-        maxScore: 10
-      },
-      rationalBehavior: {
-        title: "8. Rationalität & Disziplin",
-        status: "warning" as const,
-        description: "Rationale Entscheidungsfindung ohne Emotionen",
-        details: [
-          "Disziplinierte Kapitalallokation",
-          "Keine impulsiven Entscheidungen",
-          "Fokus auf fundamentale Bewertung"
-        ],
-        maxScore: 10
-      },
-      cyclicalBehavior: {
-        title: "9. Antizyklisches Verhalten",
-        status: "warning" as const,
-        description: "Kaufen wenn andere verkaufen",
-        details: [
-          "Investieren bei niedrigen Bewertungen",
-          "Geduld bei Marktvolatilität",
-          "Langfristige Perspektive beibehalten"
-        ],
-        maxScore: 10
-      },
-      oneTimeEffects: {
-        title: "10. Vergangenheit ≠ Zukunft",
-        status: "warning" as const,
-        description: "Fokus auf zukünftige Ertragskraft",
-        details: [
-          "Nachhaltige vs. einmalige Erträge unterscheiden",
-          "Zukünftige Wachstumschancen bewerten",
-          "Risiken und Unsicherheiten berücksichtigen"
-        ],
-        maxScore: 10
-      },
-      turnaround: {
-        title: "11. Keine Turnarounds",
-        status: "warning" as const,
-        description: "Investition in bereits erfolgreiche Unternehmen",
-        details: [
-          "Keine spekulativen Sanierungsfälle",
-          "Bewährte Geschäftsmodelle bevorzugen",
-          "Stabile Marktposition"
-        ],
-        maxScore: 10
-      }
-    };
-
-  } catch (error) {
-    console.error('Error analyzing Buffett criteria:', error);
     throw error;
   }
 };
