@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { 
   analyzeBusinessModel, 
@@ -614,17 +613,16 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     console.log('Raw metrics:', metrics);
 
     // Calculate financial metrics scores for criteria 3, 4, 6
-    let financialMetricsScore: number = 0;
-    let financialStabilityScore: number = 0;
-    let valuationScore: number = 0;
+    let financialMetricsScore = 0;
+    let financialStabilityScore = 0;
+    let valuationScore = 0;
 
     // CRITERION 3: Financial Metrics (10 Jahre Rückblick)
-    // KORRIGIERT: Verwende 3.33 + 3.33 + 3.34 = 10.00 Punkteverteilung
     console.log('=== KRITERIUM 3: FINANZKENNZAHLEN BERECHNUNG ===');
     
     if (metrics?.roe !== undefined && metrics?.roe !== null) {
       const roeValue = Number(metrics.roe);
-      if (!isNaN(roeValue)) {
+      if (!isNaN(roeValue) && isFinite(roeValue)) {
         console.log(`ROE: ${roeValue}%`);
         if (roeValue >= 15) {
           financialMetricsScore += 3.33; // Exzellent
@@ -642,7 +640,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     // Use netMargin instead of netProfitMargin
     if (metrics?.netMargin !== undefined && metrics?.netMargin !== null) {
       const netMarginValue = Number(metrics.netMargin);
-      if (!isNaN(netMarginValue)) {
+      if (!isNaN(netMarginValue) && isFinite(netMarginValue)) {
         console.log(`Nettomarge: ${netMarginValue}%`);
         if (netMarginValue >= 15) {
           financialMetricsScore += 3.33; // Exzellent
@@ -659,7 +657,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
 
     if (metrics?.epsGrowth !== undefined && metrics?.epsGrowth !== null) {
       const epsGrowthValue = Number(metrics.epsGrowth);
-      if (!isNaN(epsGrowthValue)) {
+      if (!isNaN(epsGrowthValue) && isFinite(epsGrowthValue)) {
         console.log(`EPS-Wachstum: ${epsGrowthValue}%`);
         if (epsGrowthValue >= 10) {
           financialMetricsScore += 3.34; // Exzellent (3.34 um auf 10 zu kommen)
@@ -683,7 +681,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     
     if (metrics?.debtToEbitda !== undefined && metrics?.debtToEbitda !== null) {
       const debtToEbitdaValue = Number(metrics.debtToEbitda);
-      if (!isNaN(debtToEbitdaValue)) {
+      if (!isNaN(debtToEbitdaValue) && isFinite(debtToEbitdaValue)) {
         console.log(`Debt-to-EBITDA: ${debtToEbitdaValue}`);
         if (debtToEbitdaValue < 2) {
           financialStabilityScore += 3.33; // Sehr gut
@@ -697,7 +695,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
 
     if (metrics?.currentRatio !== undefined && metrics?.currentRatio !== null) {
       const currentRatioValue = Number(metrics.currentRatio);
-      if (!isNaN(currentRatioValue)) {
+      if (!isNaN(currentRatioValue) && isFinite(currentRatioValue)) {
         console.log(`Current Ratio: ${currentRatioValue}`);
         if (currentRatioValue > 1.5) {
           financialStabilityScore += 3.33; // Gut
@@ -711,7 +709,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
 
     if (metrics?.quickRatio !== undefined && metrics?.quickRatio !== null) {
       const quickRatioValue = Number(metrics.quickRatio);
-      if (!isNaN(quickRatioValue)) {
+      if (!isNaN(quickRatioValue) && isFinite(quickRatioValue)) {
         console.log(`Quick Ratio: ${quickRatioValue}`);
         if (quickRatioValue > 1) {
           financialStabilityScore += 3.34; // Gut (3.34 um auf 10 zu kommen)
@@ -731,7 +729,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     
     if (metrics?.marginOfSafety !== undefined && metrics?.marginOfSafety !== null) {
       const marginOfSafetyValue = Number(metrics.marginOfSafety);
-      if (!isNaN(marginOfSafetyValue)) {
+      if (!isNaN(marginOfSafetyValue) && isFinite(marginOfSafetyValue)) {
         console.log(`Margin of Safety: ${marginOfSafetyValue}%`);
         if (marginOfSafetyValue >= 30) {
           valuationScore = 10; // Exzellent
