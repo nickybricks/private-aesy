@@ -607,9 +607,7 @@ Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen
 
 export const analyzeBuffettCriteria = async (ticker: string) => {
   try {
-    const [metrics] = await Promise.all([
-      getFinancialMetrics(ticker)
-    ]);
+    const metrics = await getFinancialMetrics(ticker);
 
     console.log('=== BUFFETT CRITERIA ANALYSIS START ===');
     console.log('Ticker:', ticker);
@@ -625,45 +623,54 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     console.log('=== KRITERIUM 3: FINANZKENNZAHLEN BERECHNUNG ===');
     
     if (metrics?.roe !== undefined && metrics?.roe !== null) {
-      console.log(`ROE: ${metrics.roe}%`);
-      if (metrics.roe >= 15) {
-        financialMetricsScore += 3.33; // Exzellent
-        console.log('ROE >= 15%: +3.33 Punkte');
-      } else if (metrics.roe >= 10) {
-        financialMetricsScore += 2; // Akzeptabel
-        console.log('ROE >= 10%: +2 Punkte');
-      } else if (metrics.roe >= 5) {
-        financialMetricsScore += 1; // Schwach
-        console.log('ROE >= 5%: +1 Punkt');
+      const roeValue = Number(metrics.roe);
+      if (!isNaN(roeValue)) {
+        console.log(`ROE: ${roeValue}%`);
+        if (roeValue >= 15) {
+          financialMetricsScore += 3.33; // Exzellent
+          console.log('ROE >= 15%: +3.33 Punkte');
+        } else if (roeValue >= 10) {
+          financialMetricsScore += 2; // Akzeptabel
+          console.log('ROE >= 10%: +2 Punkte');
+        } else if (roeValue >= 5) {
+          financialMetricsScore += 1; // Schwach
+          console.log('ROE >= 5%: +1 Punkt');
+        }
       }
     }
 
     // Use netMargin instead of netProfitMargin
     if (metrics?.netMargin !== undefined && metrics?.netMargin !== null) {
-      console.log(`Nettomarge: ${metrics.netMargin}%`);
-      if (metrics.netMargin >= 15) {
-        financialMetricsScore += 3.33; // Exzellent
-        console.log('Nettomarge >= 15%: +3.33 Punkte');
-      } else if (metrics.netMargin >= 10) {
-        financialMetricsScore += 2; // Akzeptabel
-        console.log('Nettomarge >= 10%: +2 Punkte');
-      } else if (metrics.netMargin >= 5) {
-        financialMetricsScore += 1; // Schwach
-        console.log('Nettomarge >= 5%: +1 Punkt');
+      const netMarginValue = Number(metrics.netMargin);
+      if (!isNaN(netMarginValue)) {
+        console.log(`Nettomarge: ${netMarginValue}%`);
+        if (netMarginValue >= 15) {
+          financialMetricsScore += 3.33; // Exzellent
+          console.log('Nettomarge >= 15%: +3.33 Punkte');
+        } else if (netMarginValue >= 10) {
+          financialMetricsScore += 2; // Akzeptabel
+          console.log('Nettomarge >= 10%: +2 Punkte');
+        } else if (netMarginValue >= 5) {
+          financialMetricsScore += 1; // Schwach
+          console.log('Nettomarge >= 5%: +1 Punkt');
+        }
       }
     }
 
     if (metrics?.epsGrowth !== undefined && metrics?.epsGrowth !== null) {
-      console.log(`EPS-Wachstum: ${metrics.epsGrowth}%`);
-      if (metrics.epsGrowth >= 10) {
-        financialMetricsScore += 3.34; // Exzellent (3.34 um auf 10 zu kommen)
-        console.log('EPS-Wachstum >= 10%: +3.34 Punkte');
-      } else if (metrics.epsGrowth >= 5) {
-        financialMetricsScore += 2; // Akzeptabel
-        console.log('EPS-Wachstum >= 5%: +2 Punkte');
-      } else if (metrics.epsGrowth >= 0) {
-        financialMetricsScore += 1; // Schwaches Wachstum
-        console.log('EPS-Wachstum >= 0%: +1 Punkt');
+      const epsGrowthValue = Number(metrics.epsGrowth);
+      if (!isNaN(epsGrowthValue)) {
+        console.log(`EPS-Wachstum: ${epsGrowthValue}%`);
+        if (epsGrowthValue >= 10) {
+          financialMetricsScore += 3.34; // Exzellent (3.34 um auf 10 zu kommen)
+          console.log('EPS-Wachstum >= 10%: +3.34 Punkte');
+        } else if (epsGrowthValue >= 5) {
+          financialMetricsScore += 2; // Akzeptabel
+          console.log('EPS-Wachstum >= 5%: +2 Punkte');
+        } else if (epsGrowthValue >= 0) {
+          financialMetricsScore += 1; // Schwaches Wachstum
+          console.log('EPS-Wachstum >= 0%: +1 Punkt');
+        }
       }
     }
 
@@ -675,35 +682,44 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     console.log('=== KRITERIUM 4: FINANZIELLE STABILITÄT BERECHNUNG ===');
     
     if (metrics?.debtToEbitda !== undefined && metrics?.debtToEbitda !== null) {
-      console.log(`Debt-to-EBITDA: ${metrics.debtToEbitda}`);
-      if (metrics.debtToEbitda < 2) {
-        financialStabilityScore += 3.33; // Sehr gut
-        console.log('Debt-to-EBITDA < 2: +3.33 Punkte');
-      } else if (metrics.debtToEbitda <= 3) {
-        financialStabilityScore += 1.67; // Okay
-        console.log('Debt-to-EBITDA <= 3: +1.67 Punkte');
+      const debtToEbitdaValue = Number(metrics.debtToEbitda);
+      if (!isNaN(debtToEbitdaValue)) {
+        console.log(`Debt-to-EBITDA: ${debtToEbitdaValue}`);
+        if (debtToEbitdaValue < 2) {
+          financialStabilityScore += 3.33; // Sehr gut
+          console.log('Debt-to-EBITDA < 2: +3.33 Punkte');
+        } else if (debtToEbitdaValue <= 3) {
+          financialStabilityScore += 1.67; // Okay
+          console.log('Debt-to-EBITDA <= 3: +1.67 Punkte');
+        }
       }
     }
 
     if (metrics?.currentRatio !== undefined && metrics?.currentRatio !== null) {
-      console.log(`Current Ratio: ${metrics.currentRatio}`);
-      if (metrics.currentRatio > 1.5) {
-        financialStabilityScore += 3.33; // Gut
-        console.log('Current Ratio > 1.5: +3.33 Punkte');
-      } else if (metrics.currentRatio >= 1) {
-        financialStabilityScore += 1.67; // Okay
-        console.log('Current Ratio >= 1: +1.67 Punkte');
+      const currentRatioValue = Number(metrics.currentRatio);
+      if (!isNaN(currentRatioValue)) {
+        console.log(`Current Ratio: ${currentRatioValue}`);
+        if (currentRatioValue > 1.5) {
+          financialStabilityScore += 3.33; // Gut
+          console.log('Current Ratio > 1.5: +3.33 Punkte');
+        } else if (currentRatioValue >= 1) {
+          financialStabilityScore += 1.67; // Okay
+          console.log('Current Ratio >= 1: +1.67 Punkte');
+        }
       }
     }
 
     if (metrics?.quickRatio !== undefined && metrics?.quickRatio !== null) {
-      console.log(`Quick Ratio: ${metrics.quickRatio}`);
-      if (metrics.quickRatio > 1) {
-        financialStabilityScore += 3.34; // Gut (3.34 um auf 10 zu kommen)
-        console.log('Quick Ratio > 1: +3.34 Punkte');
-      } else if (metrics.quickRatio >= 0.8) {
-        financialStabilityScore += 1.67; // Okay
-        console.log('Quick Ratio >= 0.8: +1.67 Punkte');
+      const quickRatioValue = Number(metrics.quickRatio);
+      if (!isNaN(quickRatioValue)) {
+        console.log(`Quick Ratio: ${quickRatioValue}`);
+        if (quickRatioValue > 1) {
+          financialStabilityScore += 3.34; // Gut (3.34 um auf 10 zu kommen)
+          console.log('Quick Ratio > 1: +3.34 Punkte');
+        } else if (quickRatioValue >= 0.8) {
+          financialStabilityScore += 1.67; // Okay
+          console.log('Quick Ratio >= 0.8: +1.67 Punkte');
+        }
       }
     }
 
@@ -714,28 +730,31 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     console.log('=== KRITERIUM 6: BEWERTUNG BERECHNUNG ===');
     
     if (metrics?.marginOfSafety !== undefined && metrics?.marginOfSafety !== null) {
-      console.log(`Margin of Safety: ${metrics.marginOfSafety}%`);
-      if (metrics.marginOfSafety >= 30) {
-        valuationScore = 10; // Exzellent
-        console.log('Margin of Safety >= 30%: 10 Punkte');
-      } else if (metrics.marginOfSafety >= 20) {
-        valuationScore = 8; // Sehr gut
-        console.log('Margin of Safety >= 20%: 8 Punkte');
-      } else if (metrics.marginOfSafety >= 10) {
-        valuationScore = 6; // Gut
-        console.log('Margin of Safety >= 10%: 6 Punkte');
-      } else if (metrics.marginOfSafety >= 0) {
-        valuationScore = 4; // Akzeptabel
-        console.log('Margin of Safety >= 0%: 4 Punkte');
-      } else {
-        valuationScore = 0; // Überbewertet
-        console.log('Margin of Safety < 0%: 0 Punkte');
+      const marginOfSafetyValue = Number(metrics.marginOfSafety);
+      if (!isNaN(marginOfSafetyValue)) {
+        console.log(`Margin of Safety: ${marginOfSafetyValue}%`);
+        if (marginOfSafetyValue >= 30) {
+          valuationScore = 10; // Exzellent
+          console.log('Margin of Safety >= 30%: 10 Punkte');
+        } else if (marginOfSafetyValue >= 20) {
+          valuationScore = 8; // Sehr gut
+          console.log('Margin of Safety >= 20%: 8 Punkte');
+        } else if (marginOfSafetyValue >= 10) {
+          valuationScore = 6; // Gut
+          console.log('Margin of Safety >= 10%: 6 Punkte');
+        } else if (marginOfSafetyValue >= 0) {
+          valuationScore = 4; // Akzeptabel
+          console.log('Margin of Safety >= 0%: 4 Punkte');
+        } else {
+          valuationScore = 0; // Überbewertet
+          console.log('Margin of Safety < 0%: 0 Punkte');
+        }
       }
     }
 
     console.log(`KRITERIUM 6 FINALSCORE: ${valuationScore}/10`);
 
-    // KORRIGIERT: Setze maxScore immer auf 10 für alle Kriterien
+    // Set maxScore always to 10 for all criteria
     const financialMetricsMaxScore = 10;
     const financialStabilityMaxScore = 10;
     const valuationMaxScore = 10;
