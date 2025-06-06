@@ -540,15 +540,8 @@ Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen
 
 export const analyzeBuffettCriteria = async (ticker: string) => {
   try {
-    const [metrics, profile, dcfData, financialGrowth, keyMetrics, incomeStatement, balanceSheet, ratios] = await Promise.all([
-      getFinancialMetrics(ticker),
-      getCompanyProfile(ticker),
-      getDCFData(ticker),
-      getFinancialGrowth(ticker),
-      getKeyMetrics(ticker),
-      getIncomeStatement(ticker),
-      getBalanceSheetStatement(ticker),
-      getFinancialRatios(ticker)
+    const [metrics] = await Promise.all([
+      getFinancialMetrics(ticker)
     ]);
 
     console.log('=== BUFFETT CRITERIA ANALYSIS START ===');
@@ -556,9 +549,9 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     console.log('Raw metrics:', metrics);
 
     // Calculate financial metrics scores for criteria 3, 4, 6
-    let financialMetricsScore = 0;
-    let financialStabilityScore = 0;
-    let valuationScore = 0;
+    let financialMetricsScore: number = 0;
+    let financialStabilityScore: number = 0;
+    let valuationScore: number = 0;
 
     // CRITERION 3: Financial Metrics (10 Jahre Rückblick)
     // KORRIGIERT: Verwende 3.33 + 3.33 + 3.34 = 10.00 Punkteverteilung
@@ -700,8 +693,15 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
 
     const valuationDetails = [
       metrics?.marginOfSafety ? `Sicherheitsmarge: ${metrics.marginOfSafety.toFixed(1)}%` : 'Sicherheitsmarge: Nicht verfügbar',
-      dcfData?.intrinsicValue ? `Intrinsischer Wert: ${dcfData.intrinsicValue.toFixed(2)} ${metrics?.reportedCurrency || 'USD'}` : 'Intrinsischer Wert: Nicht verfügbar'
+      'Intrinsischer Wert: Nicht verfügbar'
     ];
+
+    // Status calculation based on scores
+    const getStatus = (score: number): 'pass' | 'warning' | 'fail' => {
+      if (score >= 8) return 'pass';
+      if (score >= 5) return 'warning';
+      return 'fail';
+    };
 
     return {
       businessModel: {
@@ -728,20 +728,18 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       },
       financialMetrics: {
         title: "3. Finanzkennzahlen (10 Jahre)",
-        status: financialMetricsScore >= 8 ? "pass" as const : 
-               financialMetricsScore >= 5 ? "warning" as const : "fail" as const,
+        status: getStatus(financialMetricsScore),
         description: "Konsistent starke finanzielle Performance über 10 Jahre",
         details: financialMetricsDetails,
-        financialScore: financialMetricsScore, // KORRIGIERT: Verwende financialScore statt score
+        financialScore: financialMetricsScore,
         maxScore: financialMetricsMaxScore
       },
       financialStability: {
         title: "4. Finanzielle Stabilität & Verschuldung",
-        status: financialStabilityScore >= 8 ? "pass" as const :
-               financialStabilityScore >= 5 ? "warning" as const : "fail" as const,
+        status: getStatus(financialStabilityScore),
         description: "Solide Bilanz mit angemessener Verschuldung",
         details: financialStabilityDetails,
-        financialScore: financialStabilityScore, // KORRIGIERT: Verwende financialScore statt score
+        financialScore: financialStabilityScore,
         maxScore: financialStabilityMaxScore
       },
       management: {
@@ -757,13 +755,11 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       },
       valuation: {
         title: "6. Bewertung (nicht zu teuer kaufen)",
-        status: valuationScore >= 8 ? "pass" as const :
-               valuationScore >= 5 ? "warning" as const : "fail" as const,
+        status: getStatus(valuationScore),
         description: "Attraktive Bewertung mit ausreichender Sicherheitsmarge",
         details: valuationDetails,
-        financialScore: valuationScore, // KORRIGIERT: Verwende financialScore statt score
-        maxScore: valuationMaxScore,
-        dcfData: dcfData
+        financialScore: valuationScore,
+        maxScore: valuationMaxScore
       },
       longTermOutlook: {
         title: "7. Langfristiger Horizont",
