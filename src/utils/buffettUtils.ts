@@ -1,4 +1,3 @@
-
 export const getStatusColor = (status: string) => {
   switch (status) {
     case 'pass':
@@ -373,7 +372,7 @@ export const calculateFinancialMetricScore = (
   }
 };
 
-// CORRECTED UNIFIED FUNCTION: Get the displayed score for any criterion - used everywhere
+// UNIFIED FUNCTION: Get the displayed score for any criterion - used everywhere
 export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): number => {
   console.log('=== getUnifiedCriterionScore DEBUG START ===');
   console.log('Criterion title:', criterion.title);
@@ -389,6 +388,12 @@ export const getUnifiedCriterionScore = (criterion: BuffettCriterionProps): numb
   
   if ([3, 4, 6].includes(criterionNum)) {
     console.log(`=== FINANCIAL CRITERION ${criterionNum} DETECTED ===`);
+    
+    // FIXED: Add warning log if score is used instead of financialScore for financial criteria
+    if (criterion.score !== undefined && criterion.financialScore === undefined) {
+      console.warn(`Warnung: financialScore fehlt, aber score ist gesetzt – Kriterium: ${criterion.title}`);
+      console.warn('Dies sollte nicht passieren. Financial criteria should use financialScore only.');
+    }
     
     // For financial criteria, use financial data if available
     if (criterion.financialScore !== undefined) {

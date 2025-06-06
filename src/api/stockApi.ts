@@ -103,7 +103,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   // Improved logic to classify business model based on GPT analysis
   let businessModelStatus = companyProfile.description && companyProfile.description.length > 100 ? 'pass' : 'warning';
   let businessModelScore = 0;
-  const businessModelMaxScore = 3;
+  const businessModelMaxScore = 10; // FIXED: Changed from 3 to 10
   
   // GPT-basierte Analyse des Geschäftsmodells
   let businessModelGptAnalysis = null;
@@ -121,11 +121,11 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
             businessModelGptAnalysis.toLowerCase().includes('klar') || 
             businessModelGptAnalysis.toLowerCase().includes('verständlich')) {
           businessModelStatus = 'pass';
-          businessModelScore = 3; // Full score for simple business models
+          businessModelScore = 10; // FIXED: Changed from 3 to 10
         } else if (businessModelGptAnalysis.toLowerCase().includes('moderat') || 
                   businessModelGptAnalysis.toLowerCase().includes('teilweise')) {
           businessModelStatus = 'warning';
-          businessModelScore = 2; // Moderate score for moderately complex models
+          businessModelScore = 5; // FIXED: Proportional to 10-point scale
         } else if (businessModelGptAnalysis.toLowerCase().includes('komplex') || 
                   businessModelGptAnalysis.toLowerCase().includes('schwer verständlich')) {
           businessModelStatus = 'fail';
@@ -149,27 +149,32 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   // ROIC direkt aus Metriken oder berechnen
   let roic = safeValue(latestMetrics.roic) * 100;
   
-  // Economic Moat scoring
+  // Economic Moat scoring - FIXED: Normalize to 10 points
   let economicMoatScore = 0;
-  const economicMoatMaxScore = 9; // 3 points each for gross margin, operating margin, ROIC
+  const economicMoatMaxScore = 10; // FIXED: Changed from 9 to 10
+  const moatWeight = 10 / 3; // 3.33 points per metric
   
-  // Gross Margin scoring (0-3 points)
-  if (grossMargin > 40) economicMoatScore += 3;
-  else if (grossMargin > 30) economicMoatScore += 2;
-  else if (grossMargin > 20) economicMoatScore += 1;
+  // Gross Margin scoring (0-3.33 points)
+  if (grossMargin > 40) economicMoatScore += moatWeight;
+  else if (grossMargin > 30) economicMoatScore += (moatWeight * 2/3);
+  else if (grossMargin > 20) economicMoatScore += (moatWeight * 1/3);
   
-  // Operating Margin scoring (0-3 points)
-  if (operatingMargin > 20) economicMoatScore += 3;
-  else if (operatingMargin > 15) economicMoatScore += 2;
-  else if (operatingMargin > 10) economicMoatScore += 1;
+  // Operating Margin scoring (0-3.33 points)
+  if (operatingMargin > 20) economicMoatScore += moatWeight;
+  else if (operatingMargin > 15) economicMoatScore += (moatWeight * 2/3);
+  else if (operatingMargin > 10) economicMoatScore += (moatWeight * 1/3);
   
-  // ROIC scoring (0-3 points)
-  if (roic > 15) economicMoatScore += 3;
-  else if (roic > 10) economicMoatScore += 2;
-  else if (roic > 7) economicMoatScore += 1;
+  // ROIC scoring (0-3.34 points to reach exactly 10)
+  const roicWeight = 10 - (moatWeight * 2); // 3.34 points
+  if (roic > 15) economicMoatScore += roicWeight;
+  else if (roic > 10) economicMoatScore += (roicWeight * 2/3);
+  else if (roic > 7) economicMoatScore += (roicWeight * 1/3);
+  
+  // Round to 2 decimal places to avoid floating point errors
+  economicMoatScore = Math.round(economicMoatScore * 100) / 100;
   
   // Economic Moat status based on score
-  let economicMoatStatus = 'fail';
+  let economicMoatStatus: 'pass' | 'warning' | 'fail' = 'fail';
   if (economicMoatScore >= 7) {
     economicMoatStatus = 'pass';
   } else if (economicMoatScore >= 4) {
@@ -213,19 +218,20 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     }
   }
   
-  // Financial Metrics scoring
+  // Financial Metrics scoring - FIXED: Normalize to exactly 10 points
   let financialMetricsScore = 0;
-  const financialMetricsMaxScore = 9; // 3 points each for ROE, net margin, EPS growth
+  const financialMetricsMaxScore = 10; // FIXED: Changed from 9 to 10
+  const financialWeight = 10 / 3; // 3.33 points per metric
   
-  // ROE scoring (0-3 points)
-  if (roe > 15) financialMetricsScore += 3;
-  else if (roe > 10) financialMetricsScore += 2;
-  else if (roe > 7) financialMetricsScore += 1;
+  // ROE scoring (0-3.33 points)
+  if (roe > 15) financialMetricsScore += financialWeight;
+  else if (roe > 10) financialMetricsScore += (financialWeight * 2/3);
+  else if (roe > 7) financialMetricsScore += (financialWeight * 1/3);
   
-  // Net Margin scoring (0-3 points)
-  if (netMargin > 10) financialMetricsScore += 3;
-  else if (netMargin > 5) financialMetricsScore += 2;
-  else if (netMargin > 3) financialMetricsScore += 1;
+  // Net Margin scoring (0-3.33 points)
+  if (netMargin > 10) financialMetricsScore += financialWeight;
+  else if (netMargin > 5) financialMetricsScore += (financialWeight * 2/3);
+  else if (netMargin > 3) financialMetricsScore += (financialWeight * 1/3);
   
   // EPS Growth (simplified calculation)
   let epsGrowth = 0;
@@ -238,13 +244,17 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     }
   }
   
-  // EPS Growth scoring (0-3 points)
-  if (epsGrowth > 15) financialMetricsScore += 3;
-  else if (epsGrowth > 10) financialMetricsScore += 2;
-  else if (epsGrowth > 5) financialMetricsScore += 1;
+  // EPS Growth scoring (0-3.34 points to reach exactly 10)
+  const epsGrowthWeight = 10 - (financialWeight * 2); // 3.34 points
+  if (epsGrowth > 15) financialMetricsScore += epsGrowthWeight;
+  else if (epsGrowth > 10) financialMetricsScore += (epsGrowthWeight * 2/3);
+  else if (epsGrowth > 5) financialMetricsScore += (epsGrowthWeight * 1/3);
+  
+  // Round to 2 decimal places to avoid floating point errors
+  financialMetricsScore = Math.round(financialMetricsScore * 100) / 100;
   
   // Financial Metrics status based on score
-  let financialMetricsStatus = 'fail';
+  let financialMetricsStatus: 'pass' | 'warning' | 'fail' = 'fail';
   if (financialMetricsScore >= 7) {
     financialMetricsStatus = 'pass';
   } else if (financialMetricsScore >= 4) {
@@ -293,27 +303,32 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     }
   }
   
-  // Financial Stability scoring
+  // Financial Stability scoring - FIXED: Normalize to exactly 10 points
   let financialStabilityScore = 0;
-  const financialStabilityMaxScore = 9; // 3 points each for debt-to-assets, interest coverage, current ratio
+  const financialStabilityMaxScore = 10; // FIXED: Changed from 9 to 10
+  const stabilityWeight = 10 / 3; // 3.33 points per metric
   
-  // Debt to Assets scoring (0-3 points)
-  if (debtToAssets < 30) financialStabilityScore += 3;
-  else if (debtToAssets < 50) financialStabilityScore += 2;
-  else if (debtToAssets < 70) financialStabilityScore += 1;
+  // Debt to Assets scoring (0-3.33 points)
+  if (debtToAssets < 30) financialStabilityScore += stabilityWeight;
+  else if (debtToAssets < 50) financialStabilityScore += (stabilityWeight * 2/3);
+  else if (debtToAssets < 70) financialStabilityScore += (stabilityWeight * 1/3);
   
-  // Interest Coverage scoring (0-3 points)
-  if (interestCoverage > 7) financialStabilityScore += 3;
-  else if (interestCoverage > 5) financialStabilityScore += 2;
-  else if (interestCoverage > 3) financialStabilityScore += 1;
+  // Interest Coverage scoring (0-3.33 points)
+  if (interestCoverage > 7) financialStabilityScore += stabilityWeight;
+  else if (interestCoverage > 5) financialStabilityScore += (stabilityWeight * 2/3);
+  else if (interestCoverage > 3) financialStabilityScore += (stabilityWeight * 1/3);
   
-  // Current Ratio scoring (0-3 points)
-  if (currentRatio > 2) financialStabilityScore += 3;
-  else if (currentRatio > 1.5) financialStabilityScore += 2;
-  else if (currentRatio > 1) financialStabilityScore += 1;
+  // Current Ratio scoring (0-3.34 points to reach exactly 10)
+  const currentRatioWeight = 10 - (stabilityWeight * 2); // 3.34 points
+  if (currentRatio > 2) financialStabilityScore += currentRatioWeight;
+  else if (currentRatio > 1.5) financialStabilityScore += (currentRatioWeight * 2/3);
+  else if (currentRatio > 1) financialStabilityScore += (currentRatioWeight * 1/3);
+  
+  // Round to 2 decimal places to avoid floating point errors
+  financialStabilityScore = Math.round(financialStabilityScore * 100) / 100;
   
   // Financial Stability status based on score
-  let financialStabilityStatus = 'fail';
+  let financialStabilityStatus: 'pass' | 'warning' | 'fail' = 'fail';
   if (financialStabilityScore >= 7) {
     financialStabilityStatus = 'pass';
   } else if (financialStabilityScore >= 4) {
@@ -321,9 +336,9 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   }
   
   // Management Qualität - FIXED LOGIC
-  let managementStatus = 'warning'; // Default is warning until proven otherwise
-  let managementScore = 1; // Default moderate score
-  const managementMaxScore = 3;
+  let managementStatus: 'pass' | 'warning' | 'fail' = 'warning'; // Default is warning until proven otherwise
+  let managementScore = 5; // Default moderate score out of 10
+  const managementMaxScore = 10; // FIXED: Changed from 3 to 10
   
   // GPT-basierte Analyse der Managementqualität
   let managementGptAnalysis = null;
@@ -340,12 +355,12 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
             managementGptAnalysis.toLowerCase().includes('hervorragend') || 
             managementGptAnalysis.toLowerCase().includes('stark aktionärsorientiert')) {
           managementStatus = 'pass';
-          managementScore = 3;
+          managementScore = 10;
         } else if (managementGptAnalysis.toLowerCase().includes('gut') || 
                   managementGptAnalysis.toLowerCase().includes('solide') || 
                   managementGptAnalysis.toLowerCase().includes('effektiv')) {
           managementStatus = 'warning';
-          managementScore = 2;
+          managementScore = 6;
         } else if (managementGptAnalysis.toLowerCase().includes('bedenken') || 
                   managementGptAnalysis.toLowerCase().includes('problematisch') || 
                   managementGptAnalysis.toLowerCase().includes('schwach')) {
@@ -371,38 +386,42 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   // Kurs zu Cashflow Berechnung
   let priceToCashFlow = safeValue(latestRatios.priceCashFlowRatio);
   
-  // Valuation scoring
+  // Valuation scoring - FIXED: Normalize to exactly 10 points
   let valuationScore = 0;
-  const valuationMaxScore = 12; // 3 points each for PE, dividend yield, P/B, P/CF
+  const valuationMaxScore = 10; // FIXED: Changed from 12 to 10
+  const valuationWeight = 10 / 4; // 2.5 points per metric
   
   // Adjust the thresholds based on moat status
   const hasStrongMoat = economicMoatStatus === 'pass';
   
-  // PE scoring (0-3 points)
-  if (pe < 15) valuationScore += 3;
-  else if (pe < 20 || (hasStrongMoat && pe < 25)) valuationScore += 2;
-  else if (pe < 25 || (hasStrongMoat && pe < 30)) valuationScore += 1;
+  // PE scoring (0-2.5 points)
+  if (pe < 15) valuationScore += valuationWeight;
+  else if (pe < 20 || (hasStrongMoat && pe < 25)) valuationScore += (valuationWeight * 2/3);
+  else if (pe < 25 || (hasStrongMoat && pe < 30)) valuationScore += (valuationWeight * 1/3);
   
-  // Dividend Yield scoring (0-3 points)
-  if (dividendYield > 3) valuationScore += 3;
-  else if (dividendYield > 2) valuationScore += 2;
-  else if (dividendYield > 1) valuationScore += 1;
+  // Dividend Yield scoring (0-2.5 points)
+  if (dividendYield > 3) valuationScore += valuationWeight;
+  else if (dividendYield > 2) valuationScore += (valuationWeight * 2/3);
+  else if (dividendYield > 1) valuationScore += (valuationWeight * 1/3);
   
-  // P/B scoring (0-3 points) with explanations
-  if (priceToBook < 1.5) valuationScore += 3; // Unter 1,5 gilt als günstig
-  else if (priceToBook < 3 || (hasStrongMoat && priceToBook < 4)) valuationScore += 2; // 1,5-3,0 als akzeptabel bei starkem Moat
-  else if (priceToBook < 5 && hasStrongMoat) valuationScore += 1; // Höhere Werte nur mit starkem Moat akzeptabel
+  // P/B scoring (0-2.5 points) with explanations
+  if (priceToBook < 1.5) valuationScore += valuationWeight; // Unter 1,5 gilt als günstig
+  else if (priceToBook < 3 || (hasStrongMoat && priceToBook < 4)) valuationScore += (valuationWeight * 2/3); // 1,5-3,0 als akzeptabel bei starkem Moat
+  else if (priceToBook < 5 && hasStrongMoat) valuationScore += (valuationWeight * 1/3); // Höhere Werte nur mit starkem Moat akzeptabel
   
-  // P/CF scoring (0-3 points) with explanations
-  if (priceToCashFlow < 10) valuationScore += 3; // Unter 10 gilt als günstig
-  else if (priceToCashFlow < 15 || (hasStrongMoat && priceToCashFlow < 20)) valuationScore += 2; // 10-20 als fair bewertet
-  else if (priceToCashFlow < 25 && hasStrongMoat) valuationScore += 1; // Höhere Werte nur mit starkem Moat akzeptabel
+  // P/CF scoring (0-2.5 points) with explanations
+  if (priceToCashFlow < 10) valuationScore += valuationWeight; // Unter 10 gilt als günstig
+  else if (priceToCashFlow < 15 || (hasStrongMoat && priceToCashFlow < 20)) valuationScore += (valuationWeight * 2/3); // 10-20 als fair bewertet
+  else if (priceToCashFlow < 25 && hasStrongMoat) valuationScore += (valuationWeight * 1/3); // Höhere Werte nur mit starkem Moat akzeptabel
+  
+  // Round to 2 decimal places to avoid floating point errors
+  valuationScore = Math.round(valuationScore * 100) / 100;
   
   // Valuation status based on score
-  let valuationStatus = 'fail';
-  if (valuationScore >= 9) {
+  let valuationStatus: 'pass' | 'warning' | 'fail' = 'fail';
+  if (valuationScore >= 7) {
     valuationStatus = 'pass';
-  } else if (valuationScore >= 5) {
+  } else if (valuationScore >= 4) {
     valuationStatus = 'warning';
   }
   
@@ -411,7 +430,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   
   // Long-term Outlook scoring
   let longTermScore = 0;
-  const longTermMaxScore = 3;
+  const longTermMaxScore = 10; // FIXED: Changed from 3 to 10
   
   // Sector-based initial scoring
   const stableSectors = [
@@ -420,9 +439,9 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   ];
   
   if (stableSectors.includes(sector)) {
-    longTermScore = 2; // Start with 2 points for stable sectors
+    longTermScore = 6; // Start with 6 points for stable sectors (out of 10)
   } else {
-    longTermScore = 1; // Start with 1 point for other sectors
+    longTermScore = 3; // Start with 3 points for other sectors (out of 10)
   }
   
   // GPT-basierte Analyse der langfristigen Perspektiven
@@ -445,25 +464,25 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     if (longTermGptAnalysis.toLowerCase().includes('stark') || 
         longTermGptAnalysis.toLowerCase().includes('positiv') || 
         longTermGptAnalysis.toLowerCase().includes('vorteilhaft')) {
-      longTermScore = Math.min(longTermScore + 1, 3);
+      longTermScore = Math.min(longTermScore + 3, 10);
     } else if (longTermGptAnalysis.toLowerCase().includes('risik') || 
                longTermGptAnalysis.toLowerCase().includes('bedenken') || 
                longTermGptAnalysis.toLowerCase().includes('problem')) {
-      longTermScore = Math.max(longTermScore - 1, 0);
+      longTermScore = Math.max(longTermScore - 3, 0);
     }
     
     // Check for regulatory risks
     if (longTermGptAnalysis.toLowerCase().includes('regulat') || 
         longTermGptAnalysis.toLowerCase().includes('politik') || 
         longTermGptAnalysis.toLowerCase().includes('gesetz')) {
-      longTermScore = Math.max(longTermScore - 1, 0);
+      longTermScore = Math.max(longTermScore - 2, 0);
     }
   }
   
-  let longTermStatus = 'warning';
-  if (longTermScore >= 2) {
+  let longTermStatus: 'pass' | 'warning' | 'fail' = 'warning';
+  if (longTermScore >= 7) {
     longTermStatus = 'pass';
-  } else if (longTermScore <= 0) {
+  } else if (longTermScore <= 3) {
     longTermStatus = 'fail';
   }
   
@@ -482,15 +501,15 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   }
   
   // Rational Behavior based on GPT analysis
-  let rationalBehaviorScore = 1; // Default to midpoint
-  const rationalBehaviorMaxScore = 3;
-  let rationalBehaviorStatus = 'warning'; // Default to warning
+  let rationalBehaviorScore = 5; // Default to midpoint (out of 10)
+  const rationalBehaviorMaxScore = 10; // FIXED: Changed from 3 to 10
+  let rationalBehaviorStatus: 'pass' | 'warning' | 'fail' = 'warning'; // Default to warning
   
   if (rationalBehaviorGptAnalysis) {
     if (rationalBehaviorGptAnalysis.toLowerCase().includes('rational') || 
         rationalBehaviorGptAnalysis.toLowerCase().includes('disziplinier') || 
         rationalBehaviorGptAnalysis.toLowerCase().includes('effizient')) {
-      rationalBehaviorScore = 3;
+      rationalBehaviorScore = 10;
       rationalBehaviorStatus = 'pass';
     } else if (rationalBehaviorGptAnalysis.toLowerCase().includes('irrational') || 
                rationalBehaviorGptAnalysis.toLowerCase().includes('risiko') || 
@@ -515,15 +534,15 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   }
   
   // Cyclical Behavior based on GPT analysis
-  let cyclicalBehaviorScore = 1; // Default to midpoint
-  const cyclicalBehaviorMaxScore = 3;
-  let cyclicalBehaviorStatus = 'warning'; // Default to warning
+  let cyclicalBehaviorScore = 5; // Default to midpoint (out of 10)
+  const cyclicalBehaviorMaxScore = 10; // FIXED: Changed from 3 to 10
+  let cyclicalBehaviorStatus: 'pass' | 'warning' | 'fail' = 'warning'; // Default to warning
   
   if (cyclicalBehaviorGptAnalysis) {
     if (cyclicalBehaviorGptAnalysis.toLowerCase().includes('antizyklisch') || 
         cyclicalBehaviorGptAnalysis.toLowerCase().includes('nutzt schwäche') || 
         cyclicalBehaviorGptAnalysis.toLowerCase().includes('opportun')) {
-      cyclicalBehaviorScore = 3;
+      cyclicalBehaviorScore = 10;
       cyclicalBehaviorStatus = 'pass';
     } else if (cyclicalBehaviorGptAnalysis.toLowerCase().includes('trends folg') || 
                cyclicalBehaviorGptAnalysis.toLowerCase().includes('reaktiv') || 
@@ -548,15 +567,15 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   }
   
   // One-Time Effects based on GPT analysis
-  let oneTimeEffectsScore = 1; // Default to midpoint
-  const oneTimeEffectsMaxScore = 3;
-  let oneTimeEffectsStatus = 'warning'; // Default to warning
+  let oneTimeEffectsScore = 5; // Default to midpoint (out of 10)
+  const oneTimeEffectsMaxScore = 10; // FIXED: Changed from 3 to 10
+  let oneTimeEffectsStatus: 'pass' | 'warning' | 'fail' = 'warning'; // Default to warning
   
   if (oneTimeEffectsGptAnalysis) {
     if (oneTimeEffectsGptAnalysis.toLowerCase().includes('nachhaltig') || 
         oneTimeEffectsGptAnalysis.toLowerCase().includes('keine einmaleffekte') || 
         oneTimeEffectsGptAnalysis.toLowerCase().includes('kontinuierlich')) {
-      oneTimeEffectsScore = 3;
+      oneTimeEffectsScore = 10;
       oneTimeEffectsStatus = 'pass';
     } else if (oneTimeEffectsGptAnalysis.toLowerCase().includes('einmaleffekt') || 
                oneTimeEffectsGptAnalysis.toLowerCase().includes('nicht nachhaltig') || 
@@ -581,9 +600,9 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   }
   
   // Turnaround Analysis based on GPT analysis
-  let turnaroundScore = 1; // Default to midpoint
-  const turnaroundMaxScore = 3;
-  let turnaroundStatus = 'warning'; // Default to warning
+  let turnaroundScore = 5; // Default to midpoint (out of 10)
+  const turnaroundMaxScore = 10; // FIXED: Changed from 3 to 10
+  let turnaroundStatus: 'pass' | 'warning' | 'fail' = 'warning'; // Default to warning
   
   if (turnaroundGptAnalysis) {
     // Check for turnaround indicators
@@ -601,7 +620,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
                turnaroundGptAnalysis.toLowerCase().includes('etabliert') || 
                turnaroundGptAnalysis.toLowerCase().includes('stabil')) {
       // This is positive in Buffett's view - giving full points for stable companies
-      turnaroundScore = 3;
+      turnaroundScore = 10;
       turnaroundStatus = 'pass';
     }
   }
@@ -645,7 +664,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
         `EPS-Wachstum (3 Jahre): ${epsGrowth.toFixed(2)}% (Buffett bevorzugt >10%)`,
         `Gewinn pro Aktie: ${latestIncomeStatement && latestIncomeStatement.eps ? Number(latestIncomeStatement.eps).toFixed(2) + ' ' + companyProfile.currency : 'N/A'} ${companyProfile.currency || 'USD'}`
       ],
-      score: financialMetricsScore,
+      financialScore: financialMetricsScore, // FIXED: Use financialScore instead of score
       maxScore: financialMetricsMaxScore
     },
     financialStability: {
@@ -658,7 +677,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
         `Current Ratio: ${currentRatio.toFixed(2)} (Buffett bevorzugt >1.5)`,
         `Schulden zu EBITDA: ${debtToEBITDA.toFixed(2)} (niedriger ist besser)`
       ],
-      score: financialStabilityScore,
+      financialScore: financialStabilityScore, // FIXED: Use financialScore instead of score
       maxScore: financialStabilityMaxScore
     },
     management: {
@@ -685,7 +704,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
         `Kurs zu Buchwert (P/B): ${priceToBook.toFixed(2)} (Unter 1,5 gilt als günstig, 1,5-3,0 als akzeptabel bei starkem Moat)`,
         `Kurs zu Cashflow (P/CF): ${priceToCashFlow.toFixed(2)} (Unter 10 gilt als günstig, 10-20 als fair bewertet)`
       ],
-      score: valuationScore,
+      financialScore: valuationScore, // FIXED: Use financialScore instead of score
       maxScore: valuationMaxScore
     },
     longTermOutlook: {
