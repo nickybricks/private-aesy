@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { 
   analyzeBusinessModel, 
@@ -318,6 +319,60 @@ export const getFinancialMetrics = async (ticker: string) => {
         }));
     }
 
+    // Calculate additional metrics needed for analysis
+    let epsGrowth = null;
+    let debtToEbitda = null;
+    let currentRatio = null;
+    let quickRatio = null;
+    let marginOfSafety = null;
+
+    // EPS Growth calculation from historical data
+    if (historicalData.eps.length >= 2) {
+      const currentEps = historicalData.eps[0].value;
+      const previousEps = historicalData.eps[1].value;
+      if (currentEps && previousEps && previousEps !== 0) {
+        epsGrowth = ((currentEps - previousEps) / Math.abs(previousEps)) * 100;
+      }
+    }
+
+    // Debt to EBITDA calculation
+    if (latestIncomeStatement && latestBalanceSheet) {
+      const ebitda = latestIncomeStatement.ebitda;
+      let totalDebt = 0;
+      
+      if (latestBalanceSheet.totalDebt !== undefined) {
+        totalDebt = latestBalanceSheet.totalDebt;
+      } else {
+        totalDebt = (latestBalanceSheet.shortTermDebt || 0) + (latestBalanceSheet.longTermDebt || 0);
+      }
+      
+      if (ebitda && ebitda > 0 && totalDebt > 0) {
+        debtToEbitda = totalDebt / ebitda;
+      }
+    }
+
+    // Current Ratio calculation
+    if (latestBalanceSheet && latestBalanceSheet.totalCurrentAssets && latestBalanceSheet.totalCurrentLiabilities) {
+      if (latestBalanceSheet.totalCurrentLiabilities > 0) {
+        currentRatio = latestBalanceSheet.totalCurrentAssets / latestBalanceSheet.totalCurrentLiabilities;
+      }
+    }
+
+    // Quick Ratio calculation
+    if (latestBalanceSheet) {
+      const quickAssets = (latestBalanceSheet.cashAndCashEquivalents || 0) + 
+                         (latestBalanceSheet.shortTermInvestments || 0) + 
+                         (latestBalanceSheet.netReceivables || 0);
+      const currentLiabilities = latestBalanceSheet.totalCurrentLiabilities;
+      
+      if (currentLiabilities && currentLiabilities > 0) {
+        quickRatio = quickAssets / currentLiabilities;
+      }
+    }
+
+    // Margin of Safety placeholder - would need DCF calculation
+    marginOfSafety = 0; // Default value, should be calculated with DCF
+
     return {
       // Rendite-Kennzahlen
       eps,
@@ -328,6 +383,13 @@ export const getFinancialMetrics = async (ticker: string) => {
       // Schulden-Kennzahlen
       debtToAssets,
       interestCoverage,
+      
+      // Additional metrics for Buffett analysis
+      epsGrowth,
+      debtToEbitda,
+      currentRatio,
+      quickRatio,
+      marginOfSafety,
       
       // Add the reported currency to the returned object
       reportedCurrency,
@@ -375,7 +437,12 @@ export const getOverallRating = async (ticker: string) => {
     
     for (const criterion of allCriteria) {
       // Fix the type error by checking if score and maxScore exist
-      if ('score' in criterion && 'maxScore' in criterion && 
+      if ('financialScore' in criterion && 'maxScore' in criterion && 
+          criterion.financialScore !== undefined && criterion.maxScore !== undefined) {
+        detailedTotalScore += criterion.financialScore;
+        detailedMaxScore += criterion.maxScore;
+        hasDetailedScores = true;
+      } else if ('score' in criterion && 'maxScore' in criterion && 
           criterion.score !== undefined && criterion.maxScore !== undefined) {
         detailedTotalScore += criterion.score;
         detailedMaxScore += criterion.maxScore;
@@ -571,15 +638,16 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
       }
     }
 
-    if (metrics?.netProfitMargin !== undefined && metrics?.netProfitMargin !== null) {
-      console.log(`Nettomarge: ${metrics.netProfitMargin}%`);
-      if (metrics.netProfitMargin >= 15) {
+    // Use netMargin instead of netProfitMargin
+    if (metrics?.netMargin !== undefined && metrics?.netMargin !== null) {
+      console.log(`Nettomarge: ${metrics.netMargin}%`);
+      if (metrics.netMargin >= 15) {
         financialMetricsScore += 3.33; // Exzellent
         console.log('Nettomarge >= 15%: +3.33 Punkte');
-      } else if (metrics.netProfitMargin >= 10) {
+      } else if (metrics.netMargin >= 10) {
         financialMetricsScore += 2; // Akzeptabel
         console.log('Nettomarge >= 10%: +2 Punkte');
-      } else if (metrics.netProfitMargin >= 5) {
+      } else if (metrics.netMargin >= 5) {
         financialMetricsScore += 1; // Schwach
         console.log('Nettomarge >= 5%: +1 Punkt');
       }
@@ -680,7 +748,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     // Generate descriptions and details for financial criteria
     const financialMetricsDetails = [
       metrics?.roe ? `ROE: ${metrics.roe.toFixed(1)}%` : 'ROE: Nicht verfügbar',
-      metrics?.netProfitMargin ? `Nettomarge: ${metrics.netProfitMargin.toFixed(1)}%` : 'Nettomarge: Nicht verfügbar',
+      metrics?.netMargin ? `Nettomarge: ${metrics.netMargin.toFixed(1)}%` : 'Nettomarge: Nicht verfügbar',
       metrics?.epsGrowth ? `EPS-Wachstum: ${metrics.epsGrowth.toFixed(1)}%` : 'EPS-Wachstum: Nicht verfügbar',
       metrics?.eps ? `EPS: ${metrics.eps.toFixed(2)} ${metrics.reportedCurrency || 'USD'}` : 'EPS: Nicht verfügbar'
     ];
