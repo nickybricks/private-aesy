@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { 
   analyzeBusinessModel, 
@@ -544,7 +543,9 @@ export const getOverallRating = async (ticker: string) => {
     
     if (criteria.management.status === 'pass') {
       strengths.push('Qualitativ hochwertiges und aktionärsfreundliches Management');
-    } else if (criteria.management.status === 'fail') {
+    } else if (criteria.management.status === 'warning') {
+      weaknesses.push('Bedenken bezüglich der Qualität oder Aktionärsfreundlichkeit des Managements');
+    } else {
       weaknesses.push('Bedenken bezüglich der Qualität oder Aktionärsfreundlichkeit des Managements');
     }
     
