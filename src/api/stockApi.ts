@@ -437,12 +437,12 @@ export const getOverallRating = async (ticker: string) => {
     for (const criterion of allCriteria) {
       // Fix the type error by checking if score and maxScore exist
       if ('financialScore' in criterion && 'maxScore' in criterion && 
-          criterion.financialScore !== undefined && criterion.maxScore !== undefined) {
+          typeof criterion.financialScore === 'number' && typeof criterion.maxScore === 'number') {
         detailedTotalScore += criterion.financialScore;
         detailedMaxScore += criterion.maxScore;
         hasDetailedScores = true;
       } else if ('score' in criterion && 'maxScore' in criterion && 
-          criterion.score !== undefined && criterion.maxScore !== undefined) {
+          typeof criterion.score === 'number' && typeof criterion.maxScore === 'number') {
         detailedTotalScore += criterion.score;
         detailedMaxScore += criterion.maxScore;
         hasDetailedScores = true;
@@ -499,7 +499,7 @@ export const getOverallRating = async (ticker: string) => {
       strengths.push('Klares, verständliches Geschäftsmodell');
     } else if (criteria.businessModel.status === 'warning') {
       weaknesses.push('Moderat komplexes Geschäftsmodell, das tiefere Analyse erfordert');
-    } else if (criteria.businessModel.status === 'fail') {
+    } else {
       weaknesses.push('Komplexes oder schwer verständliches Geschäftsmodell');
     }
     
@@ -507,7 +507,7 @@ export const getOverallRating = async (ticker: string) => {
       strengths.push('Starker wirtschaftlicher Burggraben (Moat) mit überlegenen Margen');
     } else if (criteria.economicMoat.status === 'warning') {
       strengths.push('Moderater wirtschaftlicher Burggraben vorhanden');
-    } else if (criteria.economicMoat.status === 'fail') {
+    } else {
       weaknesses.push('Kein erkennbarer wirtschaftlicher Burggraben gegenüber Wettbewerbern');
     }
     
@@ -515,7 +515,7 @@ export const getOverallRating = async (ticker: string) => {
       strengths.push('Hervorragende Finanzkennzahlen (ROE, Nettomarge)');
     } else if (criteria.financialMetrics.status === 'warning') {
       strengths.push('Solide, aber nicht herausragende Finanzkennzahlen');
-    } else if (criteria.financialMetrics.status === 'fail') {
+    } else {
       weaknesses.push('Unterdurchschnittliche Finanzkennzahlen');
     }
     
@@ -523,7 +523,7 @@ export const getOverallRating = async (ticker: string) => {
       strengths.push('Solide finanzielle Stabilität mit geringer Verschuldung');
     } else if (criteria.financialStability.status === 'warning') {
       weaknesses.push('Moderate Bedenken bezüglich der finanziellen Stabilität');
-    } else if (criteria.financialStability.status === 'fail') {
+    } else {
       weaknesses.push('Erhebliche Bedenken hinsichtlich finanzieller Stabilität oder hoher Verschuldung');
     }
     
@@ -531,7 +531,7 @@ export const getOverallRating = async (ticker: string) => {
       strengths.push('Attraktive Bewertung (KGV, KBV, PCF und Dividendenrendite)');
     } else if (criteria.valuation.status === 'warning') {
       weaknesses.push('Faire, aber nicht besonders günstige Bewertung');
-    } else if (criteria.valuation.status === 'fail') {
+    } else {
       weaknesses.push('Hohe Bewertung im Verhältnis zu den fundamentalen Daten');
     }
     
