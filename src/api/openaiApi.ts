@@ -11,7 +11,7 @@ const getOpenAiApiKey = () => {
 
 export const hasOpenAiApiKey = (): boolean => {
   // Instead of comparing with empty string, check if the key exists and has a length
-  return !!OPENAI_API_KEY && OPENAI_API_KEY.length > 0;
+  return !!OPENAI_API_KEY && OPENAI_API_KEY.length > 0 && !OPENAI_API_KEY.includes('IHR-OPENAI-API-KEY-HIER');
 };
 
 // OpenAI API Service - Standard Chat Completion API ohne Websearch
@@ -43,33 +43,47 @@ export const queryGPT = async (prompt: string): Promise<string> => {
   try {
     const apiKey = getOpenAiApiKey();
     
-    if (!apiKey || apiKey.length === 0) {
+    console.log('API Key check:', {
+      hasKey: !!apiKey,
+      keyLength: apiKey ? apiKey.length : 0,
+      keyStart: apiKey ? apiKey.substring(0, 7) : 'none',
+      isPlaceholder: apiKey ? apiKey.includes('IHR-OPENAI-API-KEY-HIER') : false
+    });
+    
+    if (!apiKey || apiKey.length === 0 || apiKey.includes('IHR-OPENAI-API-KEY-HIER')) {
       throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
     }
     
+    const requestBody = {
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: 'Als hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien, beantworte folgende Frage präzise und strukturiert.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 300
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey.trim()}`
+    };
+
+    console.log('Making OpenAI request with headers:', {
+      'Content-Type': headers['Content-Type'],
+      'Authorization': `Bearer ${apiKey.substring(0, 7)}...` // Log only first part for security
+    });
+
     const response = await axios.post<OpenAIResponse>(
       OPENAI_API_URL,
-      {
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'Als hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien, beantworte folgende Frage präzise und strukturiert.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 300
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        }
-      }
+      requestBody,
+      { headers }
     );
     
     console.log('Raw OpenAI response received:', JSON.stringify(response.data, null, 2));
@@ -84,9 +98,20 @@ export const queryGPT = async (prompt: string): Promise<string> => {
     throw new Error('Unerwartetes Antwortformat von der OpenAI-API - keine Textdaten gefunden');
   } catch (error) {
     console.error('Error querying OpenAI:', error);
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
-      throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei.');
+    
+    if (axios.isAxiosError(error)) {
+      console.error('Response status:', error.response?.status);
+      console.error('Response data:', error.response?.data);
+      
+      if (error.response?.status === 401) {
+        throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei.');
+      }
+      
+      if (error.response?.data?.error?.message) {
+        throw new Error(`OpenAI API Fehler: ${error.response.data.error.message}`);
+      }
     }
+    
     throw new Error('Fehler bei der Anfrage an OpenAI. Bitte versuchen Sie es später erneut.');
   }
 };
