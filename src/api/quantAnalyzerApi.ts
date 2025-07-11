@@ -25,7 +25,6 @@ export const exchanges = [
   { id: 'XETRA', name: 'XETRA (Deutschland)', currency: 'EUR' },
   { id: 'NYSE', name: 'NYSE (New York)', currency: 'USD' },
   { id: 'NASDAQ', name: 'NASDAQ', currency: 'USD' },
-  { id: 'DJI', name: 'Dow Jones Industrial (USA)', currency: 'USD' },
   { id: 'LSE', name: 'LSE (London)', currency: 'GBP' },
   { id: 'EURONEXT', name: 'EURONEXT', currency: 'EUR' },
   { id: 'TSX', name: 'TSX (Toronto)', currency: 'CAD' },
