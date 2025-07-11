@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, BarChart3, Calculator, AlertCircle, Filter, Clock } from 'lucide-react';
@@ -47,12 +46,12 @@ const sectors = [
 
 // Optionen für die Anzahl der zu analysierenden Aktien
 const stockLimitOptions = [
-  { value: 25, label: '25 Aktien (ca. 30 Sekunden)' },
   { value: 50, label: '50 Aktien (ca. 1 Minute)' },
   { value: 100, label: '100 Aktien (ca. 2 Minuten)' },
-  { value: 250, label: '250 Aktien (ca. 4-5 Minuten)' },
-  { value: 500, label: '500 Aktien (ca. 8-10 Minuten)' },
-  { value: 1000, label: '1000 Aktien (ca. 15+ Minuten)' }
+  { value: 200, label: '200 Aktien (ca. 3 Minuten)' },
+  { value: 500, label: '500 Aktien (ca. 8 Minuten)' },
+  { value: 1000, label: '1000 Aktien (ca. 15 Minuten)' },
+  { value: 2000, label: '2000 Aktien (ca. 30 Minuten)' }
 ];
 
 const BuffettQuantAnalyzer = () => {
@@ -67,14 +66,16 @@ const BuffettQuantAnalyzer = () => {
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [currentOperation, setCurrentOperation] = useState('');
   
-  // Schätzen der Analysezeit basierend auf der Anzahl der Aktien
+  // Schätzen der Analysezeit basierend auf der Anzahl der Aktien (mit Batch-Verarbeitung)
   const estimatedTime = useMemo(() => {
-    if (stockLimit <= 25) return "ca. 30 Sekunden";
-    if (stockLimit <= 50) return "ca. 1 Minute";
-    if (stockLimit <= 100) return "ca. 2 Minuten";
-    if (stockLimit <= 250) return "ca. 4-5 Minuten";
-    if (stockLimit <= 500) return "ca. 8-10 Minuten";
-    return "ca. 15+ Minuten";
+    const batches = Math.ceil(stockLimit / 50);
+    const totalMinutes = batches + (batches - 1); // 1 Minute pro Batch + 1 Minute Wartezeit zwischen Batches
+    
+    if (totalMinutes <= 1) return "ca. 1 Minute";
+    if (totalMinutes <= 3) return `ca. ${totalMinutes} Minuten`;
+    if (totalMinutes <= 10) return `ca. ${totalMinutes} Minuten`;
+    if (totalMinutes <= 30) return `ca. ${totalMinutes} Minuten`;
+    return `ca. ${Math.round(totalMinutes / 60)} Stunden`;
   }, [stockLimit]);
   
   const handleExchangeChange = (value: string) => {
@@ -90,7 +91,7 @@ const BuffettQuantAnalyzer = () => {
     setStockLimit(numValue);
     
     // Zeige Warnung bei großen Datenmengen
-    if (numValue >= 500) {
+    if (numValue >= 1000) {
       setShowWarningDialog(true);
     }
   };
@@ -107,38 +108,31 @@ const BuffettQuantAnalyzer = () => {
     
     setIsLoading(true);
     setResults([]);
-    setCurrentOperation("Lade Aktien...");
-    setProgress(5);
+    setProgress(0);
+    setCurrentOperation("Starte Analyse...");
     
     try {
-      // Simpler Fortschrittsindikator
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev < 95) {
-            return prev + 1;
-          }
-          return prev;
-        });
-      }, stockLimit > 500 ? 1000 : 500);
-      
-      setCurrentOperation(`Analysiere Aktien von ${selectedExchange}...`);
-      
-      // Analyse mit dem eingestellten Limit
-      const analysisResults = await analyzeExchange(selectedExchange, stockLimit);
+      // Analyse mit dem eingestellten Limit und Progress-Callback
+      const analysisResults = await analyzeExchange(
+        selectedExchange, 
+        stockLimit,
+        (progressValue: number, operation: string) => {
+          setProgress(progressValue);
+          setCurrentOperation(operation);
+        }
+      );
       
       // Filter nach Sektor, falls nicht "Alle" ausgewählt
       const filteredResults = selectedSector === 'all' 
         ? analysisResults 
         : analysisResults.filter(result => {
-            // Annahme: Die Sektor-Information ist Teil der Ergebnisdaten
-            // Falls nicht, muss die API entsprechend angepasst werden
             return result.sector === selectedSector;
           });
       
       setResults(filteredResults);
       setHasAnalyzed(true);
-      clearInterval(progressInterval);
       setProgress(100);
+      setCurrentOperation("Analyse abgeschlossen");
       
       toast({
         title: "Analyse abgeschlossen",
@@ -154,7 +148,6 @@ const BuffettQuantAnalyzer = () => {
       });
     } finally {
       setIsLoading(false);
-      setCurrentOperation("");
     }
   };
 
@@ -225,11 +218,14 @@ const BuffettQuantAnalyzer = () => {
               <Clock className="h-4 w-4 mr-1 inline" />
               Geschätzte Analysezeit: <span className="font-medium ml-1">{estimatedTime}</span>
             </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Die Analyse läuft in Batches mit Wartezeiten, um API-Limits zu umgehen.
+            </p>
           </div>
           
           <div>
             <Button 
-              onClick={() => stockLimit >= 500 ? setShowWarningDialog(true) : startAnalysis()} 
+              onClick={() => stockLimit >= 1000 ? setShowWarningDialog(true) : startAnalysis()} 
               disabled={isLoading}
               className="bg-buffett-blue hover:bg-blue-700"
             >
@@ -237,7 +233,7 @@ const BuffettQuantAnalyzer = () => {
               {isLoading ? "Analysiere..." : "Börse analysieren"}
             </Button>
             <p className="text-sm text-gray-500 mt-2">
-              Die Analyse kann je nach Anzahl der Aktien einige Momente dauern.
+              Die Analyse läuft in mehreren Durchgängen mit Wartezeiten zwischen den Batches.
             </p>
           </div>
         </div>
@@ -252,7 +248,7 @@ const BuffettQuantAnalyzer = () => {
           </div>
           <Progress value={progress} className="h-2" />
           <p className="text-xs text-gray-500 mt-2">
-            Bitte haben Sie Geduld. Die Analyse von {stockLimit} Aktien kann {estimatedTime} dauern.
+            Die Analyse läuft in Batches von 50 Aktien mit 65 Sekunden Wartezeit zwischen den Batches.
           </p>
         </div>
       )}
@@ -306,6 +302,15 @@ const BuffettQuantAnalyzer = () => {
             </ul>
           </div>
         </div>
+        
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 className="font-semibold mb-2 text-blue-800">Batch-Verarbeitung</h3>
+          <p className="text-blue-700 text-sm">
+            Um API-Limits zu umgehen, läuft die Analyse in Batches von 50 Aktien. 
+            Zwischen den Batches wird 65 Sekunden gewartet, um das 300-Calls/Minute-Limit zu respektieren. 
+            Dies ermöglicht die Analyse von deutlich mehr Aktien als zuvor.
+          </p>
+        </div>
       </div>
 
       <footer className="mt-12 pt-8 border-t border-gray-200 text-buffett-subtext text-sm text-center">
@@ -323,12 +328,12 @@ const BuffettQuantAnalyzer = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Große Datenanalyse</AlertDialogTitle>
             <AlertDialogDescription>
-              Sie haben {stockLimit} Aktien zur Analyse ausgewählt. Dies kann {estimatedTime} oder länger dauern und 
-              eine hohe Serverlast verursachen. 
+              Sie haben {stockLimit} Aktien zur Analyse ausgewählt. Dies wird in mehreren Batches verarbeitet 
+              und kann {estimatedTime} dauern.
               
               <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200 flex items-center">
                 <AlertCircle className="text-yellow-500 h-5 w-5 mr-2" />
-                <span>Bei instabiler Verbindung kann die Analyse unterbrochen werden.</span>
+                <span>Die Analyse läuft automatisch in Batches mit Wartezeiten zwischen den API-Calls.</span>
               </div>
               
               <div className="mt-3">Möchten Sie mit der Analyse fortfahren?</div>

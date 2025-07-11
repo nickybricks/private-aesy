@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 
@@ -81,6 +82,9 @@ const safeValue = (value: any) => {
   const numValue = Number(value);
   return isNaN(numValue) ? null : numValue;
 };
+
+// Sleep function for delays
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Analyze a single ticker by Buffett criteria
 export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<QuantAnalysisResult | null> => {
@@ -233,29 +237,64 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
   }
 };
 
-// Batch-Analyse für mehrere Aktien einer Börse
-export const analyzeExchange = async (exchange: string, limit: number = 500) => {
+// Batch-Analyse für mehrere Aktien einer Börse mit Rate-Limiting
+export const analyzeExchange = async (
+  exchange: string, 
+  limit: number = 500,
+  onProgress?: (progress: number, currentOperation: string) => void
+) => {
   try {
     // Aktien der Börse abrufen
     const stocks = await fetchFromFMP(`/stock/list`);
     const exchangeStocks = stocks
       .filter((stock: any) => stock.exchangeShortName === exchange && stock.type === 'stock')
-      .slice(0, limit); // Begrenzt auf die gewählte Anzahl
+      .slice(0, limit);
     
-    console.log(`Analysiere ${exchangeStocks.length} Aktien von ${exchange}`);
+    console.log(`Analysiere ${exchangeStocks.length} Aktien von ${exchange} in Batches`);
     
-    // Progressives Laden und Analysieren der Aktien
     const results: QuantAnalysisResult[] = [];
+    const batchSize = 50; // Etwa 50 Aktien pro Minute (300 API calls / 6 calls per stock)
+    const totalBatches = Math.ceil(exchangeStocks.length / batchSize);
     
-    for (const stock of exchangeStocks) {
-      try {
-        const analysis = await analyzeStockByBuffettCriteria(stock.symbol);
-        if (analysis) {
-          results.push(analysis);
-        }
-      } catch (error) {
-        console.error(`Fehler bei der Analyse von ${stock.symbol}:`, error);
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const startIndex = batchIndex * batchSize;
+      const endIndex = Math.min(startIndex + batchSize, exchangeStocks.length);
+      const batch = exchangeStocks.slice(startIndex, endIndex);
+      
+      console.log(`Batch ${batchIndex + 1}/${totalBatches}: Analysiere Aktien ${startIndex + 1}-${endIndex}`);
+      
+      if (onProgress) {
+        const progress = Math.round((batchIndex / totalBatches) * 100);
+        onProgress(progress, `Batch ${batchIndex + 1}/${totalBatches}: Analysiere ${batch.length} Aktien...`);
       }
+      
+      // Analyze stocks in current batch
+      for (const stock of batch) {
+        try {
+          const analysis = await analyzeStockByBuffettCriteria(stock.symbol);
+          if (analysis) {
+            results.push(analysis);
+          }
+        } catch (error) {
+          console.error(`Fehler bei der Analyse von ${stock.symbol}:`, error);
+        }
+      }
+      
+      // Wait 65 seconds between batches (to ensure we don't hit the rate limit)
+      if (batchIndex < totalBatches - 1) {
+        console.log(`Warte 65 Sekunden vor dem nächsten Batch...`);
+        if (onProgress) {
+          onProgress(
+            Math.round((batchIndex / totalBatches) * 100), 
+            `Warte 65 Sekunden vor Batch ${batchIndex + 2}/${totalBatches}...`
+          );
+        }
+        await sleep(65000); // 65 seconds delay
+      }
+    }
+    
+    if (onProgress) {
+      onProgress(100, `Analyse abgeschlossen: ${results.length} Aktien analysiert`);
     }
     
     // Nach Buffett-Score sortieren (absteigend)
