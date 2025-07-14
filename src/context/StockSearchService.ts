@@ -129,7 +129,7 @@ const correctFinancialMetricsCriterion = (criteria: any) => {
   return criteria;
 };
 
-export const useStockSearch = () => {
+export const useStockSearch = (setLoadingProgress?: (progress: number) => void) => {
   const { toast } = useToast();
   
   const checkHasGptAvailable = (): boolean => {
@@ -171,14 +171,19 @@ export const useStockSearch = () => {
         description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
       });
       
-      // Parallele Ausführung aller API-Aufrufe, einschließlich des neuen DCF-Aufrufs
+      // Parallele Ausführung aller API-Aufrufe mit Progress-Tracking
       try {
-        const [rawCriteria, rawMetricsData, rating, customDcfData] = await Promise.all([
-          analyzeBuffettCriteria(ticker),
-          getFinancialMetrics(ticker),
-          getOverallRating(ticker),
-          fetchCustomDCF(ticker)
-        ]);
+        setLoadingProgress?.(20);
+        
+        // Erstelle Promises mit individueller Progress-Updates
+        const promises = [
+          analyzeBuffettCriteria(ticker).then(result => { setLoadingProgress?.(40); return result; }),
+          getFinancialMetrics(ticker).then(result => { setLoadingProgress?.(60); return result; }),
+          getOverallRating(ticker).then(result => { setLoadingProgress?.(80); return result; }),
+          fetchCustomDCF(ticker).then(result => { setLoadingProgress?.(90); return result; })
+        ];
+        
+        const [rawCriteria, rawMetricsData, rating, customDcfData] = await Promise.all(promises);
         
         // KORRIGIERE KRITERIEN-DATEN VOR DER WEITEREN VERARBEITUNG
         const criteria = correctFinancialMetricsCriterion(rawCriteria);
@@ -189,7 +194,7 @@ export const useStockSearch = () => {
         console.log('Custom DCF Data:', JSON.stringify(customDcfData, null, 2));
         
         const priceCurrency = info?.currency || 'USD';
-        const reportedCurrency = rawMetricsData?.reportedCurrency;
+        const reportedCurrency = (rawMetricsData as any)?.reportedCurrency;
         
         if (!reportedCurrency) {
           throw new Error('Berichtswährung fehlt in den Finanzdaten');
@@ -220,29 +225,30 @@ export const useStockSearch = () => {
         // Verarbeite das neue benutzerdefinierte DCF-Ergebnis, wenn verfügbar
         if (customDcfData) {
           console.log('Using custom DCF data from direct API call');
+          const customData = customDcfData as any;
           // Formatiere die Daten in das benötigte Format
           extractedDcfData = {
-            ufcf: customDcfData.projectedFcf || [],
-            wacc: customDcfData.wacc || 0,
-            presentTerminalValue: customDcfData.terminalValuePv || 0,
-            netDebt: customDcfData.netDebt || 0,
-            dilutedSharesOutstanding: customDcfData.sharesOutstanding || 0,
+            ufcf: customData.projectedFcf || [],
+            wacc: customData.wacc || 0,
+            presentTerminalValue: customData.terminalValuePv || 0,
+            netDebt: customData.netDebt || 0,
+            dilutedSharesOutstanding: customData.sharesOutstanding || 0,
             currency: priceCurrency, // Verwende immer die Kurswährung
-            intrinsicValue: customDcfData.dcfValue || 0,
-            pvUfcfs: customDcfData.projectedFcfPv || [],
-            sumPvUfcfs: customDcfData.sumPvProjectedFcf || 0,
-            enterpriseValue: customDcfData.enterpriseValue || 0,
-            equityValue: customDcfData.equityValue || 0
+            intrinsicValue: customData.dcfValue || 0,
+            pvUfcfs: customData.projectedFcfPv || [],
+            sumPvUfcfs: customData.sumPvProjectedFcf || 0,
+            enterpriseValue: customData.enterpriseValue || 0,
+            equityValue: customData.equityValue || 0
           };
 
           console.log('Extracted DCF data:');
           debugDCFData(extractedDcfData);
           
           // Speichere die Aktienanzahl in den Informationen, falls verfügbar
-          if (customDcfData.sharesOutstanding) {
+          if (customData.sharesOutstanding) {
             info = {
               ...info,
-              sharesOutstanding: customDcfData.sharesOutstanding
+              sharesOutstanding: customData.sharesOutstanding
             };
           }
         } else if (rating) {

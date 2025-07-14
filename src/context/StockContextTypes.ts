@@ -72,6 +72,8 @@ export interface DCFData {
 
 export interface StockContextType {
   isLoading: boolean;
+  loadingProgress: number;
+  loadingStartTime: number | null;
   error: string | null;
   stockInfo: any;
   buffettCriteria: any;
@@ -83,6 +85,7 @@ export interface StockContextType {
   hasCriticalDataMissing: boolean;
   dcfData?: DCFData;
   setActiveTab: (tab: string) => void;
+  setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string) => Promise<void>;
 }
 

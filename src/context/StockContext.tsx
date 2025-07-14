@@ -21,9 +21,11 @@ interface StockInfo {
 const StockContext = createContext<StockContextType | undefined>(undefined);
 
 export function StockProvider({ children }: StockProviderProps) {
-  const { checkHasGptAvailable, searchStockInfo } = useStockSearch();
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const { checkHasGptAvailable, searchStockInfo } = useStockSearch(setLoadingProgress);
   
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStartTime, setLoadingStartTime] = useState<number | null>(null);
   const [stockInfo, setStockInfo] = useState<StockInfo | null>(null);
   const [buffettCriteria, setBuffettCriteria] = useState(null);
   const [financialMetrics, setFinancialMetrics] = useState<FinancialMetricsData | null>(null);
@@ -46,6 +48,8 @@ export function StockProvider({ children }: StockProviderProps) {
 
   const handleSearch = async (ticker: string) => {
     setIsLoading(true);
+    setLoadingProgress(0);
+    setLoadingStartTime(Date.now());
     setError(null);
     
     try {
@@ -99,12 +103,16 @@ export function StockProvider({ children }: StockProviderProps) {
       setError(errorMessage);
     } finally {
       setIsLoading(false);
+      setLoadingProgress(0);
+      setLoadingStartTime(null);
     }
   };
 
   return (
     <StockContext.Provider value={{
       isLoading,
+      loadingProgress,
+      loadingStartTime,
       error,
       stockInfo,
       buffettCriteria,
@@ -116,6 +124,7 @@ export function StockProvider({ children }: StockProviderProps) {
       hasCriticalDataMissing,
       dcfData,
       setActiveTab,
+      setLoadingProgress,
       handleSearch
     }}>
       {children}
