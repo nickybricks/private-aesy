@@ -74,4 +74,43 @@
   .apple-button {
     @apply bg-buffett-blue text-white font-medium px-5 py-3 rounded-lg shadow-sm hover:bg-opacity-90 transition-colors;
   }
+  
+  /* Wave animations for loading */
+  .animate-wave {
+    animation: wave 3s ease-in-out infinite;
+  }
+  
+  .animate-wave-reverse {
+    animation: wave-reverse 3.5s ease-in-out infinite;
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateY(0) scaleY(1);
+  }
+  25% {
+    transform: translateY(-8px) scaleY(1.1);
+  }
+  50% {
+    transform: translateY(4px) scaleY(0.9);
+  }
+  75% {
+    transform: translateY(-4px) scaleY(1.05);
+  }
+}
+
+@keyframes wave-reverse {
+  0%, 100% {
+    transform: translateY(0) scaleY(1);
+  }
+  25% {
+    transform: translateY(6px) scaleY(0.9);
+  }
+  50% {
+    transform: translateY(-10px) scaleY(1.2);
+  }
+  75% {
+    transform: translateY(2px) scaleY(0.95);
+  }
 }
