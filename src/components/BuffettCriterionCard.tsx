@@ -48,9 +48,10 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
     
     if ([3, 4, 6].includes(criterionNum)) {
       // Determine status based on score for financial criteria
+      // FIXED: Lowered threshold for warning to 6.5 to correctly handle partial fulfillment (6.67)
       if (unifiedScore >= 10) {
         displayStatus = 'pass';
-      } else if (unifiedScore >= 7) {
+      } else if (unifiedScore >= 6.5) { // Changed from 7 to 6.5 to include 6.67
         displayStatus = 'warning';
       } else {
         displayStatus = 'fail';
