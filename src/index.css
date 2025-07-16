@@ -5,77 +5,35 @@
 
 @layer base {
   :root {
-    --background: 249 250 251;
-    --foreground: 17 24 39;
+    --background: 0 0% 97%;
+    --foreground: 222.2 84% 4.9%;
 
-    --card: 255 255 255;
-    --card-foreground: 17 24 39;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 255 255 255;
-    --popover-foreground: 17 24 39;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 59 130 246;
-    --primary-foreground: 255 255 255;
+    --primary: 221 84% 52%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 243 244 246;
-    --secondary-foreground: 55 65 81;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 249 250 251;
-    --muted-foreground: 107 114 128;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 243 244 246;
-    --accent-foreground: 55 65 81;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 229 231 235;
-    --input: 229 231 235;
-    --ring: 59 130 246;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221 84% 52%;
 
-    --sidebar-background: 255 255 255;
-    --sidebar-foreground: 55 65 81;
-    --sidebar-border: 229 231 235;
-    --sidebar-accent: 249 250 251;
-    --sidebar-accent-foreground: 17 24 39;
-
-    --radius: 12px;
-  }
-
-  .dark {
-    --background: 17 24 39;
-    --foreground: 243 244 246;
-
-    --card: 31 41 55;
-    --card-foreground: 243 244 246;
-
-    --popover: 31 41 55;
-    --popover-foreground: 243 244 246;
-
-    --primary: 96 165 250;
-    --primary-foreground: 17 24 39;
-
-    --secondary: 55 65 81;
-    --secondary-foreground: 243 244 246;
-
-    --muted: 31 41 55;
-    --muted-foreground: 156 163 175;
-
-    --accent: 55 65 81;
-    --accent-foreground: 243 244 246;
-
-    --destructive: 248 113 113;
-    --destructive-foreground: 255 255 255;
-
-    --border: 55 65 81;
-    --input: 55 65 81;
-    --ring: 96 165 250;
-
-    --sidebar-background: 31 41 55;
-    --sidebar-foreground: 209 213 219;
-    --sidebar-border: 55 65 81;
-    --sidebar-accent: 37 47 63;
-    --sidebar-accent-foreground: 243 244 246;
+    --radius: 0.75rem;
   }
 
   * {
@@ -83,57 +41,37 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-buffett-background text-buffett-text;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
 @layer components {
-  .apple-card {
-    @apply bg-card rounded-2xl shadow-sm border border-border/50 backdrop-blur-sm;
-  }
-  
-  .apple-nav-item {
-    @apply relative flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group;
-  }
-  
-  .apple-nav-item.active {
-    @apply bg-primary/10 text-primary;
-  }
-  
-  .apple-nav-item:not(.active) {
-    @apply text-muted-foreground hover:text-foreground hover:bg-muted/50;
-  }
-  
-  .apple-nav-icon {
-    @apply w-5 h-5 transition-colors duration-200;
-  }
-  
-  .apple-section-header {
-    @apply text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 mb-2;
-  }
-  
-  .apple-main-header {
-    @apply bg-card/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-10;
-  }
-  
-  .apple-content-card {
-    @apply bg-card rounded-2xl border border-border/50 shadow-sm backdrop-blur-sm;
-  }
-  
-  .apple-glass {
-    @apply bg-card/90 backdrop-blur-md border border-border/50;
+  .buffett-card {
+    @apply bg-buffett-card rounded-2xl shadow-sm p-6 border border-gray-200;
   }
   
   .status-red {
-    @apply text-red-500 font-medium;
+    @apply text-buffett-red font-medium;
   }
   
   .status-yellow {
-    @apply text-yellow-500 font-medium;
+    @apply text-buffett-yellow font-medium;
   }
   
   .status-green {
-    @apply text-green-500 font-medium;
+    @apply text-buffett-green font-medium;
+  }
+  
+  .metric-card {
+    @apply p-4 rounded-xl border border-gray-100 hover:shadow-sm transition-shadow;
+  }
+  
+  .apple-input {
+    @apply px-4 py-3 rounded-lg border border-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-buffett-blue;
+  }
+  
+  .apple-button {
+    @apply bg-buffett-blue text-white font-medium px-5 py-3 rounded-lg shadow-sm hover:bg-opacity-90 transition-colors;
   }
 }
