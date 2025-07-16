@@ -152,9 +152,7 @@ const BuffettQuantAnalyzer = () => {
   };
 
   return (
-    <>
-      <LeftNavigation />
-      <main className="flex-1 overflow-auto bg-background">
+    <main className="flex-1 overflow-auto bg-background">
         <div className="h-full">
           {/* Main Content Area */}
           <div className="p-8 max-w-7xl mx-auto">
@@ -350,7 +348,6 @@ const BuffettQuantAnalyzer = () => {
           </div>
         </div>
       </main>
-    </>
   );
 };
 

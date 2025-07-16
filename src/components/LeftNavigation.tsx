@@ -7,13 +7,18 @@ import {
   Star, 
   Plus,
   Settings,
-  Bookmark
+  Bookmark,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
-const LeftNavigation = () => {
+interface LeftNavigationProps {
+  onMobileClose?: () => void;
+}
+
+const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
 
@@ -61,14 +66,30 @@ const LeftNavigation = () => {
     }
   ];
 
+  const handleLinkClick = () => {
+    onMobileClose?.();
+  };
+
   return (
-    <nav className="w-64 h-full bg-card border-r border-border flex flex-col">
+    <nav className="w-64 h-full bg-card border-r border-border flex flex-col shadow-lg lg:shadow-none">
       {/* Tool Header */}
-      <div className="p-6 border-b border-border">
-        <h1 className="text-xl font-bold text-foreground">Buffett Tools</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Investment Analysis Platform
-        </p>
+      <div className="p-6 border-b border-border flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Buffett Tools</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Investment Analysis Platform
+          </p>
+        </div>
+        
+        {/* Mobile Close Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onMobileClose}
+          className="lg:hidden"
+        >
+          <X className="h-5 w-5" />
+        </Button>
       </div>
       
       {/* Navigation Content */}
@@ -109,10 +130,11 @@ const LeftNavigation = () => {
                     ) : (
                       <Link
                         to={item.path}
-                        className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                        onClick={handleLinkClick}
+                        className={`flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 ${
                           active
-                            ? 'bg-primary/10 text-primary border border-primary/20'
-                            : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                            ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
+                            : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:shadow-sm'
                         }`}
                       >
                         <Icon className={`h-5 w-5 ${active ? 'text-primary' : ''}`} />
