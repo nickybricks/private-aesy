@@ -20,7 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { extractGptAssessmentStatus } from '@/utils/buffettUtils';
+import { extractGptAssessmentStatus, getUnifiedCriterionScore } from '@/utils/buffettUtils';
 
 interface CriteriaResult {
   status: 'pass' | 'warning' | 'fail';
@@ -197,6 +197,21 @@ const CriterionCard: React.FC<{
     if (gptAssessment) {
       displayStatus = gptAssessment.status;
     }
+  }
+  
+  // ADDITIONAL FIX: Universal status validation based on score for consistency
+  const unifiedScore = getUnifiedCriterionScore(criterion);
+  if (unifiedScore !== undefined) {
+    // Apply universal thresholds for ALL criteria
+    if (unifiedScore >= 10) {
+      displayStatus = 'pass';
+    } else if (unifiedScore > 0 && unifiedScore < 10) { // Any partial score should be warning
+      displayStatus = 'warning';
+    } else if (unifiedScore === 0) {
+      displayStatus = 'fail';
+    }
+    
+    console.log(`BuffettCriteria universal threshold applied for ${criterion.title}: score=${unifiedScore}, status=${displayStatus}`);
   }
   
   // Status-basierte Farben für die Karte
