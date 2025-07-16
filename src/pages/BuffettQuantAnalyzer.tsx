@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, BarChart3, Calculator, AlertCircle, Filter, Clock } from 'lucide-react';
+import LeftNavigation from '@/components/LeftNavigation';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
@@ -152,7 +153,10 @@ const BuffettQuantAnalyzer = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-screen-xl">
+    <>
+      <LeftNavigation />
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto px-4 py-8 max-w-screen-xl">
       <header className="mb-8">
         <div className="flex items-center mb-2">
           <Link to="/" className="text-buffett-blue hover:text-blue-700 mr-4 flex items-center">
@@ -345,7 +349,9 @@ const BuffettQuantAnalyzer = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+        </div>
+      </div>
+    </>
   );
 };
 
