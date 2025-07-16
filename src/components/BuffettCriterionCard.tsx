@@ -42,13 +42,12 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
   if (gptAssessment) {
     displayStatus = gptAssessment.status;
   } else {
-    // For financial criteria (3, 4, 6) without GPT analysis, determine status from score
+    // For ALL criteria without GPT analysis, determine status from score
     const criterionNumber = criterion.title.match(/^\d+/)?.[0];
     const criterionNum = criterionNumber ? parseInt(criterionNumber, 10) : 0;
     
     if ([3, 4, 6].includes(criterionNum)) {
-      // Determine status based on score for financial criteria
-      // FIXED: Lowered threshold for warning to 6.5 to correctly handle partial fulfillment (6.67)
+      // Financial criteria thresholds
       if (unifiedScore >= 10) {
         displayStatus = 'pass';
       } else if (unifiedScore >= 6.5) { // Changed from 7 to 6.5 to include 6.67
@@ -59,6 +58,20 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
       
       console.log(`Financial criterion ${criterionNum}: score=${unifiedScore}, status=${displayStatus}`);
     }
+  }
+  
+  // ADDITIONAL FIX: For ALL criteria, if we have a score, validate status consistency
+  if (unifiedScore !== undefined && !gptAssessment) {
+    // Apply universal thresholds for consistency
+    if (unifiedScore >= 10) {
+      displayStatus = 'pass';
+    } else if (unifiedScore > 0 && unifiedScore < 10) { // Any partial score should be warning
+      displayStatus = 'warning';
+    } else if (unifiedScore === 0) {
+      displayStatus = 'fail';
+    }
+    
+    console.log(`Universal threshold applied for ${criterion.title}: score=${unifiedScore}, status=${displayStatus}`);
   }
   
   // Show partial fulfillment visualization if we have the data
