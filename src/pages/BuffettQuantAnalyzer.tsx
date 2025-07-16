@@ -154,14 +154,19 @@ const BuffettQuantAnalyzer = () => {
   return (
     <>
       <LeftNavigation />
-      <div className="flex-1 overflow-auto">
-        <div className="container mx-auto px-4 py-8 max-w-screen-xl">
-          <header className="mb-8">
-            <h1 className="text-3xl font-bold">Buffett Quant Analyzer</h1>
-            <p className="text-buffett-subtext">
-              Quantitative Aktienanalyse nach Warren Buffetts Investmentprinzipien
-            </p>
-          </header>
+      <main className="flex-1 overflow-auto bg-background">
+        <div className="h-full">
+          {/* Main Content Area */}
+          <div className="p-8 max-w-7xl mx-auto">
+            {/* Tool Header */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                Buffett Quant Analyzer
+              </h1>
+              <p className="text-muted-foreground">
+                Quantitative Aktienanalyse nach Warren Buffetts Investmentprinzipien
+              </p>
+            </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 mb-8">
         <div className="flex items-center mb-4">
@@ -342,8 +347,9 @@ const BuffettQuantAnalyzer = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+          </div>
         </div>
-      </div>
+      </main>
     </>
   );
 };

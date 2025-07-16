@@ -16,7 +16,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <div className="flex h-screen w-full">
+        <div className="flex h-screen w-full bg-background">
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/quant-analyzer" element={<BuffettQuantAnalyzer />} />

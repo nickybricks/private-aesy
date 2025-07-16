@@ -62,9 +62,19 @@ const LeftNavigation = () => {
   ];
 
   return (
-    <nav className="w-64 h-screen bg-background border-r border-border p-4 overflow-y-auto">
-      <div className="space-y-6">
-        {navigationItems.map((section, sectionIndex) => (
+    <nav className="w-64 h-full bg-card border-r border-border flex flex-col">
+      {/* Tool Header */}
+      <div className="p-6 border-b border-border">
+        <h1 className="text-xl font-bold text-foreground">Buffett Tools</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Investment Analysis Platform
+        </p>
+      </div>
+      
+      {/* Navigation Content */}
+      <div className="flex-1 p-4 overflow-y-auto">
+        <div className="space-y-6">
+          {navigationItems.map((section, sectionIndex) => (
           <div key={section.title} className="space-y-3">
             {sectionIndex > 0 && <Separator className="my-4" />}
             
@@ -121,7 +131,8 @@ const LeftNavigation = () => {
               })}
             </div>
           </div>
-        ))}
+          ))}
+        </div>
       </div>
     </nav>
   );
