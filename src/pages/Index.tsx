@@ -28,6 +28,8 @@ const IndexContent: React.FC = () => {
     <div className="container mx-auto px-4 py-8 max-w-screen-xl">
       <AppHeader />
       
+      <Navigation />
+      
       <GptAvailabilityAlert gptAvailable={gptAvailable} />
       
       {stockInfo && stockInfo.currency && stockInfo.reportedCurrency && 
