@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, BarChart3, Calculator, AlertCircle, Filter, Clock } from 'lucide-react';
+import { BarChart3, Calculator, AlertCircle, Clock } from 'lucide-react';
 import LeftNavigation from '@/components/LeftNavigation';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -157,18 +156,12 @@ const BuffettQuantAnalyzer = () => {
       <LeftNavigation />
       <div className="flex-1 overflow-auto">
         <div className="container mx-auto px-4 py-8 max-w-screen-xl">
-      <header className="mb-8">
-        <div className="flex items-center mb-2">
-          <Link to="/" className="text-buffett-blue hover:text-blue-700 mr-4 flex items-center">
-            <ArrowLeft className="h-5 w-5 mr-1" />
-            Zurück
-          </Link>
-          <h1 className="text-3xl font-bold">Buffett Quant Analyzer</h1>
-        </div>
-        <p className="text-buffett-subtext">
-          Quantitative Aktienanalyse nach Warren Buffetts Investmentprinzipien
-        </p>
-      </header>
+          <header className="mb-8">
+            <h1 className="text-3xl font-bold">Buffett Quant Analyzer</h1>
+            <p className="text-buffett-subtext">
+              Quantitative Aktienanalyse nach Warren Buffetts Investmentprinzipien
+            </p>
+          </header>
 
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 mb-8">
         <div className="flex items-center mb-4">

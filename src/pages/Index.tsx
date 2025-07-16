@@ -2,7 +2,6 @@
 import React from 'react';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
-import Navigation from '@/components/Navigation';
 import LeftNavigation from '@/components/LeftNavigation';
 import { StockProvider, useStock } from '@/context/StockContext';
 import GptAvailabilityAlert from '@/components/GptAvailabilityAlert';
@@ -31,8 +30,6 @@ const IndexContent: React.FC = () => {
       <div className="flex-1 overflow-auto">
         <div className="container mx-auto px-4 py-8 max-w-screen-xl">
           <AppHeader />
-          
-          <Navigation />
           
           <GptAvailabilityAlert gptAvailable={gptAvailable} />
           
