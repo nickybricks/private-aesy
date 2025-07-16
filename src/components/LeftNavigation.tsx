@@ -71,12 +71,14 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
   };
 
   return (
-    <nav className="w-64 h-full bg-card border-r border-border flex flex-col shadow-lg lg:shadow-none">
+    <nav className="w-64 h-full bg-sidebar border-r border-sidebar-border flex flex-col shadow-lg lg:shadow-none">
       {/* Tool Header */}
-      <div className="p-6 border-b border-border flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Buffett Tools</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+      <div className="p-6 border-b border-sidebar-border/50 flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold text-sidebar-foreground tracking-tight">
+            Buffett Tools
+          </h1>
+          <p className="text-sm text-muted-foreground">
             Investment Analysis Platform
           </p>
         </div>
@@ -86,20 +88,17 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
           variant="ghost"
           size="icon"
           onClick={onMobileClose}
-          className="lg:hidden"
+          className="lg:hidden hover:bg-sidebar-accent rounded-xl"
         >
           <X className="h-5 w-5" />
         </Button>
       </div>
       
       {/* Navigation Content */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="space-y-6">
-          {navigationItems.map((section, sectionIndex) => (
+      <div className="flex-1 p-4 overflow-y-auto space-y-8">
+        {navigationItems.map((section, sectionIndex) => (
           <div key={section.title} className="space-y-3">
-            {sectionIndex > 0 && <Separator className="my-4" />}
-            
-            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+            <h3 className="apple-section-header">
               {section.title}
             </h3>
             
@@ -111,19 +110,17 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
                 return (
                   <div key={item.path}>
                     {item.badge ? (
-                      <div className="flex items-center justify-between p-3 rounded-lg text-muted-foreground/70 bg-muted/30">
-                        <div className="flex items-center space-x-3">
-                          <Icon className="h-5 w-5" />
-                          <div>
-                            <div className="text-sm font-medium">
-                              {item.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {item.description}
-                            </div>
+                      <div className="apple-nav-item opacity-60 cursor-not-allowed">
+                        <Icon className="apple-nav-icon" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">
+                            {item.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {item.description}
                           </div>
                         </div>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs shrink-0 bg-muted/70">
                           {item.badge}
                         </Badge>
                       </div>
@@ -131,18 +128,14 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
                       <Link
                         to={item.path}
                         onClick={handleLinkClick}
-                        className={`flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 ${
-                          active
-                            ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
-                            : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:shadow-sm'
-                        }`}
+                        className={`apple-nav-item ${active ? 'active' : ''}`}
                       >
-                        <Icon className={`h-5 w-5 ${active ? 'text-primary' : ''}`} />
-                        <div>
-                          <div className="text-sm font-medium">
+                        <Icon className="apple-nav-icon" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">
                             {item.name}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground truncate">
                             {item.description}
                           </div>
                         </div>
@@ -153,8 +146,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
               })}
             </div>
           </div>
-          ))}
-        </div>
+        ))}
       </div>
     </nav>
   );

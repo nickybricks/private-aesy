@@ -59,12 +59,12 @@ const App = () => {
             <div className="flex-1 flex flex-col min-w-0">
               {/* Mobile Header */}
               {isMobile && (
-                <header className="h-14 bg-card border-b border-border flex items-center px-4 lg:hidden">
+                <header className="apple-main-header h-14 flex items-center px-4 lg:hidden">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsMobileMenuOpen(true)}
-                    className="mr-3"
+                    className="mr-3 hover:bg-muted/50 rounded-xl"
                   >
                     <Menu className="h-5 w-5" />
                   </Button>

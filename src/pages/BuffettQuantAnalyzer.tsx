@@ -155,18 +155,18 @@ const BuffettQuantAnalyzer = () => {
     <main className="flex-1 overflow-auto bg-background">
         <div className="h-full">
           {/* Main Content Area */}
-          <div className="p-8 max-w-7xl mx-auto">
+          <div className="p-8 max-w-7xl mx-auto space-y-8">
             {/* Tool Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-2">
+            <div className="apple-content-card p-8">
+              <h1 className="text-3xl font-bold text-foreground mb-3 tracking-tight">
                 Buffett Quant Analyzer
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-lg">
                 Quantitative Aktienanalyse nach Warren Buffetts Investmentprinzipien
               </p>
             </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 mb-8">
+            <div className="apple-content-card p-6">
         <div className="flex items-center mb-4">
           <Calculator className="h-6 w-6 text-buffett-blue mr-2" />
           <h2 className="text-xl font-semibold">Börsenanalyse</h2>
