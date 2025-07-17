@@ -9,8 +9,8 @@ import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { StockInfo } from '@/types/stock';
 import { OverallRatingData } from './StockContextTypes';
 
-// Konstante für den direkten DCF-Endpunkt
-const DCF_BASE_URL = 'https://financialmodelingprep.com/stable/custom-discounted-cash-flow';
+// Konstante für den direkten DCF-Endpunkt - KORRIGIERT: Verwende levered DCF
+const DCF_BASE_URL = 'https://financialmodelingprep.com/stable/custom-levered-discounted-cash-flow';
 
 // Hilfsfunktion zum Abrufen der DCF-Daten
 const fetchCustomDCF = async (ticker: string) => {
@@ -24,6 +24,14 @@ const fetchCustomDCF = async (ticker: string) => {
     });
     
     console.log('Custom DCF API response received:', apiResponse.data);
+    console.log('Response status:', apiResponse.status);
+    console.log('Response type:', typeof apiResponse.data);
+    
+    // WICHTIG: Prüfe auf leere oder undefined Antworten
+    if (!apiResponse.data || apiResponse.data === 'undefined' || (Array.isArray(apiResponse.data) && apiResponse.data.length === 0)) {
+      console.error(`DCF API returned empty/undefined data for ${ticker}`);
+      throw new Error(`DCF-Daten für ${ticker} nicht verfügbar`);
+    }
     
     // Überprüfen, ob die API-Daten ein Array zurückgegeben hat
     if (Array.isArray(apiResponse.data) && apiResponse.data.length > 0) {
