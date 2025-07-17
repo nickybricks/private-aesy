@@ -9,8 +9,8 @@ import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { StockInfo } from '@/types/stock';
 import { OverallRatingData } from './StockContextTypes';
 
-// Konstante für den direkten DCF-Endpunkt - KORRIGIERT: Verwende levered DCF
-const DCF_BASE_URL = 'https://financialmodelingprep.com/stable/custom-levered-discounted-cash-flow';
+// Konstante für den direkten DCF-Endpunkt
+const DCF_BASE_URL = 'https://financialmodelingprep.com/stable/custom-discounted-cash-flow';
 
 // Hilfsfunktion zum Abrufen der DCF-Daten
 const fetchCustomDCF = async (ticker: string) => {
