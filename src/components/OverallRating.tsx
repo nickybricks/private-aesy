@@ -209,16 +209,23 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   
   console.log('OverallRating - Real Buffett Score calculated:', realBuffettScore);
   
+  // Prüfe auf negativen DCF-Wert anstatt fehlende Daten
+  const hasNegativeDcfValue = intrinsicValue !== null && 
+                             intrinsicValue !== undefined && 
+                             !isNaN(Number(intrinsicValue)) && 
+                             Number(intrinsicValue) < 0;
+  
   const hasMissingPriceData = currentPrice === null || 
                              currentPrice === undefined || 
-                             bestBuyPrice === null || 
-                             bestBuyPrice === undefined || 
-                             intrinsicValue === null || 
-                             intrinsicValue === undefined;
+                             (intrinsicValue === null || intrinsicValue === undefined);
   
   if (hasMissingPriceData) {
     console.warn("Fehlende Preisinformationen für Wertanalyse:", 
       { currentPrice, bestBuyPrice, intrinsicValue });
+  }
+  
+  if (hasNegativeDcfValue) {
+    console.log("Negativer DCF-Wert erkannt:", intrinsicValue);
   }
   
   // Calculate correct margin of safety if needed or missing
@@ -242,7 +249,18 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   
   return (
     <div className="buffett-card animate-fade-in">
-      {hasMissingPriceData && (
+      {hasNegativeDcfValue && (
+        <div className="mb-6">
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertTriangle className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-blue-700">
+              Das DCF-Modell ergibt einen negativen intrinsischen Wert. Dies deutet auf signifikante operative Herausforderungen hin.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+      
+      {hasMissingPriceData && !hasNegativeDcfValue && (
         <div className="mb-6">
           <Alert className="bg-yellow-50 border-yellow-200">
             <AlertTriangle className="h-4 w-4 text-yellow-500" />
