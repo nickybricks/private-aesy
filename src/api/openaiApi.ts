@@ -1,5 +1,6 @@
 
 import axios from 'axios';
+import { searchCurrentCompanyData, formatCurrentDataForPrompt } from './currentDataService';
 
 // OpenAI API Key - Fest im Code eingebaut
 const OPENAI_API_KEY = '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';
@@ -207,10 +208,22 @@ export const analyzeEconomicMoat = async (companyName: string, industry: string,
 };
 
 // Function to analyze management quality using GPT
-export const analyzeManagementQuality = async (companyName: string, ceo: string): Promise<string> => {
+export const analyzeManagementQuality = async (companyName: string, ceo: string, symbol?: string): Promise<string> => {
+  // Fetch current data for enhanced analysis
+  let currentDataPrompt = '';
+  if (symbol) {
+    try {
+      const currentData = await searchCurrentCompanyData(companyName, symbol);
+      currentDataPrompt = formatCurrentDataForPrompt(currentData, 'management') + 
+                         formatCurrentDataForPrompt(currentData, 'repurchases');
+    } catch (error) {
+      console.warn('Aktuelle Daten nicht verfügbar, verwende GPT-Basisdaten');
+    }
+  }
+
   const prompt = `
     Analysiere ${companyName} unter CEO ${ceo || 'dem aktuellen Management'} nach Warren Buffetts Kriterium "Qualität des Managements".
-
+    ${currentDataPrompt}
     Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
     
     1. Ist das Management ehrlich und transparent?
