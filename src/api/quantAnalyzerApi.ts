@@ -92,6 +92,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     // Fetch all necessary data in parallel
     const [
       ratiosTTM, 
+      ratiosHistorical,
       profile, 
       incomeStatements, 
       balanceSheets,
@@ -99,6 +100,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       quote
     ] = await Promise.all([
       fetchFromFMP(`/ratios-ttm/${ticker}`),
+      fetchFromFMP(`/ratios/${ticker}?limit=3`),
       fetchFromFMP(`/profile/${ticker}`),
       fetchFromFMP(`/income-statement/${ticker}?limit=10`),
       fetchFromFMP(`/balance-sheet-statement/${ticker}?limit=5`),
@@ -200,7 +202,18 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     const pbPass = pb !== null && pb > 0 && pb < pbThreshold;
 
     // 10. Dividend yield > 2%
-    const dividendYield = safeValue(ratios.dividendYieldTTM) * 100;
+    let dividendYield = safeValue(ratios.dividendYieldTTM) * 100;
+    
+    // Falls aktuelle Dividendenrendite 0 ist, versuche historische Daten
+    if (dividendYield === 0 && ratiosHistorical && ratiosHistorical.length > 1) {
+      const previousYearRatios = ratiosHistorical[1];
+      const previousDividendYield = safeValue(previousYearRatios.dividendYield) * 100;
+      if (previousDividendYield > 0) {
+        dividendYield = previousDividendYield;
+        console.log('Dividendenrendite aus Vorjahr verwendet (Quant):', dividendYield);
+      }
+    }
+    
     const dividendYieldPass = dividendYield !== null && dividendYield > 2;
 
     // Calculate Buffett Score (1 point per criterion met)

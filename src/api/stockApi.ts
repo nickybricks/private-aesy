@@ -380,6 +380,16 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   // Verbesserte Dividendenrendite Berechnung
   let dividendYield = safeValue(latestRatios.dividendYield) * 100;
   
+  // Falls aktuelle Dividendenrendite 0 ist, versuche Vorjahresdaten
+  if (dividendYield === 0 && ratios.length > 1) {
+    const previousYearRatios = ratios[1];
+    const previousDividendYield = safeValue(previousYearRatios.dividendYield) * 100;
+    if (previousDividendYield > 0) {
+      dividendYield = previousDividendYield;
+      console.log('Dividendenrendite aus Vorjahr verwendet:', dividendYield);
+    }
+  }
+  
   // Kurs zu Buchwert Berechnung
   let priceToBook = safeValue(latestRatios.priceToBookRatio);
   
