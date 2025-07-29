@@ -346,8 +346,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     try {
       managementGptAnalysis = await analyzeManagementQuality(
         companyProfile.companyName,
-        companyProfile.ceo || 'Unbekannt',
-        ticker
+        companyProfile.ceo || 'Unbekannt'
       );
       
       // FIXED: Score based on GPT analysis, but more conservative
