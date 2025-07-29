@@ -116,6 +116,75 @@ export const queryGPT = async (prompt: string): Promise<string> => {
   }
 };
 
+// Function to query GPT with web search
+export const queryGPTWithWebSearch = async (prompt: string): Promise<string> => {
+  try {
+    const apiKey = getOpenAiApiKey();
+    
+    if (!apiKey || apiKey.length === 0 || apiKey.includes('IHR-OPENAI-API-KEY-HIER')) {
+      throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
+    }
+    
+    const requestBody = {
+      model: 'gpt-4o-search-preview',
+      web_search_options: {},
+      messages: [
+        {
+          role: 'system',
+          content: 'Als hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien, beantworte folgende Frage präzise und strukturiert. Nutze aktuelle Informationen aus dem Web.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 300
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey.trim()}`
+    };
+
+    console.log('Making OpenAI Web Search request');
+
+    const response = await axios.post<OpenAIResponse>(
+      OPENAI_API_URL,
+      requestBody,
+      { headers }
+    );
+    
+    console.log('Raw OpenAI Web Search response received:', JSON.stringify(response.data, null, 2));
+    
+    if (response.data.choices && response.data.choices.length > 0) {
+      const content = response.data.choices[0].message.content;
+      if (content) {
+        return content.trim();
+      }
+    }
+    
+    throw new Error('Unerwartetes Antwortformat von der OpenAI-API - keine Textdaten gefunden');
+  } catch (error) {
+    console.error('Error querying OpenAI with web search:', error);
+    
+    if (axios.isAxiosError(error)) {
+      console.error('Response status:', error.response?.status);
+      console.error('Response data:', error.response?.data);
+      
+      if (error.response?.status === 401) {
+        throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei.');
+      }
+      
+      if (error.response?.data?.error?.message) {
+        throw new Error(`OpenAI API Fehler: ${error.response.data.error.message}`);
+      }
+    }
+    
+    throw new Error('Fehler bei der Anfrage an OpenAI. Bitte versuchen Sie es später erneut.');
+  }
+};
+
 // Function to analyze business model using GPT
 export const analyzeBusinessModel = async (companyName: string, industry: string, description: string): Promise<string> => {
   const prompt = `
