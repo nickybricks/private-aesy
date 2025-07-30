@@ -971,8 +971,9 @@ export const getFinancialMetrics = async (ticker: string) => {
       }
     }
     
-    // Zinsdeckungsgrad Berechnung - verbessert
+    // Zinsdeckungsgrad Berechnung - verbessert mit historischer Datensuche
     let interestCoverage = null;
+    let interestCoverageDate = null;
     
     // 1. Direkt aus Ratios (vorberechneter Wert)
     if (latestRatios && latestRatios.interestCoverage !== undefined) {
@@ -990,6 +991,38 @@ export const getFinancialMetrics = async (ticker: string) => {
       if (ebit !== null && interestExpense !== null && interestExpense !== 0) {
         interestCoverage = ebit / Math.abs(interestExpense);
         console.log('Zinsdeckungsgrad berechnet aus EBIT/Zinsaufwand:', interestCoverage);
+      }
+    }
+    
+    // 3. Falls Zinsdeckungsgrad 0 ist, suche in historischen Daten nach dem letzten verfügbaren Wert
+    if ((interestCoverage === null || interestCoverage === 0) && incomeStatements && incomeStatements.length > 1) {
+      for (let i = 1; i < Math.min(incomeStatements.length, 10); i++) {
+        const statement = incomeStatements[i];
+        let historicalCoverage = null;
+        
+        // Prüfe ob Zinsdeckungsgrad direkt verfügbar ist (aus entsprechenden Ratios)
+        if (ratios && ratios[i] && ratios[i].interestCoverage !== undefined) {
+          historicalCoverage = safeValue(ratios[i].interestCoverage);
+        }
+        
+        // Berechne aus historischen EBIT und Zinsaufwand
+        if ((historicalCoverage === null || historicalCoverage === 0) && statement) {
+          const historicalEbit = statement.ebitda !== undefined && statement.depreciationAndAmortization !== undefined ?
+                                statement.ebitda - statement.depreciationAndAmortization : null;
+          const historicalInterestExpense = safeValue(statement.interestExpense);
+          
+          if (historicalEbit !== null && historicalInterestExpense !== null && historicalInterestExpense !== 0) {
+            historicalCoverage = historicalEbit / Math.abs(historicalInterestExpense);
+          }
+        }
+        
+        if (historicalCoverage !== null && historicalCoverage > 0) {
+          interestCoverage = historicalCoverage;
+          const statementDate = new Date(statement.date);
+          interestCoverageDate = `${statementDate.getFullYear()}-${String(statementDate.getMonth() + 1).padStart(2, '0')}`;
+          console.log(`Zinsdeckungsgrad aus historischen Daten (${interestCoverageDate}):`, interestCoverage);
+          break;
+        }
       }
     }
 
@@ -1041,6 +1074,98 @@ export const getFinancialMetrics = async (ticker: string) => {
         }));
     }
 
+    // Erstelle strukturierte Metriken für das Frontend
+    const metrics = [];
+
+    // EPS Metrik
+    if (eps !== null) {
+      metrics.push({
+        name: 'Gewinn pro Aktie',
+        value: eps,
+        formula: 'Jahresüberschuss ÷ Anzahl ausstehender Aktien',
+        explanation: 'Der auf eine einzelne Aktie entfallende Unternehmensgewinn',
+        threshold: 'Kontinuierliches Wachstum erwünscht',
+        status: 'pass' as const,
+        isPercentage: false,
+        isMultiplier: false
+      });
+    }
+
+    // ROE Metrik
+    if (roe !== null) {
+      metrics.push({
+        name: 'ROE (Eigenkapitalrendite)',
+        value: `${roe.toFixed(2)}%`,
+        formula: 'Jahresüberschuss ÷ Eigenkapital × 100',
+        explanation: 'Rendite auf das eingesetzte Eigenkapital',
+        threshold: 'Buffett bevorzugt > 15%',
+        status: roe > 15 ? 'pass' : roe > 10 ? 'warning' : 'fail' as const,
+        isPercentage: true,
+        isMultiplier: false
+      });
+    }
+
+    // Nettomarge Metrik
+    if (netMargin !== null) {
+      metrics.push({
+        name: 'Nettomarge',
+        value: `${netMargin.toFixed(2)}%`,
+        formula: 'Jahresüberschuss ÷ Umsatz × 100',
+        explanation: 'Anteil des Umsatzes, der als Gewinn übrig bleibt',
+        threshold: 'Buffett bevorzugt > 10%',
+        status: netMargin > 10 ? 'pass' : netMargin > 5 ? 'warning' : 'fail' as const,
+        isPercentage: true,
+        isMultiplier: false
+      });
+    }
+
+    // ROIC Metrik
+    if (roic !== null) {
+      metrics.push({
+        name: 'ROIC (Kapitalrendite)',
+        value: `${roic.toFixed(2)}%`,
+        formula: 'NOPAT ÷ (Eigenkapital + Finanzverbindlichkeiten)',
+        explanation: 'Rendite auf das gesamte investierte Kapital',
+        threshold: 'Buffett bevorzugt > 12%',
+        status: roic > 12 ? 'pass' : roic > 8 ? 'warning' : 'fail' as const,
+        isPercentage: true,
+        isMultiplier: false
+      });
+    }
+
+    // Schuldenquote Metrik
+    if (debtToAssets !== null) {
+      metrics.push({
+        name: 'Schulden zu Vermögen',
+        value: `${debtToAssets.toFixed(2)}%`,
+        formula: 'Gesamtschulden ÷ Gesamtvermögen × 100',
+        explanation: 'Anteil der Schulden am Gesamtvermögen',
+        threshold: 'Buffett bevorzugt < 50%',
+        status: debtToAssets < 50 ? 'pass' : debtToAssets < 70 ? 'warning' : 'fail' as const,
+        isPercentage: true,
+        isMultiplier: false
+      });
+    }
+
+    // Zinsdeckungsgrad Metrik
+    if (interestCoverage !== null) {
+      let coverageDisplay = interestCoverage.toFixed(2);
+      if (interestCoverageDate) {
+        coverageDisplay += ` (aus ${interestCoverageDate})`;
+      }
+      
+      metrics.push({
+        name: 'Zinsdeckungsgrad',
+        value: coverageDisplay,
+        formula: 'EBIT ÷ Zinsaufwand',
+        explanation: 'Fähigkeit des Unternehmens, Zinsen aus dem operativen Ergebnis zu bedienen',
+        threshold: 'Buffett bevorzugt > 5',
+        status: interestCoverage > 5 ? 'pass' : interestCoverage > 3 ? 'warning' : 'fail' as const,
+        isPercentage: false,
+        isMultiplier: true
+      });
+    }
+
     return {
       // Rendite-Kennzahlen
       eps,
@@ -1051,6 +1176,10 @@ export const getFinancialMetrics = async (ticker: string) => {
       // Schulden-Kennzahlen
       debtToAssets,
       interestCoverage,
+      interestCoverageDate,
+      
+      // Strukturierte Metriken für Frontend
+      metrics,
       
       // Add the reported currency to the returned object
       reportedCurrency,
