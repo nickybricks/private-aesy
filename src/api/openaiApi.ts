@@ -116,157 +116,6 @@ export const queryGPT = async (prompt: string): Promise<string> => {
   }
 };
 
-// Function to query GPT with web search
-export const queryGPTWithWebSearch = async (prompt: string): Promise<string> => {
-  try {
-    const apiKey = getOpenAiApiKey();
-    
-    if (!apiKey || apiKey.length === 0 || apiKey.includes('IHR-OPENAI-API-KEY-HIER')) {
-      throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
-    }
-    
-    const requestBody = {
-      model: 'gpt-4o-search-preview',
-      web_search_options: {},
-      messages: [
-        {
-          role: 'system',
-          content: 'Als hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien, beantworte folgende Frage präzise und strukturiert. Nutze aktuelle Informationen aus dem Web.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 300
-    };
-
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey.trim()}`
-    };
-
-    console.log('Making OpenAI Web Search request');
-
-    const response = await axios.post<OpenAIResponse>(
-      OPENAI_API_URL,
-      requestBody,
-      { headers }
-    );
-    
-    console.log('Raw OpenAI Web Search response received:', JSON.stringify(response.data, null, 2));
-    
-    if (response.data.choices && response.data.choices.length > 0) {
-      const content = response.data.choices[0].message.content;
-      if (content) {
-        return content.trim();
-      }
-    }
-    
-    throw new Error('Unerwartetes Antwortformat von der OpenAI-API - keine Textdaten gefunden');
-  } catch (error) {
-    console.error('Error querying OpenAI with web search:', error);
-    
-    if (axios.isAxiosError(error)) {
-      console.error('Response status:', error.response?.status);
-      console.error('Response data:', error.response?.data);
-      
-      if (error.response?.status === 401) {
-        throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei.');
-      }
-      
-      if (error.response?.data?.error?.message) {
-        throw new Error(`OpenAI API Fehler: ${error.response.data.error.message}`);
-      }
-    }
-    
-    throw new Error('Fehler bei der Anfrage an OpenAI. Bitte versuchen Sie es später erneut.');
-  }
-};
-
-// Function to check data recency from GPT response
-const checkDataRecency = (gptResponse: string): string | null => {
-  try {
-    // Look for source references in the response
-    const sourcePattern = /Quellen:\s*(.+?)(?:\n|$)/i;
-    const match = gptResponse.match(sourcePattern);
-    
-    if (!match) {
-      return "Keine Quellenangaben gefunden - Aktualität der Daten nicht überprüfbar.";
-    }
-    
-    const sources = match[1];
-    
-    // Extract dates from sources (looking for various date formats)
-    const datePatterns = [
-      /(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/g, // DD.MM.YYYY
-      /(\d{4})-(\d{1,2})-(\d{1,2})/g, // YYYY-MM-DD
-      /(\d{1,2})\/(\d{1,2})\/(\d{4})/g, // MM/DD/YYYY or DD/MM/YYYY
-      /(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember)\s+(\d{4})/gi, // Month YYYY
-      /(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/gi // English Month YYYY
-    ];
-    
-    const currentDate = new Date();
-    const sixtyDaysAgo = new Date(currentDate.getTime() - (60 * 24 * 60 * 60 * 1000));
-    
-    let oldestDate: Date | null = null;
-    let hasRecentData = false;
-    
-    // Check all date patterns
-    for (const pattern of datePatterns) {
-      let match;
-      while ((match = pattern.exec(sources)) !== null) {
-        let date: Date;
-        
-        if (pattern.source.includes('\\d{4}-')) {
-          // YYYY-MM-DD format
-          date = new Date(`${match[1]}-${match[2]}-${match[3]}`);
-        } else if (pattern.source.includes('\\d{1,2}\\.')) {
-          // DD.MM.YYYY format
-          date = new Date(`${match[3]}-${match[2]}-${match[1]}`);
-        } else if (pattern.source.includes('\\d{1,2}\/')) {
-          // MM/DD/YYYY format (assuming US format)
-          date = new Date(`${match[3]}-${match[1]}-${match[2]}`);
-        } else {
-          // Month YYYY format
-          const monthName = match[1];
-          const year = parseInt(match[2]);
-          const monthMap: { [key: string]: number } = {
-            'Januar': 0, 'January': 0, 'Februar': 1, 'February': 1, 'März': 2, 'March': 2,
-            'April': 3, 'Mai': 4, 'May': 4, 'Juni': 5, 'June': 5, 'Juli': 6, 'July': 6,
-            'August': 7, 'September': 8, 'Oktober': 9, 'October': 9, 'November': 10, 'Dezember': 11, 'December': 11
-          };
-          date = new Date(year, monthMap[monthName] || 0, 1);
-        }
-        
-        if (!isNaN(date.getTime())) {
-          if (!oldestDate || date < oldestDate) {
-            oldestDate = date;
-          }
-          if (date >= sixtyDaysAgo) {
-            hasRecentData = true;
-          }
-        }
-      }
-    }
-    
-    if (!oldestDate) {
-      return "Keine auswertbaren Datumsangaben in den Quellen gefunden.";
-    }
-    
-    if (!hasRecentData) {
-      const daysDiff = Math.floor((currentDate.getTime() - oldestDate.getTime()) / (24 * 60 * 60 * 1000));
-      return `Warnung: Die verwendeten Daten sind ${daysDiff} Tage alt. Für eine vollständige Aktualität empfehlen wir eine manuelle Überprüfung der aktuellsten Unternehmensnachrichten.`;
-    }
-    
-    return null; // No warning needed
-  } catch (error) {
-    console.error('Error checking data recency:', error);
-    return "Fehler bei der Überprüfung der Datenaktualität.";
-  }
-};
-
 // Function to analyze business model using GPT
 export const analyzeBusinessModel = async (companyName: string, industry: string, description: string): Promise<string> => {
   const prompt = `
@@ -527,16 +376,11 @@ export const analyzeTurnaround = async (companyName: string, industry: string): 
   const prompt = `
     Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Vergangenheit ≠ Zukunft".
     
-    Bitte nutze aktuelle Informationen aus dem Web und analysiere:
-    
     Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
     
     1. Beruhte der bisherige Erfolg auf einmaligen oder außergewöhnlichen Effekten?
     2. Gab es starke Wachstumsphasen durch untypische externe Faktoren?
     3. Ist das Wachstum langfristig wiederholbar und basiert auf einem stabilen Geschäftsmodell?
-    
-    WICHTIG: Bitte gib am Ende deiner Analyse die verwendeten Quellen mit Datum an, damit wir die Aktualität der Daten überprüfen können.
-    Format: "Quellen: [URL1 - Datum], [URL2 - Datum]"
     
     Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
     
@@ -561,16 +405,11 @@ export const analyzeTurnaround = async (companyName: string, industry: string): 
       - Nachhaltige Geschäftsentwicklung (Pass)
       - Teilweise nachhaltig (Warning)
       - Stark von Einmaleffekten abhängig (Fail)
-    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.")
+    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.“)
     - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
     `;
   
-  const response = await queryGPTWithWebSearch(prompt);
-  
-  // Check data recency and add warning if needed
-  const dataRecencyWarning = checkDataRecency(response);
-  
-  return dataRecencyWarning ? `${response}\n\n⚠️ ${dataRecencyWarning}` : response;
+  return await queryGPT(prompt);
 };
 
 // Function to analyze rational behavior
