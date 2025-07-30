@@ -31,20 +31,6 @@ interface StockSuggestion {
   isin?: string;
 }
 
-const fallbackStocks = [
-  { name: 'Apple', symbol: 'AAPL' },
-  { name: 'Microsoft', symbol: 'MSFT' },
-  { name: 'Amazon', symbol: 'AMZN' },
-  { name: 'Alphabet (Google)', symbol: 'GOOGL' },
-  { name: 'Meta (Facebook)', symbol: 'META' },
-  { name: 'Tesla', symbol: 'TSLA' },
-  { name: 'Adidas', symbol: 'ADS.DE' },
-  { name: 'BASF', symbol: 'BAS.DE' },
-  { name: 'BMW', symbol: 'BMW.DE' },
-  { name: 'Deutsche Telekom', symbol: 'DTE.DE' },
-  { name: 'SAP', symbol: 'SAP.DE' },
-  { name: 'Siemens', symbol: 'SIE.DE' },
-];
 
 const quickAccessStocks = [
   { name: 'Apple', symbol: 'AAPL' },
@@ -164,10 +150,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         name: `ISIN: ${possibleIsin}`,
       };
       
-      const matchingFallback = fallbackStocks.find(stock => stock.symbol === symbol);
-      if (matchingFallback) {
-        isinStock.name = matchingFallback.name;
-      }
       
       setIsinResults(isinStock);
       setOpen(true);
@@ -249,10 +231,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           name: `ISIN: ${possibleIsin}`,
         };
         
-        const matchingFallback = fallbackStocks.find(stock => stock.symbol === symbol);
-        if (matchingFallback) {
-          isinStock.name = matchingFallback.name;
-        }
         
         setIsinResults(isinStock);
         setOpen(true);
@@ -281,10 +259,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           name: `ISIN: ${possibleIsin}`,
         };
         
-        const matchingFallback = fallbackStocks.find(stock => stock.symbol === symbol);
-        if (matchingFallback) {
-          isinStock.name = matchingFallback.name;
-        }
         
         setIsinResults(isinStock);
         setOpen(true);
@@ -408,7 +382,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (!searchQuery || searchQuery.length < 2) {
-        setSuggestions(fallbackStocks.slice(0, 6));
+        setSuggestions([]);
         setSuggestedCorrection(null);
         return;
       }
@@ -456,18 +430,12 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         console.error('Error fetching stock suggestions:', error);
         toast({
           title: "Fehler beim Laden der Vorschläge",
-          description: "Fallback-Liste wird angezeigt. Bitte prüfen Sie Ihren API-Key.",
+          description: "API-Fehler. Bitte prüfen Sie Ihren API-Key.",
           variant: "destructive",
         });
         
-        const filteredResults = fallbackStocks.filter(stock => 
-          stock.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          stock.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setSuggestions(filteredResults);
-        
-        const correction = getFuzzyMatches(searchQuery, filteredResults);
-        setSuggestedCorrection(correction);
+        setSuggestions([]);
+        setSuggestedCorrection(null);
       } finally {
         setIsSearching(false);
       }
@@ -534,7 +502,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     setOpen(true);
     
     if (!searchQuery.trim()) {
-      setSuggestions(fallbackStocks.slice(0, 6));
+      setSuggestions([]);
     }
   };
 
@@ -705,28 +673,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                         </CommandGroup>
                       )}
                       
-                      {(!searchQuery || searchQuery.length < 2) ? (
-                        <CommandGroup heading="Beliebte Aktien">
-                          {fallbackStocks.slice(0, 6).map((stock) => {
-                            const display = formatStockDisplay(stock);
-                            return (
-                              <CommandItem 
-                                key={stock.symbol} 
-                                value={`${stock.name} ${stock.symbol}`}
-                                onSelect={() => selectStock(stock)}
-                                className="flex justify-between"
-                              >
-                                <div className="flex-1 truncate">
-                                  <span className="font-medium">{display.name}</span>
-                                  <span className="ml-2 text-sm text-muted-foreground">
-                                    ({display.symbol})
-                                  </span>
-                                </div>
-                              </CommandItem>
-                            );
-                          })}
-                        </CommandGroup>
-                      ) : (
+                      {suggestions.length > 0 && (
                         <CommandGroup heading="Vorschläge">
                           {suggestions.map((stock) => {
                             const display = formatStockDisplay(stock);

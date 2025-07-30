@@ -927,7 +927,12 @@ export const getFinancialMetrics = async (ticker: string) => {
       if (ebit !== null) {
         const taxRate = latestIncomeStatement.incomeTaxExpense !== undefined && latestIncomeStatement.incomeBeforeTax !== undefined && 
                       latestIncomeStatement.incomeBeforeTax !== 0 ?
-                      latestIncomeStatement.incomeTaxExpense / latestIncomeStatement.incomeBeforeTax : 0.25; // Fallback Steuersatz
+                      latestIncomeStatement.incomeTaxExpense / latestIncomeStatement.incomeBeforeTax : null;
+        
+        if (taxRate === null) {
+          console.log('Keine gültigen Steuerdaten verfügbar für ROIC-Berechnung');
+          return null;
+        }
         
         const nopat = ebit * (1 - taxRate);
         

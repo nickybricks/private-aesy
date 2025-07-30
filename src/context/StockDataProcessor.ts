@@ -62,15 +62,13 @@ export const calculateMarginOfSafety = (
   intrinsicValue: number | null, 
   currentPrice: number | null
 ): { value: number; status: 'pass' | 'warning' | 'fail' } => {
-  // Default values
-  const defaultValue = { value: 0, status: 'fail' as const };
   
-  // Validate inputs
+  // Validate inputs - return null if invalid instead of fallback
   if (intrinsicValue === null || intrinsicValue === undefined || 
       currentPrice === null || currentPrice === undefined || 
       isNaN(Number(intrinsicValue)) || isNaN(Number(currentPrice)) ||
       Number(intrinsicValue) <= 0 || Number(currentPrice) <= 0) {
-    return defaultValue;
+    return { value: 0, status: 'fail' as const };
   }
   
   // Calculate margin of safety percentage using Buffett's formula:
