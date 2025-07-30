@@ -1148,23 +1148,64 @@ export const getOverallRating = async (ticker: string) => {
       summary = 'Entspricht nicht ausreichend den Buffett-Kriterien oder ist deutlich überbewertet.';
     }
     
-    // Stärken und Schwächen durch umfassende Analyse aller verfügbaren Daten erstellen
-    const { generateComprehensiveAnalysis } = await import('@/utils/comprehensiveAnalysis');
+    // Stärken und Schwächen detaillierter identifizieren
+    const strengths = [];
+    const weaknesses = [];
     
-    // Hole Finanzkennzahlen für die Analyse (nur einmal)
+    if (criteria.businessModel.status === 'pass') {
+      strengths.push('Klares, verständliches Geschäftsmodell');
+    } else if (criteria.businessModel.status === 'warning') {
+      weaknesses.push('Moderat komplexes Geschäftsmodell, das tiefere Analyse erfordert');
+    } else if (criteria.businessModel.status === 'fail') {
+      weaknesses.push('Komplexes oder schwer verständliches Geschäftsmodell');
+    }
+    
+    if (criteria.economicMoat.status === 'pass') {
+      strengths.push('Starker wirtschaftlicher Burggraben (Moat) mit überlegenen Margen');
+    } else if (criteria.economicMoat.status === 'warning') {
+      strengths.push('Moderater wirtschaftlicher Burggraben vorhanden');
+    } else if (criteria.economicMoat.status === 'fail') {
+      weaknesses.push('Kein erkennbarer wirtschaftlicher Burggraben gegenüber Wettbewerbern');
+    }
+    
+    if (criteria.financialMetrics.status === 'pass') {
+      strengths.push('Hervorragende Finanzkennzahlen (ROE, Nettomarge)');
+    } else if (criteria.financialMetrics.status === 'warning') {
+      strengths.push('Solide, aber nicht herausragende Finanzkennzahlen');
+    } else if (criteria.financialMetrics.status === 'fail') {
+      weaknesses.push('Unterdurchschnittliche Finanzkennzahlen');
+    }
+    
+    if (criteria.financialStability.status === 'pass') {
+      strengths.push('Solide finanzielle Stabilität mit geringer Verschuldung');
+    } else if (criteria.financialStability.status === 'warning') {
+      weaknesses.push('Moderate Bedenken bezüglich der finanziellen Stabilität');
+    } else if (criteria.financialStability.status === 'fail') {
+      weaknesses.push('Erhebliche Bedenken hinsichtlich finanzieller Stabilität oder hoher Verschuldung');
+    }
+    
+    if (criteria.valuation.status === 'pass') {
+      strengths.push('Attraktive Bewertung (KGV, KBV, PCF und Dividendenrendite)');
+    } else if (criteria.valuation.status === 'warning') {
+      weaknesses.push('Faire, aber nicht besonders günstige Bewertung');
+    } else if (criteria.valuation.status === 'fail') {
+      weaknesses.push('Hohe Bewertung im Verhältnis zu den fundamentalen Daten');
+    }
+    
+    if (criteria.longTermOutlook.status === 'pass') {
+      strengths.push('Vielversprechende langfristige Perspektiven');
+    } else if (criteria.longTermOutlook.status === 'warning' || criteria.longTermOutlook.status === 'fail') {
+      weaknesses.push('Unsichere langfristige Perspektiven oder regulatorische Risiken');
+    }
+    
+    if (criteria.management.status === 'pass') {
+      strengths.push('Qualitativ hochwertiges und aktionärsfreundliches Management');
+    } else if (criteria.management.status === 'fail') {
+      weaknesses.push('Bedenken bezüglich der Qualität oder Aktionärsfreundlichkeit des Managements');
+    }
+    
+    // Get financial metrics to determine the reported currency
     const financialMetrics = await getFinancialMetrics(ticker);
-    
-    // DCF-Daten für die Analyse (falls vorhanden)
-    const dcfData = null; // Diese werden später in StockSearchService.ts hinzugefügt
-    
-    const comprehensiveAnalysis = generateComprehensiveAnalysis(
-      financialMetrics,
-      criteria,
-      dcfData
-    );
-    
-    const strengths = comprehensiveAnalysis.strengths;
-    const weaknesses = comprehensiveAnalysis.weaknesses;
     const reportedCurrency = financialMetrics?.reportedCurrency || 'USD';
     console.log(`Stock price currency: ${currency}, Reported currency: ${reportedCurrency}`);
 
