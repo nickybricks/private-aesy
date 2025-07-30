@@ -146,6 +146,28 @@ export const getExchangeRate = async (fromCurrency: string, toCurrency: string):
   } catch (error) {
     console.error('Error fetching exchange rate:', error);
     
+    // Try fallback API if first one fails
+    try {
+      const normalizedFromCurrency = normalizeCurrencyCode(fromCurrency);
+      const normalizedToCurrency = normalizeCurrencyCode(toCurrency);
+      
+      console.log(`Trying fallback API for exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+      const fallbackResponse = await axios.get(`https://api.exchangerate.host/latest?base=${normalizedFromCurrency}&symbols=${normalizedToCurrency}`);
+      
+      if (fallbackResponse.data && fallbackResponse.data.rates && fallbackResponse.data.rates[normalizedToCurrency]) {
+        const rate = fallbackResponse.data.rates[normalizedToCurrency];
+        console.log(`Fallback exchange rate: ${rate}`);
+        
+        if (isNaN(rate)) {
+          console.warn(`DCF ERROR: Fallback exchange rate is NaN from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+          return null;
+        }
+        
+        return rate;
+      }
+    } catch (fallbackError) {
+      console.error('Fallback API also failed:', fallbackError);
+    }
     
     console.warn(`DCF ERROR: All exchange rate APIs failed for ${fromCurrency} to ${toCurrency}`);
     return null;

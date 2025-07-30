@@ -95,13 +95,9 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   const latestIncomeStatement = incomeStatements && incomeStatements.length > 0 ? incomeStatements[0] : null;
   const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
   
-  // Validierung dass alle erforderlichen Werte existieren
-  const safeValue = (value: any) => {
-    if (value === undefined || value === null || isNaN(Number(value))) {
-      throw new Error(`Erforderlicher Wert fehlt oder ist ungültig: ${value}`);
-    }
-    return Number(value);
-  };
+  // Sicherstellen, dass alle erforderlichen Werte existieren
+  // Falls nicht, Standardwerte oder 0 verwenden
+  const safeValue = (value: any) => (value !== undefined && value !== null && !isNaN(Number(value))) ? Number(value) : 0;
   
   // Business Model Analyse - FIXED LOGIC
   // Improved logic to classify business model based on GPT analysis
@@ -931,12 +927,7 @@ export const getFinancialMetrics = async (ticker: string) => {
       if (ebit !== null) {
         const taxRate = latestIncomeStatement.incomeTaxExpense !== undefined && latestIncomeStatement.incomeBeforeTax !== undefined && 
                       latestIncomeStatement.incomeBeforeTax !== 0 ?
-                      latestIncomeStatement.incomeTaxExpense / latestIncomeStatement.incomeBeforeTax : null;
-        
-        if (taxRate === null) {
-          console.log('Keine gültigen Steuerdaten verfügbar für ROIC-Berechnung');
-          return null;
-        }
+                      latestIncomeStatement.incomeTaxExpense / latestIncomeStatement.incomeBeforeTax : 0.25; // Fallback Steuersatz
         
         const nopat = ebit * (1 - taxRate);
         
@@ -1262,7 +1253,7 @@ Fazit: Es könnte besser sein, nach anderen Investitionsmöglichkeiten zu suchen
       currentPrice,
       currency,
       reportedCurrency,
-      targetMarginOfSafety: null
+      targetMarginOfSafety: 20 // Standardwert, wird in StockSearchService.ts verwendet
     };
   } catch (error) {
     console.error('Error generating overall rating:', error);

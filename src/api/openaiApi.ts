@@ -54,21 +54,21 @@ export const queryGPT = async (prompt: string): Promise<string> => {
       throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
     }
 
-    
     const requestBody = {
-      model: 'gpt-4o',
+      model: 'gpt-4o-search-preview', // Das Modell mit Websearch
+      web_search_options: {}, // Websuche aktivieren
       messages: [
         {
           role: 'system',
-          content: 'Als hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien, beantworte folgende Frage präzise und strukturiert.'
+          content: 'Du bist ein Finanzanalyst mit Fokus auf Warren Buffetts Kriterien.'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.3,
-      max_tokens: 200
+      temperature: 0,
+      max_tokens: 300
     };
 
     
