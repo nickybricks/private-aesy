@@ -105,7 +105,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   
   // Business Model Analyse - FIXED LOGIC
   // Improved logic to classify business model based on GPT analysis
-  let businessModelStatus = companyProfile.description && companyProfile.description.length > 100 ? 'pass' : 'warning';
+  let businessModelStatus: 'pass' | 'warning' | 'fail' = 'fail';
   let businessModelScore = 0;
   const businessModelMaxScore = 10; // FIXED: Changed from 3 to 10
   
@@ -644,7 +644,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     businessModel: {
       status: businessModelStatus,
       title: '1. Verstehbares Geschäftsmodell',
-      description: `${companyProfile.companyName} ist tätig im Bereich ${companyProfile.industry || 'Unbekannt'}.`,
+      description: businessModelGptAnalysis || null,
       details: [
         `Hauptgeschäftsbereich: ${companyProfile.industry || 'Unbekannt'}`,
         `Sektor: ${companyProfile.sector || 'Unbekannt'}`,
@@ -657,7 +657,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     economicMoat: {
       status: economicMoatStatus,
       title: '2. Wirtschaftlicher Burggraben (Moat)',
-      description: `${companyProfile.companyName} zeigt ${economicMoatStatus === 'pass' ? 'starke' : economicMoatStatus === 'warning' ? 'moderate' : 'schwache'} Anzeichen eines wirtschaftlichen Burggrabens.`,
+      description: economicMoatGptAnalysis || null,
       details: [
         `Bruttomarge: ${grossMargin.toFixed(2)}% (Buffett bevorzugt >40%)`,
         `Operative Marge: ${operatingMargin.toFixed(2)}% (Buffett bevorzugt >20%)`,
@@ -671,7 +671,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     financialMetrics: {
       status: financialMetricsStatus,
       title: '3. Finanzkennzahlen (10 Jahre Rückblick)',
-      description: `Die Finanzkennzahlen von ${companyProfile.companyName} sind ${financialMetricsStatus === 'pass' ? 'stark' : financialMetricsStatus === 'warning' ? 'moderat' : 'schwach'}.`,
+      description: null,
       details: [
         `Eigenkapitalrendite (ROE): ${roe.toFixed(2)}% (Buffett bevorzugt >15%)`,
         `Nettomarge: ${netMargin.toFixed(2)}% (Buffett bevorzugt >15%)`,
@@ -684,7 +684,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     financialStability: {
       status: financialStabilityStatus,
       title: '4. Finanzielle Stabilität & Verschuldung',
-      description: `${companyProfile.companyName} zeigt ${financialStabilityStatus === 'pass' ? 'starke' : financialStabilityStatus === 'warning' ? 'moderate' : 'schwache'} finanzielle Stabilität.`,
+      description: null,
       details: [
         `Schulden zu Vermögen: ${debtToAssets.toFixed(2)}% (Buffett bevorzugt <50%)`,
         `Zinsdeckungsgrad: ${interestCoverage.toFixed(2)} (Buffett bevorzugt >5)`,
@@ -697,7 +697,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     management: {
       status: managementStatus,
       title: '5. Qualität des Managements',
-      description: `Die Qualität des Managements wird als ${managementStatus === 'pass' ? 'gut' : managementStatus === 'warning' ? 'moderat' : 'schwach'} eingestuft.`,
+      description: managementGptAnalysis || null,
       details: [
         'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
         'Beachten Sie Insider-Beteiligungen, Kapitalallokation und Kommunikation',
@@ -711,7 +711,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     valuation: {
       status: valuationStatus,
       title: '6. Bewertung (nicht zu teuer kaufen)',
-      description: `${companyProfile.companyName} ist aktuell ${valuationStatus === 'pass' ? 'angemessen' : valuationStatus === 'warning' ? 'moderat' : 'hoch'} bewertet.`,
+      description: null,
       details: [
         `KGV (P/E): ${pe.toFixed(2)} (Buffett bevorzugt <15)`,
         `Dividendenrendite: ${dividendYield.toFixed(2)}% (Buffett bevorzugt >2%)`,
@@ -724,7 +724,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     longTermOutlook: {
       status: longTermStatus,
       title: '7. Langfristiger Horizont',
-      description: `${companyProfile.companyName} operiert in einer Branche mit ${longTermStatus === 'pass' ? 'guten' : longTermStatus === 'warning' ? 'modernen' : 'unsicheren'} langfristigen Aussichten.`,
+      description: longTermGptAnalysis || null,
       details: [
         `Branche: ${companyProfile.industry || 'Unbekannt'}`,
         `Sektor: ${sector}`,
@@ -738,7 +738,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     rationalBehavior: {
       status: rationalBehaviorStatus,
       title: '8. Rationalität & Disziplin',
-      description: `${companyProfile.companyName} zeigt ${rationalBehaviorStatus === 'pass' ? 'überwiegend rationales' : rationalBehaviorStatus === 'warning' ? 'teilweise rationales' : 'tendenziell irrationales'} Geschäftsverhalten.`,
+      description: rationalBehaviorGptAnalysis || null,
       details: [
         'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
         'Beachten Sie Kapitalallokation, Akquisitionen und Ausgaben',
@@ -752,7 +752,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     cyclicalBehavior: {
       status: cyclicalBehaviorStatus,
       title: '9. Antizyklisches Verhalten',
-      description: `${companyProfile.companyName} zeigt ${cyclicalBehaviorStatus === 'pass' ? 'klare Anzeichen antizyklischen' : cyclicalBehaviorStatus === 'warning' ? 'teilweise antizyklisches' : 'wenig antizyklisches'} Verhaltens.`,
+      description: cyclicalBehaviorGptAnalysis || null,
       details: [
         'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
         'Beachten Sie das Verhalten in Marktkrisen',
@@ -766,7 +766,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     oneTimeEffects: {
       status: oneTimeEffectsStatus,
       title: '10. Vergangenheit ≠ Zukunft',
-      description: `${companyProfile.companyName} zeigt ${oneTimeEffectsStatus === 'pass' ? 'nachhaltige Erfolge ohne wesentliche Einmaleffekte' : oneTimeEffectsStatus === 'warning' ? 'teilweise nachhaltige Ergebnisse' : 'mögliche Einflüsse von Einmaleffekten'}.`,
+      description: oneTimeEffectsGptAnalysis || null,
       details: [
         'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
         'Beachten Sie einmalige Ereignisse, die Ergebnisse beeinflusst haben',
@@ -780,7 +780,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
     turnaround: {
       status: turnaroundStatus,
       title: '11. Keine Turnarounds',
-      description: `${companyProfile.companyName} ist ${turnaroundStatus === 'pass' ? 'kein Turnaround-Fall' : turnaroundStatus === 'warning' ? 'möglicherweise in einer Umstrukturierungsphase' : 'ein erkennbarer Turnaround-Fall'}.`,
+      description: turnaroundGptAnalysis || null,
       details: [
         'Für eine vollständige Bewertung sind zusätzliche Daten erforderlich',
         'Beachten Sie Anzeichen für Restrukturierung oder Sanierung',
@@ -1161,56 +1161,47 @@ export const getOverallRating = async (ticker: string) => {
     const strengths = [];
     const weaknesses = [];
     
-    if (criteria.businessModel.status === 'pass') {
-      strengths.push('Klares, verständliches Geschäftsmodell');
-    } else if (criteria.businessModel.status === 'warning') {
-      weaknesses.push('Moderat komplexes Geschäftsmodell, das tiefere Analyse erfordert');
-    } else if (criteria.businessModel.status === 'fail') {
-      weaknesses.push('Komplexes oder schwer verständliches Geschäftsmodell');
+    // Nur echte GPT-Analyseergebnisse als Stärken/Schwächen verwenden, keine Fallback-Texte
+    if (criteria.businessModel.gptAnalysis && criteria.businessModel.status === 'pass') {
+      strengths.push('Geschäftsmodell positiv bewertet');
+    } else if (criteria.businessModel.gptAnalysis && criteria.businessModel.status === 'fail') {
+      weaknesses.push('Geschäftsmodell negativ bewertet');
     }
     
-    if (criteria.economicMoat.status === 'pass') {
-      strengths.push('Starker wirtschaftlicher Burggraben (Moat) mit überlegenen Margen');
-    } else if (criteria.economicMoat.status === 'warning') {
-      strengths.push('Moderater wirtschaftlicher Burggraben vorhanden');
-    } else if (criteria.economicMoat.status === 'fail') {
-      weaknesses.push('Kein erkennbarer wirtschaftlicher Burggraben gegenüber Wettbewerbern');
+    if (criteria.economicMoat.gptAnalysis && criteria.economicMoat.status === 'pass') {
+      strengths.push('Wirtschaftlicher Burggraben identifiziert');
+    } else if (criteria.economicMoat.gptAnalysis && criteria.economicMoat.status === 'fail') {
+      weaknesses.push('Kein wirtschaftlicher Burggraben erkennbar');
     }
     
     if (criteria.financialMetrics.status === 'pass') {
-      strengths.push('Hervorragende Finanzkennzahlen (ROE, Nettomarge)');
-    } else if (criteria.financialMetrics.status === 'warning') {
-      strengths.push('Solide, aber nicht herausragende Finanzkennzahlen');
+      strengths.push('Solide Finanzkennzahlen');
     } else if (criteria.financialMetrics.status === 'fail') {
-      weaknesses.push('Unterdurchschnittliche Finanzkennzahlen');
+      weaknesses.push('Schwache Finanzkennzahlen');
     }
     
     if (criteria.financialStability.status === 'pass') {
-      strengths.push('Solide finanzielle Stabilität mit geringer Verschuldung');
-    } else if (criteria.financialStability.status === 'warning') {
-      weaknesses.push('Moderate Bedenken bezüglich der finanziellen Stabilität');
+      strengths.push('Gute finanzielle Stabilität');
     } else if (criteria.financialStability.status === 'fail') {
-      weaknesses.push('Erhebliche Bedenken hinsichtlich finanzieller Stabilität oder hoher Verschuldung');
+      weaknesses.push('Bedenken zur finanziellen Stabilität');
     }
     
     if (criteria.valuation.status === 'pass') {
-      strengths.push('Attraktive Bewertung (KGV, KBV, PCF und Dividendenrendite)');
-    } else if (criteria.valuation.status === 'warning') {
-      weaknesses.push('Faire, aber nicht besonders günstige Bewertung');
+      strengths.push('Attraktive Bewertung');
     } else if (criteria.valuation.status === 'fail') {
-      weaknesses.push('Hohe Bewertung im Verhältnis zu den fundamentalen Daten');
+      weaknesses.push('Hohe Bewertung');
     }
     
-    if (criteria.longTermOutlook.status === 'pass') {
-      strengths.push('Vielversprechende langfristige Perspektiven');
-    } else if (criteria.longTermOutlook.status === 'warning' || criteria.longTermOutlook.status === 'fail') {
-      weaknesses.push('Unsichere langfristige Perspektiven oder regulatorische Risiken');
+    if (criteria.longTermOutlook.gptAnalysis && criteria.longTermOutlook.status === 'pass') {
+      strengths.push('Positive langfristige Perspektiven');
+    } else if (criteria.longTermOutlook.gptAnalysis && criteria.longTermOutlook.status === 'fail') {
+      weaknesses.push('Bedenken zu langfristigen Perspektiven');
     }
     
-    if (criteria.management.status === 'pass') {
-      strengths.push('Qualitativ hochwertiges und aktionärsfreundliches Management');
-    } else if (criteria.management.status === 'fail') {
-      weaknesses.push('Bedenken bezüglich der Qualität oder Aktionärsfreundlichkeit des Managements');
+    if (criteria.management.gptAnalysis && criteria.management.status === 'pass') {
+      strengths.push('Qualitatives Management');
+    } else if (criteria.management.gptAnalysis && criteria.management.status === 'fail') {
+      weaknesses.push('Bedenken zum Management');
     }
     
     // Get financial metrics to determine the reported currency
