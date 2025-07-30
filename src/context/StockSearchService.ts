@@ -259,50 +259,18 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
               sharesOutstanding: customData.sharesOutstanding
             };
           }
-        } else if (rating) {
-          // Fallback zu den DCF-Daten aus dem Rating, wenn vorhanden
-          console.log('Falling back to DCF data from rating response');
-          const ratingAny = rating as any;
-          if (ratingAny && typeof ratingAny === 'object' && 'dcfData' in ratingAny) {
-            extractedDcfData = ratingAny.dcfData;
-            console.log('DCF Data found in API response.');
-            
-            // Debug the full DCF data structure using our new utility
-            debugDCFData(extractedDcfData);
-            
-            // Prüfe explizit, ob equityValuePerShare vorhanden ist und logge es
-            if (extractedDcfData.equityValuePerShare !== undefined) {
-              console.log(`DCF equityValuePerShare (this should be used as intrinsicValue): ${extractedDcfData.equityValuePerShare}`);
-            } else {
-              throw new Error('equityValuePerShare fehlt in den DCF-Daten');
-            }
-            
-            // Prüfe explizit die intrinsicValue aus dem DCF
-            if (extractedDcfData.intrinsicValue !== undefined) {
-              console.log(`DCF intrinsicValue: ${extractedDcfData.intrinsicValue}`);
-            } else if (extractedDcfData.equityValuePerShare !== undefined) {
-              // Wenn intrinsicValue nicht existiert, aber equityValuePerShare ja, verwende diese
-              extractedDcfData.intrinsicValue = extractedDcfData.equityValuePerShare;
-              console.log(`Setting intrinsicValue to equityValuePerShare: ${extractedDcfData.intrinsicValue}`);
-            } else {
-              throw new Error('Weder intrinsicValue noch equityValuePerShare sind in den DCF-Daten vorhanden');
-            }
-          } else {
-            throw new Error('DCF ERROR: Keine DCF-Daten in der API-Antwort gefunden');
-          }
         } else {
-          throw new Error('Weder direkte DCF-Daten noch Rating-Daten verfügbar');
+          throw new Error('Keine DCF-Daten verfügbar');
         }
         
         if (rating) {
           updatedRating = {
-            ...(rating as any), // Cast to any to allow property access
-            // Safely assign these properties with null as fallback
-            originalIntrinsicValue: (rating as any).originalIntrinsicValue || null,
-            originalBestBuyPrice: (rating as any).originalBestBuyPrice || null,
-            originalPrice: (rating as any).originalPrice || null,
-            marginOfSafety: (rating as any).marginOfSafety || { value: 0, status: "fail" as const },
-            bestBuyPrice: (rating as any).bestBuyPrice || 0,
+            ...(rating as any),
+            originalIntrinsicValue: (rating as any).originalIntrinsicValue,
+            originalBestBuyPrice: (rating as any).originalBestBuyPrice,
+            originalPrice: (rating as any).originalPrice,
+            marginOfSafety: (rating as any).marginOfSafety,
+            bestBuyPrice: (rating as any).bestBuyPrice,
             reportedCurrency: reportedCurrency,
             dcfData: extractedDcfData
           };
@@ -313,7 +281,7 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
             updatedRating.intrinsicValue = extractedDcfData.intrinsicValue;
             
             // Berechne den bestBuyPrice basierend auf dem intrinsischen Wert
-            const targetMarginOfSafety = updatedRating.targetMarginOfSafety || 20;
+            const targetMarginOfSafety = updatedRating.targetMarginOfSafety;
             updatedRating.bestBuyPrice = calculateBuffettBuyPrice(extractedDcfData.intrinsicValue, targetMarginOfSafety);
             console.log(`Calculated bestBuyPrice: ${updatedRating.bestBuyPrice} from intrinsicValue: ${extractedDcfData.intrinsicValue}`);
             
