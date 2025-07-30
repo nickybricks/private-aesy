@@ -53,22 +53,25 @@ export const queryGPT = async (prompt: string): Promise<string> => {
     if (!apiKey || apiKey.length === 0 || apiKey.includes('IHR-OPENAI-API-KEY-HIER')) {
       throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
     }
-    
+
     const requestBody = {
-      model: 'gpt-4o',
+      model: 'gpt-4o-search-preview', // Das Modell mit Websearch
+      web_search_options: {}, // Websuche aktivieren
       messages: [
         {
           role: 'system',
-          content: 'Als hilfreicher Assistent für Aktienanalysen nach Warren Buffetts Kriterien, beantworte folgende Frage präzise und strukturiert.'
+          content: 'Du bist ein Finanzanalyst mit Fokus auf Warren Buffetts Kriterien.'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.7,
+      temperature: 0.0,
       max_tokens: 300
     };
+
+    
 
     const headers = {
       'Content-Type': 'application/json',
@@ -340,6 +343,7 @@ export const analyzeOneTimeEffects = async (companyName: string, industry: strin
     1. Ist das Geschäftsmodell grundsätzlich zyklisch oder antizyklisch?
     2. Wie verhält sich das Unternehmen in wirtschaftlichen Krisen oder Abschwüngen?
     3. Kauft das Management gezielt Aktien zurück, wenn der Markt schwach ist?
+    4. Wann hat das Unternehmen zuletzt Aktien zurückgekauft?
     
     Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
     
