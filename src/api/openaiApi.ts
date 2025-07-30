@@ -67,7 +67,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
         }
       ],
       temperature: 0.3,
-      max_tokens: 150
+      max_tokens: 600
     };
 
     const headers = {
