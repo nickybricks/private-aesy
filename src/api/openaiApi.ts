@@ -1,123 +1,75 @@
-
 import axios from 'axios';
 
-// OpenAI API Key - Fest im Code eingebaut
-const OPENAI_API_KEY = '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';
+const OPENAI_API_KEY = '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'; // Ersetze durch deinen echten Key
 
-// OpenAI API Key handling
-const getOpenAiApiKey = () => {
-  return OPENAI_API_KEY;
-};
+const getOpenAiApiKey = () => OPENAI_API_KEY;
 
 export const hasOpenAiApiKey = (): boolean => {
-  // Instead of comparing with empty string, check if the key exists and has a length
   return !!OPENAI_API_KEY && OPENAI_API_KEY.length > 0 && !OPENAI_API_KEY.includes('IHR-OPENAI-API-KEY-HIER');
 };
 
-// OpenAI API Service - Standard Chat Completion API ohne Websearch
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Interface für Chat Completion API Response
-export interface OpenAIResponse {
-  id: string;
-  object: string;
-  created: number;
-  model: string;
-  choices: Array<{
-    index: number;
-    message: {
-      role: string;
-      content: string;
-    };
-    finish_reason: string;
-  }>;
-  usage: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
-}
-
-// Function to query the OpenAI API using the standard Chat Completions API (kein Websearch)
-export const queryGPT = async (prompt: string): Promise<string> => {
+// GPT-Abfrage mit Websuche und Retry bei Rate Limit
+export const queryGPT = async (
+  prompt: string,
+  useWebSearch = false,
+  retries = 3,
+  baseWait = 1500
+): Promise<string> => {
   try {
     const apiKey = getOpenAiApiKey();
-    
-    console.log('API Key check:', {
-      hasKey: !!apiKey,
-      keyLength: apiKey ? apiKey.length : 0,
-      keyStart: apiKey ? apiKey.substring(0, 7) : 'none',
-      isPlaceholder: apiKey ? apiKey.includes('IHR-OPENAI-API-KEY-HIER') : false
-    });
-    
-    if (!apiKey || apiKey.length === 0 || apiKey.includes('IHR-OPENAI-API-KEY-HIER')) {
-      throw new Error('OpenAI API-Key ist nicht konfiguriert. Bitte ersetzen Sie den Platzhalter in der openaiApi.ts Datei mit Ihrem tatsächlichen API-Key.');
+    if (!apiKey || apiKey.includes('IHR-OPENAI-API-KEY-HIER')) {
+      throw new Error('OpenAI API-Key ist nicht korrekt gesetzt.');
     }
 
-    const requestBody = {
-      model: 'gpt-4o-search-preview', // Das Modell mit Websearch
-      web_search_options: {}, // Websuche aktivieren
+    const model = useWebSearch ? 'gpt-4o-search-preview' : 'gpt-4o';
+
+    const requestBody: any = {
+      model,
       messages: [
-        {
-          role: 'system',
-          content: 'Du bist ein Finanzanalyst mit Fokus auf Warren Buffetts Kriterien.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
+        { role: 'system', content: 'Du bist ein Finanzanalyst mit Fokus auf Warren Buffetts Kriterien.' },
+        { role: 'user', content: prompt }
       ],
-      temperature: 0.3,
-      max_tokens: 300
+      temperature: 0.4,
+      max_tokens: 600
     };
 
-    
+    if (useWebSearch) {
+      requestBody.web_search_options = {};
+    }
 
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey.trim()}`
     };
 
-    console.log('Making OpenAI request with headers:', {
-      'Content-Type': headers['Content-Type'],
-      'Authorization': `Bearer ${apiKey.substring(0, 7)}...` // Log only first part for security
-    });
+    const response = await axios.post('https://api.openai.com/v1/chat/completions', requestBody, { headers });
+    const content = response.data.choices?.[0]?.message?.content;
+    if (content) return content.trim();
 
-    const response = await axios.post<OpenAIResponse>(
-      OPENAI_API_URL,
-      requestBody,
-      { headers }
-    );
-    
-    console.log('Raw OpenAI response received:', JSON.stringify(response.data, null, 2));
-    
-    if (response.data.choices && response.data.choices.length > 0) {
-      const content = response.data.choices[0].message.content;
-      if (content) {
-        return content.trim();
-      }
+    throw new Error('GPT-Antwort war leer oder fehlerhaft.');
+  } catch (error: any) {
+    const message = error?.response?.data?.error?.message || '';
+
+    if (message.includes('Rate limit') && retries > 0) {
+      const wait = baseWait + (4 - retries) * 500;
+      console.warn(`Rate limit erreicht – retry in ${wait}ms...`);
+      await sleep(wait);
+      return queryGPT(prompt, useWebSearch, retries - 1, baseWait);
     }
-    
-    throw new Error('Unerwartetes Antwortformat von der OpenAI-API - keine Textdaten gefunden');
-  } catch (error) {
-    console.error('Error querying OpenAI:', error);
-    
+
     if (axios.isAxiosError(error)) {
-      console.error('Response status:', error.response?.status);
-      console.error('Response data:', error.response?.data);
-      
-      if (error.response?.status === 401) {
-        throw new Error('OpenAI API-Key ist ungültig. Bitte überprüfen Sie Ihren API-Key in der openaiApi.ts Datei.');
-      }
-      
-      if (error.response?.data?.error?.message) {
-        throw new Error(`OpenAI API Fehler: ${error.response.data.error.message}`);
-      }
+      const status = error.response?.status;
+      if (status === 401) throw new Error('Ungültiger OpenAI API-Key.');
+      if (message) throw new Error(`OpenAI API Fehler: ${message}`);
     }
-    
-    throw new Error('Fehler bei der Anfrage an OpenAI. Bitte versuchen Sie es später erneut.');
+
+    throw new Error('Fehler bei der Anfrage an OpenAI.');
   }
 };
+
+
 
 // Function to analyze business model using GPT
 export const analyzeBusinessModel = async (companyName: string, industry: string, description: string): Promise<string> => {
