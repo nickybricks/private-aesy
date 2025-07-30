@@ -17,14 +17,9 @@ const getQualityAssessment = (buffettScore: number) => {
       qualityDescription: `Exzellente Qualität (${buffettScore}%)`,
       color: '#10b981'
     };
-  } else if (buffettScore >= 70) {
-    return {
-      qualityDescription: `Gute Basis, aber unter Buffett-Standard (${buffettScore}% < 85%)`,
-      color: '#f59e0b'
-    };
   } else {
     return {
-      qualityDescription: `Unzureichende Qualität (${buffettScore}% < 70%)`,
+      qualityDescription: `Unzureichende Qualität (${buffettScore}% < 85%)`,
       color: '#ef4444'
     };
   }
