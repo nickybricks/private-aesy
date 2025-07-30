@@ -84,11 +84,18 @@ const getQualityAssessment = (buffettScore: number) => {
       qualityDescription: `Exzellente Qualität (${buffettScore}%)`,
       qualityLevel: 'high' as const
     };
+  } else if (buffettScore >= 70) {
+    return {
+      isQualityMet: false,
+      qualityLabel: "⚠️ Qualität knapp nicht erfüllt", 
+      qualityDescription: `Gute Basis, aber unter Buffett-Standard (${buffettScore}% < 85%)`,
+      qualityLevel: 'medium' as const
+    };
   } else {
     return {
       isQualityMet: false,
       qualityLabel: "❌ Qualität nicht erfüllt",
-      qualityDescription: `Unzureichende Qualität (${buffettScore}% < 85%)`,
+      qualityDescription: `Unzureichende Qualität (${buffettScore}% < 70%)`,
       qualityLevel: 'low' as const
     };
   }
@@ -109,6 +116,14 @@ const generateDynamicSummary = (
   
   if (score === 'high' && priceStatus === 'überbewertet') {
     return 'Hohe Qualität erkannt, aber der aktuelle Preis bietet keine Sicherheitsmarge.';
+  }
+  
+  if (score === 'medium' && priceStatus === 'günstig') {
+    return 'Attraktiver Preis, aber Qualitätskriterien knapp unter Buffetts Standard.';
+  }
+  
+  if (score === 'medium') {
+    return 'Solide Basis mit erkennbaren Stärken, aber wichtige Buffett-Kriterien fehlen noch.';
   }
   
   return 'Wesentliche Verbesserungen in Qualität und/oder Bewertung erforderlich.';

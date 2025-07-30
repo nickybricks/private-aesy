@@ -176,7 +176,8 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({
                 <div className="mt-2 pt-2 border-t border-gray-200">
                   <p className="text-xs font-medium">Qualitätsschwellen:</p>
                   <p className="text-xs">≥ 85%: ✅ Qualität erfüllt</p>
-                  <p className="text-xs">{"< 85%: ❌ Nicht erfüllt"}</p>
+                  <p className="text-xs">70-84%: ⚠️ Teilweise erfüllt</p>
+                  <p className="text-xs">{"< 70%: ❌ Nicht erfüllt"}</p>
                 </div>
               </div>
             </TooltipContent>
