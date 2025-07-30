@@ -67,7 +67,7 @@ export const queryGPT = async (prompt: string): Promise<string> => {
           content: prompt
         }
       ],
-      temperature: 0.0,
+      temperature: 0.3,
       max_tokens: 300
     };
 
@@ -343,7 +343,6 @@ export const analyzeOneTimeEffects = async (companyName: string, industry: strin
     1. Ist das Geschäftsmodell grundsätzlich zyklisch oder antizyklisch?
     2. Wie verhält sich das Unternehmen in wirtschaftlichen Krisen oder Abschwüngen?
     3. Kauft das Management gezielt Aktien zurück, wenn der Markt schwach ist?
-    4. Wann hat das Unternehmen zuletzt Aktien zurückgekauft?
     
     Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
     
