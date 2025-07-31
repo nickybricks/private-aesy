@@ -24,17 +24,26 @@ export const processFinancialMetrics = (rawData: any, reportedCurrency: string, 
     return formattedValue;
   };
 
-  const processedMetrics = {
-    ...rawData.metrics,
-    // WICHTIG: EPS wird speziell behandelt - nur zur Information, nicht zur Bewertung
-    eps: rawData.metrics.eps !== null && rawData.metrics.eps !== undefined 
-      ? cleanCurrencyValue(rawData.metrics.eps, priceCurrency)
-      : 'N/A'
-  };
+  // Verarbeite die strukturierten Metriken (neu) oder die alten Eigenschaften
+  let processedMetrics;
+  
+  if (rawData.metrics && Array.isArray(rawData.metrics)) {
+    // Neue strukturierte Metriken - behalte sie bei
+    console.log('Using structured metrics from API:', rawData.metrics.length, 'metrics found');
+    processedMetrics = rawData.metrics;
+  } else {
+    // Alte Struktur - konvertiere zu strukturierten Metriken
+    console.log('Converting old metrics structure to new format');
+    processedMetrics = {
+      ...rawData.metrics,
+      // WICHTIG: EPS wird speziell behandelt - nur zur Information, nicht zur Bewertung
+      eps: rawData.metrics.eps !== null && rawData.metrics.eps !== undefined 
+        ? cleanCurrencyValue(rawData.metrics.eps, priceCurrency)
+        : 'N/A'
+    };
+  }
 
-  console.log('Processed EPS value:', processedMetrics.eps);
-  console.log('Original EPS from raw data:', rawData.metrics.eps);
-  console.log('Price currency used for EPS:', priceCurrency);
+  console.log('Processed metrics structure:', Array.isArray(processedMetrics) ? 'Array with ' + processedMetrics.length + ' items' : 'Object');
 
   return {
     metrics: processedMetrics,
