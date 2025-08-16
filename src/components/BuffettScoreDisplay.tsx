@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ClickableTooltip } from './ClickableTooltip';
 import { Info } from 'lucide-react';
 import { 
   BuffettCriterionProps, 
@@ -41,43 +41,41 @@ export const BuffettScoreDisplay: React.FC<ScoreDisplayProps> = ({ criterion }) 
   
   return (
     <div className="inline-flex items-center">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger className="inline-flex items-center ml-2">
-            <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-              scorePercentage >= 0.8 ? 'bg-green-100 text-green-700' :
-              scorePercentage >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
-              'bg-red-100 text-red-700'
-            }`}>
-              {score}/10
-            </span>
-            <Info className="h-3 w-3 ml-1 text-gray-400" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs">
-            <div>
-              <p className="text-xs mb-2">
-                Bewertung basierend auf der Analyse (0-10 Punkte):
-              </p>
-              
-              {criterionWeight && (
-                <div className="space-y-1 text-xs">
-                  <p><strong>{criterionWeight.name}</strong></p>
-                  <p>Aktuelle Punktzahl: <span className="font-medium">{score}/10</span></p>
-                  <p>Gewichtung im Gesamtscore: <span className="font-medium">{criterionWeight.weight}%</span></p>
-                  <p>Beitrag zum Gesamtscore: <span className="font-medium">{weightedContribution.toFixed(1)} Punkte</span></p>
-                </div>
-              )}
-              
-              <div className="mt-2 pt-2 border-t border-gray-200">
-                <p className="text-xs font-medium">Bewertungsskala (0-10 Punkte):</p>
-                <p className="text-xs">Pass: 10/10 Punkte</p>
-                <p className="text-xs">Warning: Je nach Erfüllungsgrad (z.B. 2/3 = 6,7/10)</p>
-                <p className="text-xs">Fail: 0/10 Punkte</p>
+      <ClickableTooltip
+        content={
+          <div>
+            <p className="text-xs mb-2">
+              Bewertung basierend auf der Analyse (0-10 Punkte):
+            </p>
+            
+            {criterionWeight && (
+              <div className="space-y-1 text-xs">
+                <p><strong>{criterionWeight.name}</strong></p>
+                <p>Aktuelle Punktzahl: <span className="font-medium">{score}/10</span></p>
+                <p>Gewichtung im Gesamtscore: <span className="font-medium">{criterionWeight.weight}%</span></p>
+                <p>Beitrag zum Gesamtscore: <span className="font-medium">{weightedContribution.toFixed(1)} Punkte</span></p>
               </div>
+            )}
+            
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <p className="text-xs font-medium">Bewertungsskala (0-10 Punkte):</p>
+              <p className="text-xs">Pass: 10/10 Punkte</p>
+              <p className="text-xs">Warning: Je nach Erfüllungsgrad (z.B. 2/3 = 6,7/10)</p>
+              <p className="text-xs">Fail: 0/10 Punkte</p>
             </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+          </div>
+        }
+        width="80"
+      >
+        <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+          scorePercentage >= 0.8 ? 'bg-green-100 text-green-700' :
+          scorePercentage >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
+          'bg-red-100 text-red-700'
+        }`}>
+          {score}/10
+        </span>
+        <Info className="h-3 w-3 ml-1 text-gray-400" />
+      </ClickableTooltip>
     </div>
   );
 };

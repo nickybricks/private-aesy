@@ -14,12 +14,7 @@ import {
   HelpCircle,
   Info
 } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { ClickableTooltip } from './ClickableTooltip';
 import { extractGptAssessmentStatus, getUnifiedCriterionScore } from '@/utils/buffettUtils';
 
 interface CriteriaResult {
@@ -237,25 +232,23 @@ const CriterionCard: React.FC<{
             <StatusIcon status={displayStatus} />
             <StatusBadge status={displayStatus} />
             
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button className="ml-1 rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
-                    <Info size={14} className="text-gray-500" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs p-3">
-                  <div className="space-y-2">
-                    <p className="font-medium">Buffett-Kriterium: {title}</p>
-                    <p>{criteriaExplanation}</p>
-                    <div className="text-sm pt-2 border-t border-gray-100 mt-1">
-                      <p className="font-medium mb-1">Bewertungssystem:</p>
-                      <p>{scoringExplanation}</p>
-                    </div>
+            <ClickableTooltip
+              content={
+                <div className="space-y-2">
+                  <p className="font-medium">Buffett-Kriterium: {title}</p>
+                  <p>{criteriaExplanation}</p>
+                  <div className="text-sm pt-2 border-t border-gray-100 mt-1">
+                    <p className="font-medium mb-1">Bewertungssystem:</p>
+                    <p>{scoringExplanation}</p>
                   </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                </div>
+              }
+              width="80"
+            >
+              <button className="ml-1 rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center">
+                <Info size={14} className="text-gray-500" />
+              </button>
+            </ClickableTooltip>
           </div>
           
           <p className="text-buffett-subtext mb-4">{description}</p>
@@ -300,24 +293,22 @@ const CriterionCard: React.FC<{
                       )}
                       
                       {hasMetricExplanation && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button className="ml-1 inline-flex items-center justify-center rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
-                                <HelpCircle size={12} className="text-gray-500" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs p-3">
-                              <div className="space-y-2">
-                                <p className="font-medium">{foundMetric}</p>
-                                <p>{hasMetricExplanation.description}</p>
-                                <p className="text-sm pt-2 border-t border-gray-100 mt-1">
-                                  <span className="font-medium">Buffett-Richtwert:</span> {hasMetricExplanation.buffettGuideline}
-                                </p>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <ClickableTooltip
+                          content={
+                            <div className="space-y-2">
+                              <p className="font-medium">{foundMetric}</p>
+                              <p>{hasMetricExplanation.description}</p>
+                              <p className="text-sm pt-2 border-t border-gray-100 mt-1">
+                                <span className="font-medium">Buffett-Richtwert:</span> {hasMetricExplanation.buffettGuideline}
+                              </p>
+                            </div>
+                          }
+                          width="80"
+                        >
+                          <button className="ml-1 inline-flex items-center justify-center rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                            <HelpCircle size={12} className="text-gray-500" />
+                          </button>
+                        </ClickableTooltip>
                       )}
                     </div>
                   </li>

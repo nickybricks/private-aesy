@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ClickableTooltip } from './ClickableTooltip';
 import { 
   buffettCriteriaWeights, 
   getBuffettScoreInterpretation,
@@ -134,55 +134,53 @@ export const BuffettScoreSummary: React.FC<BuffettScoreSummaryProps> = ({
         <h3 className="text-lg font-semibold">
           Buffett-Kompatibilität: {displayScore}%
         </h3>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger className="ml-1">
-              <Info className="h-4 w-4 text-gray-400" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-md">
-              <div className="space-y-3">
-                <p className="text-xs mb-2 font-medium">
-                  Berechnung der Buffett-Kompatibilität ({displayScore}%):
-                </p>
-                
-                <div className="space-y-2 text-xs">
-                  {detailedBreakdown.map((item, idx) => (
-                    <div key={idx} className="bg-white bg-opacity-50 p-2 rounded">
-                      <div className="font-medium text-xs mb-1">
-                        {item.name}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
-                        <div>Score: {item.score.toFixed(1)}/10</div>
-                        <div>Gewichtung: {item.weight}%</div>
-                        <div>Beitrag: {item.weightedContribution.toFixed(2)}</div>
-                        <div>Max: {item.maxWeightedContribution.toFixed(2)}</div>
-                      </div>
+        <ClickableTooltip
+          content={
+            <div className="space-y-3">
+              <p className="text-xs mb-2 font-medium">
+                Berechnung der Buffett-Kompatibilität ({displayScore}%):
+              </p>
+              
+              <div className="space-y-2 text-xs">
+                {detailedBreakdown.map((item, idx) => (
+                  <div key={idx} className="bg-white bg-opacity-50 p-2 rounded">
+                    <div className="font-medium text-xs mb-1">
+                      {item.name}
                     </div>
-                  ))}
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                      <div>Score: {item.score.toFixed(1)}/10</div>
+                      <div>Gewichtung: {item.weight}%</div>
+                      <div>Beitrag: {item.weightedContribution.toFixed(2)}</div>
+                      <div>Max: {item.maxWeightedContribution.toFixed(2)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="pt-2 border-t border-gray-200">
+                <div className="text-xs font-medium">
+                  Gesamtberechnung:
                 </div>
-                
-                <div className="pt-2 border-t border-gray-200">
-                  <div className="text-xs font-medium">
-                    Gesamtberechnung:
-                  </div>
-                  <div className="text-xs text-gray-700 mt-1">
-                    Gewichtete Summe: {totalWeightedScore.toFixed(2)} / {maxTotalWeightedScore.toFixed(2)}
-                  </div>
-                  <div className="text-xs text-gray-700">
-                    Prozent: ({totalWeightedScore.toFixed(2)} / {maxTotalWeightedScore.toFixed(2)}) × 100 = {displayScore}%
-                  </div>
+                <div className="text-xs text-gray-700 mt-1">
+                  Gewichtete Summe: {totalWeightedScore.toFixed(2)} / {maxTotalWeightedScore.toFixed(2)}
                 </div>
-                
-                <div className="mt-2 pt-2 border-t border-gray-200">
-                  <p className="text-xs font-medium">Qualitätsschwellen:</p>
-                  <p className="text-xs">≥ 85%: ✅ Qualität erfüllt</p>
-                  <p className="text-xs">70-84%: ⚠️ Teilweise erfüllt</p>
-                  <p className="text-xs">{"< 70%: ❌ Nicht erfüllt"}</p>
+                <div className="text-xs text-gray-700">
+                  Prozent: ({totalWeightedScore.toFixed(2)} / {maxTotalWeightedScore.toFixed(2)}) × 100 = {displayScore}%
                 </div>
               </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+              
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <p className="text-xs font-medium">Qualitätsschwellen:</p>
+                <p className="text-xs">≥ 85%: ✅ Qualität erfüllt</p>
+                <p className="text-xs">70-84%: ⚠️ Teilweise erfüllt</p>
+                <p className="text-xs">{"< 70%: ❌ Nicht erfüllt"}</p>
+              </div>
+            </div>
+          }
+          width="96"
+        >
+          <Info className="h-4 w-4 text-gray-400" />
+        </ClickableTooltip>
       </div>
       
       {/* NEW: Quality threshold scale */}

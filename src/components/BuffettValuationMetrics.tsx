@@ -6,12 +6,7 @@ import {
   Calculator,
   Info
 } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { ClickableTooltip } from './ClickableTooltip';
 import MarginOfSafetyExplanation from './MarginOfSafetyExplanation';
 
 interface BuffettValuationMetricsProps {
@@ -226,23 +221,21 @@ const BuffettValuationMetrics: React.FC<BuffettValuationMetricsProps> = ({
             <TrendingDown size={18} className="text-buffett-blue" />
             <h4 className="font-semibold">Margin of Safety</h4>
             
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
-                    <Info size={14} className="text-gray-500" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <MarginOfSafetyTooltip 
-                    targetMarginOfSafety={targetMarginOfSafety}
-                    intrinsicValue={intrinsicValue}
-                    currentPrice={currentPrice}
-                    currency={currency}
-                  />
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <ClickableTooltip
+              content={
+                <MarginOfSafetyTooltip 
+                  targetMarginOfSafety={targetMarginOfSafety}
+                  intrinsicValue={intrinsicValue}
+                  currentPrice={currentPrice}
+                  currency={currency}
+                />
+              }
+              width="96"
+            >
+              <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                <Info size={14} className="text-gray-500" />
+              </button>
+            </ClickableTooltip>
           </div>
           <div className="text-2xl font-bold mb-2"
                style={{
@@ -271,23 +264,21 @@ const BuffettValuationMetrics: React.FC<BuffettValuationMetricsProps> = ({
             <DollarSign size={18} className="text-buffett-blue" />
             <h4 className="font-semibold">Idealer Kaufpreis</h4>
             
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
-                    <Info size={14} className="text-gray-500" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <BuffettBuyPriceTooltip 
-                    intrinsicValue={intrinsicValue}
-                    bestBuyPrice={bestBuyPrice}
-                    targetMarginOfSafety={targetMarginOfSafety}
-                    currency={currency}
-                  />
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <ClickableTooltip
+              content={
+                <BuffettBuyPriceTooltip 
+                  intrinsicValue={intrinsicValue}
+                  bestBuyPrice={bestBuyPrice}
+                  targetMarginOfSafety={targetMarginOfSafety}
+                  currency={currency}
+                />
+              }
+              width="96"
+            >
+              <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                <Info size={14} className="text-gray-500" />
+              </button>
+            </ClickableTooltip>
           </div>
           
           <div className="flex items-baseline gap-2 mb-1">
@@ -317,23 +308,21 @@ const BuffettValuationMetrics: React.FC<BuffettValuationMetricsProps> = ({
               <div className="flex items-center gap-2">
                 <Calculator size={14} className="text-gray-500" />
                 <span className="text-gray-600">Innerer Wert (DCF): {intrinsicValue.toFixed(2)} {currency}</span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
-                        <Info size={14} className="text-gray-500" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xl p-4">
-                      <IntrinsicValueTooltip 
-                        intrinsicValue={intrinsicValue} 
-                        currency={currency}
-                        originalCurrency={originalCurrency}
-                        originalIntrinsicValue={originalIntrinsicValue}
-                      />
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <ClickableTooltip
+                  content={
+                    <IntrinsicValueTooltip 
+                      intrinsicValue={intrinsicValue} 
+                      currency={currency}
+                      originalCurrency={originalCurrency}
+                      originalIntrinsicValue={originalIntrinsicValue}
+                    />
+                  }
+                  width="96"
+                >
+                  <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <Info size={14} className="text-gray-500" />
+                  </button>
+                </ClickableTooltip>
               </div>
             </div>
           )}

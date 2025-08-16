@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Euro } from 'lucide-react';
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { ClickableTooltip } from './ClickableTooltip';
 import { Info } from 'lucide-react';
 import { BuffettBuyPriceTooltip } from './BuffettBuyPriceTooltip';
 
@@ -26,23 +26,21 @@ export const BestBuyPriceCard: React.FC<BestBuyPriceCardProps> = ({
         <Euro size={18} className="text-blue-600" />
         <h4 className="font-semibold">Idealer Kaufpreis</h4>
         
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
-                <Info size={14} className="text-gray-500" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <BuffettBuyPriceTooltip 
-                intrinsicValue={intrinsicValue}
-                bestBuyPrice={bestBuyPrice}
-                targetMarginOfSafety={targetMarginOfSafety}
-                currency={currency}
-              />
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <ClickableTooltip
+          content={
+            <BuffettBuyPriceTooltip 
+              intrinsicValue={intrinsicValue}
+              bestBuyPrice={bestBuyPrice}
+              targetMarginOfSafety={targetMarginOfSafety}
+              currency={currency}
+            />
+          }
+          width="96"
+        >
+          <button className="rounded-full p-0.5 bg-gray-100 hover:bg-gray-200 transition-colors">
+            <Info size={14} className="text-gray-500" />
+          </button>
+        </ClickableTooltip>
       </div>
       
       <div className="text-2xl font-bold mb-2 text-blue-600">
