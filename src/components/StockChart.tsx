@@ -65,7 +65,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         // Fetch both historical price data and financial data in parallel
         const [priceResponse, financialResponse] = await Promise.all([
           fetch(`https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${DEFAULT_FMP_API_KEY}`),
-          fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?period=annual&limit=10&apikey=${DEFAULT_FMP_API_KEY}`)
+          fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?period=quarter&limit=40&apikey=${DEFAULT_FMP_API_KEY}`)
         ]);
         
         if (!priceResponse.ok) {
