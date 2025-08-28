@@ -62,22 +62,24 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           console.log(`Using intrinsic value: ${intrinsicValue} ${currency}`);
         }
         
-        const response = await fetch(
-          `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${DEFAULT_FMP_API_KEY}`
-        );
+        // Fetch both historical price data and financial data in parallel
+        const [priceResponse, financialResponse] = await Promise.all([
+          fetch(`https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${DEFAULT_FMP_API_KEY}`),
+          fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?period=annual&limit=10&apikey=${DEFAULT_FMP_API_KEY}`)
+        ]);
         
-        if (!response.ok) {
-          console.error(`API response not ok: ${response.status}`);
+        if (!priceResponse.ok) {
+          console.error(`API response not ok: ${priceResponse.status}`);
           throw new Error('Fehler beim Laden der historischen Daten');
         }
 
-        const data = await response.json();
-        if (!data.historical || !Array.isArray(data.historical) || data.historical.length === 0) {
-          console.error('No historical data available', data);
+        const priceData = await priceResponse.json();
+        if (!priceData.historical || !Array.isArray(priceData.historical) || priceData.historical.length === 0) {
+          console.error('No historical data available', priceData);
           throw new Error('Keine historischen Daten verfügbar');
         }
 
-        let processedData: HistoricalDataPoint[] = data.historical.map((item: any) => ({
+        let processedData: HistoricalDataPoint[] = priceData.historical.map((item: any) => ({
           date: item.date,
           close: item.close,
         }));
@@ -115,13 +117,129 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           }
         }
 
-        // Create chart data with intrinsic value
+        // Calculate historical intrinsic values based on financial data
+        let historicalIntrinsicValues: { [key: string]: number } = {};
+        
+        if (financialResponse.ok && intrinsicValue && !isNaN(Number(intrinsicValue))) {
+          const financialData = await financialResponse.json();
+          
+          if (financialData && Array.isArray(financialData) && financialData.length > 0) {
+            console.log('Calculating historical intrinsic values based on earnings growth...');
+            
+            // Get current and historical earnings
+            const sortedFinancials = financialData
+              .filter(f => f.netIncome && f.date)
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            
+            if (sortedFinancials.length >= 2) {
+              const currentYear = new Date().getFullYear();
+              const currentIntrinsic = Number(intrinsicValue);
+              
+              // Calculate average earnings growth rate
+              const recentEarnings = sortedFinancials.slice(0, Math.min(5, sortedFinancials.length));
+              let totalGrowthRate = 0;
+              let validGrowthRates = 0;
+              
+              for (let i = 0; i < recentEarnings.length - 1; i++) {
+                const currentEarnings = recentEarnings[i].netIncome;
+                const previousEarnings = recentEarnings[i + 1].netIncome;
+                
+                if (previousEarnings > 0 && currentEarnings > 0) {
+                  const growthRate = (currentEarnings - previousEarnings) / Math.abs(previousEarnings);
+                  totalGrowthRate += growthRate;
+                  validGrowthRates++;
+                }
+              }
+              
+              const avgGrowthRate = validGrowthRates > 0 ? totalGrowthRate / validGrowthRates : 0;
+              console.log(`Average earnings growth rate: ${(avgGrowthRate * 100).toFixed(2)}%`);
+              
+              // Calculate historical intrinsic values for each year
+              const historicalIntrinsicPromises = sortedFinancials.map(async (financial, index) => {
+                const financialYear = new Date(financial.date).getFullYear();
+                const yearsFromCurrent = currentYear - financialYear;
+                
+                if (yearsFromCurrent >= 0) {
+                  // For historical values, work backwards using growth rate
+                  // Use a compound discount approach
+                  const discountFactor = Math.pow(1 + Math.max(avgGrowthRate, -0.5), yearsFromCurrent);
+                  let historicalIntrinsic = currentIntrinsic / discountFactor;
+                  
+                  // Apply some smoothing and bounds
+                  historicalIntrinsic = Math.max(historicalIntrinsic, currentIntrinsic * 0.3);
+                  historicalIntrinsic = Math.min(historicalIntrinsic, currentIntrinsic * 3);
+                  
+                  // Convert currency if needed
+                  if (needsCurrencyConversion('USD', normalizedCurrency)) {
+                    historicalIntrinsic = await convertCurrency(historicalIntrinsic, 'USD', normalizedCurrency);
+                  }
+                  
+                  console.log(`Historical intrinsic value for ${financialYear}: ${historicalIntrinsic.toFixed(2)}`);
+                  return { year: financialYear.toString(), value: historicalIntrinsic };
+                }
+                return null;
+              });
+              
+              const historicalIntrinsicResults = await Promise.all(historicalIntrinsicPromises);
+              historicalIntrinsicResults.forEach(result => {
+                if (result) {
+                  historicalIntrinsicValues[result.year] = result.value;
+                }
+              });
+            }
+          }
+        }
+        
+        // Create interpolated intrinsic values for missing years
+        const years = Object.keys(historicalIntrinsicValues).map(y => parseInt(y)).sort();
+        if (years.length >= 2) {
+          const minYear = Math.min(...years);
+          const maxYear = Math.max(...years);
+          
+          for (let year = minYear; year <= maxYear; year++) {
+            if (!historicalIntrinsicValues[year.toString()]) {
+              // Linear interpolation between closest years
+              let lowerYear = null, upperYear = null;
+              
+              for (const y of years) {
+                if (y < year) lowerYear = y;
+                if (y > year && !upperYear) upperYear = y;
+              }
+              
+              if (lowerYear && upperYear) {
+                const lowerValue = historicalIntrinsicValues[lowerYear.toString()];
+                const upperValue = historicalIntrinsicValues[upperYear.toString()];
+                const ratio = (year - lowerYear) / (upperYear - lowerYear);
+                historicalIntrinsicValues[year.toString()] = lowerValue + (upperValue - lowerValue) * ratio;
+              }
+            }
+          }
+        }
+
+        // Create chart data with historical intrinsic values
         const chartData: ChartData[] = processedData
           .map(item => {
+            const itemDate = new Date(item.date);
+            const year = itemDate.getFullYear();
+            
+            let historicalIntrinsic = null;
+            
+            // Find the closest historical intrinsic value
+            if (Object.keys(historicalIntrinsicValues).length > 0) {
+              const availableYears = Object.keys(historicalIntrinsicValues).map(y => parseInt(y));
+              const closestYear = availableYears.reduce((prev, curr) => 
+                Math.abs(curr - year) < Math.abs(prev - year) ? curr : prev
+              );
+              
+              if (Math.abs(closestYear - year) <= 1) {
+                historicalIntrinsic = historicalIntrinsicValues[closestYear.toString()];
+              }
+            }
+            
             const dataPoint = {
-              date: new Date(item.date),
+              date: itemDate,
               price: item.close,
-              intrinsicValue: intrinsicValue && !isNaN(Number(intrinsicValue)) ? Number(intrinsicValue) : null,
+              intrinsicValue: historicalIntrinsic,
             };
             
             // Debug for NaN values
@@ -133,7 +251,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           })
           .sort((a, b) => a.date.getTime() - b.date.getTime());
         
-        console.log(`Chart data prepared with ${chartData.length} points. Intrinsic value: ${intrinsicValue}`);
+        console.log(`Chart data prepared with ${chartData.length} points. Historical intrinsic values calculated.`);
         setHistoricalData(chartData);
       } catch (err) {
         console.error('Error fetching historical data:', err);
@@ -247,19 +365,20 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
               <Tooltip
                 content={({ active, payload }) => {
                   if (active && payload && payload.length > 0) {
+                    const dataPoint = payload[0].payload;
                     return (
                       <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
                         <p className="text-sm text-gray-600">
-                          {format(new Date(payload[0].payload.date), 'dd. MMMM yyyy', { locale: de })}
+                          {format(new Date(dataPoint.date), 'dd. MMMM yyyy', { locale: de })}
                         </p>
                         <p className="text-sm font-semibold">
                           Kurs: {typeof payload[0].value === 'number' 
                             ? payload[0].value.toFixed(2) 
                             : payload[0].value} {currency}
                         </p>
-                        {intrinsicValue !== null && intrinsicValue !== undefined && !isNaN(Number(intrinsicValue)) && (
+                        {dataPoint.intrinsicValue && !isNaN(Number(dataPoint.intrinsicValue)) && (
                           <p className="text-sm text-green-700">
-                            Innerer Wert: {Number(intrinsicValue).toFixed(2)} {currency}
+                            Innerer Wert: {Number(dataPoint.intrinsicValue).toFixed(2)} {currency}
                           </p>
                         )}
                       </div>
@@ -275,19 +394,15 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                 fillOpacity={1}
                 fill="url(#colorPrice)"
               />
-              {intrinsicValue !== null && intrinsicValue !== undefined && !isNaN(Number(intrinsicValue)) && (
-                <ReferenceLine
-                  y={Number(intrinsicValue)}
-                  stroke="hsl(142, 76%, 36%)"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  label={{
-                    value: `Innerer Wert: ${Number(intrinsicValue).toFixed(2)} ${currency}`,
-                    fill: 'hsl(142, 76%, 36%)',
-                    position: 'insideBottomRight'
-                  }}
-                />
-              )}
+              <Line
+                type="monotone"
+                dataKey="intrinsicValue"
+                stroke="hsl(142, 76%, 36%)"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={false}
+                connectNulls={false}
+              />
             </ComposedChart>
           </ResponsiveContainer>
         </ChartContainer>
