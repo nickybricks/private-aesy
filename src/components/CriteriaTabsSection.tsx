@@ -13,10 +13,12 @@ const CriteriaTabsSection: React.FC = () => {
     activeTab, 
     setActiveTab, 
     gptAvailable,
-    hasCriticalDataMissing
+    hasCriticalDataMissing,
+    stockInfo
   } = useStock();
   
-  if (!buffettCriteria || hasCriticalDataMissing) {
+  // Show toggle always when we have stock info, hide content if no criteria
+  if (!stockInfo) {
     return null;
   }
 
@@ -44,22 +46,37 @@ const CriteriaTabsSection: React.FC = () => {
       </div>
 
       {/* Content */}
-      {activeTab === 'standard' && (
-        <BuffettCriteria criteria={buffettCriteria} />
-      )}
-      
-      {activeTab === 'gpt' && (
-        gptAvailable ? (
-          <BuffettCriteriaGPT criteria={buffettCriteria} />
-        ) : (
-          <Alert>
-            <InfoIcon className="h-4 w-4" />
-            <AlertTitle>GPT-Analyse nicht verfügbar</AlertTitle>
-            <AlertDescription>
-              Bitte konfigurieren Sie Ihren OpenAI API-Key in der Datei src/api/openaiApi.ts, um Zugang zur erweiterten GPT-Analyse zu erhalten.
-            </AlertDescription>
-          </Alert>
-        )
+      {!buffettCriteria || hasCriticalDataMissing ? (
+        <Alert>
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>Analyse noch nicht verfügbar</AlertTitle>
+          <AlertDescription>
+            {hasCriticalDataMissing 
+              ? "Die Analyse kann aufgrund fehlender kritischer Daten nicht durchgeführt werden."
+              : "Bitte warten Sie, während die Daten geladen werden."
+            }
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          {activeTab === 'standard' && (
+            <BuffettCriteria criteria={buffettCriteria} />
+          )}
+          
+          {activeTab === 'gpt' && (
+            gptAvailable ? (
+              <BuffettCriteriaGPT criteria={buffettCriteria} />
+            ) : (
+              <Alert>
+                <InfoIcon className="h-4 w-4" />
+                <AlertTitle>GPT-Analyse nicht verfügbar</AlertTitle>
+                <AlertDescription>
+                  Bitte konfigurieren Sie Ihren OpenAI API-Key in der Datei src/api/openaiApi.ts, um Zugang zur erweiterten GPT-Analyse zu erhalten.
+                </AlertDescription>
+              </Alert>
+            )
+          )}
+        </>
       )}
     </div>
   );
