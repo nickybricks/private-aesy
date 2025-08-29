@@ -193,10 +193,10 @@ const Watchlists: React.FC = () => {
                       {watchlist.description}
                     </p>
                   )}
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>0 Positionen</span>
-                    <span>Erstellt: {new Date(watchlist.created_at).toLocaleDateString('de-DE')}</span>
-                  </div>
+                   <div className="flex items-center justify-between text-sm text-muted-foreground">
+                     <span>{watchlist.stock_count || 0} Positionen</span>
+                     <span>Erstellt: {new Date(watchlist.created_at).toLocaleDateString('de-DE')}</span>
+                   </div>
                   <div className="mt-2 text-xs text-muted-foreground">
                     Aktualisiert: {new Date(watchlist.updated_at).toLocaleDateString('de-DE')}
                   </div>
@@ -333,7 +333,7 @@ const Watchlists: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <TrendingUp className="h-5 w-5 text-green-500" />
                     <div>
-                      <p className="text-2xl font-bold">0</p>
+                       <p className="text-2xl font-bold">{watchlists.reduce((total, wl) => total + (wl.stock_count || 0), 0)}</p>
                       <p className="text-sm text-muted-foreground">Gesamte Positionen</p>
                     </div>
                   </div>
@@ -345,7 +345,7 @@ const Watchlists: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-5 w-5 text-blue-500" />
                     <div>
-                      <p className="text-2xl font-bold">0</p>
+                      <p className="text-2xl font-bold">{watchlists.filter(wl => (wl.stock_count || 0) > 0).length}</p>
                       <p className="text-sm text-muted-foreground">Aktive Listen</p>
                     </div>
                   </div>

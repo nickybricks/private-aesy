@@ -10,6 +10,7 @@ export interface Watchlist {
   description?: string;
   created_at: string;
   updated_at: string;
+  stock_count?: number;
 }
 
 export const useWatchlists = () => {
@@ -18,7 +19,7 @@ export const useWatchlists = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Fetch watchlists
+  // Fetch watchlists with stock counts
   const fetchWatchlists = async () => {
     if (!user) {
       setWatchlists([]);
@@ -27,19 +28,58 @@ export const useWatchlists = () => {
     }
 
     try {
+      // Fetch watchlists with stock counts using a LEFT JOIN
       const { data, error } = await supabase
         .from('watchlists')
-        .select('*')
+        .select(`
+          *,
+          user_stocks(count)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setWatchlists(data || []);
+      
+      // Transform the data to include stock_count
+      const watchlistsWithCounts = (data || []).map(watchlist => ({
+        ...watchlist,
+        stock_count: watchlist.user_stocks?.[0]?.count || 0,
+        user_stocks: undefined // Remove the user_stocks array from the result
+      }));
+      
+      setWatchlists(watchlistsWithCounts);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Fehler beim Laden der Watchlists",
-        description: error.message
-      });
+      // Fallback: fetch watchlists without counts if the join fails
+      try {
+        const { data, error: fallbackError } = await supabase
+          .from('watchlists')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (fallbackError) throw fallbackError;
+        
+        // Fetch stock counts separately for each watchlist
+        const watchlistsWithCounts = await Promise.all(
+          (data || []).map(async (watchlist) => {
+            const { count } = await supabase
+              .from('user_stocks')
+              .select('*', { count: 'exact', head: true })
+              .eq('watchlist_id', watchlist.id);
+            
+            return {
+              ...watchlist,
+              stock_count: count || 0
+            };
+          })
+        );
+        
+        setWatchlists(watchlistsWithCounts);
+      } catch (fallbackError: any) {
+        toast({
+          variant: "destructive",
+          title: "Fehler beim Laden der Watchlists",
+          description: fallbackError.message
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -153,6 +193,18 @@ export const useWatchlists = () => {
         },
         () => {
           fetchWatchlists();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_stocks',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchWatchlists(); // Refetch to update stock counts
         }
       )
       .subscribe();
