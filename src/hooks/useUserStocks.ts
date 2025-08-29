@@ -49,6 +49,64 @@ export const useUserStocks = (watchlistId: string) => {
     }
   };
 
+  const getFMPApiKey = async () => {
+    const { data, error } = await supabase.functions.invoke('get-fmp-key');
+    if (error) throw error;
+    return data.apiKey;
+  };
+
+  const fetchStockData = async (symbol: string) => {
+    try {
+      const apiKey = await getFMPApiKey();
+      
+      // Get current quote
+      const quoteResponse = await fetch(
+        `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${apiKey}`
+      );
+      
+      if (!quoteResponse.ok) {
+        throw new Error('Failed to fetch stock quote');
+      }
+      
+      const quoteData = await quoteResponse.json();
+      const quote = quoteData[0];
+      
+      if (!quote) {
+        throw new Error('Stock not found');
+      }
+      
+      // Get company profile for additional data
+      const profileResponse = await fetch(
+        `https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${apiKey}`
+      );
+      
+      let exchange = '';
+      let currency = 'USD';
+      let isin = '';
+      
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        const profile = profileData[0];
+        if (profile) {
+          exchange = profile.exchangeShortName || '';
+          currency = profile.currency || 'USD';
+          isin = profile.isin || '';
+        }
+      }
+      
+      return {
+        price: quote.price,
+        currency,
+        changePercent: quote.changesPercentage,
+        exchange,
+        isin
+      };
+    } catch (error) {
+      console.error('Error fetching stock data:', error);
+      return null;
+    }
+  };
+
   const addStock = async (stockData: {
     symbol: string;
     company_name?: string;
@@ -59,17 +117,17 @@ export const useUserStocks = (watchlistId: string) => {
     try {
       setLoading(true);
       
-      // TODO: Fetch real stock data from API
-      // Example:
-      // const stockInfo = await fetchStockData(stockData.symbol);
-      // const priceData = {
-      //   price: stockInfo.price,
-      //   currency: stockInfo.currency,
-      //   changePercent: stockInfo.changePercent,
-      //   sinceAddedPercent: 0,
-      //   exchange: stockInfo.exchange,
-      //   isin: stockInfo.isin
-      // };
+      // Fetch real stock data from FMP API
+      const stockInfo = await fetchStockData(stockData.symbol);
+      
+      const priceData: StockAnalysisData | undefined = stockInfo ? {
+        price: stockInfo.price,
+        currency: stockInfo.currency,
+        changePercent: stockInfo.changePercent,
+        sinceAddedPercent: 0, // Will be calculated later
+        exchange: stockInfo.exchange,
+        isin: stockInfo.isin
+      } : undefined;
 
       const { data, error } = await supabase
         .from('user_stocks')
@@ -78,7 +136,7 @@ export const useUserStocks = (watchlistId: string) => {
           watchlist_id: stockData.watchlist_id,
           symbol: stockData.symbol,
           company_name: stockData.company_name,
-          // analysis_data: priceData, // Add this when real API is integrated
+          analysis_data: priceData as any,
           last_analysis_date: new Date().toISOString()
         })
         .select()
