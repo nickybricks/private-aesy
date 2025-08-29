@@ -10,11 +10,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, MoreVertical, Edit, Trash2, TrendingUp, Calendar, Star } from 'lucide-react';
 import { useWatchlists } from '@/hooks/useWatchlists';
+import { useWatchlistStats } from '@/hooks/useWatchlistStats';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Watchlists: React.FC = () => {
   const navigate = useNavigate();
   const { watchlists, loading, createWatchlist, updateWatchlist, deleteWatchlist } = useWatchlists();
+  const { stats, loading: statsLoading, getTotalStocks, getActiveListsCount } = useWatchlistStats(watchlists.map(w => w.id));
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingWatchlist, setEditingWatchlist] = useState<any>(null);
@@ -194,7 +196,7 @@ const Watchlists: React.FC = () => {
                     </p>
                   )}
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>0 Positionen</span>
+                    <span>{stats[watchlist.id]?.stockCount || 0} Positionen</span>
                     <span>Erstellt: {new Date(watchlist.created_at).toLocaleDateString('de-DE')}</span>
                   </div>
                   <div className="mt-2 text-xs text-muted-foreground">
@@ -333,7 +335,7 @@ const Watchlists: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <TrendingUp className="h-5 w-5 text-green-500" />
                     <div>
-                      <p className="text-2xl font-bold">0</p>
+                      <p className="text-2xl font-bold">{getTotalStocks()}</p>
                       <p className="text-sm text-muted-foreground">Gesamte Positionen</p>
                     </div>
                   </div>
@@ -345,7 +347,7 @@ const Watchlists: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-5 w-5 text-blue-500" />
                     <div>
-                      <p className="text-2xl font-bold">0</p>
+                      <p className="text-2xl font-bold">{getActiveListsCount()}</p>
                       <p className="text-sm text-muted-foreground">Aktive Listen</p>
                     </div>
                   </div>
