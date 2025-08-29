@@ -14,7 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_stocks: {
+        Row: {
+          analysis_data: Json | null
+          buffett_score: number | null
+          company_name: string | null
+          created_at: string
+          id: string
+          last_analysis_date: string | null
+          notes: string | null
+          symbol: string
+          updated_at: string
+          user_id: string
+          watchlist_id: string | null
+        }
+        Insert: {
+          analysis_data?: Json | null
+          buffett_score?: number | null
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          last_analysis_date?: string | null
+          notes?: string | null
+          symbol: string
+          updated_at?: string
+          user_id: string
+          watchlist_id?: string | null
+        }
+        Update: {
+          analysis_data?: Json | null
+          buffett_score?: number | null
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          last_analysis_date?: string | null
+          notes?: string | null
+          symbol?: string
+          updated_at?: string
+          user_id?: string
+          watchlist_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stocks_watchlist_id_fkey"
+            columns: ["watchlist_id"]
+            isOneToOne: false
+            referencedRelation: "watchlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watchlists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
