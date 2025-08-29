@@ -14,7 +14,8 @@ const AuthPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
-  const { signIn, signUp, user, loading } = useAuth();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const { signIn, signUp, resetPassword, user, loading } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
@@ -38,6 +39,17 @@ const AuthPage: React.FC = () => {
     if (!error) {
       setActiveTab('signin');
       setPassword('');
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      return;
+    }
+    const { error } = await resetPassword(email);
+    if (!error) {
+      setShowForgotPassword(false);
     }
   };
 
@@ -82,22 +94,22 @@ const AuthPage: React.FC = () => {
               <TabsTrigger value="signup">Registrieren</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="signin">
-              <Card>
+            {showForgotPassword ? (
+              <Card className="mt-4">
                 <CardHeader>
-                  <CardTitle>Bei deinem Account anmelden</CardTitle>
+                  <CardTitle>Passwort zurücksetzen</CardTitle>
                   <CardDescription>
-                    Gib deine E-Mail und dein Passwort ein
+                    Gib deine E-Mail-Adresse ein, um einen Reset-Link zu erhalten
                   </CardDescription>
                 </CardHeader>
-                <form onSubmit={handleSignIn}>
+                <form onSubmit={handleForgotPassword}>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signin-email">E-Mail</Label>
+                      <Label htmlFor="reset-email">E-Mail</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
-                          id="signin-email"
+                          id="reset-email"
                           type="email"
                           placeholder="deine@email.com"
                           value={email}
@@ -107,113 +119,169 @@ const AuthPage: React.FC = () => {
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-password">Passwort</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signin-password"
-                          type={showSignInPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="pl-10 pr-10"
-                          required
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6"
-                          onClick={() => setShowSignInPassword(!showSignInPassword)}
-                        >
-                          {showSignInPassword ? (
-                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
                   </CardContent>
-                  <CardFooter>
-                    <Button type="submit" className="w-full" disabled={loading}>
+                  <CardFooter className="flex space-x-2">
+                    <Button type="submit" className="flex-1" disabled={loading}>
                       {loading ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       ) : null}
-                      Anmelden
+                      Reset-Link senden
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setShowForgotPassword(false)}
+                      disabled={loading}
+                    >
+                      Zurück
                     </Button>
                   </CardFooter>
                 </form>
               </Card>
-            </TabsContent>
+            ) : (
+              <>
+                <TabsContent value="signin">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Bei deinem Account anmelden</CardTitle>
+                      <CardDescription>
+                        Gib deine E-Mail und dein Passwort ein
+                      </CardDescription>
+                    </CardHeader>
+                    <form onSubmit={handleSignIn}>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="signin-email">E-Mail</Label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="signin-email"
+                              type="email"
+                              placeholder="deine@email.com"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              className="pl-10"
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signin-password">Passwort</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="signin-password"
+                              type={showSignInPassword ? "text" : "password"}
+                              placeholder="••••••••"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              className="pl-10 pr-10"
+                              required
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6"
+                              onClick={() => setShowSignInPassword(!showSignInPassword)}
+                            >
+                              {showSignInPassword ? (
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <Eye className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex flex-col space-y-2">
+                        <Button type="submit" className="w-full" disabled={loading}>
+                          {loading ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : null}
+                          Anmelden
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="text-sm"
+                          onClick={() => setShowForgotPassword(true)}
+                        >
+                          Passwort vergessen?
+                        </Button>
+                      </CardFooter>
+                    </form>
+                  </Card>
+                </TabsContent>
 
-            <TabsContent value="signup">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Kostenlosen Account erstellen</CardTitle>
-                  <CardDescription>
-                    Starte noch heute mit professioneller Aktienanalyse
-                  </CardDescription>
-                </CardHeader>
-                <form onSubmit={handleSignUp}>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">E-Mail</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-email"
-                          type="email"
-                          placeholder="deine@email.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Passwort</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-password"
-                          type={showSignUpPassword ? "text" : "password"}
-                          placeholder="Mindestens 6 Zeichen"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="pl-10 pr-10"
-                          minLength={6}
-                          required
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6"
-                          onClick={() => setShowSignUpPassword(!showSignUpPassword)}
-                        >
-                          {showSignUpPassword ? (
-                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                          )}
+                <TabsContent value="signup">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Kostenlosen Account erstellen</CardTitle>
+                      <CardDescription>
+                        Starte noch heute mit professioneller Aktienanalyse
+                      </CardDescription>
+                    </CardHeader>
+                    <form onSubmit={handleSignUp}>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-email">E-Mail</Label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="signup-email"
+                              type="email"
+                              placeholder="deine@email.com"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              className="pl-10"
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-password">Passwort</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="signup-password"
+                              type={showSignUpPassword ? "text" : "password"}
+                              placeholder="Mindestens 6 Zeichen"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              className="pl-10 pr-10"
+                              minLength={6}
+                              required
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6"
+                              onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                            >
+                              {showSignUpPassword ? (
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <Eye className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button type="submit" className="w-full" disabled={loading}>
+                          {loading ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : null}
+                          Kostenlosen Account erstellen
                         </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : null}
-                      Kostenlosen Account erstellen
-                    </Button>
-                  </CardFooter>
-                </form>
-              </Card>
-            </TabsContent>
+                      </CardFooter>
+                    </form>
+                  </Card>
+                </TabsContent>
+              </>
+            )}
           </Tabs>
 
           <div className="text-center mt-6">
