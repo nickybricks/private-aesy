@@ -1096,13 +1096,14 @@ export const getFinancialMetrics = async (ticker: string) => {
       console.log(`DEBUG: Raw ROE from API: ${roe}`);
       metrics.push({
         name: 'ROE (Eigenkapitalrendite)',
-        value: roe, // Remove the % symbol and .toFixed formatting
+        value: roe,
         formula: 'Jahresüberschuss ÷ Eigenkapital × 100',
         explanation: 'Rendite auf das eingesetzte Eigenkapital',
         threshold: 'Buffett bevorzugt > 15%',
         status: roe > 15 ? 'pass' : roe > 10 ? 'warning' : 'fail' as const,
         isPercentage: true,
-        isMultiplier: false
+        isMultiplier: false,
+        isAlreadyPercent: true // ROE comes already as percentage from API
       });
     }
 
@@ -1111,13 +1112,14 @@ export const getFinancialMetrics = async (ticker: string) => {
       console.log(`DEBUG: Raw netMargin from API: ${netMargin}`);
       metrics.push({
         name: 'Nettomarge',
-        value: netMargin, // Remove the % symbol and .toFixed formatting
+        value: netMargin,
         formula: 'Jahresüberschuss ÷ Umsatz × 100',
         explanation: 'Anteil des Umsatzes, der als Gewinn übrig bleibt',
         threshold: 'Buffett bevorzugt > 10%',
         status: netMargin > 10 ? 'pass' : netMargin > 5 ? 'warning' : 'fail' as const,
         isPercentage: true,
-        isMultiplier: false
+        isMultiplier: false,
+        isAlreadyPercent: false // Net margin comes as decimal from API
       });
     }
 
@@ -1126,13 +1128,14 @@ export const getFinancialMetrics = async (ticker: string) => {
       console.log(`DEBUG: Raw ROIC from API: ${roic}`);
       metrics.push({
         name: 'ROIC (Kapitalrendite)',
-        value: roic, // Remove the % symbol and .toFixed formatting
+        value: roic,
         formula: 'NOPAT ÷ (Eigenkapital + Finanzverbindlichkeiten)',
         explanation: 'Rendite auf das gesamte investierte Kapital',
         threshold: 'Buffett bevorzugt > 12%',
         status: roic > 12 ? 'pass' : roic > 8 ? 'warning' : 'fail' as const,
         isPercentage: true,
-        isMultiplier: false
+        isMultiplier: false,
+        isAlreadyPercent: true // ROIC comes already as percentage from API
       });
     }
 
@@ -1141,13 +1144,14 @@ export const getFinancialMetrics = async (ticker: string) => {
       console.log(`DEBUG: Raw debtToAssets from API: ${debtToAssets}`);
       metrics.push({
         name: 'Schulden zu Vermögen',
-        value: debtToAssets, // Remove the % symbol and .toFixed formatting
+        value: debtToAssets,
         formula: 'Gesamtschulden ÷ Gesamtvermögen × 100',
         explanation: 'Anteil der Schulden am Gesamtvermögen',
         threshold: 'Buffett bevorzugt < 50%',
         status: debtToAssets < 50 ? 'pass' : debtToAssets < 70 ? 'warning' : 'fail' as const,
         isPercentage: true,
-        isMultiplier: false
+        isMultiplier: false,
+        isAlreadyPercent: false // Debt to assets comes as decimal from API
       });
     }
 

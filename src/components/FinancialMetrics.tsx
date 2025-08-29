@@ -34,6 +34,7 @@ interface FinancialMetric {
   originalCurrency?: string;
   isPercentage?: boolean;
   isMultiplier?: boolean;
+  isAlreadyPercent?: boolean; // Flag to indicate if value is already in percentage format
 }
 
 interface HistoricalDataItem {
@@ -160,7 +161,7 @@ const MetricStatus: React.FC<{ status: 'pass' | 'warning' | 'fail' | 'positive' 
 };
 
 const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ metric, currency }) => {
-  const { name, value, formula, explanation, threshold, status, originalValue, originalCurrency, isPercentage, isMultiplier } = metric;
+  const { name, value, formula, explanation, threshold, status, originalValue, originalCurrency, isPercentage, isMultiplier, isAlreadyPercent } = metric;
   
   const isValueMissing = value === 'N/A' || 
                          (typeof value === 'string' && (value.includes('N/A') || value === '0.00' || value === '0.00%')) ||
@@ -175,11 +176,19 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   
   if (!isValueMissing) {
     if (metric.isPercentage) {
-      // Convert decimal values to percentage by multiplying by 100
-      const percentageValue = typeof displayValue === 'number' ? displayValue * 100 : displayValue;
-      cleanedDisplayValue = typeof displayValue === 'number' 
-        ? `${percentageValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} %`
-        : displayValue;
+      // Check if value is already in percentage format or needs conversion
+      if (isAlreadyPercent) {
+        // Value is already a percentage (e.g., 15.5 for 15.5%)
+        cleanedDisplayValue = typeof displayValue === 'number' 
+          ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} %`
+          : displayValue;
+      } else {
+        // Value is decimal and needs conversion to percentage (e.g., 0.155 for 15.5%)
+        const percentageValue = typeof displayValue === 'number' ? displayValue * 100 : displayValue;
+        cleanedDisplayValue = typeof displayValue === 'number' 
+          ? `${percentageValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} %`
+          : displayValue;
+      }
     } else if (metric.isMultiplier) {
       cleanedDisplayValue = typeof displayValue === 'number'
         ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}x`
@@ -192,7 +201,8 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         originalValue, 
         originalCurrency,
         metric.isPercentage,
-        metric.isMultiplier
+        metric.isMultiplier,
+        metric.isAlreadyPercent
       );
     } else {
       cleanedDisplayValue = formatCurrency(
@@ -202,7 +212,8 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         undefined,
         undefined,
         metric.isPercentage,
-        metric.isMultiplier
+        metric.isMultiplier,
+        metric.isAlreadyPercent
       );
     }
   }

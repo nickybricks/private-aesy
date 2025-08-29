@@ -230,7 +230,8 @@ export const formatCurrency = (
   originalValue?: number | string,
   originalCurrency?: string,
   isPercentage?: boolean,
-  isMultiplier?: boolean
+  isMultiplier?: boolean,
+  isAlreadyPercent?: boolean
 ): string => {
   if (value === 'N/A' || value === null || value === undefined) {
     return 'N/A';
@@ -249,9 +250,15 @@ export const formatCurrency = (
   let formattedValue = '';
   
   if (isPercentage) {
-    // Convert decimal values to percentage by multiplying by 100
-    const percentageValue = numValue * 100;
-    formattedValue = `${percentageValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+    // Check if value is already in percentage format or needs conversion
+    if (isAlreadyPercent) {
+      // Value is already a percentage (e.g., 15.5 for 15.5%)
+      formattedValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+    } else {
+      // Convert decimal values to percentage by multiplying by 100
+      const percentageValue = numValue * 100;
+      formattedValue = `${percentageValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+    }
   } else if (isMultiplier) {
     formattedValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}x`;
   } else {
@@ -264,9 +271,15 @@ export const formatCurrency = (
     const formattedOriginal = origNumValue.toLocaleString('de-DE', { maximumFractionDigits: origDecimalPlaces });
     
     if (isPercentage) {
-      // Convert decimal values to percentage by multiplying by 100
-      const origPercentageValue = origNumValue * 100;
-      return `${formattedValue} (ursprünglich: ${origPercentageValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%)`;
+      // Check if original value is already in percentage format or needs conversion
+      if (isAlreadyPercent) {
+        // Original value is already a percentage
+        return `${formattedValue} (ursprünglich: ${formattedOriginal}%)`;
+      } else {
+        // Convert decimal values to percentage by multiplying by 100
+        const origPercentageValue = origNumValue * 100;
+        return `${formattedValue} (ursprünglich: ${origPercentageValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%)`;
+      }
     } else if (isMultiplier) {
       return `${formattedValue} (ursprünglich: ${formattedOriginal}x)`;
     } else {
