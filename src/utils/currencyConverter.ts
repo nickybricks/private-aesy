@@ -249,7 +249,9 @@ export const formatCurrency = (
   let formattedValue = '';
   
   if (isPercentage) {
-    formattedValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
+    // Convert decimal values to percentage by multiplying by 100
+    const percentageValue = numValue * 100;
+    formattedValue = `${percentageValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`;
   } else if (isMultiplier) {
     formattedValue = `${numValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}x`;
   } else {
@@ -262,7 +264,9 @@ export const formatCurrency = (
     const formattedOriginal = origNumValue.toLocaleString('de-DE', { maximumFractionDigits: origDecimalPlaces });
     
     if (isPercentage) {
-      return `${formattedValue} (ursprünglich: ${formattedOriginal}%)`;
+      // Convert decimal values to percentage by multiplying by 100
+      const origPercentageValue = origNumValue * 100;
+      return `${formattedValue} (ursprünglich: ${origPercentageValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%)`;
     } else if (isMultiplier) {
       return `${formattedValue} (ursprünglich: ${formattedOriginal}x)`;
     } else {

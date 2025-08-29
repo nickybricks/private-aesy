@@ -175,8 +175,10 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   
   if (!isValueMissing) {
     if (metric.isPercentage) {
+      // Convert decimal values to percentage by multiplying by 100
+      const percentageValue = typeof displayValue === 'number' ? displayValue * 100 : displayValue;
       cleanedDisplayValue = typeof displayValue === 'number' 
-        ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} %`
+        ? `${percentageValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} %`
         : displayValue;
     } else if (metric.isMultiplier) {
       cleanedDisplayValue = typeof displayValue === 'number'
