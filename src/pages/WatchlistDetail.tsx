@@ -149,47 +149,54 @@ const WatchlistDetail: React.FC = () => {
                       onChange={(e) => handleStockSearchChange(e.target.value)}
                       className="w-full"
                     />
-                    {isSearching && (
-                      <p className="text-sm text-muted-foreground mt-2">Suche läuft...</p>
-                    )}
                     
                     {/* Search Results Dropdown */}
-                    {searchResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-md shadow-lg max-h-96 overflow-y-auto">
-                        {searchResults.map((stock, index) => (
-                          <div 
-                            key={index} 
-                            className="p-3 cursor-pointer hover:bg-accent border-b border-border last:border-b-0" 
-                            onClick={() => handleAddStock(stock)}
-                          >
-                            <div className="flex justify-between items-center">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <h3 className="font-medium text-sm">{stock.name}</h3>
-                                  <Badge variant="outline" className="text-xs">
-                                    {stock.assetType}
-                                  </Badge>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                  {stock.symbol} • {stock.exchange}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-medium text-sm">{formatCurrency(stock.price, stock.currency)}</p>
-                                {stock.changePercent && (
-                                  <p className="text-xs">{formatPercentage(stock.changePercent)}</p>
-                                )}
-                              </div>
-                            </div>
+                    {(searchResults.length > 0 || (stockSearchQuery.length >= 2 && !isSearching)) && (
+                      <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+                        {isSearching && (
+                          <div className="p-3 text-sm text-muted-foreground">
+                            Suche läuft...
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        )}
+                        
+                        {searchResults.length > 0 && (
+                          <>
+                            <div className="px-3 py-2 bg-muted/50 border-b border-border">
+                              <span className="text-sm font-medium text-muted-foreground">Vorschläge</span>
+                            </div>
+                            <div className="max-h-80 overflow-y-auto">
+                              {searchResults.map((stock, index) => (
+                                <div 
+                                  key={index} 
+                                  className="p-3 cursor-pointer hover:bg-accent transition-colors border-b border-border last:border-b-0" 
+                                  onClick={() => handleAddStock(stock)}
+                                >
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex-1">
+                                      <div className="flex items-center space-x-2">
+                                        <span className="font-medium text-foreground">{stock.name}</span>
+                                        <span className="text-muted-foreground">({stock.symbol})</span>
+                                        <Badge variant="secondary" className="text-xs">
+                                          {stock.assetType}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-sm font-medium text-muted-foreground">{stock.exchange}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
 
-                    {stockSearchQuery.length >= 2 && searchResults.length === 0 && !isSearching && (
-                      <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-md shadow-lg p-8 text-center text-muted-foreground">
-                        <p>Keine Ergebnisse für "{stockSearchQuery}" gefunden</p>
-                        <p className="text-sm mt-1">Versuche es mit einem anderen Suchbegriff</p>
+                        {stockSearchQuery.length >= 2 && searchResults.length === 0 && !isSearching && (
+                          <div className="p-6 text-center text-muted-foreground">
+                            <p>Keine Ergebnisse für "{stockSearchQuery}" gefunden</p>
+                            <p className="text-sm mt-1">Versuche es mit einem anderen Suchbegriff</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
