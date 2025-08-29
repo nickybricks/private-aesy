@@ -9,6 +9,7 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LeftNavigation from "./components/LeftNavigation";
 import Index from "./pages/Index";
+import BuffettAnalyzer from "./pages/BuffettAnalyzer";
 import BuffettQuantAnalyzer from "./pages/BuffettQuantAnalyzer";
 import Watchlists from "./pages/Watchlists";
 import NotFound from "./pages/NotFound";
@@ -77,7 +78,8 @@ const App = () => {
               <main className="flex-1 overflow-auto">
                 <Routes>
                   <Route path="/" element={<Index />} />
-                  <Route path="/quant-analyzer" element={<BuffettQuantAnalyzer />} />
+                  <Route path="/analyzer" element={<BuffettAnalyzer />} />
+                  <Route path="/quant" element={<BuffettQuantAnalyzer />} />
                   <Route path="/watchlists" element={<Watchlists />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

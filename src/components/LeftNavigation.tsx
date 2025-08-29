@@ -28,13 +28,13 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
       items: [
         {
           name: 'Buffett Benchmark',
-          path: '/',
+          path: '/analyzer',
           icon: LineChart,
           description: 'Aktienanalyse nach Buffett-Prinzipien'
         },
         {
           name: 'Quant Analyzer',
-          path: '/quant-analyzer',
+          path: '/quant',
           icon: BarChart3,
           description: 'Erweiterte quantitative Analyse'
         }
