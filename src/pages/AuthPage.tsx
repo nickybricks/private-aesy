@@ -26,12 +26,12 @@ const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (but not if updating password)
   useEffect(() => {
-    if (user) {
+    if (user && !showUpdatePassword) {
       navigate('/analyzer');
     }
-  }, [user, navigate]);
+  }, [user, navigate, showUpdatePassword]);
 
   // Check for password reset parameters
   useEffect(() => {
@@ -47,7 +47,29 @@ const AuthPage: React.FC = () => {
         refresh_token: refreshToken
       }).then(() => {
         setShowUpdatePassword(true);
+        setShowForgotPassword(false);
         // Clear URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+      });
+    }
+  }, []);
+
+  // Check for hash fragment (alternative auth flow)
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    const type = hashParams.get('type');
+    
+    if (type === 'recovery' && accessToken && refreshToken) {
+      // Set the session from hash parameters for password recovery
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      }).then(() => {
+        setShowUpdatePassword(true);
+        setShowForgotPassword(false);
+        // Clear hash
         window.history.replaceState({}, document.title, window.location.pathname);
       });
     }
