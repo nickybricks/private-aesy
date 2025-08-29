@@ -19,61 +19,29 @@ export const useStockSearch = () => {
     setIsSearching(true);
     
     try {
-      // Simulierte API-Abfrage - hier würdest du eine echte Stock-API verwenden
-      // Beispiele für verschiedene APIs:
-      // - Alpha Vantage
-      // - Financial Modeling Prep
-      // - Yahoo Finance API
-      // - Twelve Data
-      // - Polygon.io
+      // TODO: Integrate with real stock API
+      // Recommended APIs:
+      // - Alpha Vantage: https://www.alphavantage.co/
+      // - Financial Modeling Prep: https://financialmodelingprep.com/
+      // - Twelve Data: https://twelvedata.com/
+      // - Polygon.io: https://polygon.io/
       
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simuliere API-Delay
+      // Example API call structure:
+      // const response = await fetch(`https://api.example.com/search?q=${query}&apikey=${API_KEY}`);
+      // const data = await response.json();
+      // const results = data.results.map(item => ({
+      //   symbol: item.symbol,
+      //   name: item.name,
+      //   exchange: item.exchange,
+      //   currency: item.currency,
+      //   price: item.price,
+      //   changePercent: item.changePercent,
+      //   isin: item.isin
+      // }));
+      // setSearchResults(results);
       
-      // Mock-Daten basierend auf der Suchanfrage
-      const mockResults: StockSearchResult[] = [
-        {
-          symbol: 'AAPL',
-          name: 'Apple Inc.',
-          exchange: 'NASDAQ',
-          currency: 'USD',
-          price: 175.25,
-          changePercent: 1.25,
-          isin: 'US0378331005'
-        },
-        {
-          symbol: 'MSFT',
-          name: 'Microsoft Corporation',
-          exchange: 'NASDAQ',
-          currency: 'USD',
-          price: 342.50,
-          changePercent: -0.85,
-          isin: 'US5949181045'
-        },
-        {
-          symbol: 'SAP',
-          name: 'SAP SE',
-          exchange: 'XETRA',
-          currency: 'EUR',
-          price: 125.40,
-          changePercent: 0.65,
-          isin: 'DE0007164600'
-        },
-        {
-          symbol: 'ASML',
-          name: 'ASML Holding N.V.',
-          exchange: 'NASDAQ',
-          currency: 'USD',
-          price: 650.80,
-          changePercent: 2.15,
-          isin: 'NL0010273215'
-        }
-      ].filter(stock => 
-        stock.symbol.toLowerCase().includes(query.toLowerCase()) ||
-        stock.name.toLowerCase().includes(query.toLowerCase()) ||
-        stock.isin?.includes(query.toUpperCase())
-      );
-      
-      setSearchResults(mockResults);
+      // For now, return empty results until API is integrated
+      setSearchResults([]);
     } catch (error) {
       console.error('Error searching stocks:', error);
       setSearchResults([]);

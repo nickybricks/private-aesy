@@ -59,15 +59,17 @@ export const useUserStocks = (watchlistId: string) => {
     try {
       setLoading(true);
       
-      // Simuliere Live-Kursdaten (hier würdest du eine echte API verwenden)
-      const mockPriceData = {
-        price: Math.random() * 200 + 50, // Zufälliger Preis zwischen 50-250
-        currency: 'EUR',
-        changePercent: (Math.random() - 0.5) * 10, // Zufällige Änderung zwischen -5% und +5%
-        sinceAddedPercent: 0, // Gerade hinzugefügt
-        exchange: 'XETRA',
-        isin: `DE${Math.random().toString().slice(2, 12)}` // Mock ISIN
-      };
+      // TODO: Fetch real stock data from API
+      // Example:
+      // const stockInfo = await fetchStockData(stockData.symbol);
+      // const priceData = {
+      //   price: stockInfo.price,
+      //   currency: stockInfo.currency,
+      //   changePercent: stockInfo.changePercent,
+      //   sinceAddedPercent: 0,
+      //   exchange: stockInfo.exchange,
+      //   isin: stockInfo.isin
+      // };
 
       const { data, error } = await supabase
         .from('user_stocks')
@@ -76,7 +78,7 @@ export const useUserStocks = (watchlistId: string) => {
           watchlist_id: stockData.watchlist_id,
           symbol: stockData.symbol,
           company_name: stockData.company_name,
-          analysis_data: mockPriceData,
+          // analysis_data: priceData, // Add this when real API is integrated
           last_analysis_date: new Date().toISOString()
         })
         .select()
@@ -143,32 +145,23 @@ export const useUserStocks = (watchlistId: string) => {
     }
   };
 
-  // Simuliere Live-Kurs-Updates (alle 30 Sekunden)
-  useEffect(() => {
-    if (stocks.length === 0) return;
-
-    const interval = setInterval(() => {
-      setStocks(prev => prev.map(stock => {
-        if (!stock.analysis_data) return stock;
-        
-        const currentPrice = stock.analysis_data.price || 100;
-        const priceChange = (Math.random() - 0.5) * 2; // Kleine Preisänderungen
-        const newPrice = Math.max(0.01, currentPrice + priceChange);
-        const changePercent = ((newPrice - currentPrice) / currentPrice) * 100;
-        
-        return {
-          ...stock,
-          analysis_data: {
-            ...stock.analysis_data,
-            price: newPrice,
-            changePercent: changePercent
-          }
-        };
-      }));
-    }, 30000); // Update alle 30 Sekunden
-
-    return () => clearInterval(interval);
-  }, [stocks.length]);
+  // TODO: Implement real-time price updates
+  // useEffect(() => {
+  //   if (stocks.length === 0) return;
+  //   
+  //   // Example: WebSocket connection for real-time updates
+  //   // const ws = new WebSocket('wss://api.example.com/realtime');
+  //   // ws.onmessage = (event) => {
+  //   //   const priceUpdate = JSON.parse(event.data);
+  //   //   setStocks(prev => prev.map(stock => 
+  //   //     stock.symbol === priceUpdate.symbol 
+  //   //       ? { ...stock, analysis_data: { ...stock.analysis_data, ...priceUpdate } }
+  //   //       : stock
+  //   //   ));
+  //   // };
+  //   // 
+  //   // return () => ws.close();
+  // }, [stocks.length]);
 
   useEffect(() => {
     fetchStocks();
