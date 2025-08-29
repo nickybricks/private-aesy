@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ import { useWatchlists } from '@/hooks/useWatchlists';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Watchlists: React.FC = () => {
+  const navigate = useNavigate();
   const { watchlists, loading, createWatchlist, updateWatchlist, deleteWatchlist } = useWatchlists();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -161,22 +163,22 @@ const Watchlists: React.FC = () => {
           {/* Watchlists Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {watchlists.map((watchlist) => (
-              <Card key={watchlist.id} className="hover:shadow-md transition-shadow">
+              <Card key={watchlist.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/watchlists/${watchlist.id}`)}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-lg font-medium">{watchlist.name}</CardTitle>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(watchlist)}>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(watchlist); }}>
                         <Edit className="mr-2 h-4 w-4" />
                         Bearbeiten
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => handleDelete(watchlist.id)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(watchlist.id); }}
                         className="text-destructive"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
