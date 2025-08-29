@@ -137,7 +137,7 @@ const WatchlistDetail: React.FC = () => {
                   <Plus className="h-6 w-6" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+              <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Wertpapier hinzufügen</DialogTitle>
                 </DialogHeader>
@@ -149,62 +149,71 @@ const WatchlistDetail: React.FC = () => {
                       onChange={(e) => handleStockSearchChange(e.target.value)}
                       className="w-full"
                     />
-                    
-                    {/* Search Results Dropdown */}
-                    {(searchResults.length > 0 || (stockSearchQuery.length >= 2 && !isSearching)) && (
-                      <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
-                        {isSearching && (
-                          <div className="p-3 text-sm text-muted-foreground">
-                            Suche läuft...
-                          </div>
-                        )}
-                        
-                        {searchResults.length > 0 && (
-                          <>
-                            <div className="px-3 py-2 bg-muted/50 border-b border-border">
-                              <span className="text-sm font-medium text-muted-foreground">Vorschläge</span>
-                            </div>
-                            <div className="max-h-80 overflow-y-auto">
-                              {searchResults.map((stock, index) => (
-                                <div 
-                                  key={index} 
-                                  className="p-3 cursor-pointer hover:bg-accent transition-colors border-b border-border last:border-b-0" 
-                                  onClick={() => handleAddStock(stock)}
-                                >
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex-1">
-                                      <div className="flex items-center space-x-2">
-                                        <span className="font-medium text-foreground">{stock.name}</span>
-                                        <span className="text-muted-foreground">({stock.symbol})</span>
-                                        <Badge variant="secondary" className="text-xs">
-                                          {stock.assetType}
-                                        </Badge>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <span className="text-sm font-medium text-muted-foreground">{stock.exchange}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        )}
-
-                        {stockSearchQuery.length >= 2 && searchResults.length === 0 && !isSearching && (
-                          <div className="p-6 text-center text-muted-foreground">
-                            <p>Keine Ergebnisse für "{stockSearchQuery}" gefunden</p>
-                            <p className="text-sm mt-1">Versuche es mit einem anderen Suchbegriff</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
         </div>
+
+        {/* Search Results Portal - Outside Dialog */}
+        {isAddStockDialogOpen && (searchResults.length > 0 || (stockSearchQuery.length >= 2 && !isSearching)) && (
+          <div className="fixed inset-0 z-[60] pointer-events-none">
+            <div className="flex items-center justify-center min-h-screen p-4">
+              <div className="relative w-full max-w-2xl">
+                {/* Position the dropdown below where the input would be */}
+                <div className="absolute top-[120px] left-0 right-0 pointer-events-auto">
+                  <div className="bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+                    {isSearching && (
+                      <div className="p-3 text-sm text-muted-foreground">
+                        Suche läuft...
+                      </div>
+                    )}
+                    
+                    {searchResults.length > 0 && (
+                      <>
+                        <div className="px-3 py-2 bg-muted/50 border-b border-border">
+                          <span className="text-sm font-medium text-muted-foreground">Vorschläge</span>
+                        </div>
+                        <div className="max-h-80 overflow-y-auto">
+                          {searchResults.map((stock, index) => (
+                            <div 
+                              key={index} 
+                              className="p-3 cursor-pointer hover:bg-accent transition-colors border-b border-border last:border-b-0" 
+                              onClick={() => handleAddStock(stock)}
+                            >
+                              <div className="flex justify-between items-center">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="font-medium text-foreground">{stock.name}</span>
+                                    <span className="text-muted-foreground">({stock.symbol})</span>
+                                    <Badge variant="secondary" className="text-xs">
+                                      {stock.assetType}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-sm font-medium text-muted-foreground">{stock.exchange}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {stockSearchQuery.length >= 2 && searchResults.length === 0 && !isSearching && (
+                      <div className="p-6 text-center text-muted-foreground">
+                        <p>Keine Ergebnisse für "{stockSearchQuery}" gefunden</p>
+                        <p className="text-sm mt-1">Versuche es mit einem anderen Suchbegriff</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="border-b border-border mb-6">
