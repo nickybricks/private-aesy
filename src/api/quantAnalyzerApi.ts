@@ -21,27 +21,110 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
   }
 };
 
-// Available exchanges
-export const exchanges = [
-  { id: 'XETRA', name: 'XETRA (Deutschland)', currency: 'EUR' },
-  { id: 'NYSE', name: 'NYSE (New York)', currency: 'USD' },
-  { id: 'NASDAQ', name: 'NASDAQ', currency: 'USD' },
-  { id: 'LSE', name: 'LSE (London)', currency: 'GBP' },
-  { id: 'EURONEXT', name: 'EURONEXT', currency: 'EUR' },
-  { id: 'TSX', name: 'TSX (Toronto)', currency: 'CAD' },
-  { id: 'HKSE', name: 'HKSE (Hong Kong)', currency: 'HKD' }
+// Available exchanges and indices
+export const marketOptions = [
+  // Börsen
+  { id: 'XETRA', name: 'XETRA (Deutschland)', currency: 'EUR', type: 'exchange' },
+  { id: 'NYSE', name: 'NYSE (New York)', currency: 'USD', type: 'exchange' },
+  { id: 'NASDAQ', name: 'NASDAQ', currency: 'USD', type: 'exchange' },
+  { id: 'LSE', name: 'LSE (London)', currency: 'GBP', type: 'exchange' },
+  { id: 'EURONEXT', name: 'EURONEXT', currency: 'EUR', type: 'exchange' },
+  { id: 'TSX', name: 'TSX (Toronto)', currency: 'CAD', type: 'exchange' },
+  { id: 'HKSE', name: 'HKSE (Hong Kong)', currency: 'HKD', type: 'exchange' },
+  
+  // Major Indices
+  { id: 'SP500', name: 'S&P 500', currency: 'USD', type: 'index' },
+  { id: 'DOW', name: 'Dow Jones', currency: 'USD', type: 'index' },
+  { id: 'NASDAQ100', name: 'NASDAQ 100', currency: 'USD', type: 'index' },
+  { id: 'DAX', name: 'DAX (Deutschland)', currency: 'EUR', type: 'index' },
+  { id: 'FTSE100', name: 'FTSE 100', currency: 'GBP', type: 'index' },
+  { id: 'NIKKEI', name: 'Nikkei 225', currency: 'JPY', type: 'index' }
 ];
 
-// Get tickers for an exchange
-export const getStocksByExchange = async (exchange: string) => {
-  const stocks = await fetchFromFMP('/stock/list');
-  return stocks.filter((stock: any) => 
-    stock.exchangeShortName === exchange && 
-    stock.type === 'stock' && 
-    !stock.isEtf && 
-    !stock.isActivelyTrading !== false
-  );
+// Backwards compatibility
+export const exchanges = marketOptions.filter(option => option.type === 'exchange');
+
+// Get tickers for an exchange or index
+export const getStocksByMarket = async (marketId: string) => {
+  const marketOption = marketOptions.find(option => option.id === marketId);
+  
+  if (!marketOption) {
+    throw new Error(`Unknown market: ${marketId}`);
+  }
+  
+  if (marketOption.type === 'exchange') {
+    // Existing exchange logic
+    const stocks = await fetchFromFMP('/stock/list');
+    return stocks.filter((stock: any) => 
+      stock.exchangeShortName === marketId && 
+      stock.type === 'stock' && 
+      !stock.isEtf && 
+      !stock.isActivelyTrading !== false
+    );
+  } else if (marketOption.type === 'index') {
+    // Index constituent logic
+    return await getIndexConstituents(marketId);
+  }
+  
+  return [];
 };
+
+// Get index constituents
+const getIndexConstituents = async (indexId: string) => {
+  try {
+    let endpoint = '';
+    
+    switch (indexId) {
+      case 'SP500':
+        endpoint = '/sp500_constituent';
+        break;
+      case 'DOW':
+        endpoint = '/dowjones_constituent';  
+        break;
+      case 'NASDAQ100':
+        endpoint = '/nasdaq_constituent';
+        break;
+      case 'DAX':
+        // DAX constituents via custom logic or fallback to German exchanges
+        const germanStocks = await fetchFromFMP('/stock/list');
+        return germanStocks.filter((stock: any) => 
+          stock.exchangeShortName === 'XETRA' && 
+          stock.type === 'stock' && 
+          !stock.isEtf
+        ).slice(0, 40); // Approximate DAX size
+      case 'FTSE100':
+        const ukStocks = await fetchFromFMP('/stock/list');
+        return ukStocks.filter((stock: any) => 
+          stock.exchangeShortName === 'LSE' && 
+          stock.type === 'stock' && 
+          !stock.isEtf
+        ).slice(0, 100);
+      case 'NIKKEI':
+        // Fallback for Nikkei - would need more sophisticated mapping
+        return [];
+      default:
+        return [];
+    }
+    
+    if (endpoint) {
+      const constituents = await fetchFromFMP(endpoint);
+      return constituents.map((constituent: any) => ({
+        symbol: constituent.symbol,
+        name: constituent.name || constituent.companyName,
+        exchangeShortName: constituent.exchange || 'NYSE', // Default fallback
+        type: 'stock'
+      }));
+    }
+    
+    return [];
+  } catch (error) {
+    console.error(`Error fetching index constituents for ${indexId}:`, error);
+    return [];
+  }
+};
+
+// Backwards compatibility
+export const getStocksByExchange = getStocksByMarket;
 
 // Function types for Quantitative Analysis
 export interface QuantAnalysisResult {
@@ -361,29 +444,30 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
   }
 };
 
-// Batch-Analyse für mehrere Aktien einer Börse mit Rate-Limiting
-export const analyzeExchange = async (
-  exchange: string, 
+// Batch-Analyse für mehrere Aktien einer Börse oder eines Index mit Rate-Limiting
+export const analyzeMarket = async (
+  marketId: string, 
   limit: number = 500,
   onProgress?: (progress: number, currentOperation: string) => void
 ) => {
   try {
-    // Aktien der Börse abrufen
-    const stocks = await fetchFromFMP(`/stock/list`);
-    const exchangeStocks = stocks
-      .filter((stock: any) => stock.exchangeShortName === exchange && stock.type === 'stock')
-      .slice(0, limit);
+    const marketOption = marketOptions.find(option => option.id === marketId);
+    const marketName = marketOption ? marketOption.name : marketId;
     
-    console.log(`Analysiere ${exchangeStocks.length} Aktien von ${exchange} in Batches`);
+    // Aktien des Marktes abrufen (Börse oder Index)
+    const marketStocks = await getStocksByMarket(marketId);
+    const stocksToAnalyze = marketStocks.slice(0, limit);
+    
+    console.log(`Analysiere ${stocksToAnalyze.length} Aktien von ${marketName} in Batches`);
     
     const results: QuantAnalysisResult[] = [];
     const batchSize = 50; // Etwa 50 Aktien pro Minute (300 API calls / 6 calls per stock)
-    const totalBatches = Math.ceil(exchangeStocks.length / batchSize);
+    const totalBatches = Math.ceil(stocksToAnalyze.length / batchSize);
     
     for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
       const startIndex = batchIndex * batchSize;
-      const endIndex = Math.min(startIndex + batchSize, exchangeStocks.length);
-      const batch = exchangeStocks.slice(startIndex, endIndex);
+      const endIndex = Math.min(startIndex + batchSize, stocksToAnalyze.length);
+      const batch = stocksToAnalyze.slice(startIndex, endIndex);
       
       console.log(`Batch ${batchIndex + 1}/${totalBatches}: Analysiere Aktien ${startIndex + 1}-${endIndex}`);
       
@@ -424,10 +508,13 @@ export const analyzeExchange = async (
     // Nach Buffett-Score sortieren (absteigend)
     return results.sort((a, b) => b.buffettScore - a.buffettScore);
   } catch (error) {
-    console.error('Fehler bei der Börsenanalyse:', error);
+    console.error('Fehler bei der Marktanalyse:', error);
     throw error;
   }
 };
+
+// Backwards compatibility
+export const analyzeExchange = analyzeMarket;
 
 // Exportieren der CSV-Datei
 export const exportToCsv = (results: QuantAnalysisResult[]) => {

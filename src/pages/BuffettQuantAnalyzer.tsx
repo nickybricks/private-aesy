@@ -4,9 +4,9 @@ import LeftNavigation from '@/components/LeftNavigation';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
-import ExchangeSelector from '@/components/ExchangeSelector';
+import MarketSelector from '@/components/MarketSelector';
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
-import { analyzeExchange, QuantAnalysisResult, exchanges } from '@/api/quantAnalyzerApi';
+import { analyzeMarket, QuantAnalysisResult, marketOptions } from '@/api/quantAnalyzerApi';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -56,7 +56,7 @@ const stockLimitOptions = [
 
 const BuffettQuantAnalyzer = () => {
   const { toast } = useToast();
-  const [selectedExchange, setSelectedExchange] = useState('NYSE');
+  const [selectedMarket, setSelectedMarket] = useState('NYSE');
   const [selectedSector, setSelectedSector] = useState('all');
   const [stockLimit, setStockLimit] = useState(100);
   const [results, setResults] = useState<QuantAnalysisResult[]>([]);
@@ -78,8 +78,8 @@ const BuffettQuantAnalyzer = () => {
     return `ca. ${Math.round(totalMinutes / 60)} Stunden`;
   }, [stockLimit]);
   
-  const handleExchangeChange = (value: string) => {
-    setSelectedExchange(value);
+  const handleMarketChange = (value: string) => {
+    setSelectedMarket(value);
   };
   
   const handleSectorChange = (value: string) => {
@@ -97,10 +97,10 @@ const BuffettQuantAnalyzer = () => {
   };
   
   const startAnalysis = async () => {
-    if (!selectedExchange) {
+    if (!selectedMarket) {
       toast({
-        title: "Bitte wählen Sie eine Börse aus",
-        description: "Sie müssen zuerst eine Börse auswählen, um die Analyse zu starten.",
+        title: "Bitte wählen Sie einen Markt aus",
+        description: "Sie müssen zuerst eine Börse oder einen Index auswählen, um die Analyse zu starten.",
         variant: "destructive"
       });
       return;
@@ -113,8 +113,8 @@ const BuffettQuantAnalyzer = () => {
     
     try {
       // Analyse mit dem eingestellten Limit und Progress-Callback
-      const analysisResults = await analyzeExchange(
-        selectedExchange, 
+      const analysisResults = await analyzeMarket(
+        selectedMarket, 
         stockLimit,
         (progressValue: number, operation: string) => {
           setProgress(progressValue);
@@ -134,9 +134,12 @@ const BuffettQuantAnalyzer = () => {
       setProgress(100);
       setCurrentOperation("Analyse abgeschlossen");
       
+      const selectedMarketOption = marketOptions.find(option => option.id === selectedMarket);
+      const marketName = selectedMarketOption ? selectedMarketOption.name : selectedMarket;
+      
       toast({
         title: "Analyse abgeschlossen",
-        description: `${filteredResults.length} Aktien von ${selectedExchange} wurden nach Buffett-Kriterien analysiert.`,
+        description: `${filteredResults.length} Aktien von ${marketName} wurden nach Buffett-Kriterien analysiert.`,
         variant: "default"
       });
     } catch (error) {
@@ -169,14 +172,14 @@ const BuffettQuantAnalyzer = () => {
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 mb-8">
         <div className="flex items-center mb-4">
           <Calculator className="h-6 w-6 text-buffett-blue mr-2" />
-          <h2 className="text-xl font-semibold">Börsenanalyse</h2>
+          <h2 className="text-xl font-semibold">Marktanalyse</h2>
         </div>
         
         <div className="space-y-6">
-          {/* Börsenauswahl */}
-          <ExchangeSelector 
-            selectedExchange={selectedExchange} 
-            onExchangeChange={handleExchangeChange} 
+          {/* Marktauswahl */}
+          <MarketSelector 
+            selectedMarket={selectedMarket} 
+            onMarketChange={handleMarketChange} 
           />
           
           {/* Sektorenfilter */}
@@ -230,7 +233,7 @@ const BuffettQuantAnalyzer = () => {
               className="bg-buffett-blue hover:bg-blue-700"
             >
               <BarChart3 className="mr-2 h-4 w-4" />
-              {isLoading ? "Analysiere..." : "Börse analysieren"}
+              {isLoading ? "Analysiere..." : "Markt analysieren"}
             </Button>
             <p className="text-sm text-gray-500 mt-2">
               Die Analyse läuft in mehreren Durchgängen mit Wartezeiten zwischen den Batches.
