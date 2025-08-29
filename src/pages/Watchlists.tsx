@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, MoreVertical, Edit, Trash2, TrendingUp, Calendar, Star } from 'lucide-react';
 import { useWatchlists } from '@/hooks/useWatchlists';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'react-router-dom';
 
 const Watchlists: React.FC = () => {
   const { watchlists, loading, createWatchlist, updateWatchlist, deleteWatchlist } = useWatchlists();
@@ -161,44 +162,46 @@ const Watchlists: React.FC = () => {
           {/* Watchlists Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {watchlists.map((watchlist) => (
-              <Card key={watchlist.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-lg font-medium">{watchlist.name}</CardTitle>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(watchlist)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Bearbeiten
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleDelete(watchlist.id)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Löschen
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </CardHeader>
-                <CardContent>
-                  {watchlist.description && (
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {watchlist.description}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>0 Positionen</span>
-                    <span>Erstellt: {new Date(watchlist.created_at).toLocaleDateString('de-DE')}</span>
-                  </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    Aktualisiert: {new Date(watchlist.updated_at).toLocaleDateString('de-DE')}
-                  </div>
-                </CardContent>
+              <Card key={watchlist.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                <Link to={`/watchlists/${watchlist.id}`}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-lg font-medium">{watchlist.name}</CardTitle>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={(e) => { e.preventDefault(); handleEdit(watchlist); }}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Bearbeiten
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => { e.preventDefault(); handleDelete(watchlist.id); }}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Löschen
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </CardHeader>
+                  <CardContent>
+                    {watchlist.description && (
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {watchlist.description}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>0 Positionen</span>
+                      <span>Erstellt: {new Date(watchlist.created_at).toLocaleDateString('de-DE')}</span>
+                    </div>
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Aktualisiert: {new Date(watchlist.updated_at).toLocaleDateString('de-DE')}
+                    </div>
+                  </CardContent>
+                </Link>
               </Card>
             ))}
 
