@@ -879,7 +879,7 @@ export const getFinancialMetrics = async (ticker: string) => {
     
     // 1. Direkt aus Ratios (vorberechneter Wert)
     if (latestRatios && latestRatios.returnOnEquity !== undefined) {
-      roe = safeValue(latestRatios.returnOnEquity);
+      roe = safeValue(latestRatios.returnOnEquity) * 100;
       console.log('ROE aus Ratios:', roe);
     }
     
@@ -888,7 +888,7 @@ export const getFinancialMetrics = async (ticker: string) => {
         latestIncomeStatement.netIncome !== undefined && 
         latestBalanceSheet.totalStockholdersEquity !== undefined && 
         latestBalanceSheet.totalStockholdersEquity > 0) {
-      roe = safeValue(latestIncomeStatement.netIncome / latestBalanceSheet.totalStockholdersEquity);
+      roe = safeValue(latestIncomeStatement.netIncome / latestBalanceSheet.totalStockholdersEquity) * 100;
       console.log('ROE berechnet aus Nettogewinn/Eigenkapital:', roe);
     }
     
