@@ -299,6 +299,12 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     }
   };
 
+  const normalizeSearchString = (str: string): string => {
+    return str.toLowerCase()
+      .replace(/[^a-z0-9]/g, '') // Remove all non-alphanumeric characters
+      .trim();
+  };
+
   const prioritizeResults = (results: StockSuggestion[]): StockSuggestion[] => {
     if (!results.length) return [];
     
@@ -328,20 +334,39 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     });
     
     const searchLower = searchQuery.toLowerCase();
+    const normalizedSearch = normalizeSearchString(searchQuery);
     
     const scoredResults = filteredResults.map(stock => {
       let score = 0;
+      const stockNameLower = stock.name.toLowerCase();
+      const normalizedStockName = normalizeSearchString(stock.name);
       
-      if (stock.name.toLowerCase() === searchLower) {
+      // Exact matches (highest priority)
+      if (stockNameLower === searchLower) {
         score += 100;
       } 
-      else if (stock.name.toLowerCase().startsWith(searchLower)) {
+      // Normalized exact match (for cases like "United health" vs "UnitedHealth")
+      else if (normalizedStockName === normalizedSearch) {
+        score += 95;
+      }
+      // Start matches
+      else if (stockNameLower.startsWith(searchLower)) {
         score += 80;
       }
-      else if (stock.name.toLowerCase().includes(searchLower)) {
+      // Normalized start match
+      else if (normalizedStockName.startsWith(normalizedSearch)) {
+        score += 75;
+      }
+      // Contains matches
+      else if (stockNameLower.includes(searchLower)) {
         score += 60;
       }
+      // Normalized contains match
+      else if (normalizedStockName.includes(normalizedSearch)) {
+        score += 55;
+      }
       
+      // Symbol matches
       if (stock.symbol.toLowerCase() === searchLower) {
         score += 50;
       }
@@ -349,6 +374,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         score += 40;
       }
       
+      // Exchange preferences
       if (stock.symbol.endsWith('.DE')) {
         score += 30;
       }
@@ -460,10 +486,16 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           variant: "destructive",
         });
         
-        const filteredResults = fallbackStocks.filter(stock => 
-          stock.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          stock.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        const filteredResults = fallbackStocks.filter(stock => {
+          const stockNameLower = stock.name.toLowerCase();
+          const searchLower = searchQuery.toLowerCase();
+          const normalizedSearch = normalizeSearchString(searchQuery);
+          const normalizedStockName = normalizeSearchString(stock.name);
+          
+          return stockNameLower.includes(searchLower) || 
+                 stock.symbol.toLowerCase().includes(searchLower) ||
+                 normalizedStockName.includes(normalizedSearch);
+        });
         setSuggestions(filteredResults);
         
         const correction = getFuzzyMatches(searchQuery, filteredResults);
