@@ -10,7 +10,6 @@ export interface StockSearchResult {
   change?: number;
   changePercent?: number;
   isin?: string;
-  assetType?: string;
 }
 
 interface FMPSearchResult {
@@ -40,26 +39,18 @@ export const useStockSearch = () => {
   };
 
   const isStock = (item: FMPSearchResult): boolean => {
-    // Now we accept all types of securities, but we'll categorize them
-    return true;
-  };
-
-  const getAssetType = (item: FMPSearchResult): string => {
+    const excludePatterns = [
+      /ETF/i, /FUND/i, /INDEX/i, /REIT/i, /ADR/i, /GDR/i,
+      /WARRANT/i, /BOND/i, /NOTE/i, /CERTIFICATE/i,
+      /FUTURE/i, /OPTION/i, /SWAP/i
+    ];
+    
     const name = item.name.toLowerCase();
     const symbol = item.symbol.toLowerCase();
     
-    if (/etf/i.test(name) || /etf/i.test(symbol)) return 'ETF';
-    if (/fund/i.test(name) || /fund/i.test(symbol)) return 'Fonds';
-    if (/reit/i.test(name) || /reit/i.test(symbol)) return 'REIT';
-    if (/adr/i.test(name) || /adr/i.test(symbol)) return 'ADR';
-    if (/gdr/i.test(name) || /gdr/i.test(symbol)) return 'GDR';
-    if (/warrant/i.test(name) || /warrant/i.test(symbol)) return 'Warrant';
-    if (/bond/i.test(name) || /note/i.test(name)) return 'Anleihe';
-    if (/certificate/i.test(name)) return 'Zertifikat';
-    if (/future/i.test(name)) return 'Future';
-    if (/option/i.test(name)) return 'Option';
-    
-    return 'Aktie';
+    return !excludePatterns.some(pattern => 
+      pattern.test(name) || pattern.test(symbol)
+    );
   };
 
   const searchStocks = async (query: string) => {
@@ -84,16 +75,16 @@ export const useStockSearch = () => {
       
       const searchData: FMPSearchResult[] = await searchResponse.json();
       
-      // Include all securities (stocks, ETFs, funds, etc.)
-      const allSecurities = searchData;
+      // Filter only stocks (exclude ETFs, funds, etc.)
+      const stocksOnly = searchData.filter(isStock);
       
-      if (allSecurities.length === 0) {
+      if (stocksOnly.length === 0) {
         setSearchResults([]);
         return;
       }
       
-      // Get current quotes for the found securities
-      const symbols = allSecurities.slice(0, 10).map(stock => stock.symbol).join(',');
+      // Get current quotes for the found stocks
+      const symbols = stocksOnly.slice(0, 10).map(stock => stock.symbol).join(',');
       const quoteResponse = await fetch(
         `https://financialmodelingprep.com/api/v3/quote/${symbols}?apikey=${apiKey}`
       );
@@ -105,7 +96,7 @@ export const useStockSearch = () => {
       const quoteData: FMPQuote[] = await quoteResponse.json();
       
       // Combine search and quote data
-      const results: StockSearchResult[] = allSecurities
+      const results: StockSearchResult[] = stocksOnly
         .map(stock => {
           const quote = quoteData.find(q => q.symbol === stock.symbol);
           return {
@@ -116,10 +107,9 @@ export const useStockSearch = () => {
             price: quote?.price || 0,
             change: quote?.change,
             changePercent: quote?.changesPercentage,
-            assetType: getAssetType(stock),
           };
         })
-        .filter(stock => stock.price > 0) // Only include securities with valid prices
+        .filter(stock => stock.price > 0) // Only include stocks with valid prices
         .slice(0, 10);
       
       setSearchResults(results);

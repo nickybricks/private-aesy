@@ -11,7 +11,6 @@ export interface StockAnalysisData {
   sinceAddedPercent?: number;
   exchange?: string;
   isin?: string;
-  assetType?: string;
 }
 
 export interface UserStock extends Omit<Tables<'user_stocks'>, 'analysis_data'> {
@@ -84,7 +83,6 @@ export const useUserStocks = (watchlistId: string) => {
       let exchange = '';
       let currency = 'USD';
       let isin = '';
-      let assetType = 'Aktie';
       
       if (profileResponse.ok) {
         const profileData = await profileResponse.json();
@@ -93,14 +91,6 @@ export const useUserStocks = (watchlistId: string) => {
           exchange = profile.exchangeShortName || '';
           currency = profile.currency || 'USD';
           isin = profile.isin || '';
-          // Determine asset type from profile
-          const name = profile.companyName?.toLowerCase() || '';
-          const symbol = profile.symbol?.toLowerCase() || '';
-          
-          if (/etf/i.test(name) || /etf/i.test(symbol)) assetType = 'ETF';
-          else if (/fund/i.test(name) || /fund/i.test(symbol)) assetType = 'Fonds';
-          else if (/reit/i.test(name) || /reit/i.test(symbol)) assetType = 'REIT';
-          else if (/adr/i.test(name) || /adr/i.test(symbol)) assetType = 'ADR';
         }
       }
       
@@ -109,8 +99,7 @@ export const useUserStocks = (watchlistId: string) => {
         currency,
         changePercent: quote.changesPercentage,
         exchange,
-        isin,
-        assetType
+        isin
       };
     } catch (error) {
       console.error('Error fetching stock data:', error);
@@ -137,8 +126,7 @@ export const useUserStocks = (watchlistId: string) => {
         changePercent: stockInfo.changePercent,
         sinceAddedPercent: 0, // Will be calculated later
         exchange: stockInfo.exchange,
-        isin: stockInfo.isin,
-        assetType: stockInfo.assetType
+        isin: stockInfo.isin
       } : undefined;
 
       const { data, error } = await supabase

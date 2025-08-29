@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Search, MoreHorizontal, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,35 +33,11 @@ const WatchlistDetail: React.FC = () => {
     stock.company_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Auto-search with debouncing
-  const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      if (query.trim().length >= 3) {
-        searchStocks(query);
-      }
-    }, 800),
-    [searchStocks]
-  );
-
-  useEffect(() => {
-    debouncedSearch(stockSearchQuery);
-  }, [stockSearchQuery, debouncedSearch]);
-
-  const handleStockSearchChange = (value: string) => {
-    setStockSearchQuery(value);
+  const handleStockSearch = async () => {
+    if (stockSearchQuery.trim()) {
+      await searchStocks(stockSearchQuery);
+    }
   };
-
-  // Debounce utility function
-  function debounce<T extends (...args: any[]) => any>(
-    func: T,
-    delay: number
-  ): (...args: Parameters<T>) => void {
-    let timeoutId: NodeJS.Timeout;
-    return (...args: Parameters<T>) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func(...args), delay);
-    };
-  }
 
   const handleAddStock = async (stockData: any) => {
     await addStock({
@@ -136,81 +112,50 @@ const WatchlistDetail: React.FC = () => {
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Wertpapier hinzufügen</DialogTitle>
+                  <DialogTitle>Aktie hinzufügen</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="relative">
+                  <div className="flex space-x-2">
                     <Input
-                      placeholder="Aktien, ETFs oder Fonds suchen (z.B. Apple, AAPL, Vanguard)"
+                      placeholder="Aktien suchen (z.B. Apple, AAPL, US0378331005)"
                       value={stockSearchQuery}
-                      onChange={(e) => handleStockSearchChange(e.target.value)}
-                      className="w-full"
+                      onChange={(e) => setStockSearchQuery(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleStockSearch()}
                     />
+                    <Button onClick={handleStockSearch} disabled={isSearching}>
+                      <Search className="h-4 w-4" />
+                    </Button>
                   </div>
+                  
+                  {searchResults.length > 0 && (
+                    <div className="max-h-96 overflow-y-auto space-y-2">
+                      {searchResults.map((stock, index) => (
+                        <Card key={index} className="cursor-pointer hover:bg-accent" onClick={() => handleAddStock(stock)}>
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h3 className="font-medium">{stock.name}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {stock.symbol} • {stock.exchange}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-medium">{formatCurrency(stock.price, stock.currency)}</p>
+                                {stock.change && (
+                                  <p className="text-sm">{formatPercentage(stock.change)}</p>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
           </div>
         </div>
-
-        {/* Search Results Portal - Outside Dialog */}
-        {isAddStockDialogOpen && (searchResults.length > 0 || (stockSearchQuery.length >= 2 && !isSearching)) && (
-          <div className="fixed inset-0 z-[60] pointer-events-none">
-            <div className="flex items-center justify-center min-h-screen p-4">
-              <div className="relative w-full max-w-2xl">
-                {/* Position the dropdown below where the input would be */}
-                <div className="absolute top-[120px] left-0 right-0 pointer-events-auto">
-                  <div className="bg-background border border-border rounded-lg shadow-lg overflow-hidden">
-                    {isSearching && (
-                      <div className="p-3 text-sm text-muted-foreground">
-                        Suche läuft...
-                      </div>
-                    )}
-                    
-                    {searchResults.length > 0 && (
-                      <>
-                        <div className="px-3 py-2 bg-muted/50 border-b border-border">
-                          <span className="text-sm font-medium text-muted-foreground">Vorschläge</span>
-                        </div>
-                        <div className="max-h-80 overflow-y-auto">
-                          {searchResults.map((stock, index) => (
-                            <div 
-                              key={index} 
-                              className="p-3 cursor-pointer hover:bg-accent transition-colors border-b border-border last:border-b-0" 
-                              onClick={() => handleAddStock(stock)}
-                            >
-                              <div className="flex justify-between items-center">
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2">
-                                    <span className="font-medium text-foreground">{stock.name}</span>
-                                    <span className="text-muted-foreground">({stock.symbol})</span>
-                                    <Badge variant="secondary" className="text-xs">
-                                      {stock.assetType}
-                                    </Badge>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <span className="text-sm font-medium text-muted-foreground">{stock.exchange}</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-
-                    {stockSearchQuery.length >= 2 && searchResults.length === 0 && !isSearching && (
-                      <div className="p-6 text-center text-muted-foreground">
-                        <p>Keine Ergebnisse für "{stockSearchQuery}" gefunden</p>
-                        <p className="text-sm mt-1">Versuche es mit einem anderen Suchbegriff</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Tabs */}
         <div className="border-b border-border mb-6">
@@ -236,7 +181,7 @@ const WatchlistDetail: React.FC = () => {
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Wertpapiere"
+              placeholder="Aktien"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -263,19 +208,9 @@ const WatchlistDetail: React.FC = () => {
                   <TableRow key={stock.id}>
                     <TableCell>
                       <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium">{stock.company_name || stock.symbol}</span>
-                          {stock.analysis_data?.assetType && (
-                            <Badge variant="outline" className="text-xs">
-                              {stock.analysis_data.assetType}
-                            </Badge>
-                          )}
-                        </div>
+                        <div className="font-medium">{stock.company_name || stock.symbol}</div>
                         <div className="text-sm text-muted-foreground">
                           {stock.symbol} • {stock.analysis_data?.exchange || 'N/A'}
-                          {stock.analysis_data?.isin && (
-                            <span className="ml-2">• {stock.analysis_data.isin}</span>
-                          )}
                         </div>
                       </div>
                     </TableCell>
@@ -321,7 +256,7 @@ const WatchlistDetail: React.FC = () => {
                 {filteredStocks.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      {stocksLoading ? 'Laden...' : 'Keine Wertpapiere in dieser Watchlist'}
+                      {stocksLoading ? 'Laden...' : 'Keine Aktien in dieser Watchlist'}
                     </TableCell>
                   </TableRow>
                 )}
