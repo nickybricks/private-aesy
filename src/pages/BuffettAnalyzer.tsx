@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
@@ -27,13 +27,17 @@ const IndexContent: React.FC = () => {
     stockInfo
   } = useStock();
 
+  // Track which ticker has been analyzed to prevent duplicate analysis
+  const analyzedTicker = useRef<string | null>(null);
+
   // Check for ticker parameter in URL and trigger search
   useEffect(() => {
     const ticker = searchParams.get('ticker');
-    if (ticker && !stockInfo) {
+    if (ticker && ticker !== analyzedTicker.current && !isLoading) {
+      analyzedTicker.current = ticker;
       handleSearch(ticker);
     }
-  }, [searchParams, handleSearch, stockInfo]);
+  }, [searchParams, isLoading]); // Nur searchParams und isLoading als Dependencies
   
   return (
     <main className="flex-1 overflow-auto bg-background">
