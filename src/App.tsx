@@ -10,7 +10,6 @@ import AuthPage from "./pages/AuthPage";
 import BuffettAnalyzer from "./pages/BuffettAnalyzer";
 import BuffettQuantAnalyzer from "./pages/BuffettQuantAnalyzer";
 import Watchlists from "./pages/Watchlists";
-import WatchlistDetail from "./pages/WatchlistDetail";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
@@ -97,14 +96,6 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Watchlists />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/watchlists/:id" 
-              element={
-                <ProtectedRoute>
-                  <WatchlistDetail />
                 </ProtectedRoute>
               } 
             />
