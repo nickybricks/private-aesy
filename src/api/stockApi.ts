@@ -915,7 +915,7 @@ export const getFinancialMetrics = async (ticker: string) => {
     
     // 1. Direkt aus Metrics (vorberechneter Wert)
     if (latestMetrics && latestMetrics.roic !== undefined) {
-      roic = safeValue(latestMetrics.roic);
+      roic = safeValue(latestMetrics.roic) * 100;
       console.log('ROIC aus Key Metrics:', roic);
     }
     
@@ -936,7 +936,7 @@ export const getFinancialMetrics = async (ticker: string) => {
                                (latestBalanceSheet.shortTermDebt || 0);
         
         if (investedCapital > 0) {
-          roic = nopat / investedCapital;
+          roic = (nopat / investedCapital) * 100;
           console.log('ROIC berechnet aus NOPAT/Investiertes Kapital:', roic);
         }
       }
