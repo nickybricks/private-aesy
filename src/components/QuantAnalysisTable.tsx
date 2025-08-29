@@ -61,6 +61,18 @@ const metricsDefinitions = {
     target: "positiv",
     formula: "Aktueller Umsatz ÷ Vorjahres-Umsatz - 1"
   },
+  interestCoverage: {
+    name: "Zinsdeckungsgrad",
+    definition: "Fähigkeit des Unternehmens, Zinsen aus dem operativen Gewinn zu bedienen.",
+    target: "> 5",
+    formula: "EBIT ÷ Zinsaufwand"
+  },
+  debtRatio: {
+    name: "Schuldenquote",
+    definition: "Verhältnis der Gesamtverschuldung zur Bilanzsumme.",
+    target: "< 70%",
+    formula: "Gesamtschulden ÷ Bilanzsumme"
+  },
   pe: {
     name: "KGV (Kurs-Gewinn-Verhältnis)",
     definition: "Verhältnis zwischen Aktienkurs und Gewinn pro Aktie.",
@@ -228,6 +240,22 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           valueA = a.criteria.netMargin.value || -9999;
           valueB = b.criteria.netMargin.value || -9999;
           break;
+        case 'epsGrowth':
+          valueA = a.criteria.epsGrowth.value || -9999;
+          valueB = b.criteria.epsGrowth.value || -9999;
+          break;
+        case 'revenueGrowth':
+          valueA = a.criteria.revenueGrowth.value || -9999;
+          valueB = b.criteria.revenueGrowth.value || -9999;
+          break;
+        case 'interestCoverage':
+          valueA = a.criteria.interestCoverage.value || -9999;
+          valueB = b.criteria.interestCoverage.value || -9999;
+          break;
+        case 'debtRatio':
+          valueA = a.criteria.debtRatio.value || 9999;
+          valueB = b.criteria.debtRatio.value || 9999;
+          break;
         case 'pe':
           valueA = a.criteria.pe.value || 9999;
           valueB = b.criteria.pe.value || 9999;
@@ -364,6 +392,42 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortDirection={setSortDirection}
               />
               <SortableHeader 
+                field="epsGrowth" 
+                name="EPS ↑" 
+                tooltipText={`${metricsDefinitions.epsGrowth.definition} Ziel: ${metricsDefinitions.epsGrowth.target}`}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                setSortField={setSortField}
+                setSortDirection={setSortDirection}
+              />
+              <SortableHeader 
+                field="revenueGrowth" 
+                name="Umsatz ↑" 
+                tooltipText={`${metricsDefinitions.revenueGrowth.definition} Ziel: ${metricsDefinitions.revenueGrowth.target}`}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                setSortField={setSortField}
+                setSortDirection={setSortDirection}
+              />
+              <SortableHeader 
+                field="interestCoverage" 
+                name="Zinsdeckung" 
+                tooltipText={`${metricsDefinitions.interestCoverage.definition} Ziel: ${metricsDefinitions.interestCoverage.target}`}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                setSortField={setSortField}
+                setSortDirection={setSortDirection}
+              />
+              <SortableHeader 
+                field="debtRatio" 
+                name="Schulden %" 
+                tooltipText={`${metricsDefinitions.debtRatio.definition} Ziel: ${metricsDefinitions.debtRatio.target}`}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                setSortField={setSortField}
+                setSortDirection={setSortDirection}
+              />
+              <SortableHeader
                 field="pe" 
                 name="KGV" 
                 tooltipText={`${metricsDefinitions.pe.definition} Ziel: ${metricsDefinitions.pe.target}`}
@@ -414,7 +478,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={14} className="text-center py-8">
+                <TableCell colSpan={16} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
                     <span>Analyse läuft...</span>
@@ -423,7 +487,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableRow>
             ) : filteredResults.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={14} className="text-center py-8">
+                <TableCell colSpan={16} className="text-center py-8">
                   Keine Ergebnisse gefunden
                 </TableCell>
               </TableRow>
@@ -455,6 +519,30 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.netMargin.pass} value={stock.criteria.netMargin.value} />
                       <span>{formatValue(stock.criteria.netMargin.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.epsGrowth.pass} value={stock.criteria.epsGrowth.value} />
+                      <span>{formatValue(stock.criteria.epsGrowth.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.revenueGrowth.pass} value={stock.criteria.revenueGrowth.value} />
+                      <span>{formatValue(stock.criteria.revenueGrowth.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.interestCoverage.pass} value={stock.criteria.interestCoverage.value} />
+                      <span>{formatValue(stock.criteria.interestCoverage.value, 1, false)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.debtRatio.pass} value={stock.criteria.debtRatio.value} />
+                      <span>{formatValue(stock.criteria.debtRatio.value)}</span>
                     </div>
                   </TableCell>
                   <TableCell>
