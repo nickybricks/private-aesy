@@ -419,6 +419,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12"></TableHead>
               <SortableHeader 
                 field="symbol" 
                 name="Symbol" 
@@ -561,7 +562,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortDirection={setSortDirection}
               />
               <TableHead>Preis</TableHead>
-              <TableHead>Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -583,6 +583,43 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
             ) : (
               filteredResults.map((stock) => (
                 <TableRow key={stock.symbol}>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleAnalyzeStock(stock)}>
+                          <TrendingUp className="mr-2 h-4 w-4" />
+                          In Buffett Analyzer analysieren
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Zu Watchlist hinzufügen
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {watchlists.map((watchlist) => (
+                              <DropdownMenuItem
+                                key={watchlist.id}
+                                onClick={() => handleAddToWatchlist(stock, watchlist.id)}
+                              >
+                                {watchlist.name}
+                              </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleAddToWatchlist(stock)}>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Neue Watchlist erstellen
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                   <TableCell className="font-medium">{stock.symbol}</TableCell>
                   <TableCell>{stock.name}</TableCell>
                   <TableCell>{stock.sector}</TableCell>
@@ -676,43 +713,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   </TableCell>
                   <TableCell>
                     {stock.price?.toFixed(2)} {stock.currency}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleAnalyzeStock(stock)}>
-                          <TrendingUp className="mr-2 h-4 w-4" />
-                          In Buffett Analyzer analysieren
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Zu Watchlist hinzufügen
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            {watchlists.map((watchlist) => (
-                              <DropdownMenuItem
-                                key={watchlist.id}
-                                onClick={() => handleAddToWatchlist(stock, watchlist.id)}
-                              >
-                                {watchlist.name}
-                              </DropdownMenuItem>
-                            ))}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleAddToWatchlist(stock)}>
-                              <Plus className="mr-2 h-4 w-4" />
-                              Neue Watchlist erstellen
-                            </DropdownMenuItem>
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
