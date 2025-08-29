@@ -134,25 +134,35 @@ const SortableHeader = ({ field, name, tooltipText, sortField, sortDirection, se
   const isCurrentSort = sortField === field;
   const SortIcon = sortDirection === "asc" ? ArrowUp : ArrowDown;
   
+  const handleHeaderClick = () => {
+    if (isCurrentSort) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  const handleTooltipClick = (e: React.MouseEvent) => {
+    // Verhindere das Sortieren, wenn auf den Tooltip geklickt wird
+    e.stopPropagation();
+  };
+  
   return (
-    <TableHead className="cursor-pointer select-none" onClick={() => {
-      if (isCurrentSort) {
-        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-      } else {
-        setSortField(field);
-        setSortDirection("desc");
-      }
-    }}>
+    <TableHead className="cursor-pointer select-none" onClick={handleHeaderClick}>
       <div className="flex items-center space-x-1">
         <span>{name}</span>
         {isCurrentSort && <SortIcon className="h-4 w-4" />}
         {tooltipText && (
           <Popover>
             <PopoverTrigger asChild>
-              <Info className="h-4 w-4 text-gray-400 ml-1 cursor-pointer" />
+              <Info 
+                className="h-4 w-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600" 
+                onClick={handleTooltipClick}
+              />
             </PopoverTrigger>
-            <PopoverContent>
-              <p className="max-w-xs">{tooltipText}</p>
+            <PopoverContent className="max-w-sm">
+              <p className="text-sm">{tooltipText}</p>
             </PopoverContent>
           </Popover>
         )}
