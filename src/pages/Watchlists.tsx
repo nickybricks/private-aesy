@@ -1,126 +1,85 @@
 import React, { useState } from 'react';
-import { Plus, MoreVertical, Star, TrendingUp, Calendar } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, MoreVertical, Edit, Trash2, TrendingUp, Calendar, Star } from 'lucide-react';
+import { useWatchlists } from '@/hooks/useWatchlists';
+import { Skeleton } from '@/components/ui/skeleton';
 
-interface Watchlist {
-  id: string;
-  name: string;
-  description?: string;
-  positions: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const Watchlists = () => {
-  const { toast } = useToast();
-  const [watchlists, setWatchlists] = useState<Watchlist[]>([
-    {
-      id: '1',
-      name: 'Buffett Favorites',
-      description: 'Aktien nach Warren Buffetts Prinzipien',
-      positions: 7,
-      createdAt: '06.06.2025',
-      updatedAt: '06.06.2025'
-    },
-    {
-      id: '2', 
-      name: 'Tech Giants',
-      description: 'Große Technologie-Unternehmen',
-      positions: 5,
-      createdAt: '01.12.2024',
-      updatedAt: '24.01.2025'
-    },
-    {
-      id: '3',
-      name: 'Dividenden Champions', 
-      description: 'Aktien mit konstanten Dividenden',
-      positions: 12,
-      createdAt: '24.01.2025',
-      updatedAt: '24.01.2025'
-    },
-    {
-      id: '4',
-      name: 'Value Picks 2025',
-      positions: 0,
-      createdAt: '24.01.2025',
-      updatedAt: '24.01.2025'
-    }
-  ]);
-
+const Watchlists: React.FC = () => {
+  const { watchlists, loading, createWatchlist, updateWatchlist, deleteWatchlist } = useWatchlists();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newWatchlistName, setNewWatchlistName] = useState('');
-  const [newWatchlistDescription, setNewWatchlistDescription] = useState('');
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingWatchlist, setEditingWatchlist] = useState<any>(null);
+  const [formData, setFormData] = useState({ name: '', description: '' });
 
-  const handleCreateWatchlist = () => {
-    if (!newWatchlistName.trim()) {
-      toast({
-        title: "Name erforderlich",
-        description: "Bitte geben Sie einen Namen für die Watchlist ein.",
-        variant: "destructive"
-      });
-      return;
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createWatchlist(formData.name, formData.description || undefined);
+      setFormData({ name: '', description: '' });
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      // Error handled by hook
     }
+  };
 
-    const now = new Date().toLocaleDateString('de-DE');
-    const newWatchlist: Watchlist = {
-      id: Date.now().toString(),
-      name: newWatchlistName.trim(),
-      description: newWatchlistDescription.trim() || undefined,
-      positions: 0,
-      createdAt: now,
-      updatedAt: now
-    };
-
-    setWatchlists([newWatchlist, ...watchlists]);
-    setNewWatchlistName('');
-    setNewWatchlistDescription('');
-    setIsCreateDialogOpen(false);
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingWatchlist) return;
     
-    toast({
-      title: "Watchlist erstellt",
-      description: `"${newWatchlist.name}" wurde erfolgreich erstellt.`,
-      variant: "default"
-    });
+    try {
+      await updateWatchlist(editingWatchlist.id, {
+        name: formData.name,
+        description: formData.description || undefined
+      });
+      setFormData({ name: '', description: '' });
+      setIsEditDialogOpen(false);
+      setEditingWatchlist(null);
+    } catch (error) {
+      // Error handled by hook
+    }
   };
 
-  const handleDeleteWatchlist = (id: string, name: string) => {
-    setWatchlists(watchlists.filter(w => w.id !== id));
-    toast({
-      title: "Watchlist gelöscht",
-      description: `"${name}" wurde erfolgreich gelöscht.`,
-      variant: "default"
+  const handleEdit = (watchlist: any) => {
+    setEditingWatchlist(watchlist);
+    setFormData({ 
+      name: watchlist.name, 
+      description: watchlist.description || '' 
     });
+    setIsEditDialogOpen(true);
   };
 
-  const handleRenameWatchlist = (id: string) => {
-    // Placeholder für Umbenennung
-    toast({
-      title: "Feature kommt bald",
-      description: "Die Umbenennung von Watchlists wird bald verfügbar sein.",
-      variant: "default"
-    });
+  const handleDelete = async (watchlistId: string) => {
+    try {
+      await deleteWatchlist(watchlistId);
+    } catch (error) {
+      // Error handled by hook
+    }
   };
+
+  if (loading) {
+    return (
+      <main className="flex-1 overflow-auto bg-background">
+        <div className="p-8 max-w-7xl mx-auto">
+          <div className="mb-8">
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="grid gap-6">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 overflow-auto bg-background">
@@ -137,52 +96,55 @@ const Watchlists = () => {
               </p>
             </div>
 
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="lg" className="bg-primary hover:bg-primary/90">
-                  <Plus className="mr-2 h-5 w-5" />
-                  Neue Watchlist
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Neue Watchlist erstellen</DialogTitle>
-                  <DialogDescription>
-                    Erstellen Sie eine neue Watchlist für Ihre Aktienauswahl.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">Name *</Label>
-                    <Input
-                      id="name"
-                      value={newWatchlistName}
-                      onChange={(e) => setNewWatchlistName(e.target.value)}
-                      placeholder="z.B. Meine Favoriten"
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Beschreibung (optional)</Label>
-                    <Textarea
-                      id="description"
-                      value={newWatchlistDescription}
-                      onChange={(e) => setNewWatchlistDescription(e.target.value)}
-                      placeholder="Beschreiben Sie den Zweck dieser Watchlist..."
-                      className="min-h-[80px]"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                    Abbrechen
+            {/* Create New Watchlist Dialog */}
+            {watchlists.length > 0 && (
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Neue Watchlist
                   </Button>
-                  <Button onClick={handleCreateWatchlist}>
-                    Erstellen
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <form onSubmit={handleCreateSubmit}>
+                    <DialogHeader>
+                      <DialogTitle>Neue Watchlist erstellen</DialogTitle>
+                      <DialogDescription>
+                        Erstelle eine neue Watchlist um deine Aktien zu organisieren.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div>
+                        <Label htmlFor="create-name">Name</Label>
+                        <Input
+                          id="create-name"
+                          value={formData.name}
+                          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="z.B. Tech-Aktien"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="create-description">Beschreibung (Optional)</Label>
+                        <Textarea
+                          id="create-description"
+                          value={formData.description}
+                          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="Kurze Beschreibung der Watchlist..."
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                        Abbrechen
+                      </Button>
+                      <Button type="submit">Erstellen</Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
 
           {/* Tabs */}
@@ -197,78 +159,157 @@ const Watchlists = () => {
           </div>
 
           {/* Watchlists Grid */}
-          <div className="grid gap-4">
-            {watchlists.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Star className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Keine Watchlists vorhanden</h3>
-                  <p className="text-muted-foreground text-center mb-4">
-                    Erstellen Sie Ihre erste Watchlist, um interessante Aktien zu sammeln und zu verfolgen.
-                  </p>
-                  <Button onClick={() => setIsCreateDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Erste Watchlist erstellen
-                  </Button>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {watchlists.map((watchlist) => (
+              <Card key={watchlist.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-lg font-medium">{watchlist.name}</CardTitle>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(watchlist)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Bearbeiten
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleDelete(watchlist.id)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Löschen
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardHeader>
+                <CardContent>
+                  {watchlist.description && (
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {watchlist.description}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>0 Positionen</span>
+                    <span>Erstellt: {new Date(watchlist.created_at).toLocaleDateString('de-DE')}</span>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    Aktualisiert: {new Date(watchlist.updated_at).toLocaleDateString('de-DE')}
+                  </div>
                 </CardContent>
               </Card>
-            ) : (
-              watchlists.map((watchlist) => (
-                <Card key={watchlist.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-semibold text-foreground truncate">
-                            {watchlist.name}
-                          </h3>
-                          <Badge variant="secondary" className="shrink-0">
-                            {watchlist.positions} {watchlist.positions === 1 ? 'Position' : 'Positionen'}
-                          </Badge>
+            ))}
+
+            {watchlists.length === 0 && (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                <TrendingUp className="h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-medium text-foreground mb-2">
+                  Noch keine Watchlists erstellt
+                </h3>
+                <p className="text-muted-foreground mb-6 max-w-md">
+                  Erstelle deine erste Watchlist, um Aktien zu organisieren und zu verfolgen.
+                </p>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Erste Watchlist erstellen
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <form onSubmit={handleCreateSubmit}>
+                      <DialogHeader>
+                        <DialogTitle>Neue Watchlist erstellen</DialogTitle>
+                        <DialogDescription>
+                          Erstelle eine neue Watchlist um deine Aktien zu organisieren.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div>
+                          <Label htmlFor="create-name">Name</Label>
+                          <Input
+                            id="create-name"
+                            value={formData.name}
+                            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="z.B. Tech-Aktien"
+                            required
+                          />
                         </div>
-                        
-                        {watchlist.description && (
-                          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
-                            {watchlist.description}
-                          </p>
-                        )}
-                        
-                        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>Hinzugefügt: {watchlist.createdAt}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <TrendingUp className="h-3 w-3" />
-                            <span>Update: {watchlist.updatedAt}</span>
-                          </div>
+                        <div>
+                          <Label htmlFor="create-description">Beschreibung (Optional)</Label>
+                          <Textarea
+                            id="create-description"
+                            value={formData.description}
+                            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                            placeholder="Kurze Beschreibung der Watchlist..."
+                            rows={3}
+                          />
                         </div>
                       </div>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="shrink-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleRenameWatchlist(watchlist.id)}>
-                            Umbenennen
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteWatchlist(watchlist.id, watchlist.name)}
-                            className="text-red-600"
-                          >
-                            Löschen
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                          Abbrechen
+                        </Button>
+                        <Button type="submit">Erstellen</Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
             )}
           </div>
+
+          {/* Edit Watchlist Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent>
+              <form onSubmit={handleEditSubmit}>
+                <DialogHeader>
+                  <DialogTitle>Watchlist bearbeiten</DialogTitle>
+                  <DialogDescription>
+                    Bearbeite den Namen und die Beschreibung deiner Watchlist.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <Label htmlFor="edit-name">Name</Label>
+                    <Input
+                      id="edit-name"
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="z.B. Tech-Aktien"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-description">Beschreibung (Optional)</Label>
+                    <Textarea
+                      id="edit-description"
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Kurze Beschreibung der Watchlist..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsEditDialogOpen(false);
+                      setEditingWatchlist(null);
+                      setFormData({ name: '', description: '' });
+                    }}
+                  >
+                    Abbrechen
+                  </Button>
+                  <Button type="submit">Speichern</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           {/* Stats */}
           {watchlists.length > 0 && (
@@ -290,9 +331,7 @@ const Watchlists = () => {
                   <div className="flex items-center space-x-2">
                     <TrendingUp className="h-5 w-5 text-green-500" />
                     <div>
-                      <p className="text-2xl font-bold">
-                        {watchlists.reduce((sum, w) => sum + w.positions, 0)}
-                      </p>
+                      <p className="text-2xl font-bold">0</p>
                       <p className="text-sm text-muted-foreground">Gesamte Positionen</p>
                     </div>
                   </div>
@@ -304,9 +343,7 @@ const Watchlists = () => {
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-5 w-5 text-blue-500" />
                     <div>
-                      <p className="text-2xl font-bold">
-                        {watchlists.filter(w => w.positions > 0).length}
-                      </p>
+                      <p className="text-2xl font-bold">0</p>
                       <p className="text-sm text-muted-foreground">Aktive Listen</p>
                     </div>
                   </div>
