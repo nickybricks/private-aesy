@@ -36,13 +36,10 @@ const WatchlistDetail: React.FC = () => {
   // Auto-search with debouncing
   const debouncedSearch = useCallback(
     debounce((query: string) => {
-      if (query.trim().length >= 2) {
+      if (query.trim().length >= 3) {
         searchStocks(query);
-      } else {
-        // Clear results if query is too short
-        searchStocks('');
       }
-    }, 300),
+    }, 800),
     [searchStocks]
   );
 
