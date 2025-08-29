@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Search, MoreHorizontal, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,11 +33,38 @@ const WatchlistDetail: React.FC = () => {
     stock.company_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleStockSearch = async () => {
-    if (stockSearchQuery.trim()) {
-      await searchStocks(stockSearchQuery);
-    }
+  // Auto-search with debouncing
+  const debouncedSearch = useCallback(
+    debounce((query: string) => {
+      if (query.trim().length >= 2) {
+        searchStocks(query);
+      } else {
+        // Clear results if query is too short
+        searchStocks('');
+      }
+    }, 300),
+    [searchStocks]
+  );
+
+  useEffect(() => {
+    debouncedSearch(stockSearchQuery);
+  }, [stockSearchQuery, debouncedSearch]);
+
+  const handleStockSearchChange = (value: string) => {
+    setStockSearchQuery(value);
   };
+
+  // Debounce utility function
+  function debounce<T extends (...args: any[]) => any>(
+    func: T,
+    delay: number
+  ): (...args: Parameters<T>) => void {
+    let timeoutId: NodeJS.Timeout;
+    return (...args: Parameters<T>) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func(...args), delay);
+    };
+  }
 
   const handleAddStock = async (stockData: any) => {
     await addStock({
@@ -112,19 +139,19 @@ const WatchlistDetail: React.FC = () => {
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Aktie hinzufügen</DialogTitle>
+                  <DialogTitle>Wertpapier hinzufügen</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="flex space-x-2">
+                  <div>
                     <Input
-                      placeholder="Aktien suchen (z.B. Apple, AAPL, US0378331005)"
+                      placeholder="Aktien, ETFs oder Fonds suchen (z.B. Apple, AAPL, Vanguard)"
                       value={stockSearchQuery}
-                      onChange={(e) => setStockSearchQuery(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleStockSearch()}
+                      onChange={(e) => handleStockSearchChange(e.target.value)}
+                      className="w-full"
                     />
-                    <Button onClick={handleStockSearch} disabled={isSearching}>
-                      <Search className="h-4 w-4" />
-                    </Button>
+                    {isSearching && (
+                      <p className="text-sm text-muted-foreground mt-2">Suche läuft...</p>
+                    )}
                   </div>
                   
                   {searchResults.length > 0 && (
@@ -133,22 +160,34 @@ const WatchlistDetail: React.FC = () => {
                         <Card key={index} className="cursor-pointer hover:bg-accent" onClick={() => handleAddStock(stock)}>
                           <CardContent className="p-4">
                             <div className="flex justify-between items-center">
-                              <div>
-                                <h3 className="font-medium">{stock.name}</h3>
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <h3 className="font-medium">{stock.name}</h3>
+                                  <Badge variant="outline" className="text-xs">
+                                    {stock.assetType}
+                                  </Badge>
+                                </div>
                                 <p className="text-sm text-muted-foreground">
                                   {stock.symbol} • {stock.exchange}
                                 </p>
                               </div>
                               <div className="text-right">
                                 <p className="font-medium">{formatCurrency(stock.price, stock.currency)}</p>
-                                {stock.change && (
-                                  <p className="text-sm">{formatPercentage(stock.change)}</p>
+                                {stock.changePercent && (
+                                  <p className="text-sm">{formatPercentage(stock.changePercent)}</p>
                                 )}
                               </div>
                             </div>
                           </CardContent>
                         </Card>
                       ))}
+                    </div>
+                  )}
+
+                  {stockSearchQuery.length >= 2 && searchResults.length === 0 && !isSearching && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Keine Ergebnisse für "{stockSearchQuery}" gefunden</p>
+                      <p className="text-sm mt-1">Versuche es mit einem anderen Suchbegriff</p>
                     </div>
                   )}
                 </div>
@@ -181,7 +220,7 @@ const WatchlistDetail: React.FC = () => {
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Aktien"
+              placeholder="Wertpapiere"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -208,9 +247,19 @@ const WatchlistDetail: React.FC = () => {
                   <TableRow key={stock.id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{stock.company_name || stock.symbol}</div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{stock.company_name || stock.symbol}</span>
+                          {stock.analysis_data?.assetType && (
+                            <Badge variant="outline" className="text-xs">
+                              {stock.analysis_data.assetType}
+                            </Badge>
+                          )}
+                        </div>
                         <div className="text-sm text-muted-foreground">
                           {stock.symbol} • {stock.analysis_data?.exchange || 'N/A'}
+                          {stock.analysis_data?.isin && (
+                            <span className="ml-2">• {stock.analysis_data.isin}</span>
+                          )}
                         </div>
                       </div>
                     </TableCell>
@@ -256,7 +305,7 @@ const WatchlistDetail: React.FC = () => {
                 {filteredStocks.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      {stocksLoading ? 'Laden...' : 'Keine Aktien in dieser Watchlist'}
+                      {stocksLoading ? 'Laden...' : 'Keine Wertpapiere in dieser Watchlist'}
                     </TableCell>
                   </TableRow>
                 )}
