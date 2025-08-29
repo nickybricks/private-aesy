@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import LeftNavigation from "./components/LeftNavigation";
 import Index from "./pages/Index";
 import BuffettQuantAnalyzer from "./pages/BuffettQuantAnalyzer";
+import Watchlists from "./pages/Watchlists";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,6 +78,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/quant-analyzer" element={<BuffettQuantAnalyzer />} />
+                  <Route path="/watchlists" element={<Watchlists />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>

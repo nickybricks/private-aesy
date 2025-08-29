@@ -47,8 +47,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
           name: 'Watchlists',
           path: '/watchlists',
           icon: Bookmark,
-          description: 'Verwalte deine Aktien-Watchlists',
-          badge: 'Soon'
+          description: 'Verwalte deine Aktien-Watchlists'
         }
       ]
     },
