@@ -263,7 +263,7 @@ const BuffettQuantAnalyzer = () => {
         <h2 className="text-xl font-semibold mb-4">Über den Quant Analyzer</h2>
         <p className="text-gray-600 mb-4">
           Der Buffett Quant Analyzer bewertet Aktien ausschließlich auf Basis von harten Finanzkennzahlen, 
-          gemäß den Prinzipien von Warren Buffett. Für jedes der 10 Buffett-Kriterien wird 1 Punkt vergeben, 
+          gemäß den Prinzipien von Warren Buffett. Für jedes der 12 Buffett-Kriterien wird 1 Punkt vergeben, 
           wenn die Aktie den Zielwert erreicht.
         </p>
         
@@ -281,6 +281,8 @@ const BuffettQuantAnalyzer = () => {
               <li>KGV (P/E) &lt; 15</li>
               <li>P/B &lt; 1.5 (oder &lt; 3 bei starker Marge)</li>
               <li>Dividendenrendite &gt; 2%</li>
+              <li><strong>Innerer Wert &gt; Aktienkurs</strong></li>
+              <li><strong>Innerer Wert mit 20% Sicherheitsmarge &gt; Aktienkurs</strong></li>
             </ul>
           </div>
           
@@ -289,15 +291,15 @@ const BuffettQuantAnalyzer = () => {
             <ul className="pl-6 text-gray-600 space-y-2">
               <li className="flex items-center">
                 <Badge className="bg-green-100 text-green-800 mr-2">🟢 Kandidat</Badge>
-                <span>Score 7-10: Starke Buffett-Kandidaten</span>
+                <span>Score 9-12: Starke Buffett-Kandidaten</span>
               </li>
               <li className="flex items-center">
                 <Badge className="bg-yellow-100 text-yellow-800 mr-2">🟡 Beobachten</Badge>
-                <span>Score 5-6: Moderate Buffett-Konformität</span>
+                <span>Score 6-8: Moderate Buffett-Konformität</span>
               </li>
               <li className="flex items-center">
                 <Badge className="bg-red-100 text-red-800 mr-2">🔴 Vermeiden</Badge>
-                <span>Score &lt;5: Nicht Buffett-konform</span>
+                <span>Score &lt;6: Nicht Buffett-konform</span>
               </li>
             </ul>
           </div>

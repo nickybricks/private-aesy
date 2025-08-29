@@ -60,10 +60,14 @@ export interface QuantAnalysisResult {
     debtRatio: { value: number | null; pass: boolean },
     pe: { value: number | null; pass: boolean },
     pb: { value: number | null; pass: boolean },
-    dividendYield: { value: number | null; pass: boolean }
+    dividendYield: { value: number | null; pass: boolean },
+    intrinsicValue: { value: number | null; pass: boolean },
+    intrinsicValueWithMargin: { value: number | null; pass: boolean }
   };
   price: number;
   currency: string;
+  intrinsicValue?: number | null;
+  marginOfSafety?: number | null;
   originalValues?: {
     roe?: number | null;
     roic?: number | null;
@@ -73,6 +77,7 @@ export interface QuantAnalysisResult {
     pe?: number | null;
     pb?: number | null;
     price?: number | null;
+    intrinsicValue?: number | null;
   };
 }
 
@@ -81,6 +86,63 @@ const safeValue = (value: any) => {
   if (value === undefined || value === null) return null;
   const numValue = Number(value);
   return isNaN(numValue) ? null : numValue;
+};
+
+// Calculate simplified intrinsic value using multiple methods
+const calculateSimplifiedIntrinsicValue = (
+  eps: number | null,
+  bookValue: number | null,
+  pe: number | null,
+  revenue: number | null,
+  netMargin: number | null,
+  sharesOutstanding: number | null
+): number | null => {
+  console.log('Calculating intrinsic value with:', { eps, bookValue, pe, revenue, netMargin, sharesOutstanding });
+  
+  const results: number[] = [];
+  
+  // Method 1: Graham Number (conservative)
+  if (eps !== null && eps > 0 && bookValue !== null && bookValue > 0) {
+    const grahamNumber = Math.sqrt(22.5 * eps * bookValue);
+    if (!isNaN(grahamNumber) && grahamNumber > 0) {
+      results.push(grahamNumber);
+      console.log(`Graham Number: ${grahamNumber}`);
+    }
+  }
+  
+  // Method 2: Simple P/E based valuation (using conservative P/E of 12-15)
+  if (eps !== null && eps > 0) {
+    const conservativePE = 12; // Buffett's preferred range
+    const peBasedValue = eps * conservativePE;
+    if (!isNaN(peBasedValue) && peBasedValue > 0) {
+      results.push(peBasedValue);
+      console.log(`P/E based value (12x): ${peBasedValue}`);
+    }
+  }
+  
+  // Method 3: Revenue-based valuation (for growth companies)
+  if (revenue !== null && revenue > 0 && netMargin !== null && netMargin > 0 && sharesOutstanding !== null && sharesOutstanding > 0) {
+    const estimatedEarnings = (revenue * (netMargin / 100)) / sharesOutstanding;
+    const revenueBasedValue = estimatedEarnings * 10; // Conservative 10x multiple
+    if (!isNaN(revenueBasedValue) && revenueBasedValue > 0) {
+      results.push(revenueBasedValue);
+      console.log(`Revenue based value: ${revenueBasedValue}`);
+    }
+  }
+  
+  if (results.length === 0) {
+    console.log('No valid intrinsic value calculation possible');
+    return null;
+  }
+  
+  // Use median of available methods for robustness
+  results.sort((a, b) => a - b);
+  const median = results.length % 2 === 0 
+    ? (results[results.length / 2 - 1] + results[results.length / 2]) / 2
+    : results[Math.floor(results.length / 2)];
+  
+  console.log(`Intrinsic value methods used: ${results.length}, median: ${median}`);
+  return parseFloat(median.toFixed(2));
 };
 
 // Sleep function for delays
@@ -216,10 +278,55 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     
     const dividendYieldPass = dividendYield !== null && dividendYield > 2;
 
-    // Calculate Buffett Score (1 point per criterion met)
+    // 11. Calculate Intrinsic Value and compare to current price
+    const currentPrice = quoteData ? quoteData.price : 0;
+    let intrinsicValueCalc = null;
+    let intrinsicValuePass = false;
+    let intrinsicValueWithMarginPass = false;
+    let marginOfSafety = null;
+
+    // Get additional data for intrinsic value calculation
+    const currentEps = incomeStatements && incomeStatements.length > 0 ? safeValue(incomeStatements[0].eps) : null;
+    const bookValuePerShare = balanceSheets && balanceSheets.length > 0 ? 
+      safeValue(balanceSheets[0].totalStockholdersEquity) / safeValue(companyProfile.mktCap / currentPrice) : null;
+    const currentRevenue = incomeStatements && incomeStatements.length > 0 ? safeValue(incomeStatements[0].revenue) : null;
+    const sharesOutstanding = safeValue(companyProfile.mktCap / currentPrice);
+
+    // Calculate intrinsic value using our simplified method
+    intrinsicValueCalc = calculateSimplifiedIntrinsicValue(
+      currentEps,
+      bookValuePerShare, 
+      pe,
+      currentRevenue,
+      netMargin,
+      sharesOutstanding
+    );
+
+    if (intrinsicValueCalc !== null && currentPrice > 0) {
+      // Check if intrinsic value > current price (positive)
+      intrinsicValuePass = intrinsicValueCalc > currentPrice;
+      
+      // Check if intrinsic value with 20% margin > current price (even more positive)  
+      const intrinsicValueWith20PercentMargin = intrinsicValueCalc * 0.8; // 20% safety margin
+      intrinsicValueWithMarginPass = intrinsicValueWith20PercentMargin > currentPrice;
+      
+      // Calculate margin of safety percentage
+      marginOfSafety = ((intrinsicValueCalc - currentPrice) / currentPrice) * 100;
+      
+      console.log(`${ticker}: Intrinsic Value: ${intrinsicValueCalc}, Price: ${currentPrice}, Margin of Safety: ${marginOfSafety?.toFixed(2)}%`);
+    }
+
+    // Store original intrinsic value
+    const updatedOriginalValues = {
+      ...originalValues,
+      intrinsicValue: intrinsicValueCalc
+    };
+
+    // Calculate Buffett Score (1 point per criterion met) - now 12 criteria total
     const buffettScore = [
       roePass, roicPass, netMarginPass, epsGrowthPass, revenueGrowthPass,
-      interestCoveragePass, debtRatioPass, pePass, pbPass, dividendYieldPass
+      interestCoveragePass, debtRatioPass, pePass, pbPass, dividendYieldPass,
+      intrinsicValuePass, intrinsicValueWithMarginPass
     ].filter(Boolean).length;
 
     return {
@@ -238,11 +345,15 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
         debtRatio: { value: debtRatio, pass: debtRatioPass },
         pe: { value: pe, pass: pePass },
         pb: { value: pb, pass: pbPass },
-        dividendYield: { value: dividendYield, pass: dividendYieldPass }
+        dividendYield: { value: dividendYield, pass: dividendYieldPass },
+        intrinsicValue: { value: intrinsicValueCalc, pass: intrinsicValuePass },
+        intrinsicValueWithMargin: { value: intrinsicValueCalc ? intrinsicValueCalc * 0.8 : null, pass: intrinsicValueWithMarginPass }
       },
-      price: quoteData ? quoteData.price : 0,
+      price: currentPrice,
       currency: stockCurrency,
-      originalValues
+      intrinsicValue: intrinsicValueCalc,
+      marginOfSafety: marginOfSafety,
+      originalValues: updatedOriginalValues
     };
   } catch (error) {
     console.error(`Error analyzing ${ticker}:`, error);
@@ -324,7 +435,7 @@ export const exportToCsv = (results: QuantAnalysisResult[]) => {
     'Symbol', 'Name', 'Exchange', 'Sector', 'Buffett Score',
     'ROE (%)', 'ROIC (%)', 'Net Margin (%)', 'EPS Growth (%)', 'Revenue Growth (%)',
     'Interest Coverage', 'Debt Ratio (%)', 'P/E', 'P/B', 'Dividend Yield (%)',
-    'Price', 'Currency'
+    'Intrinsic Value', 'Intrinsic Value with Margin', 'Price', 'Currency', 'Margin of Safety (%)'
   ];
   
   const rows = results.map(result => [
@@ -343,8 +454,11 @@ export const exportToCsv = (results: QuantAnalysisResult[]) => {
     result.criteria.pe.value !== null ? result.criteria.pe.value.toFixed(2) : 'N/A',
     result.criteria.pb.value !== null ? result.criteria.pb.value.toFixed(2) : 'N/A',
     result.criteria.dividendYield.value !== null ? result.criteria.dividendYield.value.toFixed(2) : 'N/A',
+    result.criteria.intrinsicValue.value !== null ? result.criteria.intrinsicValue.value.toFixed(2) : 'N/A',
+    result.criteria.intrinsicValueWithMargin.value !== null ? result.criteria.intrinsicValueWithMargin.value.toFixed(2) : 'N/A',
     result.price.toFixed(2),
-    result.currency
+    result.currency,
+    result.marginOfSafety !== null ? result.marginOfSafety.toFixed(2) : 'N/A'
   ]);
   
   const csvContent = [

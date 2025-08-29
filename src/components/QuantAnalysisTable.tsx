@@ -78,13 +78,25 @@ const metricsDefinitions = {
     definition: "Jährliche Dividendenzahlung im Verhältnis zum Aktienkurs.",
     target: "> 2%",
     formula: "Jährliche Dividende pro Aktie ÷ Aktienkurs"
+  },
+  intrinsicValue: {
+    name: "Innerer Wert",
+    definition: "Vereinfachte Berechnung des intrinsischen Wertes mittels Graham-Zahl und P/E-basierter Bewertung.",
+    target: "Innerer Wert > Aktienkurs",
+    formula: "Median aus Graham-Zahl, P/E-basiert (12x), Umsatz-basiert"
+  },
+  intrinsicValueWithMargin: {
+    name: "Sicherheitsmarge (20%)",
+    definition: "Innerer Wert mit 20% Sicherheitsmarge nach Buffetts Prinzip.",
+    target: "Innerer Wert × 0.8 > Aktienkurs", 
+    formula: "Innerer Wert × 0.8"
   }
 };
 
 const BuffettScoreBadge = ({ score }: { score: number }) => {
-  if (score >= 7) {
+  if (score >= 9) {
     return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">🟢 Kandidat</Badge>;
-  } else if (score >= 5) {
+  } else if (score >= 6) {
     return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">🟡 Beobachten</Badge>;
   } else {
     return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">🔴 Vermeiden</Badge>;
@@ -218,6 +230,14 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           valueA = a.criteria.dividendYield.value || -9999;
           valueB = b.criteria.dividendYield.value || -9999;
           break;
+        case 'intrinsicValue':
+          valueA = a.criteria.intrinsicValue.value || -9999;
+          valueB = b.criteria.intrinsicValue.value || -9999;
+          break;
+        case 'intrinsicValueWithMargin':
+          valueA = a.criteria.intrinsicValueWithMargin.value || -9999;
+          valueB = b.criteria.intrinsicValueWithMargin.value || -9999;
+          break;
         default:
           valueA = a.buffettScore;
           valueB = b.buffettScore;
@@ -300,7 +320,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               <SortableHeader 
                 field="buffettScore" 
                 name="Buffett Score" 
-                tooltipText="Erfüllte Buffett-Kriterien (max. 10 Punkte)"
+                tooltipText="Erfüllte Buffett-Kriterien (max. 12 Punkte)"
                 sortField={sortField}
                 sortDirection={sortDirection}
                 setSortField={setSortField}
@@ -360,13 +380,31 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+              <SortableHeader 
+                field="intrinsicValue" 
+                name="Innerer Wert" 
+                tooltipText={`${metricsDefinitions.intrinsicValue.definition} Ziel: ${metricsDefinitions.intrinsicValue.target}`}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                setSortField={setSortField}
+                setSortDirection={setSortDirection}
+              />
+              <SortableHeader 
+                field="intrinsicValueWithMargin" 
+                name="Sicherheit" 
+                tooltipText={`${metricsDefinitions.intrinsicValueWithMargin.definition} Ziel: ${metricsDefinitions.intrinsicValueWithMargin.target}`}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                setSortField={setSortField}
+                setSortDirection={setSortDirection}
+              />
               <TableHead>Preis</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8">
+                <TableCell colSpan={14} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
                     <span>Analyse läuft...</span>
@@ -375,7 +413,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableRow>
             ) : filteredResults.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8">
+                <TableCell colSpan={14} className="text-center py-8">
                   Keine Ergebnisse gefunden
                 </TableCell>
               </TableRow>
@@ -387,7 +425,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   <TableCell>{stock.sector}</TableCell>
                   <TableCell>
                     <div className="flex items-center">
-                      <span className="mr-2">{stock.buffettScore}/10</span>
+                      <span className="mr-2">{stock.buffettScore}/12</span>
                       <BuffettScoreBadge score={stock.buffettScore} />
                     </div>
                   </TableCell>
@@ -425,6 +463,28 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.dividendYield.pass} value={stock.criteria.dividendYield.value} />
                       <span>{formatValue(stock.criteria.dividendYield.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.intrinsicValue.pass} value={stock.criteria.intrinsicValue.value} />
+                      <span className="text-xs">
+                        {stock.criteria.intrinsicValue.value !== null ? 
+                          `${stock.criteria.intrinsicValue.value.toFixed(2)} vs ${stock.price.toFixed(2)}` : 
+                          'N/A'
+                        }
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.intrinsicValueWithMargin.pass} value={stock.criteria.intrinsicValueWithMargin.value} />
+                      <span className="text-xs">
+                        {stock.marginOfSafety !== null ? 
+                          `${stock.marginOfSafety.toFixed(1)}%` : 
+                          'N/A'
+                        }
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
