@@ -19,7 +19,9 @@ const LandingPage: React.FC = () => {
             <Link to="/analyzer">
               <Button variant="outline">Zum Tool</Button>
             </Link>
-            <Button>Kostenlos starten</Button>
+            <Link to="/auth">
+              <Button>Kostenlos starten</Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -44,7 +46,7 @@ const LandingPage: React.FC = () => {
               </Button>
             </Link>
             <Button variant="outline" size="lg">
-              Mehr erfahren
+              <Link to="/auth">Mehr erfahren</Link>
             </Button>
           </div>
         </div>
@@ -199,7 +201,7 @@ const LandingPage: React.FC = () => {
           <p className="text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
             Nutze die bewährten Prinzipien von Warren Buffett für deine Investment-Entscheidungen
           </p>
-          <Link to="/analyzer">
+          <Link to="/auth">
             <Button size="lg" variant="secondary" className="px-8">
               Kostenloses Tool testen
             </Button>

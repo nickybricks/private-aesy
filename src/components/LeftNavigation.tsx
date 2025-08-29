@@ -8,11 +8,13 @@ import {
   Plus,
   Settings,
   Bookmark,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/context/AuthContext';
 
 interface LeftNavigationProps {
   onMobileClose?: () => void;
@@ -20,7 +22,13 @@ interface LeftNavigationProps {
 
 const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
   const location = useLocation();
+  const { user, signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    await signOut();
+    onMobileClose?.();
+  };
 
   const navigationItems = [
     {
@@ -154,6 +162,35 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
           </div>
           ))}
         </div>
+        
+        {/* User Section */}
+        {user && (
+          <div className="border-t border-border pt-4">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                  <User className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-foreground">
+                    {user.email?.split('@')[0]}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {user.email}
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSignOut}
+                className="h-8 w-8"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );

@@ -3,7 +3,12 @@ import React from 'react';
 import { ClickableTooltip } from './ClickableTooltip';
 import { Info } from 'lucide-react';
 
-const AppHeader: React.FC = () => {
+interface AppHeaderProps {
+  onMobileMenuToggle?: () => void;
+  isMobileMenuOpen?: boolean;
+}
+
+const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle, isMobileMenuOpen }) => {
   return (
     <header className="mb-8">
       <div className="flex items-center gap-2">
