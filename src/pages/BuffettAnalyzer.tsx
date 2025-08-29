@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
 import LeftNavigation from '@/components/LeftNavigation';
@@ -17,12 +19,21 @@ import AppFooter from '@/components/AppFooter';
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 
 const IndexContent: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const { 
     isLoading,
     handleSearch,
     gptAvailable,
     stockInfo
   } = useStock();
+
+  // Check for ticker parameter in URL and trigger search
+  useEffect(() => {
+    const ticker = searchParams.get('ticker');
+    if (ticker && !stockInfo) {
+      handleSearch(ticker);
+    }
+  }, [searchParams, handleSearch, stockInfo]);
   
   return (
     <main className="flex-1 overflow-auto bg-background">

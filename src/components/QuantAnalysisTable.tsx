@@ -9,9 +9,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Check, AlertTriangle, X, Info, HelpCircle, AlertCircle, CheckCircle2, XCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import { Check, AlertTriangle, X, Info, HelpCircle, AlertCircle, CheckCircle2, XCircle, ArrowUp, ArrowDown, MoreHorizontal, TrendingUp, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useWatchlists } from '@/hooks/useWatchlists';
+import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Popover,
@@ -24,6 +46,8 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { QuantAnalysisResult } from '@/api/quantAnalyzerApi';
+import { useUserStocks } from '@/hooks/useUserStocks';
+import { addStockToWatchlist } from '@/utils/watchlistService';
 
 interface QuantAnalysisTableProps {
   results: QuantAnalysisResult[];
@@ -187,10 +211,16 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
   results, 
   isLoading 
 }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { watchlists, createWatchlist } = useWatchlists();
   const [filteredResults, setFilteredResults] = useState<QuantAnalysisResult[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('buffettScore');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [showNewWatchlistDialog, setShowNewWatchlistDialog] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<QuantAnalysisResult | null>(null);
+  const [newWatchlistName, setNewWatchlistName] = useState('');
 
   // Filter and sort the results when they change
   useEffect(() => {
@@ -303,6 +333,64 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
     return isPercent 
       ? `${value.toFixed(decimals)}%`
       : value.toFixed(decimals);
+  };
+
+  const handleAnalyzeStock = (stock: QuantAnalysisResult) => {
+    // Navigate to analyzer with stock symbol
+    navigate(`/analyzer?ticker=${stock.symbol}`);
+  };
+
+  const handleAddToWatchlist = async (stock: QuantAnalysisResult, watchlistId?: string) => {
+    if (!watchlistId) {
+      setSelectedStock(stock);
+      setShowNewWatchlistDialog(true);
+      return;
+    }
+
+    try {
+      await addStockToWatchlist(
+        {
+          symbol: stock.symbol,
+          name: stock.name,
+          price: stock.price,
+          currency: stock.currency,
+        },
+        watchlistId
+      );
+
+      toast({
+        title: "Aktie hinzugefügt",
+        description: `${stock.symbol} wurde zur Watchlist hinzugefügt.`,
+      });
+    } catch (error: any) {
+      const message = error.message || "Die Aktie konnte nicht zur Watchlist hinzugefügt werden.";
+      toast({
+        title: "Fehler",
+        description: message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateNewWatchlist = async () => {
+    if (!selectedStock || !newWatchlistName.trim()) return;
+
+    try {
+      await createWatchlist(newWatchlistName.trim());
+      toast({
+        title: "Watchlist erstellt",
+        description: `Neue Watchlist "${newWatchlistName}" wurde erstellt.`,
+      });
+      setShowNewWatchlistDialog(false);
+      setNewWatchlistName('');
+      setSelectedStock(null);
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Die Watchlist konnte nicht erstellt werden.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -473,12 +561,13 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortDirection={setSortDirection}
               />
               <TableHead>Preis</TableHead>
+              <TableHead>Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={16} className="text-center py-8">
+                <TableCell colSpan={17} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
                     <span>Analyse läuft...</span>
@@ -487,7 +576,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableRow>
             ) : filteredResults.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={16} className="text-center py-8">
+                <TableCell colSpan={17} className="text-center py-8">
                   Keine Ergebnisse gefunden
                 </TableCell>
               </TableRow>
@@ -588,12 +677,90 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   <TableCell>
                     {stock.price?.toFixed(2)} {stock.currency}
                   </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleAnalyzeStock(stock)}>
+                          <TrendingUp className="mr-2 h-4 w-4" />
+                          In Buffett Analyzer analysieren
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Zu Watchlist hinzufügen
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {watchlists.map((watchlist) => (
+                              <DropdownMenuItem
+                                key={watchlist.id}
+                                onClick={() => handleAddToWatchlist(stock, watchlist.id)}
+                              >
+                                {watchlist.name}
+                              </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleAddToWatchlist(stock)}>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Neue Watchlist erstellen
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Dialog for creating new watchlist */}
+      <Dialog open={showNewWatchlistDialog} onOpenChange={setShowNewWatchlistDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Neue Watchlist erstellen</DialogTitle>
+            <DialogDescription>
+              Erstellen Sie eine neue Watchlist für {selectedStock?.symbol} ({selectedStock?.name}).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="watchlist-name">Name der Watchlist</Label>
+              <Input
+                id="watchlist-name"
+                value={newWatchlistName}
+                onChange={(e) => setNewWatchlistName(e.target.value)}
+                placeholder="z.B. Tech-Aktien, Dividenden-Titel..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowNewWatchlistDialog(false);
+                setNewWatchlistName('');
+                setSelectedStock(null);
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleCreateNewWatchlist}
+              disabled={!newWatchlistName.trim()}
+            >
+              Watchlist erstellen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
