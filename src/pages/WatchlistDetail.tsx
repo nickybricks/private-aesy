@@ -26,7 +26,7 @@ const WatchlistDetail: React.FC = () => {
 
   const watchlist = watchlists.find(w => w.id === id);
 
-  const tabs = ['POSITIONEN', 'LIMITS', 'ÄNDERUNGEN', 'NEWS'];
+  const tabs = ['POSITIONEN', 'NEWS'];
 
   const filteredStocks = stocks.filter(stock => 
     stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -163,14 +163,16 @@ const WatchlistDetail: React.FC = () => {
             {tabs.map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => tab !== 'NEWS' && setActiveTab(tab)}
                 className={`whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium ${
                   activeTab === tab
                     ? 'border-primary text-primary'
+                    : tab === 'NEWS'
+                    ? 'border-transparent text-muted-foreground cursor-default opacity-60'
                     : 'border-transparent text-muted-foreground hover:border-gray-300 hover:text-foreground'
                 }`}
               >
-                {tab}
+                {tab === 'NEWS' ? 'NEWS (soon)' : tab}
               </button>
             ))}
           </nav>
