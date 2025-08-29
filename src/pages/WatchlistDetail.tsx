@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Search, MoreHorizontal, Printer } from 'lucide-react';
+import { ArrowLeft, Plus, Search, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -101,9 +101,6 @@ const WatchlistDetail: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm">
-              <Printer className="h-4 w-4" />
-            </Button>
             <Dialog open={isAddStockDialogOpen} onOpenChange={setIsAddStockDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="rounded-full w-12 h-12 p-0">
