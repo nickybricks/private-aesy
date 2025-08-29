@@ -5,13 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, Mail, Lock, Loader2 } from 'lucide-react';
+import { TrendingUp, Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 const AuthPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -111,13 +113,26 @@ const AuthPage: React.FC = () => {
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="signin-password"
-                          type="password"
+                          type={showSignInPassword ? "text" : "password"}
                           placeholder="••••••••"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 pr-10"
                           required
                         />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6"
+                          onClick={() => setShowSignInPassword(!showSignInPassword)}
+                        >
+                          {showSignInPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -164,14 +179,27 @@ const AuthPage: React.FC = () => {
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="signup-password"
-                          type="password"
+                          type={showSignUpPassword ? "text" : "password"}
                           placeholder="Mindestens 6 Zeichen"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 pr-10"
                           minLength={6}
                           required
                         />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6"
+                          onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                        >
+                          {showSignUpPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
