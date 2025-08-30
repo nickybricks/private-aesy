@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StockSearchProps {
   onSearch: (ticker: string) => void;
@@ -38,6 +39,10 @@ const fallbackStocks = [
   { name: 'Alphabet (Google)', symbol: 'GOOGL' },
   { name: 'Meta (Facebook)', symbol: 'META' },
   { name: 'Tesla', symbol: 'TSLA' },
+  { name: 'Coca-Cola', symbol: 'KO' },
+  { name: 'Johnson & Johnson', symbol: 'JNJ' },
+  { name: 'Procter & Gamble', symbol: 'PG' },
+  { name: 'UnitedHealth Group', symbol: 'UNH' },
   { name: 'Adidas', symbol: 'ADS.DE' },
   { name: 'BASF', symbol: 'BAS.DE' },
   { name: 'BMW', symbol: 'BMW.DE' },
@@ -431,6 +436,17 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     return null;
   };
 
+  const getFMPApiKey = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-fmp-key');
+      if (error) throw error;
+      return data.apiKey;
+    } catch (error) {
+      console.warn('Failed to get FMP API key from Supabase, using default:', error);
+      return DEFAULT_FMP_API_KEY;
+    }
+  };
+
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (!searchQuery || searchQuery.length < 2) {
@@ -442,7 +458,11 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       setIsSearching(true);
       
       try {
-        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=25&apikey=${DEFAULT_FMP_API_KEY}`);
+        const apiKey = await getFMPApiKey();
+        console.log('Searching for:', searchQuery, 'with API key length:', apiKey?.length);
+        
+        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=25&apikey=${apiKey}`);
+        console.log('API Response:', response.status, 'Results count:', response.data?.length);
         
         if (response.data && Array.isArray(response.data)) {
           const stocksOnly = response.data.filter((item: any) => {
