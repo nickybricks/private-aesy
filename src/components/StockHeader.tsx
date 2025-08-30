@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ClickableTooltip } from './ClickableTooltip';
+import { DCFExplanationTooltip } from './DCFExplanationTooltip';
 import { convertCurrency, needsCurrencyConversion, getExchangeRate, shouldConvertCurrency } from '@/utils/currencyConverter';
 import StockChart from './StockChart';
+import { DCFData } from '@/context/StockContextTypes';
 
 interface StockHeaderProps {
   stockInfo: {
@@ -23,6 +25,7 @@ interface StockHeaderProps {
     originalIntrinsicValue?: number | null;
     originalCurrency?: string;
     reportedCurrency?: string;
+    dcfData?: DCFData;
   } | null;
 }
 
@@ -131,7 +134,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
     );
   }
 
-  const { name, ticker, price, change, changePercent, currency, marketCap, intrinsicValue, originalIntrinsicValue, originalCurrency, reportedCurrency } = stockInfo;
+  const { name, ticker, price, change, changePercent, currency, marketCap, intrinsicValue, originalIntrinsicValue, originalCurrency, reportedCurrency, dcfData } = stockInfo;
   const isPositive = change !== null && change >= 0;
   
   const alternativeSymbol = hasCriticalDataMissing && ticker.endsWith('.DE') ? ticker.replace('.DE', '') : null;
@@ -222,28 +225,32 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
           {intrinsicValue !== null && intrinsicValue !== undefined && !isNaN(Number(intrinsicValue)) && (
             <div className="mt-2 flex items-center justify-end text-lg font-medium text-buffett-blue">
               <span>Innerer Wert: {Number(intrinsicValue).toFixed(2)} {currency}</span>
-              <ClickableTooltip
-                content={
-                  <div className="max-w-sm space-y-2">
-                    <h4 className="font-semibold text-buffett-blue">DCF-Bewertung (Innerer Wert)</h4>
-                    <p className="text-sm">
-                      Der innere Wert wird mittels Discounted Cash Flow (DCF) Methode berechnet:
-                    </p>
-                    <div className="text-sm space-y-1">
-                      <p><strong>1. Free Cash Flow (FCF):</strong> Operative Cash Flows abzüglich Investitionen</p>
-                      <p><strong>2. Wachstumsrate:</strong> Durchschnitt der letzten 5 Jahre FCF-Wachstum</p>
-                      <p><strong>3. Diskontierungssatz:</strong> 10% (Buffett's typische Mindestrendite)</p>
-                      <p><strong>4. Projektionszeitraum:</strong> 10 Jahre + Endwert</p>
-                      <p><strong>5. Sicherheitsmarge:</strong> 20% Abschlag für Unsicherheiten</p>
+              {dcfData ? (
+                <DCFExplanationTooltip dcfData={dcfData} />
+              ) : (
+                <ClickableTooltip
+                  content={
+                    <div className="max-w-sm space-y-2">
+                      <h4 className="font-semibold text-buffett-blue">DCF-Bewertung (Innerer Wert)</h4>
+                      <p className="text-sm">
+                        Der innere Wert wird mittels Discounted Cash Flow (DCF) Methode berechnet:
+                      </p>
+                      <div className="text-sm space-y-1">
+                        <p><strong>1. Free Cash Flow (FCF):</strong> Operative Cash Flows abzüglich Investitionen</p>
+                        <p><strong>2. Wachstumsrate:</strong> Durchschnitt der letzten 5 Jahre FCF-Wachstum</p>
+                        <p><strong>3. Diskontierungssatz:</strong> 10% (Buffett's typische Mindestrendite)</p>
+                        <p><strong>4. Projektionszeitraum:</strong> 10 Jahre + Endwert</p>
+                        <p><strong>5. Sicherheitsmarge:</strong> 20% Abschlag für Unsicherheiten</p>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2">
+                        Diese Bewertung stellt eine Schätzung des fairen Wertes dar und sollte nicht als einzige Entscheidungsgrundlage verwendet werden.
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-600 mt-2">
-                      Diese Bewertung stellt eine Schätzung des fairen Wertes dar und sollte nicht als einzige Entscheidungsgrundlage verwendet werden.
-                    </p>
-                  </div>
-                }
-              >
-                <Info size={16} className="text-buffett-blue/70 hover:text-buffett-blue cursor-pointer ml-2" />
-              </ClickableTooltip>
+                  }
+                >
+                  <Info size={16} className="text-buffett-blue/70 hover:text-buffett-blue cursor-pointer ml-2" />
+                </ClickableTooltip>
+              )}
             </div>
           )}
         </div>

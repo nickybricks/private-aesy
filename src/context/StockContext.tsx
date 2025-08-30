@@ -16,6 +16,7 @@ interface StockInfo {
   sharesOutstanding?: number | null;
   reportedCurrency?: string;
   originalCurrency?: string;
+  dcfData?: DCFData;
 }
 
 const StockContext = createContext<StockContextType | undefined>(undefined);
@@ -73,16 +74,22 @@ export function StockProvider({ children }: StockProviderProps) {
       // Wenn die dcfData einen intrinsicValue enthält, aktualisiere diesen in den stockInfo-Daten
       if (newDcfData && newDcfData.intrinsicValue !== undefined) {
         if (info) {
-          // Ensure intrinsicValue exists on info object
+          // Ensure intrinsicValue exists on info object and add dcfData
           const updatedInfo = {
             ...info,
-            intrinsicValue: newDcfData.intrinsicValue
+            intrinsicValue: newDcfData.intrinsicValue,
+            dcfData: newDcfData
           };
           setStockInfo(updatedInfo);
           console.log(`Updated stockInfo.intrinsicValue with dcfData.intrinsicValue: ${newDcfData.intrinsicValue}`);
         }
       } else {
-        setStockInfo(info);
+        // Even if there's no intrinsicValue, still add dcfData to stockInfo if available
+        const updatedInfo = info ? {
+          ...info,
+          dcfData: newDcfData
+        } : info;
+        setStockInfo(updatedInfo);
       }
       
       setStockCurrency(currency);
