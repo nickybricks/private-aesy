@@ -9,6 +9,7 @@ import { ClickableTooltip } from './ClickableTooltip';
 import { DCFExplanationTooltip } from './DCFExplanationTooltip';
 import { convertCurrency, needsCurrencyConversion, getExchangeRate, shouldConvertCurrency } from '@/utils/currencyConverter';
 import StockChart from './StockChart';
+import PeterLynchChart from './PeterLynchChart';
 import { DCFData } from '@/context/StockContextTypes';
 import { AddToWatchlistButton } from './AddToWatchlistButton';
 import { useStock } from '@/context/StockContext';
@@ -54,6 +55,39 @@ const formatMarketCap = (marketCap: number | null, currency: string = 'EUR'): st
   }
   
   return `${scaledValue.toFixed(2)} ${unit} ${currency}`;
+};
+
+// Generate sample data for Peter Lynch Chart demonstration
+const generateSampleLynchData = (ticker: string, currentPrice: number | null, currency: string) => {
+  if (!currentPrice || currentPrice <= 0) {
+    return [];
+  }
+
+  const baseEPS = currentPrice * 0.06; // Assume current P/E around 16-17
+  const basePrice = currentPrice * 0.7; // Start from 70% of current price
+  
+  const data = [];
+  const startYear = new Date().getFullYear() - 8;
+  
+  for (let i = 0; i < 9; i++) {
+    const year = startYear + i;
+    const quarter = Math.floor(Math.random() * 4) + 1;
+    const date = `${year}-${quarter.toString().padStart(2, '0')}`;
+    
+    // Simulate some growth with volatility
+    const growthFactor = Math.pow(1.08 + (Math.random() - 0.5) * 0.1, i);
+    const eps = baseEPS * growthFactor;
+    const priceVolatility = 1 + (Math.random() - 0.5) * 0.3;
+    const price = basePrice * growthFactor * priceVolatility;
+    
+    data.push({
+      date,
+      price: Math.max(price, 0.01),
+      eps: Math.max(eps, 0.01)
+    });
+  }
+  
+  return data;
 };
 
 const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
@@ -259,12 +293,27 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         </div>
       </div>
       
-      <div className="mt-4 pt-4 border-t border-gray-100">
+      <div className="mt-4 pt-4 border-t border-gray-100 space-y-6">
         <StockChart 
           symbol={ticker} 
           currency={currency} 
           intrinsicValue={intrinsicValue}
         />
+        
+        {/* Peter Lynch Chart */}
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-foreground">Peter Lynch Chart</h3>
+          <p className="text-sm text-muted-foreground">
+            Vergleicht den Aktienkurs mit der Earnings-Line (EPS × P/E Multiple). 
+            Kurs unter der Linie = tendenziell unterbewertet, darüber = überbewertet.
+          </p>
+          <PeterLynchChart 
+            data={generateSampleLynchData(ticker, price, currency)}
+            currency={currency}
+            defaultPE={15}
+            defaultLogScale={true}
+          />
+        </div>
       </div>
       
       <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
