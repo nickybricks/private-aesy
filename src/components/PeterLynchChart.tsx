@@ -197,7 +197,7 @@ const PeterLynchChart: React.FC<PeterLynchChartProps> = ({ symbol, currency }) =
         <div>
           <h3 className="text-lg font-semibold text-buffett-navy mb-1">Peter Lynch Chart</h3>
           <p className="text-sm text-buffett-subtext">
-            Kaufgelegenheiten entstehen, wenn der Kurs (grün) unter der P/KGV=15 Linie (blau) liegt
+            Kaufgelegenheiten entstehen, wenn der Kurs (grün) unter der P/E=15 Linie (blau) liegt
           </p>
         </div>
         <div className="flex gap-2">
@@ -256,7 +256,7 @@ const PeterLynchChart: React.FC<PeterLynchChartProps> = ({ symbol, currency }) =
                           Aktienkurs: {dataPoint.price.toFixed(2)} {currency}
                         </p>
                         <p className="text-sm font-semibold text-blue-700">
-                          P/KGV=15 Linie: {dataPoint.pe15Line.toFixed(2)} {currency}
+                          P/E=15 Linie: {dataPoint.pe15Line.toFixed(2)} {currency}
                         </p>
                         <p className="text-xs text-gray-500 mt-2">
                           {dataPoint.price < dataPoint.pe15Line ? 
@@ -284,7 +284,7 @@ const PeterLynchChart: React.FC<PeterLynchChartProps> = ({ symbol, currency }) =
                 stroke="hsl(221, 83%, 53%)"
                 strokeWidth={2}
                 dot={false}
-                name="P/KGV = 15"
+                name="P/E = 15"
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -292,7 +292,7 @@ const PeterLynchChart: React.FC<PeterLynchChartProps> = ({ symbol, currency }) =
       </div>
       
       <div className="text-xs text-buffett-subtext mt-4">
-        <p><strong>Interpretation:</strong> Laut Peter Lynch entstehen die besten Kaufgelegenheiten, wenn der Aktienkurs (grüne Linie) deutlich unter der P/KGV=15 Linie (blaue Linie) liegt. Die Skalierung ist logarithmisch, wie von Lynch empfohlen.</p>
+        <p><strong>Interpretation:</strong> Laut Peter Lynch entstehen die besten Kaufgelegenheiten, wenn der Aktienkurs (grüne Linie) deutlich unter der P/E=15 Linie (blauen Linie) liegt. Die Skalierung ist logarithmisch, wie von Lynch empfohlen.</p>
       </div>
     </Card>
   );
