@@ -10,6 +10,8 @@ import { DCFExplanationTooltip } from './DCFExplanationTooltip';
 import { convertCurrency, needsCurrencyConversion, getExchangeRate, shouldConvertCurrency } from '@/utils/currencyConverter';
 import StockChart from './StockChart';
 import { DCFData } from '@/context/StockContextTypes';
+import { AddToWatchlistButton } from './AddToWatchlistButton';
+import { useStock } from '@/context/StockContext';
 
 interface StockHeaderProps {
   stockInfo: {
@@ -62,6 +64,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   const navigate = useNavigate();
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
   const [showCurrencyNotice, setShowCurrencyNotice] = useState(false);
+  const { buffettCriteria, financialMetrics, overallRating } = useStock();
 
   useEffect(() => {
     if (stockInfo) {
@@ -264,11 +267,23 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         />
       </div>
       
-      <div className="pt-4 border-t border-gray-100 flex items-center">
-        <DollarSign size={16} className="mr-2 text-buffett-subtext" />
-        <span className="text-buffett-subtext">
-          Marktkapitalisierung: {formatMarketCap(marketCap, currency)}
-        </span>
+      <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+        <div className="flex items-center">
+          <DollarSign size={16} className="mr-2 text-buffett-subtext" />
+          <span className="text-buffett-subtext">
+            Marktkapitalisierung: {formatMarketCap(marketCap, currency)}
+          </span>
+        </div>
+        
+        {/* Add to Watchlist Button - only show when analysis is complete */}
+        {buffettCriteria && financialMetrics && overallRating && (
+          <AddToWatchlistButton
+            stockInfo={stockInfo}
+            buffettCriteria={buffettCriteria}
+            financialMetrics={financialMetrics}
+            overallRating={overallRating}
+          />
+        )}
       </div>
       
       {showCurrencyNotice && (
