@@ -65,29 +65,30 @@ const generateSampleLynchData = (ticker: string, currentPrice: number | null, cu
 
   const data = [];
   const currentDate = new Date();
-  const monthsBack = 36; // 3 Jahre monatliche Daten
+  const daysBack = 365; // 1 Jahr tägliche Daten
   
   // Assume current P/E around 18 for realistic EPS calculation
   const assumedCurrentPE = 18;
   const currentEPS = currentPrice / assumedCurrentPE;
   
-  for (let i = monthsBack; i >= 0; i--) {
+  for (let i = daysBack; i >= 0; i -= 7) { // Wöchentliche Samples für Performance
     const date = new Date(currentDate);
-    date.setMonth(date.getMonth() - i);
-    const dateString = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+    date.setDate(date.getDate() - i);
+    const dateString = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
     
-    // Simulate realistic price progression with some volatility
-    const timeProgressFactor = (monthsBack - i) / monthsBack; // 0 to 1
-    const baseGrowthFactor = 0.7 + timeProgressFactor * 0.3; // From 70% to 100% of current price
-    const volatility = 0.85 + Math.random() * 0.3; // Random volatility ±15%
-    const seasonality = 1 + 0.05 * Math.sin((date.getMonth() / 12) * 2 * Math.PI); // Small seasonal effect
+    // Simulate realistic price progression with daily volatility
+    const timeProgressFactor = (daysBack - i) / daysBack; // 0 to 1
+    const baseGrowthFactor = 0.8 + timeProgressFactor * 0.2; // From 80% to 100% of current price
+    const dailyVolatility = 0.92 + Math.random() * 0.16; // Daily volatility ±8%
+    const trendNoise = 1 + 0.02 * Math.sin((i / 30) * 2 * Math.PI); // Monthly cycles
     
-    const price = currentPrice * baseGrowthFactor * volatility * seasonality;
+    const price = currentPrice * baseGrowthFactor * dailyVolatility * trendNoise;
     
-    // EPS grows more gradually than price (more stable)
-    const epsGrowthFactor = 0.8 + timeProgressFactor * 0.2; // From 80% to 100% of current EPS
-    const epsVolatility = 0.9 + Math.random() * 0.2; // Less volatile than price
-    const eps = currentEPS * epsGrowthFactor * epsVolatility;
+    // EPS changes less frequently (quarterly updates, but we interpolate)
+    const quarterProgress = Math.floor((daysBack - i) / 90) / 4; // Quarterly steps
+    const epsGrowthFactor = 0.85 + quarterProgress * 0.15; // From 85% to 100% of current EPS
+    const epsStability = 0.95 + Math.random() * 0.10; // Very stable compared to price
+    const eps = currentEPS * epsGrowthFactor * epsStability;
     
     data.push({
       date: dateString,
@@ -96,7 +97,7 @@ const generateSampleLynchData = (ticker: string, currentPrice: number | null, cu
     });
   }
   
-  return data;
+  return data.reverse(); // Chronological order
 };
 
 const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
