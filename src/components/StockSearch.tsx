@@ -603,15 +603,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         Geben Sie einen Firmennamen oder ein Aktiensymbol ein, um die Buffett-Analyse zu starten.
       </p>
       
-      <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-4 text-sm">
-        <p className="font-medium">Tipps zur Aktiensuche:</p>
-        <ul className="mt-1 list-disc list-inside">
-          <li>Geben Sie den Firmennamen (z.B. "Adidas") oder das Symbol (z.B. "ADS.DE") ein</li>
-          <li>Deutsche Aktien enden meist auf .DE (z.B. ADS.DE für Adidas)</li>
-          <li>Sie können auch eine ISIN eingeben (z.B. DE000A1EWWW0 für Adidas)</li>
-        </ul>
-      </div>
-      
       {showAppleCorrection && (
         <Alert className="mb-4 border-buffett-blue bg-buffett-blue bg-opacity-5">
           <AlertTitle>Meinten Sie Apple (AAPL)?</AlertTitle>
