@@ -65,39 +65,56 @@ const generateSampleLynchData = (ticker: string, currentPrice: number | null, cu
 
   const data = [];
   const currentDate = new Date();
-  const daysBack = 365; // 1 Jahr tägliche Daten
+  const yearsBack = 10; // 10 Jahre Daten
+  const totalDays = yearsBack * 365;
   
   // Assume current P/E around 18 for realistic EPS calculation
   const assumedCurrentPE = 18;
   const currentEPS = currentPrice / assumedCurrentPE;
   
-  for (let i = daysBack; i >= 0; i -= 7) { // Wöchentliche Samples für Performance
+  // Generate data every 7 days for performance (weekly sampling)
+  for (let i = totalDays; i >= 0; i -= 7) {
     const date = new Date(currentDate);
     date.setDate(date.getDate() - i);
     const dateString = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
     
     // Simulate realistic price progression with daily volatility
-    const timeProgressFactor = (daysBack - i) / daysBack; // 0 to 1
-    const baseGrowthFactor = 0.8 + timeProgressFactor * 0.2; // From 80% to 100% of current price
-    const dailyVolatility = 0.92 + Math.random() * 0.16; // Daily volatility ±8%
-    const trendNoise = 1 + 0.02 * Math.sin((i / 30) * 2 * Math.PI); // Monthly cycles
+    const timeProgressFactor = (totalDays - i) / totalDays; // 0 to 1 over 10 years
     
-    const price = currentPrice * baseGrowthFactor * dailyVolatility * trendNoise;
+    // Long-term growth trend (average 8% annually)
+    const annualGrowthRate = 0.08;
+    const yearsElapsed = (totalDays - i) / 365;
+    const baseGrowthFactor = Math.pow(1 + annualGrowthRate, yearsElapsed);
     
-    // EPS changes less frequently (quarterly updates, but we interpolate)
-    const quarterProgress = Math.floor((daysBack - i) / 90) / 4; // Quarterly steps
-    const epsGrowthFactor = 0.85 + quarterProgress * 0.15; // From 85% to 100% of current EPS
-    const epsStability = 0.95 + Math.random() * 0.10; // Very stable compared to price
-    const eps = currentEPS * epsGrowthFactor * epsStability;
+    // Start from 30% of current price 10 years ago
+    const startingFactor = 0.3;
+    const priceTrend = startingFactor + (1 - startingFactor) * timeProgressFactor;
+    
+    // Add volatility and market cycles
+    const volatility = 0.85 + Math.random() * 0.3; // ±15% random volatility
+    const cyclicalEffect = 1 + 0.1 * Math.sin((yearsElapsed / 4) * 2 * Math.PI); // 4-year market cycles
+    const seasonality = 1 + 0.02 * Math.sin((date.getMonth() / 12) * 2 * Math.PI); // Small seasonal effect
+    
+    const price = currentPrice * priceTrend * volatility * cyclicalEffect * seasonality;
+    
+    // EPS grows more gradually and stable than price
+    const epsGrowthRate = 0.06; // 6% annual EPS growth
+    const epsGrowthFactor = Math.pow(1 + epsGrowthRate, yearsElapsed);
+    const epsStartingFactor = 0.5; // Start from 50% of current EPS
+    const epsTrend = epsStartingFactor + (1 - epsStartingFactor) * timeProgressFactor;
+    
+    // Less volatility for EPS (quarterly updates smoothed out)
+    const epsVolatility = 0.95 + Math.random() * 0.10; // ±5% volatility
+    const eps = currentEPS * epsTrend * epsVolatility;
     
     data.push({
       date: dateString,
-      price: Math.round(price * 100) / 100,
-      eps: Math.round(eps * 100) / 100
+      price: Math.max(Math.round(price * 100) / 100, 0.01),
+      eps: Math.max(Math.round(eps * 100) / 100, 0.01)
     });
   }
   
-  return data.reverse(); // Chronological order
+  return data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 };
 
 const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {

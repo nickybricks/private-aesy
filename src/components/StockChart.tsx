@@ -37,9 +37,15 @@ interface ChartData {
 }
 
 const TIME_RANGES = [
-  { label: '1 Jahr', value: '1Y' },
-  { label: '5 Jahre', value: '5Y' },
-  { label: 'Allzeit', value: 'MAX' }
+  { label: '5T', value: '5D' },
+  { label: '1M', value: '1M' },
+  { label: '3M', value: '3M' },
+  { label: 'YTD', value: 'YTD' },
+  { label: '1J', value: '1Y' },
+  { label: '3J', value: '3Y' },
+  { label: '5J', value: '5Y' },
+  { label: '10J', value: '10Y' },
+  { label: 'All', value: 'MAX' }
 ] as const;
 
 const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValue }) => {
@@ -273,11 +279,29 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
     let cutoffDate = new Date();
     
     switch (selectedRange) {
+      case '5D':
+        cutoffDate.setDate(now.getDate() - 5);
+        break;
+      case '1M':
+        cutoffDate.setMonth(now.getMonth() - 1);
+        break;
+      case '3M':
+        cutoffDate.setMonth(now.getMonth() - 3);
+        break;
+      case 'YTD':
+        cutoffDate = new Date(now.getFullYear(), 0, 1);
+        break;
       case '1Y':
         cutoffDate.setFullYear(now.getFullYear() - 1);
         break;
+      case '3Y':
+        cutoffDate.setFullYear(now.getFullYear() - 3);
+        break;
       case '5Y':
         cutoffDate.setFullYear(now.getFullYear() - 5);
+        break;
+      case '10Y':
+        cutoffDate.setFullYear(now.getFullYear() - 10);
         break;
       case 'MAX':
         return historicalData;

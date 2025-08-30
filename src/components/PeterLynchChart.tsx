@@ -10,6 +10,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from "recharts";
+import { Button } from "@/components/ui/button";
 
 type LynchPoint = {
   date: string;   // ISO-String oder "YYYY-MM"
@@ -23,6 +24,18 @@ type Props = {
   defaultLogScale?: boolean; // Standard: true
   currency?: string; // "USD", "EUR" etc.
 };
+
+const TIME_RANGES = [
+  { label: '5T', value: '5D' },
+  { label: '1M', value: '1M' },
+  { label: '3M', value: '3M' },
+  { label: 'YTD', value: 'YTD' },
+  { label: '1J', value: '1Y' },
+  { label: '3J', value: '3Y' },
+  { label: '5J', value: '5Y' },
+  { label: '10J', value: '10Y' },
+  { label: 'All', value: 'MAX' }
+] as const;
 
 function fmt(n: number, currency = "USD") {
   try {
@@ -49,11 +62,55 @@ export default function PeterLynchChart({
 }: Props) {
   const [peMultiple, setPeMultiple] = useState<number>(defaultPE);
   const [useLog, setUseLog] = useState<boolean>(defaultLogScale);
+  const [selectedRange, setSelectedRange] = useState<typeof TIME_RANGES[number]['value']>('1Y');
+
+  // Filter data based on selected time range
+  const getFilteredData = () => {
+    if (!data.length) return [];
+    
+    const now = new Date();
+    let cutoffDate = new Date();
+    
+    switch (selectedRange) {
+      case '5D':
+        cutoffDate.setDate(now.getDate() - 5);
+        break;
+      case '1M':
+        cutoffDate.setMonth(now.getMonth() - 1);
+        break;
+      case '3M':
+        cutoffDate.setMonth(now.getMonth() - 3);
+        break;
+      case 'YTD':
+        cutoffDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      case '1Y':
+        cutoffDate.setFullYear(now.getFullYear() - 1);
+        break;
+      case '3Y':
+        cutoffDate.setFullYear(now.getFullYear() - 3);
+        break;
+      case '5Y':
+        cutoffDate.setFullYear(now.getFullYear() - 5);
+        break;
+      case '10Y':
+        cutoffDate.setFullYear(now.getFullYear() - 10);
+        break;
+      case 'MAX':
+        return data;
+      default:
+        return data;
+    }
+    
+    return data.filter(item => new Date(item.date) >= cutoffDate);
+  };
+
+  const filteredData = getFilteredData();
 
   // 1) Clean & enrich data
   const prepared = useMemo(() => {
     // Filter ungültige Punkte für Log-Skala
-    const filtered = data.filter(d =>
+    const filtered = filteredData.filter(d =>
       Number.isFinite(d.price) && Number.isFinite(d.eps) &&
       d.price > 0 && d.eps > 0
     );
@@ -62,7 +119,7 @@ export default function PeterLynchChart({
       earningsLinePrice: d.eps * peMultiple, // EPS*PE = "Earnings-Line" in Preis-Einheiten
       premium: d.price / Math.max(d.eps * peMultiple, 1e-9) - 1, // + = über Earnings-Line
     }));
-  }, [data, peMultiple]);
+  }, [filteredData, peMultiple]);
 
   // 2) Domains so wählen, dass 1 EPS ≙ peMultiple Preis
   const domains = useMemo(() => {
@@ -115,6 +172,19 @@ export default function PeterLynchChart({
   return (
     <div className="w-full space-y-4">
       {/* Controls */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {TIME_RANGES.map((range) => (
+          <Button
+            key={range.value}
+            variant={selectedRange === range.value ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedRange(range.value)}
+          >
+            {range.label}
+          </Button>
+        ))}
+      </div>
+      
       <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/30 rounded-lg">
         <label className="flex items-center gap-2">
           <span className="text-sm font-medium">P/E-Multiple</span>
