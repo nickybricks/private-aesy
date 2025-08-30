@@ -22,7 +22,7 @@ interface PeterLynchChartProps {
 }
 
 interface PeterLynchDataPoint {
-  date: Date;
+  date: string;
   price: number;
   pe15Line: number;
 }
@@ -112,7 +112,7 @@ const PeterLynchChart: React.FC<PeterLynchChartProps> = ({ symbol, currency }) =
             const pe15Line = eps * 15; // P/E = 15 line
             
             processedData.push({
-              date,
+              date: pricePoint.date,
               price,
               pe15Line
             });
@@ -120,7 +120,7 @@ const PeterLynchChart: React.FC<PeterLynchChartProps> = ({ symbol, currency }) =
         }
 
         // Sort by date
-        processedData.sort((a, b) => a.date.getTime() - b.date.getTime());
+        processedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
         console.log(`Peter Lynch chart data prepared with ${processedData.length} points`);
         setChartData(processedData);
@@ -156,7 +156,7 @@ const PeterLynchChart: React.FC<PeterLynchChartProps> = ({ symbol, currency }) =
         return chartData;
     }
     
-    return chartData.filter(item => item.date >= cutoffDate);
+    return chartData.filter(item => new Date(item.date) >= cutoffDate);
   };
 
   if (isLoading) {
@@ -229,9 +229,6 @@ const PeterLynchChart: React.FC<PeterLynchChartProps> = ({ symbol, currency }) =
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="date"
-                type="number"
-                scale="time"
-                domain={['dataMin', 'dataMax']}
                 tickFormatter={(date) => format(new Date(date), 'yyyy', { locale: de })}
                 height={70}
                 tickMargin={30}
