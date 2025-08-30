@@ -63,29 +63,39 @@ const generateSampleLynchData = (ticker: string, currentPrice: number | null, cu
     return [];
   }
 
-  const baseEPS = currentPrice * 0.06; // Assume current P/E around 16-17
-  const basePrice = currentPrice * 0.7; // Start from 70% of current price
-  
+  // More realistic sample data generation
+  const currentYear = new Date().getFullYear();
   const data = [];
-  const startYear = new Date().getFullYear() - 8;
   
-  for (let i = 0; i < 9; i++) {
-    const year = startYear + i;
-    const quarter = Math.floor(Math.random() * 4) + 1;
-    const date = `${year}-${quarter.toString().padStart(2, '0')}`;
+  // Generate 5 years of historical data
+  for (let i = 4; i >= 0; i--) {
+    const year = currentYear - i;
+    const date = `${year}-12`;
     
-    // Simulate some growth with volatility
-    const growthFactor = Math.pow(1.08 + (Math.random() - 0.5) * 0.1, i);
-    const eps = baseEPS * growthFactor;
-    const priceVolatility = 1 + (Math.random() - 0.5) * 0.3;
-    const price = basePrice * growthFactor * priceVolatility;
+    // Simulate historical price progression to current price
+    const priceProgressionFactor = 0.6 + (4 - i) * 0.1; // From 60% to 100% of current price
+    const price = currentPrice * priceProgressionFactor * (0.9 + Math.random() * 0.2); // Add some volatility
+    
+    // Simulate EPS growth (assume current P/E around 15-20)
+    const assumedCurrentPE = 18;
+    const currentEPS = currentPrice / assumedCurrentPE;
+    const epsGrowthFactor = 0.7 + (4 - i) * 0.075; // Gradual EPS growth
+    const eps = currentEPS * epsGrowthFactor * (0.9 + Math.random() * 0.2); // Add some volatility
     
     data.push({
       date,
-      price: Math.max(price, 0.01),
-      eps: Math.max(eps, 0.01)
+      price: Math.round(price * 100) / 100,
+      eps: Math.round(eps * 100) / 100
     });
   }
+  
+  // Add current data point
+  const currentEPS = currentPrice / 18; // Assume P/E of 18
+  data.push({
+    date: `${currentYear}-12`,
+    price: currentPrice,
+    eps: Math.round(currentEPS * 100) / 100
+  });
   
   return data;
 };

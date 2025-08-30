@@ -74,26 +74,29 @@ export default function PeterLynchChart({
         rightMax: peMultiple * 10,
       };
     }
-    let minEPS = Infinity, maxEPS = -Infinity;
-    let minPrice = Infinity, maxPrice = -Infinity;
-    let minEL = Infinity, maxEL = -Infinity;
+    
+    const prices = prepared.map(p => p.price);
+    const epss = prepared.map(p => p.eps);
+    const earningsLinePrices = prepared.map(p => p.earningsLinePrice);
+    
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const minEPS = Math.min(...epss);
+    const maxEPS = Math.max(...epss);
+    const minEL = Math.min(...earningsLinePrices);
+    const maxEL = Math.max(...earningsLinePrices);
 
-    prepared.forEach(p => {
-      minEPS = Math.min(minEPS, p.eps);
-      maxEPS = Math.max(maxEPS, p.eps);
-      minPrice = Math.min(minPrice, p.price);
-      maxPrice = Math.max(maxPrice, p.price);
-      minEL = Math.min(minEL, p.earningsLinePrice);
-      maxEL = Math.max(maxEL, p.earningsLinePrice);
-    });
-
-    // linke Achse (EPS)
-    const leftMin = Math.max(Math.min(minEPS, (minPrice / peMultiple), (minEL / peMultiple)), 1e-3);
-    const leftMax = Math.max(maxEPS, (maxPrice / peMultiple), (maxEL / peMultiple));
-
-    // rechte Achse (Preis)
-    const rightMin = Math.max(Math.min(minPrice, minEL, leftMin * peMultiple), 1e-2);
-    const rightMax = Math.max(maxPrice, maxEL, leftMax * peMultiple);
+    // Add padding for better visualization
+    const pricePadding = (maxPrice - minPrice) * 0.1;
+    const epsPadding = (maxEPS - minEPS) * 0.1;
+    
+    // Right axis domain (price)
+    const rightMin = Math.max(Math.min(minPrice, minEL) - pricePadding, 0.01);
+    const rightMax = Math.max(maxPrice, maxEL) + pricePadding;
+    
+    // Left axis domain (EPS) - aligned with price axis
+    const leftMin = Math.max((rightMin / peMultiple), 0.01);
+    const leftMax = rightMax / peMultiple;
 
     return { leftMin, leftMax, rightMin, rightMax };
   }, [prepared, peMultiple]);
@@ -211,8 +214,8 @@ export default function PeterLynchChart({
               dataKey="price"
               name="Kurs"
               dot={false}
-              strokeWidth={2}
-              stroke="hsl(var(--chart-1))"
+              strokeWidth={3}
+              stroke="#22c55e"
             />
 
             {/* Earnings-Line als Preislinie (rechts) - Blaue Linie */}
@@ -222,9 +225,9 @@ export default function PeterLynchChart({
               dataKey="earningsLinePrice"
               name={`Earnings-Line (EPS×${peMultiple})`}
               dot={false}
-              strokeWidth={2}
-              stroke="hsl(var(--chart-2))"
-              strokeDasharray="5 5"
+              strokeWidth={3}
+              stroke="#3b82f6"
+              strokeDasharray="8 4"
             />
           </LineChart>
         </ResponsiveContainer>
