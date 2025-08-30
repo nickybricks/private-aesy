@@ -809,40 +809,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           {isLoading ? 'Analysiere...' : 'Analysieren'}
         </Button>
       </form>
-      
-      <div className="mt-4 text-sm text-buffett-subtext flex items-center">
-        <p>Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung.</p>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Info size={16} className="ml-2 cursor-pointer" />
-          </PopoverTrigger>
-          <PopoverContent className="max-w-xs p-4">
-            <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
-            <p>Dieses Tool verwendet die Financial Modeling Prep API und OpenAI GPT für detaillierte Analysen.</p>
-          </PopoverContent>
-        </Popover>
-      </div>
-      
-      <div className="mt-6">
-        <p className="text-sm font-medium mb-2">Häufig verwendete Symbole:</p>
-        <div className="flex flex-wrap gap-2">
-          {quickAccessStocks.map((item) => (
-            <Button
-              key={item.symbol}
-              variant="outline"
-              size="sm"
-              className="text-xs py-1 h-auto"
-              onClick={() => {
-                selectQuickAccessStock(item.symbol);
-                setOpen(true);
-                setForceKeepOpen(true);
-              }}
-            >
-              {item.symbol} ({item.name})
-            </Button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
