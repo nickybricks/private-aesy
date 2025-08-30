@@ -128,7 +128,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const [ticker, setTicker] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
-  const [suggestedCorrection, setSuggestedCorrection] = useState<{original: string, suggestion: string, symbol: string} | null>(null);
+  
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<StockSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -396,45 +396,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     return scoredResults.sort((a: any, b: any) => b.score - a.score);
   };
 
-  const getFuzzyMatches = (query: string, stocks: StockSuggestion[]) => {
-    if (query.length < 4) return null;
-    
-    const exactMatch = stocks.find(stock => 
-      stock.symbol.toLowerCase() === query.toLowerCase()
-    );
-    if (exactMatch) return null;
-    
-    const queryLower = query.toLowerCase();
-    
-    for (const stock of stocks) {
-      const nameLower = stock.name.toLowerCase();
-      const symbolLower = stock.symbol.toLowerCase();
-      
-      if (symbolLower === queryLower) continue;
-      
-      let matchCount = 0;
-      let lastIndex = -1;
-      
-      for (const char of queryLower) {
-        const index = nameLower.indexOf(char, lastIndex + 1);
-        if (index > -1) {
-          matchCount++;
-          lastIndex = index;
-        }
-      }
-      
-      if (matchCount >= queryLower.length * 0.7 && 
-          (stock.symbol.endsWith('.DE') || ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'].includes(stock.symbol))) {
-        return {
-          original: query,
-          suggestion: stock.name,
-          symbol: stock.symbol
-        };
-      }
-    }
-    
-    return null;
-  };
 
   const getFMPApiKey = async () => {
     try {
@@ -451,7 +412,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
     const fetchSuggestions = async () => {
       if (!searchQuery || searchQuery.length < 2) {
         setSuggestions(fallbackStocks.slice(0, 6));
-        setSuggestedCorrection(null);
         return;
       }
 
@@ -494,9 +454,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           
           const prioritizedResults = prioritizeResults(stocksOnly);
           setSuggestions(prioritizedResults);
-          
-          const correction = getFuzzyMatches(searchQuery, prioritizedResults);
-          setSuggestedCorrection(correction);
         }
       } catch (error) {
         console.error('Error fetching stock suggestions:', error);
@@ -517,9 +474,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                  normalizedStockName.includes(normalizedSearch);
         });
         setSuggestions(filteredResults);
-        
-        const correction = getFuzzyMatches(searchQuery, filteredResults);
-        setSuggestedCorrection(correction);
       } finally {
         setIsSearching(false);
       }
@@ -619,25 +573,6 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         </Alert>
       )}
       
-      {suggestedCorrection && (
-        <Alert className="mb-4 border-buffett-blue bg-buffett-blue bg-opacity-5">
-          <AlertTitle>Meinten Sie {suggestedCorrection.suggestion}?</AlertTitle>
-          <AlertDescription>
-            <p>Wir haben eine ähnliche Aktie gefunden.</p>
-            <Button 
-              variant="link" 
-              className="p-0 h-auto text-buffett-blue font-medium mt-1"
-              onClick={() => {
-                setTicker(suggestedCorrection.symbol);
-                onSearch(suggestedCorrection.symbol);
-                setSuggestedCorrection(null);
-              }}
-            >
-              {suggestedCorrection.symbol} ({suggestedCorrection.suggestion}) verwenden →
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
       
       <form onSubmit={handleSubmit} className="flex gap-2">
         <div className="relative flex-1">
