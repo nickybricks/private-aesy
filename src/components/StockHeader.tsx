@@ -9,7 +9,6 @@ import { ClickableTooltip } from './ClickableTooltip';
 import { DCFExplanationTooltip } from './DCFExplanationTooltip';
 import { convertCurrency, needsCurrencyConversion, getExchangeRate, shouldConvertCurrency } from '@/utils/currencyConverter';
 import StockChart from './StockChart';
-import PeterLynchChart from './PeterLynchChart';
 import { DCFData } from '@/context/StockContextTypes';
 import { AddToWatchlistButton } from './AddToWatchlistButton';
 import { useStock } from '@/context/StockContext';
@@ -265,13 +264,6 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
           symbol={ticker} 
           currency={currency} 
           intrinsicValue={intrinsicValue}
-        />
-      </div>
-      
-      <div className="mt-6 pt-4 border-t border-gray-100">
-        <PeterLynchChart 
-          symbol={ticker} 
-          currency={currency} 
         />
       </div>
       
