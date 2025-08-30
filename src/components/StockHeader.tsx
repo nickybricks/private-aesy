@@ -63,39 +63,38 @@ const generateSampleLynchData = (ticker: string, currentPrice: number | null, cu
     return [];
   }
 
-  // More realistic sample data generation
-  const currentYear = new Date().getFullYear();
   const data = [];
+  const currentDate = new Date();
+  const monthsBack = 36; // 3 Jahre monatliche Daten
   
-  // Generate 5 years of historical data
-  for (let i = 4; i >= 0; i--) {
-    const year = currentYear - i;
-    const date = `${year}-12`;
+  // Assume current P/E around 18 for realistic EPS calculation
+  const assumedCurrentPE = 18;
+  const currentEPS = currentPrice / assumedCurrentPE;
+  
+  for (let i = monthsBack; i >= 0; i--) {
+    const date = new Date(currentDate);
+    date.setMonth(date.getMonth() - i);
+    const dateString = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
     
-    // Simulate historical price progression to current price
-    const priceProgressionFactor = 0.6 + (4 - i) * 0.1; // From 60% to 100% of current price
-    const price = currentPrice * priceProgressionFactor * (0.9 + Math.random() * 0.2); // Add some volatility
+    // Simulate realistic price progression with some volatility
+    const timeProgressFactor = (monthsBack - i) / monthsBack; // 0 to 1
+    const baseGrowthFactor = 0.7 + timeProgressFactor * 0.3; // From 70% to 100% of current price
+    const volatility = 0.85 + Math.random() * 0.3; // Random volatility ±15%
+    const seasonality = 1 + 0.05 * Math.sin((date.getMonth() / 12) * 2 * Math.PI); // Small seasonal effect
     
-    // Simulate EPS growth (assume current P/E around 15-20)
-    const assumedCurrentPE = 18;
-    const currentEPS = currentPrice / assumedCurrentPE;
-    const epsGrowthFactor = 0.7 + (4 - i) * 0.075; // Gradual EPS growth
-    const eps = currentEPS * epsGrowthFactor * (0.9 + Math.random() * 0.2); // Add some volatility
+    const price = currentPrice * baseGrowthFactor * volatility * seasonality;
+    
+    // EPS grows more gradually than price (more stable)
+    const epsGrowthFactor = 0.8 + timeProgressFactor * 0.2; // From 80% to 100% of current EPS
+    const epsVolatility = 0.9 + Math.random() * 0.2; // Less volatile than price
+    const eps = currentEPS * epsGrowthFactor * epsVolatility;
     
     data.push({
-      date,
+      date: dateString,
       price: Math.round(price * 100) / 100,
       eps: Math.round(eps * 100) / 100
     });
   }
-  
-  // Add current data point
-  const currentEPS = currentPrice / 18; // Assume P/E of 18
-  data.push({
-    date: `${currentYear}-12`,
-    price: currentPrice,
-    eps: Math.round(currentEPS * 100) / 100
-  });
   
   return data;
 };
