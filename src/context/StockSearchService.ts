@@ -2,7 +2,7 @@ import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverall
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { shouldConvertCurrency, debugDCFData } from '@/utils/currencyConverter';
-import { processFinancialMetrics, calculateBuffettBuyPrice } from './StockDataProcessor';
+import { processFinancialMetrics, calculateBuffettBuyPrice, correctDCFForNegativeNetDebt } from './StockDataProcessor';
 import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
@@ -234,29 +234,33 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
         if (customDcfData) {
           console.log('Using custom DCF data from direct API call');
           const customData = customDcfData as any;
+          
+          // WICHTIG: Korrigiere DCF-Berechnung für negative Nettoverschuldung
+          const correctedCustomData = correctDCFForNegativeNetDebt(customData);
+          
           // Formatiere die Daten in das benötigte Format
           extractedDcfData = {
-            ufcf: customData.projectedFcf || [],
-            wacc: customData.wacc || 0,
-            presentTerminalValue: customData.terminalValuePv || 0,
-            netDebt: customData.netDebt || 0,
-            dilutedSharesOutstanding: customData.sharesOutstanding || 0,
+            ufcf: correctedCustomData.projectedFcf || [],
+            wacc: correctedCustomData.wacc || 0,
+            presentTerminalValue: correctedCustomData.terminalValuePv || 0,
+            netDebt: correctedCustomData.netDebt || 0,
+            dilutedSharesOutstanding: correctedCustomData.sharesOutstanding || 0,
             currency: priceCurrency, // Verwende immer die Kurswährung
-            intrinsicValue: customData.dcfValue || 0,
-            pvUfcfs: customData.projectedFcfPv || [],
-            sumPvUfcfs: customData.sumPvProjectedFcf || 0,
-            enterpriseValue: customData.enterpriseValue || 0,
-            equityValue: customData.equityValue || 0
+            intrinsicValue: correctedCustomData.dcfValue || 0,
+            pvUfcfs: correctedCustomData.projectedFcfPv || [],
+            sumPvUfcfs: correctedCustomData.sumPvProjectedFcf || 0,
+            enterpriseValue: correctedCustomData.enterpriseValue || 0,
+            equityValue: correctedCustomData.equityValue || 0
           };
 
-          console.log('Extracted DCF data:');
+          console.log('Extracted DCF data (after correction):');
           debugDCFData(extractedDcfData);
           
           // Speichere die Aktienanzahl in den Informationen, falls verfügbar
-          if (customData.sharesOutstanding) {
+          if (correctedCustomData.sharesOutstanding) {
             info = {
               ...info,
-              sharesOutstanding: customData.sharesOutstanding
+              sharesOutstanding: correctedCustomData.sharesOutstanding
             };
           }
         } else if (rating) {
@@ -264,8 +268,12 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
           console.log('Falling back to DCF data from rating response');
           const ratingAny = rating as any;
           if (ratingAny && typeof ratingAny === 'object' && 'dcfData' in ratingAny) {
-            extractedDcfData = ratingAny.dcfData;
-            console.log('DCF Data found in API response.');
+            let rawDcfData = ratingAny.dcfData;
+            
+            // WICHTIG: Korrigiere DCF-Berechnung für negative Nettoverschuldung
+            extractedDcfData = correctDCFForNegativeNetDebt(rawDcfData);
+            
+            console.log('DCF Data found in API response (after correction).');
             
             // Debug the full DCF data structure using our new utility
             debugDCFData(extractedDcfData);
