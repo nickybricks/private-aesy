@@ -331,7 +331,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
   const formatValue = (value: number | null, decimals = 2, isPercent = true) => {
     if (value === null) return 'N/A';
     return isPercent 
-      ? `${(value * 100).toFixed(decimals)}%`  // Multiply by 100 for percentage display
+      ? `${value.toFixed(decimals)}%`  // Values are already in percentage form from API
       : value.toFixed(decimals);
   };
 
