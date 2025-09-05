@@ -125,46 +125,4 @@ export const calculateBuffettBuyPrice = (
   return buyPrice;
 };
 
-/**
- * Fix DCF calculation for negative net debt (net cash position)
- * Correct formula: Equity Value = Enterprise Value - Net Debt
- * When Net Debt is negative (company has net cash), it should INCREASE equity value
- */
-export const correctDCFForNegativeNetDebt = (dcfData: any): any => {
-  if (!dcfData || typeof dcfData.netDebt === 'undefined') {
-    return dcfData;
-  }
-
-  const netDebt = Number(dcfData.netDebt) || 0;
-  const enterpriseValue = Number(dcfData.enterpriseValue) || 0;
-  const sharesOutstanding = Number(dcfData.dilutedSharesOutstanding) || Number(dcfData.sharesOutstanding) || 0;
-
-  console.log(`DCF Correction - Original values:`);
-  console.log(`  Enterprise Value: ${enterpriseValue}`);
-  console.log(`  Net Debt: ${netDebt}`);
-  console.log(`  Shares Outstanding: ${sharesOutstanding}`);
-  console.log(`  Original Equity Value: ${dcfData.equityValue}`);
-  console.log(`  Original DCF Value per Share: ${dcfData.dcfValue || dcfData.equityValuePerShare || dcfData.intrinsicValue}`);
-
-  // Apply correct DCF formula: Equity Value = Enterprise Value - Net Debt
-  // When netDebt is negative (net cash), this will INCREASE equity value
-  const correctedEquityValue = enterpriseValue - netDebt;
-  const correctedDcfValuePerShare = sharesOutstanding > 0 ? correctedEquityValue / sharesOutstanding : 0;
-
-  console.log(`DCF Correction - Corrected values:`);
-  console.log(`  Corrected Equity Value = ${enterpriseValue} - (${netDebt}) = ${correctedEquityValue}`);
-  console.log(`  Corrected DCF Value per Share = ${correctedEquityValue} / ${sharesOutstanding} = ${correctedDcfValuePerShare}`);
-
-  // Update all relevant properties with corrected values
-  const correctedDcfData = {
-    ...dcfData,
-    equityValue: correctedEquityValue,
-    dcfValue: correctedDcfValuePerShare,
-    equityValuePerShare: correctedDcfValuePerShare,
-    intrinsicValue: correctedDcfValuePerShare
-  };
-
-  console.log(`DCF correction applied successfully. Net debt effect: ${netDebt < 0 ? 'INCREASED' : 'DECREASED'} equity value by ${Math.abs(netDebt)}`);
-
-  return correctedDcfData;
-};
+// Note: correctDCFForNegativeNetDebt function removed as DCF calculation now handled in DCFCalculationService

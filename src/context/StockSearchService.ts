@@ -2,110 +2,16 @@ import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverall
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { shouldConvertCurrency, debugDCFData } from '@/utils/currencyConverter';
-import { processFinancialMetrics, calculateBuffettBuyPrice, correctDCFForNegativeNetDebt } from './StockDataProcessor';
+import { processFinancialMetrics, calculateBuffettBuyPrice } from './StockDataProcessor';
 import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
-import axios from 'axios';
-import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
+import { DCFCalculationService } from '@/services/DCFCalculationService';
 import { StockInfo } from '@/types/stock';
 import { OverallRatingData } from './StockContextTypes';
 
-// Konstante für den direkten DCF-Endpunkt
-const DCF_BASE_URL = 'https://financialmodelingprep.com/stable/custom-discounted-cash-flow';
-
-// Hilfsfunktion zum Abrufen der DCF-Daten
-const fetchCustomDCF = async (ticker: string) => {
-  try {
-    console.log(`Fetching custom DCF data for ${ticker} from ${DCF_BASE_URL}`);
-    const apiResponse = await axios.get(DCF_BASE_URL, {
-      params: {
-        symbol: ticker,
-        apikey: DEFAULT_FMP_API_KEY
-      }
-    });
-    
-    console.log('Custom DCF API response received:', apiResponse.data);
-    console.log('Response status:', apiResponse.status);
-    console.log('Response type:', typeof apiResponse.data);
-    
-    // WICHTIG: Prüfe auf leere oder undefined Antworten
-    if (!apiResponse.data || apiResponse.data === 'undefined' || (Array.isArray(apiResponse.data) && apiResponse.data.length === 0)) {
-      console.error(`DCF API returned empty/undefined data for ${ticker}`);
-      throw new Error(`DCF-Daten für ${ticker} nicht verfügbar`);
-    }
-    
-    // Überprüfen, ob die API-Daten ein Array zurückgegeben hat
-    if (Array.isArray(apiResponse.data) && apiResponse.data.length > 0) {
-      // Das erste Element enthält die aktuellsten und wichtigsten Daten
-      const dcfData = apiResponse.data[0];
-      console.log('Processing first year DCF data from array:', dcfData);
-      
-      // Prüfen, ob wichtige Daten vorhanden sind
-      if (dcfData && typeof dcfData.equityValuePerShare !== 'undefined') {
-        console.log(`Found equityValuePerShare: ${dcfData.equityValuePerShare}`);
-        
-        // Projektionen für die nächsten 5 Jahre extrahieren (ufcf)
-        const currentYear = new Date().getFullYear();
-        const projectedYears = apiResponse.data
-          .filter((annual: any) => parseInt(annual.year) >= currentYear)
-          .sort((a: any, b: any) => parseInt(a.year) - parseInt(b.year));
-        
-        const projectedFcf = projectedYears
-          .map((annual: any) => annual.ufcf || 0)
-          .slice(0, 5);
-        
-        console.log('Projected FCF for next 5 years:', projectedFcf);
-        
-        // Berechnung der PV für diese UFCFs
-        if (!dcfData.wacc) {
-          throw new Error('WACC-Daten fehlen in der DCF-Berechnung');
-        }
-        
-        const wacc = dcfData.wacc;
-        const pvProjectedFcf = projectedFcf.map((fcf: number, index: number) => {
-          return fcf / Math.pow(1 + wacc/100, index + 1);
-        });
-        
-        console.log('PV of projected FCF:', pvProjectedFcf);
-        console.log('WACC used:', wacc);
-        
-        // Extrahiere weitere wichtige Werte direkt
-        if (!dcfData.presentTerminalValue) {
-          throw new Error('Terminal Value-Daten fehlen in der DCF-Berechnung');
-        }
-        
-        if (!dcfData.dilutedSharesOutstanding) {
-          throw new Error('Shares Outstanding-Daten fehlen in der DCF-Berechnung');
-        }
-        
-        if (!dcfData.equityValuePerShare) {
-          throw new Error('Equity Value Per Share-Daten fehlen in der DCF-Berechnung');
-        }
-        
-        const processedData = {
-          projectedFcf,
-          projectedFcfPv: pvProjectedFcf,
-          wacc: dcfData.wacc,
-          terminalValuePv: dcfData.presentTerminalValue,
-          netDebt: dcfData.netDebt || 0,
-          sharesOutstanding: dcfData.dilutedSharesOutstanding,
-          dcfValue: dcfData.equityValuePerShare,
-          sumPvProjectedFcf: dcfData.sumPvUfcf || 0,
-          enterpriseValue: dcfData.enterpriseValue || 0,
-          equityValue: dcfData.equityValue || 0
-        };
-        
-        console.log('Successfully processed DCF data:', processedData);
-        return processedData;
-      } else {
-        throw new Error('DCF ERROR: Wichtige Daten (equityValuePerShare) fehlen in der API-Antwort');
-      }
-    } else {
-      throw new Error('DCF ERROR: API-Antwort ist kein Array oder ist leer');
-    }
-  } catch (error) {
-    console.error('Error fetching custom DCF data:', error);
-    throw error;
-  }
+// Neue DCF-Berechnung mit eigener FCFF-Logik
+const calculateCustomDCF = async (ticker: string) => {
+  console.log(`Starting custom DCF calculation for ${ticker}`);
+  return await DCFCalculationService.calculateDCF(ticker);
 };
 
 // NEUE FUNKTION: Korrigiere Kriterium 3 Daten
@@ -188,7 +94,7 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
           analyzeBuffettCriteria(ticker).then(result => { setLoadingProgress?.(40); return result; }),
           getFinancialMetrics(ticker).then(result => { setLoadingProgress?.(60); return result; }),
           getOverallRating(ticker).then(result => { setLoadingProgress?.(80); return result; }),
-          fetchCustomDCF(ticker).then(result => { setLoadingProgress?.(90); return result; })
+          calculateCustomDCF(ticker).then(result => { setLoadingProgress?.(90); return result; })
         ];
         
         const [rawCriteria, rawMetricsData, rating, customDcfData] = await Promise.all(promises);
@@ -230,37 +136,35 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
         let updatedRating: OverallRatingData | null = null;
         let extractedDcfData = null;
 
-        // Verarbeite das neue benutzerdefinierte DCF-Ergebnis, wenn verfügbar
+        // Verarbeite das neue benutzerdefinierte DCF-Ergebnis
         if (customDcfData) {
-          console.log('Using custom DCF data from direct API call');
+          console.log('Using custom DCF calculation results');
           const customData = customDcfData as any;
-          
-          // WICHTIG: Korrigiere DCF-Berechnung für negative Nettoverschuldung
-          const correctedCustomData = correctDCFForNegativeNetDebt(customData);
           
           // Formatiere die Daten in das benötigte Format
           extractedDcfData = {
-            ufcf: correctedCustomData.projectedFcf || [],
-            wacc: correctedCustomData.wacc || 0,
-            presentTerminalValue: correctedCustomData.terminalValuePv || 0,
-            netDebt: correctedCustomData.netDebt || 0,
-            dilutedSharesOutstanding: correctedCustomData.sharesOutstanding || 0,
+            ufcf: customData.projectedFcf || [],
+            wacc: customData.wacc || 0,
+            presentTerminalValue: customData.terminalValuePv || 0,
+            netDebt: customData.netDebt || 0,
+            dilutedSharesOutstanding: customData.sharesOutstanding || 0,
             currency: priceCurrency, // Verwende immer die Kurswährung
-            intrinsicValue: correctedCustomData.dcfValue || 0,
-            pvUfcfs: correctedCustomData.projectedFcfPv || [],
-            sumPvUfcfs: correctedCustomData.sumPvProjectedFcf || 0,
-            enterpriseValue: correctedCustomData.enterpriseValue || 0,
-            equityValue: correctedCustomData.equityValue || 0
+            intrinsicValue: customData.intrinsicValue || 0,
+            pvUfcfs: customData.projectedFcfPv || [],
+            sumPvUfcfs: customData.sumPvProjectedFcf || 0,
+            enterpriseValue: customData.enterpriseValue || 0,
+            equityValue: customData.equityValue || 0,
+            debugOutput: customData.debugOutput || []
           };
 
-          console.log('Extracted DCF data (after correction):');
+          console.log('Extracted DCF data from custom calculation:');
           debugDCFData(extractedDcfData);
           
           // Speichere die Aktienanzahl in den Informationen, falls verfügbar
-          if (correctedCustomData.sharesOutstanding) {
+          if (customData.sharesOutstanding) {
             info = {
               ...info,
-              sharesOutstanding: correctedCustomData.sharesOutstanding
+              sharesOutstanding: customData.sharesOutstanding
             };
           }
         } else if (rating) {
@@ -269,13 +173,9 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
           const ratingAny = rating as any;
           if (ratingAny && typeof ratingAny === 'object' && 'dcfData' in ratingAny) {
             let rawDcfData = ratingAny.dcfData;
+            extractedDcfData = rawDcfData;
             
-            // WICHTIG: Korrigiere DCF-Berechnung für negative Nettoverschuldung
-            extractedDcfData = correctDCFForNegativeNetDebt(rawDcfData);
-            
-            console.log('DCF Data found in API response (after correction).');
-            
-            // Debug the full DCF data structure using our new utility
+            console.log('DCF Data found in API response (fallback).');
             debugDCFData(extractedDcfData);
             
             // Prüfe explizit, ob equityValuePerShare vorhanden ist und logge es
