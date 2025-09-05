@@ -162,10 +162,10 @@ const BuffettQuantAnalyzer = () => {
             {/* Tool Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-foreground mb-2">
-                Buffett Quant Analyzer
+                Aesy Quant Analyzer
               </h1>
               <p className="text-muted-foreground">
-                Quantitative Aktienanalyse nach Warren Buffetts Investmentprinzipien
+                Quantitative Aktienanalyse nach bewährten Investmentprinzipien
               </p>
             </div>
 
@@ -265,8 +265,8 @@ const BuffettQuantAnalyzer = () => {
       <div className="mt-8 bg-white p-6 rounded-lg shadow-md border border-gray-100">
         <h2 className="text-xl font-semibold mb-4">Über den Quant Analyzer</h2>
         <p className="text-gray-600 mb-4">
-          Der Buffett Quant Analyzer bewertet Aktien ausschließlich auf Basis von harten Finanzkennzahlen, 
-          gemäß den Prinzipien von Warren Buffett. Für jedes der 12 Buffett-Kriterien wird 1 Punkt vergeben, 
+          Der Aesy Quant Analyzer bewertet Aktien ausschließlich auf Basis von harten Finanzkennzahlen, 
+          gemäß bewährten Investmentprinzipien. Für jedes der 12 Kriterien wird 1 Punkt vergeben, 
           wenn die Aktie den Zielwert erreicht.
         </p>
         
@@ -320,7 +320,7 @@ const BuffettQuantAnalyzer = () => {
 
       <footer className="mt-12 pt-8 border-t border-gray-200 text-buffett-subtext text-sm text-center">
         <p>
-          Buffett Quant Analyzer - Quantitative Analyse nach Warren Buffetts Prinzipien
+          Aesy Quant Analyzer - Quantitative Analyse nach bewährten Prinzipien
         </p>
         <p className="mt-1 text-xs">
           Datenquelle: Financial Modeling Prep API
