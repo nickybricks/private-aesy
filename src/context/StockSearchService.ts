@@ -2,7 +2,7 @@ import { fetchStockInfo, analyzeBuffettCriteria, getFinancialMetrics, getOverall
 import { hasOpenAiApiKey } from '@/api/openaiApi';
 import { useToast } from '@/hooks/use-toast';
 import { shouldConvertCurrency, debugDCFData } from '@/utils/currencyConverter';
-import { processFinancialMetrics, calculateBuffettBuyPrice, correctDCFForNegativeNetDebt } from './StockDataProcessor';
+import { processFinancialMetrics, calculateBuffettBuyPrice } from './StockDataProcessor';
 import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
@@ -249,13 +249,7 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
             equityValue: customData.equityValue || 0
           };
 
-          console.log('Extracted DCF data before correction:');
-          debugDCFData(extractedDcfData);
-          
-          // CRITICAL FIX: Apply DCF correction for negative net debt
-          extractedDcfData = correctDCFForNegativeNetDebt(extractedDcfData);
-          
-          console.log('Extracted DCF data after correction:');
+          console.log('Extracted DCF data:');
           debugDCFData(extractedDcfData);
           
           // Speichere die Aktienanzahl in den Informationen, falls verfügbar
@@ -274,12 +268,6 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
             console.log('DCF Data found in API response.');
             
             // Debug the full DCF data structure using our new utility
-            debugDCFData(extractedDcfData);
-            
-            // CRITICAL FIX: Apply DCF correction for negative net debt (fallback case)
-            extractedDcfData = correctDCFForNegativeNetDebt(extractedDcfData);
-            
-            console.log('DCF Data after correction (fallback case):');
             debugDCFData(extractedDcfData);
             
             // Prüfe explizit, ob equityValuePerShare vorhanden ist und logge es
