@@ -107,6 +107,62 @@ export const calculateMarginOfSafety = (
 };
 
 /**
+ * Correct DCF calculation when net debt is negative (company has more cash than debt)
+ * This is a critical fix for companies like Ryanair with strong cash positions
+ */
+export const correctDCFForNegativeNetDebt = (dcfData: any): any => {
+  if (!dcfData || typeof dcfData.netDebt !== 'number') {
+    console.log('No DCF data or net debt available for correction');
+    return dcfData;
+  }
+
+  console.log('=== DCF CORRECTION FOR NEGATIVE NET DEBT ===');
+  console.log(`Original Net Debt: ${dcfData.netDebt}`);
+  console.log(`Original Enterprise Value: ${dcfData.enterpriseValue}`);
+  console.log(`Original Equity Value: ${dcfData.equityValue}`);
+  console.log(`Original Intrinsic Value: ${dcfData.intrinsicValue}`);
+
+  // If net debt is negative (company has more cash than debt), this is GOOD
+  if (dcfData.netDebt < 0) {
+    console.log('✅ NEGATIVE NET DEBT DETECTED - Company has more cash than debt!');
+    
+    // Correct DCF calculation:
+    // Enterprise Value = Sum of Discounted Cash Flows + Terminal Value
+    // Equity Value = Enterprise Value - Net Debt
+    // When Net Debt is negative: Equity Value = Enterprise Value - (-Net Debt) = Enterprise Value + |Net Debt|
+    
+    const correctedEquityValue = dcfData.enterpriseValue - dcfData.netDebt; // Since netDebt is negative, this adds value
+    const correctedIntrinsicValue = correctedEquityValue / dcfData.dilutedSharesOutstanding;
+    
+    console.log('=== CORRECTED VALUES ===');
+    console.log(`Corrected Equity Value: ${dcfData.enterpriseValue} - (${dcfData.netDebt}) = ${correctedEquityValue}`);
+    console.log(`Corrected Intrinsic Value: ${correctedEquityValue} / ${dcfData.dilutedSharesOutstanding} = ${correctedIntrinsicValue}`);
+    
+    // Only apply correction if the result is positive and reasonable
+    if (correctedIntrinsicValue > 0 && correctedIntrinsicValue > dcfData.intrinsicValue) {
+      console.log('✅ Applying DCF correction - intrinsic value increased due to strong cash position');
+      
+      return {
+        ...dcfData,
+        equityValue: correctedEquityValue,
+        intrinsicValue: correctedIntrinsicValue,
+        equityValuePerShare: correctedIntrinsicValue, // This should match intrinsicValue
+        _corrected: true, // Flag to indicate this was corrected
+        _originalIntrinsicValue: dcfData.intrinsicValue,
+        _correctionReason: 'Negative net debt correction applied'
+      };
+    } else {
+      console.log('⚠️ Correction would result in invalid value, keeping original');
+    }
+  } else {
+    console.log('Net debt is positive or zero - no correction needed');
+  }
+
+  console.log('=== DCF CORRECTION COMPLETE ===');
+  return dcfData;
+};
+
+/**
  * Calculate the recommended buy price with the given margin of safety
  */
 export const calculateBuffettBuyPrice = (
