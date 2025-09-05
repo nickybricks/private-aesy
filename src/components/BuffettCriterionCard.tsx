@@ -210,11 +210,11 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
             <Collapsible className="mt-3 pt-3 border-t border-gray-200">
               <CollapsibleTrigger className="flex items-center gap-2 mb-2 w-full">
                 <Bot size={16} className="text-blue-500" />
-                <span className="font-medium text-blue-700">GPT-Analyse</span>
+                <span className="font-medium text-blue-700">KI-Analyse</span>
                 <ChevronDown className="h-4 w-4 text-blue-500 ml-auto transition-transform duration-200" />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="text-gray-700 gpt-analysis prose prose-sm max-w-none">
+                <div className="text-gray-700 ki-analysis prose prose-sm max-w-none">
                   <ReactMarkdown components={{
                     strong: ({ node, ...props }) => <span className="font-bold" {...props} />,
                     p: ({ node, ...props }) => <div className="mb-2" {...props} />,

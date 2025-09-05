@@ -753,7 +753,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           </PopoverTrigger>
           <PopoverContent className="max-w-xs p-4">
             <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
-            <p>Dieses Tool verwendet die Financial Modeling Prep API und OpenAI GPT für detaillierte Analysen.</p>
+            <p>Dieses Tool verwendet die Financial Modeling Prep API und KI-Technologie für detaillierte Analysen.</p>
           </PopoverContent>
         </Popover>
       </div>

@@ -26,7 +26,7 @@ const CriteriaTabsSection: React.FC = () => {
         <TabsList className="mb-4">
           <TabsTrigger value="standard">Standard-Analyse</TabsTrigger>
           <TabsTrigger value="gpt" disabled={!gptAvailable}>
-            {gptAvailable ? 'GPT-Analyse (11 Kriterien)' : 'GPT-Analyse (Nicht verfügbar)'}
+            {gptAvailable ? 'KI-Analyse (11 Kriterien)' : 'KI-Analyse (Nicht verfügbar)'}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="standard">
@@ -38,9 +38,9 @@ const CriteriaTabsSection: React.FC = () => {
           ) : (
             <Alert>
               <InfoIcon className="h-4 w-4" />
-              <AlertTitle>GPT-Analyse nicht verfügbar</AlertTitle>
+              <AlertTitle>KI-Analyse nicht verfügbar</AlertTitle>
               <AlertDescription>
-                Bitte konfigurieren Sie Ihren OpenAI API-Key in der Datei src/api/openaiApi.ts, um Zugang zur erweiterten GPT-Analyse zu erhalten.
+                Bitte konfigurieren Sie Ihren API-Key, um Zugang zur erweiterten KI-Analyse zu erhalten.
               </AlertDescription>
             </Alert>
           )}

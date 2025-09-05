@@ -49,7 +49,7 @@ const BuffettCriteriaGPT: React.FC<BuffettCriteriaGPTProps> = ({ criteria }) => 
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Buffett-Kriterien Analyse mit GPT</h2>
+      <h2 className="text-2xl font-bold mb-4">Buffett-Kriterien KI-Analyse</h2>
       <p className="text-buffett-subtext mb-6">
         Eine umfassende Analyse nach Warren Buffetts 11 Investmentkriterien mit gewichteter Bewertung (0-10 Punkte pro Kriterium).
       </p>

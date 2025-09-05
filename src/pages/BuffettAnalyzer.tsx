@@ -6,7 +6,7 @@ import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
 import LeftNavigation from '@/components/LeftNavigation';
 import { StockProvider, useStock } from '@/context/StockContext';
-import GptAvailabilityAlert from '@/components/GptAvailabilityAlert';
+import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
 import CriteriaTabsSection from '@/components/CriteriaTabsSection';
 import MetricsSection from '@/components/MetricsSection';
@@ -54,7 +54,7 @@ const IndexContent: React.FC = () => {
               </p>
             </div>
             
-            <GptAvailabilityAlert gptAvailable={gptAvailable} />
+            <KiAvailabilityAlert gptAvailable={gptAvailable} />
             
             {stockInfo && stockInfo.currency && stockInfo.reportedCurrency && 
              needsCurrencyConversion(stockInfo.reportedCurrency, stockInfo.currency) && (
