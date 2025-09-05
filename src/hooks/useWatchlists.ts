@@ -20,12 +20,6 @@ export const useWatchlists = () => {
 
   // Fetch watchlists
   const fetchWatchlists = async () => {
-    if (!user) {
-      setWatchlists([]);
-      setLoading(false);
-      return;
-    }
-
     try {
       const { data, error } = await supabase
         .from('watchlists')
@@ -35,6 +29,7 @@ export const useWatchlists = () => {
       if (error) throw error;
       setWatchlists(data || []);
     } catch (error: any) {
+      console.error('Error fetching watchlists:', error);
       toast({
         variant: "destructive",
         title: "Fehler beim Laden der Watchlists",
@@ -137,29 +132,29 @@ export const useWatchlists = () => {
 
   // Setup realtime subscription
   useEffect(() => {
-    if (!user) return;
-
     fetchWatchlists();
 
-    const channel = supabase
-      .channel('watchlists-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'watchlists',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          fetchWatchlists();
-        }
-      )
-      .subscribe();
+    if (user) {
+      const channel = supabase
+        .channel('watchlists-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'watchlists',
+            filter: `user_id=eq.${user.id}`
+          },
+          () => {
+            fetchWatchlists();
+          }
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [user]);
 
   return {
