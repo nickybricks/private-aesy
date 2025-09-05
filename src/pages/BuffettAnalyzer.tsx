@@ -49,9 +49,6 @@ const IndexContent: React.FC = () => {
               <h1 className="text-3xl font-bold text-foreground mb-2">
                 Aesy
               </h1>
-              <p className="text-muted-foreground">
-                Bewerte Aktien nach bewährten Investmentprinzipien
-              </p>
             </div>
             
             <KiAvailabilityAlert gptAvailable={gptAvailable} />
