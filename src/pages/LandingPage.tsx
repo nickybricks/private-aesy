@@ -10,7 +10,7 @@ const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="w-full px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <TrendingUp className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold text-foreground">Buffett Benchmark</h1>
@@ -28,14 +28,14 @@ const LandingPage: React.FC = () => {
 
       {/* Hero Section */}
       <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="w-full text-center">
           <Badge variant="secondary" className="mb-4">
             Basierend auf Warren Buffetts Prinzipien
           </Badge>
           <h2 className="text-5xl font-bold text-foreground mb-6">
             Bewerte Aktien wie Warren Buffett
           </h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+          <p className="text-xl text-muted-foreground mb-8 w-full text-center">
             Nutze bewährte Investmentprinzipien des erfolgreichsten Investors der Welt. 
             Analysiere Aktien systematisch nach Quality, Valuation und Margin of Safety.
           </p>
@@ -54,12 +54,12 @@ const LandingPage: React.FC = () => {
 
       {/* Features Section */}
       <section className="py-20 px-6 bg-muted/30">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-foreground mb-4">
               Das Buffett Benchmark Tool
             </h3>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-muted-foreground w-full text-center">
               Alle wichtigen Kennzahlen und Analysen nach Warren Buffetts bewährten Methoden
             </p>
           </div>
@@ -148,7 +148,7 @@ const LandingPage: React.FC = () => {
 
       {/* How it works */}
       <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-foreground mb-4">
               So funktioniert's
@@ -194,11 +194,11 @@ const LandingPage: React.FC = () => {
 
       {/* CTA Section */}
       <section className="py-20 px-6 bg-primary">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="w-full text-center">
           <h3 className="text-3xl font-bold text-primary-foreground mb-4">
             Starte noch heute mit professioneller Aktienanalyse
           </h3>
-          <p className="text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
+          <p className="text-primary-foreground/80 mb-8 w-full text-center">
             Nutze die bewährten Prinzipien von Warren Buffett für deine Investment-Entscheidungen
           </p>
           <Link to="/auth">
@@ -211,7 +211,7 @@ const LandingPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-border py-12 px-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">

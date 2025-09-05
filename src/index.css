@@ -43,6 +43,9 @@
   body {
     @apply bg-buffett-background text-buffett-text;
     font-feature-settings: "rlig" 1, "calt" 1;
+    width: 100%;
+    margin: 0;
+    padding: 0;
   }
 }
 

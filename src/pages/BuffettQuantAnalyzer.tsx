@@ -158,7 +158,7 @@ const BuffettQuantAnalyzer = () => {
     <main className="flex-1 overflow-auto bg-background">
         <div className="h-full">
           {/* Main Content Area */}
-          <div className="p-8 max-w-7xl mx-auto">
+          <div className="p-8 w-full">
             {/* Tool Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-foreground mb-2">

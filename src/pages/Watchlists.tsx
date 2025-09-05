@@ -70,7 +70,7 @@ const Watchlists: React.FC = () => {
   if (loading) {
     return (
       <main className="flex-1 overflow-auto bg-background">
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="p-8 w-full">
           <div className="mb-8">
             <Skeleton className="h-8 w-64 mb-2" />
             <Skeleton className="h-4 w-96" />
@@ -88,7 +88,7 @@ const Watchlists: React.FC = () => {
   return (
     <main className="flex-1 overflow-auto bg-background">
       <div className="h-full">
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="p-8 w-full">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>

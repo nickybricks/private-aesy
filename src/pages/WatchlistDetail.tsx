@@ -69,7 +69,7 @@ const WatchlistDetail: React.FC = () => {
   if (!watchlist) {
     return (
       <main className="flex-1 overflow-auto bg-background">
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="p-8 w-full">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Watchlist nicht gefunden</h1>
             <Button onClick={() => navigate('/watchlists')}>
@@ -83,7 +83,7 @@ const WatchlistDetail: React.FC = () => {
 
   return (
     <main className="flex-1 overflow-auto bg-background">
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 w-full">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
