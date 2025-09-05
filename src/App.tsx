@@ -48,8 +48,8 @@ const App = () => {
     
     return (
       <div className="min-h-screen bg-background flex">
-        {/* Check if we're on landing or auth page */}
-        {location.pathname !== "/" && location.pathname !== "/auth" && (
+        {/* Check if we're on auth page */}
+        {location.pathname !== "/auth" && (
           <>
             <div className={`${isMobile ? 'fixed inset-0 z-50 transform transition-transform' : ''} ${isMobile && !isMobileMenuOpen ? '-translate-x-full' : ''}`}>
               <LeftNavigation onMobileClose={handleMobileMenuClose} />
@@ -65,8 +65,8 @@ const App = () => {
           </>
         )}
 
-        <div className={`flex-1 flex flex-col ${location.pathname !== "/" && location.pathname !== "/auth" ? (isMobile ? 'w-full' : 'ml-0') : 'w-full'}`}>
-          {location.pathname !== "/" && location.pathname !== "/auth" && isMobile && (
+        <div className={`flex-1 flex flex-col ${location.pathname !== "/auth" ? (isMobile ? 'w-full' : 'ml-0') : 'w-full'}`}>
+          {location.pathname !== "/auth" && isMobile && (
             <AppHeader 
               onMobileMenuToggle={handleMobileMenuToggle}
               isMobileMenuOpen={isMobileMenuOpen}
@@ -74,40 +74,12 @@ const App = () => {
           )}
           
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<BuffettAnalyzer />} />
             <Route path="/auth" element={<AuthPage />} />
-            <Route 
-              path="/analyzer" 
-              element={
-                <ProtectedRoute>
-                  <BuffettAnalyzer />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/quant" 
-              element={
-                <ProtectedRoute>
-                  <BuffettQuantAnalyzer />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/watchlists" 
-              element={
-                <ProtectedRoute>
-                  <Watchlists />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/watchlists/:id" 
-              element={
-                <ProtectedRoute>
-                  <WatchlistDetail />
-                </ProtectedRoute>
-              } 
-            />
+            <Route path="/analyzer" element={<BuffettAnalyzer />} />
+            <Route path="/quant" element={<BuffettQuantAnalyzer />} />
+            <Route path="/watchlists" element={<Watchlists />} />
+            <Route path="/watchlists/:id" element={<WatchlistDetail />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
