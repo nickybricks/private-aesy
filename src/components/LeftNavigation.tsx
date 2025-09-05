@@ -41,7 +41,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
           description: 'Aktienanalyse nach bewährten Prinzipien'
         },
         {
-          name: 'Quant Analyzer',
+          name: 'Boersen Analyzer',
           path: '/quant',
           icon: BarChart3,
           description: 'Erweiterte quantitative Analyse'

@@ -54,7 +54,7 @@ const Navigation = () => {
                   >
                     <div className="flex items-center">
                       <BarChart3 className="h-4 w-4 mr-2 text-buffett-blue" />
-                      <div className="text-sm font-medium leading-none">Quant Analyzer</div>
+                      <div className="text-sm font-medium leading-none">Boersen Analyzer</div>
                     </div>
                     <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                       Erweiterte quantitative Analyse für Value-Investoren
