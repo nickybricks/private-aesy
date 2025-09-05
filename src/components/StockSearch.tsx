@@ -552,7 +552,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
 
   return (
     <div className="buffett-card mb-8 animate-fade-in">
-      <h2 className="text-2xl font-semibold mb-4">Aktienanalyse nach Warren Buffett</h2>
+      <h2 className="text-2xl font-semibold mb-4">Aktienanalyse mit Aesy</h2>
       <p className="text-buffett-subtext mb-4">
         Geben Sie einen Firmennamen oder ein Aktiensymbol ein, um die Buffett-Analyse zu starten.
       </p>

@@ -47,10 +47,10 @@ const IndexContent: React.FC = () => {
           <div className="p-8 w-full">{/* Tool Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-foreground mb-2">
-                Buffett Benchmark Tool
+                Aesy
               </h1>
               <p className="text-muted-foreground">
-                Bewerte Aktien nach Warren Buffetts bewährten Investmentprinzipien
+                Bewerte Aktien nach bewährten Investmentprinzipien
               </p>
             </div>
             

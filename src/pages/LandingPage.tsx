@@ -13,7 +13,7 @@ const LandingPage: React.FC = () => {
         <div className="w-full px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <TrendingUp className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Buffett Benchmark</h1>
+            <h1 className="text-2xl font-bold text-foreground">Aesy</h1>
           </div>
           <div className="flex items-center space-x-4">
             <Link to="/analyzer">
@@ -57,10 +57,10 @@ const LandingPage: React.FC = () => {
         <div className="w-full">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-foreground mb-4">
-              Das Buffett Benchmark Tool
+              Aesy
             </h3>
             <p className="text-muted-foreground w-full text-center">
-              Alle wichtigen Kennzahlen und Analysen nach Warren Buffetts bewährten Methoden
+              Alle wichtigen Kennzahlen und Analysen nach bewährten Methoden
             </p>
           </div>
 
@@ -216,10 +216,10 @@ const LandingPage: React.FC = () => {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <TrendingUp className="h-6 w-6 text-primary" />
-                <span className="font-bold text-foreground">Buffett Benchmark</span>
+                <span className="font-bold text-foreground">Aesy</span>
               </div>
               <p className="text-muted-foreground text-sm">
-                Professionelle Aktienanalyse nach Warren Buffetts Prinzipien
+                Professionelle Aktienanalyse nach bewährten Prinzipien
               </p>
             </div>
             
@@ -249,7 +249,7 @@ const LandingPage: React.FC = () => {
           </div>
           
           <div className="border-t border-border pt-8 mt-8 text-center text-sm text-muted-foreground">
-            © 2024 Buffett Benchmark. Alle Rechte vorbehalten.
+            © 2024 Aesy. Alle Rechte vorbehalten.
           </div>
         </div>
       </footer>

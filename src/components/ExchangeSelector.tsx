@@ -37,7 +37,7 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
               </button>
             </TooltipTrigger>
             <TooltipContent className="max-w-sm">
-              <p>Wählen Sie eine Börse aus, deren Aktien Sie nach Buffett-Kriterien analysieren möchten.</p>
+              <p>Wählen Sie eine Börse aus, deren Aktien Sie nach bewährten Kriterien analysieren möchten.</p>
               <p className="mt-1">Die Analyse berücksichtigt 10 quantitative Kriterien.</p>
               <p className="mt-1 text-sm text-yellow-600 font-medium">
                 Hinweis: Bei ausländischen Börsen werden Werte automatisch in EUR umgerechnet.
@@ -63,7 +63,7 @@ const ExchangeSelector: React.FC<ExchangeSelectorProps> = ({
         </SelectContent>
       </Select>
       <p className="text-sm text-gray-500 mt-2">
-        Wählen Sie eine Börse aus, um Aktien nach Warren Buffetts Kriterien zu analysieren.
+        Wählen Sie eine Börse aus, um Aktien nach bewährten Kriterien zu analysieren.
         {selectedExchange && (
           <span className="ml-1">
             {exchanges.find(e => e.id === selectedExchange)?.currency && 

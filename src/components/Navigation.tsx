@@ -34,10 +34,10 @@ const Navigation = () => {
                   >
                     <LineChart className="h-6 w-6 text-white" />
                     <div className="mb-2 mt-4 text-lg font-medium text-white">
-                      Buffett Benchmark Tool
+                      Aesy
                     </div>
                     <p className="text-sm leading-tight text-white/90">
-                      Analysieren Sie Aktien nach Warren Buffetts Investmentprinzipien
+                      Analysieren Sie Aktien nach bewährten Investmentprinzipien
                     </p>
                   </Link>
                 </NavigationMenuLink>
@@ -71,7 +71,7 @@ const Navigation = () => {
                     <div className="text-sm font-medium leading-none">Portfolio Tracker</div>
                   </div>
                   <p className="line-clamp-2 text-sm leading-snug">
-                    Portfolio-Tracking nach Buffett-Prinzipien (Coming Soon)
+                    Portfolio-Tracking nach bewährten Prinzipien (Coming Soon)
                   </p>
                 </div>
               </li>

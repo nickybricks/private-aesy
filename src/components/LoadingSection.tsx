@@ -36,7 +36,7 @@ const LoadingSection: React.FC = () => {
         </div>
         
         <p className="text-lg font-medium text-foreground">
-          Analysiere Aktie nach Warren Buffett's Kriterien...
+          Analysiere Aktie nach bewährten Kriterien...
         </p>
       </div>
     </div>

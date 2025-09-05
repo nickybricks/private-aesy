@@ -143,7 +143,7 @@ const AuthPage: React.FC = () => {
         <div className="w-full px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <TrendingUp className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Buffett Benchmark</h1>
+            <h1 className="text-2xl font-bold text-foreground">Aesy</h1>
           </Link>
           <Link to="/">
             <Button variant="outline">Zurück zur Startseite</Button>

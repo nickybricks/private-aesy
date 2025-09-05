@@ -12,13 +12,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onMobileMenuToggle, isMobileMenuO
   return (
     <header className="mb-8">
       <div className="flex items-center gap-2">
-        <h1 className="text-3xl font-bold">Buffett Benchmark Tool</h1>
+        <h1 className="text-3xl font-bold">Aesy</h1>
         <ClickableTooltip
           content={
             <div className="space-y-2 max-w-md">
               <h4 className="font-medium">Über dieses Tool</h4>
               <p className="text-sm">
-                Das Buffett Benchmark Tool analysiert Aktien nach den Investitionsprinzipien von Warren Buffett. 
+                Aesy analysiert Aktien nach den Investitionsprinzipien von Warren Buffett. 
                 Die DCF-Berechnung des inneren Werts basiert auf realen Finanzdaten der Unternehmen.
               </p>
               <h5 className="font-medium mt-4">Verwendete Daten</h5>

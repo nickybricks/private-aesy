@@ -35,10 +35,10 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
       title: 'Tools',
       items: [
         {
-          name: 'Buffett Benchmark',
+          name: 'Aesy',
           path: '/analyzer',
           icon: LineChart,
-          description: 'Aktienanalyse nach Buffett-Prinzipien'
+          description: 'Aktienanalyse nach bewährten Prinzipien'
         },
         {
           name: 'Quant Analyzer',
@@ -82,7 +82,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
       {/* Tool Header */}
       <div className="p-6 border-b border-border flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Buffett Tools</h1>
+          <h1 className="text-xl font-bold text-foreground">Investment Tools</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Investment Analysis Platform
           </p>
