@@ -16,7 +16,7 @@ import LoadingSection from '@/components/LoadingSection';
 import ErrorAlert from '@/components/ErrorAlert';
 import AppHeader from '@/components/AppHeader';
 import AppFooter from '@/components/AppFooter';
-import { NewsSection } from '@/components/NewsSection';
+
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 
 const IndexContent: React.FC = () => {
@@ -79,7 +79,7 @@ const IndexContent: React.FC = () => {
                 <MetricsSection />
                 <CriteriaTabsSection />
                 <RatingSection />
-                <NewsSection companyName={stockInfo?.companyName} />
+                
                 <DataMissingAlert />
               </>
             )}
