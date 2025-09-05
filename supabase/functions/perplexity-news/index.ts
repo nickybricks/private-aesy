@@ -13,11 +13,11 @@ serve(async (req) => {
   }
 
   try {
-    const { companyName, query } = await req.json();
+    const { companyName, query, prompt, analysisType } = await req.json();
     
-    if (!companyName && !query) {
+    if (!companyName && !query && !prompt) {
       return new Response(
-        JSON.stringify({ error: 'Company name or query is required' }), 
+        JSON.stringify({ error: 'Company name, query or prompt is required' }), 
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -38,9 +38,22 @@ serve(async (req) => {
       );
     }
 
-    const searchQuery = query || `${companyName} aktuelle Nachrichten Geschäftsergebnisse Quartalszahlen 2024 2025`;
+    // Determine the search query and system prompt based on analysis type
+    let searchQuery, systemContent, userContent;
     
-    console.log('Making Perplexity API request for:', searchQuery);
+    if (analysisType === 'qualitative') {
+      // For qualitative analysis, use the provided prompt directly
+      searchQuery = prompt;
+      systemContent = 'Du bist ein Experte für Aktienanalysen nach Warren Buffetts Investmentprinzipien. Du analysierst Unternehmen anhand aktueller Informationen und bewertest sie strukturiert. Nutze die neuesten verfügbaren Daten und Nachrichten für deine Analyse. Antworte immer auf Deutsch und strukturiert.';
+      userContent = prompt;
+    } else {
+      // For news analysis (default behavior)
+      searchQuery = query || `${companyName} aktuelle Nachrichten Geschäftsergebnisse Quartalszahlen 2024 2025`;
+      systemContent = 'Du bist ein hilfreicher Assistent für Aktienanalysen. Gib präzise, aktuelle Informationen über Unternehmen zurück. Konzentriere dich auf die wichtigsten aktuellen Entwicklungen, Quartalsergebnisse, strategische Änderungen und Marktposition. Antworte auf Deutsch.';
+      userContent = `Gib mir die aktuellsten und wichtigsten Nachrichten zu ${searchQuery}. Fokussiere dich auf: Geschäftsergebnisse, Quartalszahlen, strategische Entwicklungen, Management-Änderungen, Marktposition und relevante Branchennews. Strukturiere die Antwort übersichtlich.`;
+    }
+    
+    console.log('Making Perplexity API request for:', analysisType || 'news', searchQuery);
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -53,15 +66,15 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Du bist ein hilfreicher Assistent für Aktienanalysen. Gib präzise, aktuelle Informationen über Unternehmen zurück. Konzentriere dich auf die wichtigsten aktuellen Entwicklungen, Quartalsergebnisse, strategische Änderungen und Marktposition. Antworte auf Deutsch.'
+            content: systemContent
           },
           {
             role: 'user',
-            content: `Gib mir die aktuellsten und wichtigsten Nachrichten zu ${searchQuery}. Fokussiere dich auf: Geschäftsergebnisse, Quartalszahlen, strategische Entwicklungen, Management-Änderungen, Marktposition und relevante Branchennews. Strukturiere die Antwort übersichtlich.`
+            content: userContent
           }
         ],
-        temperature: 0.2,
-        max_tokens: 1000,
+        temperature: analysisType === 'qualitative' ? 0.1 : 0.2,
+        max_tokens: analysisType === 'qualitative' ? 800 : 1000,
         top_p: 0.9,
         return_related_questions: false,
         search_recency_filter: 'month',
@@ -86,18 +99,31 @@ serve(async (req) => {
     console.log('Perplexity API response received');
 
     if (data.choices && data.choices.length > 0) {
-      const newsContent = data.choices[0].message.content;
+      const content = data.choices[0].message.content;
       
-      return new Response(
-        JSON.stringify({ 
-          news: newsContent,
-          company: companyName,
-          searchQuery: searchQuery
-        }), 
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      if (analysisType === 'qualitative') {
+        return new Response(
+          JSON.stringify({ 
+            content: content,
+            company: companyName,
+            analysisType: analysisType
+          }), 
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      } else {
+        return new Response(
+          JSON.stringify({ 
+            news: content,
+            company: companyName,
+            searchQuery: searchQuery
+          }), 
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
     } else {
       return new Response(
         JSON.stringify({ error: 'No content received from Perplexity API' }), 
