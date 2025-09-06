@@ -31,11 +31,9 @@ const SavedAnalyses: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <AppHeader />
-      
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+    <main className="flex-1 overflow-auto bg-background">
+      <div className="h-full">
+        <div className="p-8 w-full">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">
               Gespeicherte Analysen
@@ -47,10 +45,15 @@ const SavedAnalyses: React.FC = () => {
 
           <SavedAnalysesPanel onLoadAnalysis={handleLoadAnalysis} />
         </div>
-      </main>
-
-      <AppFooter />
-    </div>
+        
+        {/* Footer */}
+        <div className="border-t border-border mt-12">
+          <div className="w-full">
+            <AppFooter />
+          </div>
+        </div>
+      </div>
+    </main>
   );
 };
 
