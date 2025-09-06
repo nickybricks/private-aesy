@@ -8,6 +8,7 @@ import {
   Plus,
   Settings,
   Bookmark,
+  History,
   X,
   LogOut
 } from 'lucide-react';
@@ -56,6 +57,12 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
           path: '/watchlists',
           icon: Bookmark,
           description: 'Verwalte deine Aktien-Watchlists'
+        },
+        {
+          name: 'Gespeicherte Analysen',
+          path: '/saved-analyses',
+          icon: History,
+          description: 'Zugriff auf gespeicherte Momentaufnahmen'
         }
       ]
     },

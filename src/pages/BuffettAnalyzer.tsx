@@ -24,6 +24,7 @@ const IndexContent: React.FC = () => {
   const { 
     isLoading,
     handleSearch,
+    loadSavedAnalysis,
     gptAvailable,
     stockInfo
   } = useStock();
@@ -34,9 +35,18 @@ const IndexContent: React.FC = () => {
   // Check for ticker parameter in URL and trigger search
   useEffect(() => {
     const ticker = searchParams.get('ticker');
+    const loadAnalysisId = searchParams.get('loadAnalysis');
+    
     if (ticker && ticker !== analyzedTicker.current && !isLoading) {
       analyzedTicker.current = ticker;
-      handleSearch(ticker);
+      
+      if (loadAnalysisId) {
+        // Load saved analysis
+        // This is handled by the SavedAnalyses page navigation
+        handleSearch(ticker);
+      } else {
+        handleSearch(ticker);
+      }
     }
   }, [searchParams, isLoading]); // Nur searchParams und isLoading als Dependencies
   

@@ -41,6 +41,42 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_analyses: {
+        Row: {
+          analysis_data: Json
+          company_name: string
+          created_at: string
+          id: string
+          saved_at: string
+          ticker: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis_data: Json
+          company_name: string
+          created_at?: string
+          id?: string
+          saved_at?: string
+          ticker: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis_data?: Json
+          company_name?: string
+          created_at?: string
+          id?: string
+          saved_at?: string
+          ticker?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_stocks: {
         Row: {
           analysis_data: Json | null

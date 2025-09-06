@@ -115,6 +115,22 @@ export function StockProvider({ children }: StockProviderProps) {
     }
   };
 
+  const loadSavedAnalysis = (analysisData: any) => {
+    try {
+      setStockInfo(analysisData.stockInfo);
+      setBuffettCriteria(analysisData.buffettCriteria);
+      setFinancialMetrics(analysisData.financialMetrics);
+      setOverallRating(analysisData.overallRating);
+      setDcfData(analysisData.dcfData);
+      setStockCurrency(analysisData.stockInfo?.currency || 'EUR');
+      setError(null);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error loading saved analysis:', error);
+      setError('Fehler beim Laden der gespeicherten Analyse');
+    }
+  };
+
   return (
     <StockContext.Provider value={{
       isLoading,
@@ -132,7 +148,8 @@ export function StockProvider({ children }: StockProviderProps) {
       dcfData,
       setActiveTab,
       setLoadingProgress,
-      handleSearch
+      handleSearch,
+      loadSavedAnalysis
     }}>
       {children}
     </StockContext.Provider>

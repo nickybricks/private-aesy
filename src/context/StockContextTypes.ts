@@ -87,6 +87,7 @@ export interface StockContextType {
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string) => Promise<void>;
+  loadSavedAnalysis: (analysisData: any) => void;
 }
 
 export interface StockProviderProps {

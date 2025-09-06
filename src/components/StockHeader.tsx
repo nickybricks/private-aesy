@@ -12,6 +12,7 @@ import StockChart from './StockChart';
 import PeterLynchChart from './PeterLynchChart';
 import { DCFData } from '@/context/StockContextTypes';
 import { AddToWatchlistButton } from './AddToWatchlistButton';
+import { SaveAnalysisButton } from './SaveAnalysisButton';
 import { useStock } from '@/context/StockContext';
 
 interface StockHeaderProps {
@@ -351,14 +352,17 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
           </span>
         </div>
         
-        {/* Add to Watchlist Button - only show when analysis is complete */}
+        {/* Analysis buttons - only show when analysis is complete */}
         {buffettCriteria && financialMetrics && overallRating && (
-          <AddToWatchlistButton
-            stockInfo={stockInfo}
-            buffettCriteria={buffettCriteria}
-            financialMetrics={financialMetrics}
-            overallRating={overallRating}
-          />
+          <div className="flex items-center gap-2">
+            <SaveAnalysisButton />
+            <AddToWatchlistButton
+              stockInfo={stockInfo}
+              buffettCriteria={buffettCriteria}
+              financialMetrics={financialMetrics}
+              overallRating={overallRating}
+            />
+          </div>
         )}
       </div>
       
