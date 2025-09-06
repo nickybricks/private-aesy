@@ -58,7 +58,13 @@ const formatMarketCap = (marketCap: number | null, currency: string = 'EUR'): st
   return `${scaledValue.toFixed(2)} ${unit} ${currency}`;
 };
 
-// Generate sample data for Peter Lynch Chart demonstration
+// Deterministic random generator based on seed (for consistent chart data)
+const seededRandom = (seed: number) => {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+};
+
+// Generate stable data for Peter Lynch Chart
 const generateSampleLynchData = (ticker: string, currentPrice: number | null, currency: string) => {
   if (!currentPrice || currentPrice <= 0) {
     return [];
@@ -69,6 +75,9 @@ const generateSampleLynchData = (ticker: string, currentPrice: number | null, cu
   const yearsBack = 10; // 10 Jahre Daten
   const totalDays = yearsBack * 365;
   
+  // Create a seed based on ticker for consistent data
+  const tickerSeed = ticker.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  
   // Assume current P/E around 18 for realistic EPS calculation
   const assumedCurrentPE = 18;
   const currentEPS = currentPrice / assumedCurrentPE;
@@ -78,6 +87,9 @@ const generateSampleLynchData = (ticker: string, currentPrice: number | null, cu
     const date = new Date(currentDate);
     date.setDate(date.getDate() - i);
     const dateString = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+    
+    // Create unique seed for this date point
+    const dateSeed = tickerSeed + i;
     
     // Simulate realistic price progression with daily volatility
     const timeProgressFactor = (totalDays - i) / totalDays; // 0 to 1 over 10 years
@@ -91,8 +103,8 @@ const generateSampleLynchData = (ticker: string, currentPrice: number | null, cu
     const startingFactor = 0.3;
     const priceTrend = startingFactor + (1 - startingFactor) * timeProgressFactor;
     
-    // Add volatility and market cycles
-    const volatility = 0.85 + Math.random() * 0.3; // ±15% random volatility
+    // Add volatility and market cycles (now deterministic)
+    const volatility = 0.85 + seededRandom(dateSeed) * 0.3; // ±15% volatility
     const cyclicalEffect = 1 + 0.1 * Math.sin((yearsElapsed / 4) * 2 * Math.PI); // 4-year market cycles
     const seasonality = 1 + 0.02 * Math.sin((date.getMonth() / 12) * 2 * Math.PI); // Small seasonal effect
     
@@ -105,7 +117,7 @@ const generateSampleLynchData = (ticker: string, currentPrice: number | null, cu
     const epsTrend = epsStartingFactor + (1 - epsStartingFactor) * timeProgressFactor;
     
     // Less volatility for EPS (quarterly updates smoothed out)
-    const epsVolatility = 0.95 + Math.random() * 0.10; // ±5% volatility
+    const epsVolatility = 0.95 + seededRandom(dateSeed + 1000) * 0.10; // ±5% volatility
     const eps = currentEPS * epsTrend * epsVolatility;
     
     data.push({
