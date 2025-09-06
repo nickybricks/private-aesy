@@ -1,6 +1,6 @@
 
 import React from 'react';
-import FinancialMetrics from '@/components/FinancialMetrics';
+import CompactFinancialMetrics from '@/components/CompactFinancialMetrics';
 import { useStock } from '@/context/StockContext';
 
 const MetricsSection: React.FC = () => {
@@ -11,13 +11,10 @@ const MetricsSection: React.FC = () => {
   }
 
   return (
-    <div className="mb-10">
-      <FinancialMetrics 
-        metrics={financialMetrics.metrics} 
-        historicalData={financialMetrics.historicalData} 
-        currency={stockCurrency}
-      />
-    </div>
+    <CompactFinancialMetrics 
+      metrics={financialMetrics.metrics} 
+      currency={stockCurrency}
+    />
   );
 };
 
