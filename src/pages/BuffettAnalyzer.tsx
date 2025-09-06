@@ -33,40 +33,48 @@ const IndexContent: React.FC = () => {
   const { analyses, loading: analysesLoading } = useSavedAnalyses();
   const { toast } = useToast();
 
-  // Track which ticker has been analyzed to prevent duplicate analysis
-  const analyzedTicker = useRef<string | null>(null);
+  // Track what has been processed to prevent duplicate actions
+  const processedRef = useRef<string | null>(null);
 
   // Check for ticker parameter in URL and trigger search
   useEffect(() => {
     const ticker = searchParams.get('ticker');
     const loadAnalysisId = searchParams.get('loadAnalysis');
     
-    // Don't proceed if analyses are still loading or if already processing
-    if (analysesLoading || isLoading) return;
+    // Create unique key for this request
+    const requestKey = `${ticker}-${loadAnalysisId || 'new'}`;
     
-    if (ticker && ticker !== analyzedTicker.current) {
-      analyzedTicker.current = ticker;
+    // Don't proceed if analyses are still loading, already processing this request, or currently loading
+    if (analysesLoading || isLoading || processedRef.current === requestKey) {
+      return;
+    }
+    
+    if (ticker) {
+      processedRef.current = requestKey;
       
       if (loadAnalysisId) {
         // Load saved analysis instead of performing new search
+        console.log('Searching for saved analysis with ID:', loadAnalysisId);
+        console.log('Available analyses:', analyses.map(a => a.id));
+        
         const savedAnalysis = analyses.find(analysis => analysis.id === loadAnalysisId);
         if (savedAnalysis) {
-          console.log('Loading saved analysis:', savedAnalysis);
+          console.log('Found saved analysis, loading:', savedAnalysis.title);
           loadSavedAnalysis(savedAnalysis.analysis_data);
           toast({
             title: "Analyse geladen",
             description: `${savedAnalysis.title} wurde erfolgreich geladen.`
           });
-          return; // Important: Don't proceed to handleSearch
         } else {
           console.log('Saved analysis not found, performing new search');
+          handleSearch(ticker);
         }
+      } else {
+        console.log('No loadAnalysis parameter, performing new search');
+        handleSearch(ticker);
       }
-      
-      // Only perform new search if no saved analysis was loaded
-      handleSearch(ticker);
     }
-  }, [searchParams, isLoading, analysesLoading, analyses, loadSavedAnalysis, toast, handleSearch]);
+  }, [searchParams, isLoading, analysesLoading, analyses]);
   
   return (
     <main className="flex-1 overflow-auto bg-background">
