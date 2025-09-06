@@ -16,6 +16,8 @@ import LoadingSection from '@/components/LoadingSection';
 import ErrorAlert from '@/components/ErrorAlert';
 import AppHeader from '@/components/AppHeader';
 import AppFooter from '@/components/AppFooter';
+import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
+import { useToast } from '@/hooks/use-toast';
 
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 
@@ -28,6 +30,8 @@ const IndexContent: React.FC = () => {
     gptAvailable,
     stockInfo
   } = useStock();
+  const { analyses } = useSavedAnalyses();
+  const { toast } = useToast();
 
   // Track which ticker has been analyzed to prevent duplicate analysis
   const analyzedTicker = useRef<string | null>(null);
@@ -41,14 +45,23 @@ const IndexContent: React.FC = () => {
       analyzedTicker.current = ticker;
       
       if (loadAnalysisId) {
-        // Load saved analysis
-        // This is handled by the SavedAnalyses page navigation
-        handleSearch(ticker);
+        // Load saved analysis instead of performing new search
+        const savedAnalysis = analyses.find(analysis => analysis.id === loadAnalysisId);
+        if (savedAnalysis) {
+          loadSavedAnalysis(savedAnalysis.analysis_data);
+          toast({
+            title: "Analyse geladen",
+            description: `${savedAnalysis.title} wurde erfolgreich geladen.`
+          });
+        } else {
+          // If saved analysis not found, perform new search
+          handleSearch(ticker);
+        }
       } else {
         handleSearch(ticker);
       }
     }
-  }, [searchParams, isLoading]); // Nur searchParams und isLoading als Dependencies
+  }, [searchParams, isLoading, analyses, loadSavedAnalysis, toast]); // Added analyses and other dependencies
   
   return (
     <main className="flex-1 overflow-auto bg-background">
