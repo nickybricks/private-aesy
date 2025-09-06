@@ -1,325 +1,593 @@
-import React, { useMemo, useState } from "react";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  CartesianGrid,
-  ReferenceLine,
-} from "recharts";
-import { Button } from "@/components/ui/button";
+import React, { useState, useMemo, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import axios from 'axios';
+import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 
-type LynchPoint = {
-  date: string;   // ISO-String oder "YYYY-MM"
-  price: number;  // Schlusskurs
-  eps: number;    // Gewinn je Aktie (TTM empfohlen)
-};
+// Types for financial data
+interface QuarterlyData {
+  date: string;
+  filingDate: string;
+  netIncome: number;
+  eps: number;
+  weightedAverageShsOutDil: number;
+  epsWithoutNRI?: number;
+}
 
-type Props = {
-  data: LynchPoint[];
-  defaultPE?: number; // Standard: 15
-  defaultLogScale?: boolean; // Standard: true
-  currency?: string; // "USD", "EUR" etc.
-};
+interface AnnualData {
+  date: string;
+  ebitda: number;
+  weightedAverageShsOutDil: number;
+  bookValuePerShare?: number;
+}
+
+interface PriceData {
+  date: string;
+  adjClose: number;
+}
+
+interface LynchDataPoint {
+  date: string;
+  price: number;
+  epsTTM: number;
+  fairValue: number | null;
+  mode: string;
+  peMultiple?: number;
+  growthRate?: number;
+  deviation?: number;
+}
+
+interface Props {
+  ticker: string;
+  currency: string;
+  currentPrice: number | null;
+  defaultMode?: 'constant-pe' | 'peg-1';
+  defaultPE?: number;
+  defaultLogScale?: boolean;
+}
 
 const TIME_RANGES = [
-  { label: '5T', value: '5D' },
-  { label: '1M', value: '1M' },
-  { label: '3M', value: '3M' },
-  { label: 'YTD', value: 'YTD' },
-  { label: '1J', value: '1Y' },
-  { label: '3J', value: '3Y' },
-  { label: '5J', value: '5Y' },
-  { label: '10J', value: '10Y' },
-  { label: 'All', value: 'MAX' }
-] as const;
+  { label: '1Y', value: '1year' },
+  { label: '3Y', value: '3years' },
+  { label: '5Y', value: '5years' },
+  { label: '10Y', value: '10years' },
+];
 
-function fmt(n: number, currency = "USD") {
+const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 2,
-    }).format(n);
-  } catch {
-    return n.toFixed(2);
+    const response = await axios.get(`https://financialmodelingprep.com/api/v3${endpoint}`, {
+      params: {
+        apikey: DEFAULT_FMP_API_KEY,
+        ...params
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching data from FMP:', error);
+    throw error;
   }
-}
+};
 
-function pct(n: number) {
-  const sign = n > 0 ? "+" : "";
-  return `${sign}${(n * 100).toFixed(1)}%`;
-}
+const isBank = (ticker: string): boolean => {
+  // Simple heuristic - in real implementation, would check sector/industry
+  const bankTickers = ['BAC', 'JPM', 'WFC', 'C', 'GS', 'MS'];
+  return bankTickers.includes(ticker.toUpperCase());
+};
 
-export default function PeterLynchChart({
-  data,
+const PeterLynchChartNew: React.FC<Props> = ({
+  ticker,
+  currency,
+  currentPrice,
+  defaultMode = 'constant-pe',
   defaultPE = 15,
-  defaultLogScale = true,
-  currency = "USD",
-}: Props) {
-  const [peMultiple, setPeMultiple] = useState<number>(defaultPE);
-  const [useLog, setUseLog] = useState<boolean>(defaultLogScale);
-  const [selectedRange, setSelectedRange] = useState<typeof TIME_RANGES[number]['value']>('1Y');
+  defaultLogScale = false
+}) => {
+  const [mode, setMode] = useState<'constant-pe' | 'peg-1'>(defaultMode);
+  const [peMultiple, setPeMultiple] = useState(defaultPE);
+  const [useLogScale, setUseLogScale] = useState(defaultLogScale);
+  const [selectedRange, setSelectedRange] = useState('5years');
+  const [epsSource, setEpsSource] = useState<'without-nri' | 'gaap'>('without-nri');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [quarterlyData, setQuarterlyData] = useState<QuarterlyData[]>([]);
+  const [annualData, setAnnualData] = useState<AnnualData[]>([]);
+  const [priceData, setPriceData] = useState<PriceData[]>([]);
 
-  // Filter data based on selected time range
-  const getFilteredData = () => {
-    if (!data.length) return [];
+  // Fetch financial data
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!ticker) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const [quarterly, annual, prices] = await Promise.all([
+          fetchFromFMP(`/income-statement/${ticker}`, { period: 'quarter', limit: 40 }),
+          fetchFromFMP(`/income-statement/${ticker}`, { period: 'annual', limit: 10 }),
+          fetchFromFMP(`/historical-price-full/${ticker}`, { from: '2014-01-01' })
+        ]);
+
+        // Process quarterly data
+        const processedQuarterly: QuarterlyData[] = quarterly
+          .filter((q: any) => q.netIncome !== null && q.weightedAverageShsOutDil > 0)
+          .map((q: any) => ({
+            date: q.date,
+            filingDate: q.fillingDate || q.date, // Use date as fallback
+            netIncome: q.netIncome,
+            eps: q.eps || (q.netIncome / q.weightedAverageShsOutDil),
+            weightedAverageShsOutDil: q.weightedAverageShsOutDil,
+            epsWithoutNRI: q.epsWithoutNRI // If available
+          }))
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        // Process annual data
+        const processedAnnual: AnnualData[] = annual
+          .filter((a: any) => a.ebitda !== null && a.weightedAverageShsOutDil > 0)
+          .map((a: any) => ({
+            date: a.date,
+            ebitda: a.ebitda,
+            weightedAverageShsOutDil: a.weightedAverageShsOutDil,
+            bookValuePerShare: a.bookValuePerShare
+          }))
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        // Process price data
+        const processedPrices: PriceData[] = prices.historical
+          ?.map((p: any) => ({
+            date: p.date,
+            adjClose: p.adjClose
+          }))
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) || [];
+
+        setQuarterlyData(processedQuarterly);
+        setAnnualData(processedAnnual);
+        setPriceData(processedPrices);
+      } catch (error) {
+        console.error('Error fetching Lynch chart data:', error);
+        setError('Fehler beim Laden der Finanzdaten für den Peter Lynch Chart');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [ticker]);
+
+  // Calculate EPS TTM from quarterly data
+  const epsTimeSeries = useMemo(() => {
+    if (quarterlyData.length < 4) return [];
+
+    const result: { date: string; epsTTM: number }[] = [];
     
-    const now = new Date();
-    let cutoffDate = new Date();
-    
-    switch (selectedRange) {
-      case '5D':
-        cutoffDate.setDate(now.getDate() - 5);
-        break;
-      case '1M':
-        cutoffDate.setMonth(now.getMonth() - 1);
-        break;
-      case '3M':
-        cutoffDate.setMonth(now.getMonth() - 3);
-        break;
-      case 'YTD':
-        cutoffDate = new Date(now.getFullYear(), 0, 1);
-        break;
-      case '1Y':
-        cutoffDate.setFullYear(now.getFullYear() - 1);
-        break;
-      case '3Y':
-        cutoffDate.setFullYear(now.getFullYear() - 3);
-        break;
-      case '5Y':
-        cutoffDate.setFullYear(now.getFullYear() - 5);
-        break;
-      case '10Y':
-        cutoffDate.setFullYear(now.getFullYear() - 10);
-        break;
-      case 'MAX':
-        return data;
-      default:
-        return data;
+    for (let i = 3; i < quarterlyData.length; i++) {
+      const last4Quarters = quarterlyData.slice(i - 3, i + 1);
+      const epsTTM = last4Quarters.reduce((sum, q) => {
+        const eps = epsSource === 'without-nri' && q.epsWithoutNRI 
+          ? q.epsWithoutNRI 
+          : q.eps;
+        return sum + eps;
+      }, 0);
+      
+      result.push({
+        date: quarterlyData[i].filingDate,
+        epsTTM
+      });
     }
     
-    return data.filter(item => new Date(item.date) >= cutoffDate);
+    return result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [quarterlyData, epsSource]);
+
+  // Calculate 5-year CAGR for PEG mode
+  const growthRate = useMemo(() => {
+    if (annualData.length < 6) return null;
+
+    const isBankStock = isBank(ticker);
+    const sortedData = [...annualData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    const latest = sortedData[sortedData.length - 1];
+    const fiveYearsAgo = sortedData[sortedData.length - 6];
+    
+    if (!latest || !fiveYearsAgo) return null;
+
+    let currentValue: number;
+    let pastValue: number;
+
+    if (isBankStock) {
+      // Use Book Value per Share for banks
+      currentValue = latest.bookValuePerShare || 0;
+      pastValue = fiveYearsAgo.bookValuePerShare || 0;
+    } else {
+      // Use EBITDA per share for regular companies
+      currentValue = latest.ebitda / latest.weightedAverageShsOutDil;
+      pastValue = fiveYearsAgo.ebitda / fiveYearsAgo.weightedAverageShsOutDil;
+    }
+
+    if (pastValue <= 0 || currentValue <= 0) return null;
+
+    const cagr = (Math.pow(currentValue / pastValue, 1/5) - 1) * 100;
+    
+    // Clamp between 5% and 25%
+    if (cagr < 5) return null; // Don't show PEG fair value if growth < 5%
+    return Math.min(25, Math.max(5, cagr));
+  }, [annualData, ticker]);
+
+  // Filter data by time range
+  const getFilteredData = (data: any[], range: string) => {
+    const endDate = new Date();
+    let startDate: Date;
+    
+    switch (range) {
+      case '1year':
+        startDate = new Date(endDate.getFullYear() - 1, endDate.getMonth(), endDate.getDate());
+        break;
+      case '3years':
+        startDate = new Date(endDate.getFullYear() - 3, endDate.getMonth(), endDate.getDate());
+        break;
+      case '5years':
+        startDate = new Date(endDate.getFullYear() - 5, endDate.getMonth(), endDate.getDate());
+        break;
+      case '10years':
+        startDate = new Date(endDate.getFullYear() - 10, endDate.getMonth(), endDate.getDate());
+        break;
+      default:
+        startDate = new Date(endDate.getFullYear() - 5, endDate.getMonth(), endDate.getDate());
+    }
+    
+    return data.filter(item => new Date(item.date) >= startDate);
   };
 
-  const filteredData = getFilteredData();
+  // Prepare chart data
+  const chartData = useMemo(() => {
+    if (!priceData.length || !epsTimeSeries.length) return [];
 
-  // 1) Clean & enrich data
-  const prepared = useMemo(() => {
-    // Filter ungültige Punkte für Log-Skala
-    const filtered = filteredData.filter(d =>
-      Number.isFinite(d.price) && Number.isFinite(d.eps) &&
-      d.price > 0 && d.eps > 0
-    );
-    return filtered.map(d => ({
-      ...d,
-      earningsLinePrice: d.eps * peMultiple, // EPS*PE = "Earnings-Line" in Preis-Einheiten
-      premium: d.price / Math.max(d.eps * peMultiple, 1e-9) - 1, // + = über Earnings-Line
-    }));
-  }, [filteredData, peMultiple]);
+    const filteredPrices = getFilteredData(priceData, selectedRange);
+    
+    const result: LynchDataPoint[] = [];
+    let epsIndex = 0;
+    let currentEPS = epsTimeSeries[0]?.epsTTM || 0;
 
-  // 2) Domains so wählen, dass 1 EPS ≙ peMultiple Preis
-  const domains = useMemo(() => {
-    if (prepared.length === 0) {
-      return {
-        leftMin: 0.1,
-        leftMax: 10,
-        rightMin: peMultiple * 0.1,
-        rightMax: peMultiple * 10,
-      };
+    for (const pricePoint of filteredPrices) {
+      // Update EPS TTM based on filing dates (step function)
+      while (epsIndex < epsTimeSeries.length - 1 && 
+             new Date(epsTimeSeries[epsIndex + 1].date) <= new Date(pricePoint.date)) {
+        epsIndex++;
+        currentEPS = epsTimeSeries[epsIndex].epsTTM;
+      }
+
+      let fairValue: number | null = null;
+      let currentPeMultiple: number | undefined;
+      let currentGrowthRate: number | undefined;
+
+      if (currentEPS > 0) {
+        if (mode === 'constant-pe') {
+          fairValue = currentEPS * peMultiple;
+          currentPeMultiple = peMultiple;
+        } else if (mode === 'peg-1' && growthRate !== null) {
+          fairValue = currentEPS * growthRate;
+          currentGrowthRate = growthRate;
+        }
+      }
+
+      const deviation = fairValue ? (pricePoint.adjClose / fairValue - 1) * 100 : undefined;
+
+      result.push({
+        date: pricePoint.date,
+        price: pricePoint.adjClose,
+        epsTTM: currentEPS,
+        fairValue,
+        mode: mode === 'constant-pe' ? `P/E ${peMultiple}` : `PEG=1 (${growthRate?.toFixed(1)}%)`,
+        peMultiple: currentPeMultiple,
+        growthRate: currentGrowthRate,
+        deviation
+      });
     }
-    
-    const prices = prepared.map(p => p.price);
-    const epss = prepared.map(p => p.eps);
-    const earningsLinePrices = prepared.map(p => p.earningsLinePrice);
-    
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    const minEPS = Math.min(...epss);
-    const maxEPS = Math.max(...epss);
-    const minEL = Math.min(...earningsLinePrices);
-    const maxEL = Math.max(...earningsLinePrices);
 
-    // Add padding for better visualization
-    const pricePadding = (maxPrice - minPrice) * 0.1;
-    const epsPadding = (maxEPS - minEPS) * 0.1;
-    
-    // Right axis domain (price)
-    const rightMin = Math.max(Math.min(minPrice, minEL) - pricePadding, 0.01);
-    const rightMax = Math.max(maxPrice, maxEL) + pricePadding;
-    
-    // Left axis domain (EPS) - aligned with price axis
-    const leftMin = Math.max((rightMin / peMultiple), 0.01);
-    const leftMax = rightMax / peMultiple;
+    return result;
+  }, [priceData, epsTimeSeries, selectedRange, mode, peMultiple, growthRate]);
 
-    return { leftMin, leftMax, rightMin, rightMax };
-  }, [prepared, peMultiple]);
+  // Calculate latest metrics
+  const latestData = chartData[chartData.length - 1];
 
-  const latest = prepared[prepared.length - 1];
-
-  if (prepared.length === 0) {
+  if (isLoading) {
     return (
-      <div className="w-full p-8 text-center text-muted-foreground">
-        <p>Keine gültigen Daten für Peter Lynch Chart verfügbar.</p>
-        <p className="text-sm mt-2">Benötigt werden positive Kurs- und EPS-Werte.</p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Peter Lynch Chart</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">Lade Finanzdaten...</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Peter Lynch Chart</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!chartData.length) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Peter Lynch Chart</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Nicht genügend Daten für die Darstellung verfügbar. 
+              Mindestens 4 Quartale mit EPS-Daten erforderlich.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="w-full space-y-4">
-      {/* Controls */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {TIME_RANGES.map((range) => (
-          <Button
-            key={range.value}
-            variant={selectedRange === range.value ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedRange(range.value)}
-          >
-            {range.label}
-          </Button>
-        ))}
-      </div>
-      
-      <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/30 rounded-lg">
-        <label className="flex items-center gap-2">
-          <span className="text-sm font-medium">P/E-Multiple</span>
-          <input
-            type="number"
-            min={1}
-            step={1}
-            value={peMultiple}
-            onChange={(e) => setPeMultiple(Math.max(1, Number(e.target.value) || 1))}
-            className="border rounded px-2 py-1 text-sm w-20 bg-background"
-          />
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={useLog}
-            onChange={() => setUseLog(s => !s)}
-            className="rounded"
-          />
-          <span className="text-sm">Logarithmische Skala</span>
-        </label>
-
-        {latest && (
-          <div className="ml-auto text-sm">
-            <span className={`inline-block rounded-full px-3 py-1 border text-xs font-medium ${
-              latest.premium > 0.1 ? 'bg-red-50 text-red-700 border-red-200' :
-              latest.premium < -0.1 ? 'bg-green-50 text-green-700 border-green-200' :
-              'bg-yellow-50 text-yellow-700 border-yellow-200'
-            }`}>
-              Abweichung: <strong>{pct(latest.premium)}</strong>
-            </span>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          Peter Lynch Chart
+          {latestData?.deviation !== undefined && (
+            <Badge variant={latestData.deviation > 0 ? "destructive" : "default"} className="ml-2">
+              {latestData.deviation > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+              {latestData.deviation > 0 ? '+' : ''}{latestData.deviation.toFixed(1)}%
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Time Range */}
+          <div className="space-y-2">
+            <Label>Zeitraum</Label>
+            <div className="flex gap-1">
+              {TIME_RANGES.map(range => (
+                <Button
+                  key={range.value}
+                  variant={selectedRange === range.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedRange(range.value)}
+                >
+                  {range.label}
+                </Button>
+              ))}
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Chart */}
-      <div style={{ width: "100%", height: 420 }}>
-        <ResponsiveContainer>
-          <LineChart data={prepared} margin={{ left: 20, right: 20, top: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          {/* Mode Switch */}
+          <div className="space-y-2">
+            <Label>Modus</Label>
+            <Select value={mode} onValueChange={(value: 'constant-pe' | 'peg-1') => setMode(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="constant-pe">P/E konstant</SelectItem>
+                <SelectItem value="peg-1">PEG = 1 (GuruFocus)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-              minTickGap={28}
-              stroke="hsl(var(--border))"
-            />
+          {/* P/E Multiple (only in constant-pe mode) */}
+          {mode === 'constant-pe' && (
+            <div className="space-y-2">
+              <Label>P/E Multiple</Label>
+              <Input
+                type="number"
+                min="5"
+                max="30"
+                step="0.5"
+                value={peMultiple}
+                onChange={(e) => setPeMultiple(parseFloat(e.target.value) || 15)}
+                className="w-full"
+              />
+            </div>
+          )}
 
-            {/* Linke Achse: EPS */}
-            <YAxis
-              yAxisId="left"
-              scale={useLog ? "log" : "auto"}
-              domain={[domains.leftMin, domains.leftMax]}
-              allowDataOverflow
-              tickFormatter={(v) => v >= 1 ? `${v.toFixed(1)}` : v.toFixed(2)}
-              width={60}
-              tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-              stroke="hsl(var(--border))"
-              label={{ value: 'EPS', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
-            />
+          {/* Growth Rate Display (PEG mode) */}
+          {mode === 'peg-1' && (
+            <div className="space-y-2">
+              <Label>Wachstumsrate (5J-CAGR)</Label>
+              <div className="p-2 bg-muted rounded-md text-sm">
+                {growthRate !== null ? `${growthRate.toFixed(1)}%` : 'Nicht berechenbar'}
+              </div>
+            </div>
+          )}
 
-            {/* Rechte Achse: Preis */}
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              scale={useLog ? "log" : "auto"}
-              domain={[domains.rightMin, domains.rightMax]}
-              allowDataOverflow
-              tickFormatter={(v) => fmt(v, currency)}
-              width={80}
-              tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-              stroke="hsl(var(--border))"
-              label={{ value: 'Preis', angle: 90, position: 'insideRight', style: { textAnchor: 'middle' } }}
-            />
-
-            <Tooltip
-              formatter={(value: any, name: string) => {
-                if (name === "Kurs") return [fmt(value as number, currency), name];
-                if (name === `Earnings-Line (EPS×${peMultiple})`) return [fmt(value as number, currency), name];
-                if (name === "EPS") return [(value as number).toFixed(2), name];
-                if (name === "Abweichung") return [pct(value as number), name];
-                return [value, name];
-              }}
-              labelFormatter={(label) => `Datum: ${label}`}
-              contentStyle={{
-                backgroundColor: "hsl(var(--popover))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "6px"
-              }}
-            />
-            <Legend />
-
-            {/* Kurs (rechts) - Grüne Linie */}
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey="price"
-              name="Kurs"
-              dot={false}
-              strokeWidth={3}
-              stroke="#22c55e"
-            />
-
-            {/* Earnings-Line als Preislinie (rechts) - Blaue Linie */}
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey="earningsLinePrice"
-              name={`Earnings-Line (EPS×${peMultiple})`}
-              dot={false}
-              strokeWidth={3}
-              stroke="#3b82f6"
-              strokeDasharray="8 4"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="space-y-2">
-        <div className="text-sm text-muted-foreground bg-muted/20 p-3 rounded">
-          <p className="font-medium mb-2">Peter Lynch Chart Interpretation:</p>
-          <ul className="space-y-1 text-xs">
-            <li><span className="inline-block w-3 h-3 bg-green-500 rounded mr-2"></span><strong>Kurs unter Earnings-Line:</strong> Tendenziell unterbewertet (guter Kaufzeitpunkt)</li>
-            <li><span className="inline-block w-3 h-3 bg-blue-500 rounded mr-2"></span><strong>Kurs über Earnings-Line:</strong> Überbewertet (Vorsicht bei Kauf)</li>
-          </ul>
+          {/* Log Scale Toggle */}
+          <div className="space-y-2">
+            <Label>Logarithmische Skala</Label>
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={useLogScale}
+                onCheckedChange={setUseLogScale}
+              />
+            </div>
+          </div>
         </div>
-        
-        {latest && (
-          <div className="text-sm p-3 rounded border">
-            <p><strong>Aktuelle Bewertung:</strong></p>
-            <p>Kurs: {fmt(latest.price, currency)} | Earnings-Line (P/E {peMultiple}): {fmt(latest.earningsLinePrice, currency)}</p>
-            <p>Abweichung: {pct(latest.premium)} {latest.premium > 0.1 ? '(überbewertet)' : latest.premium < -0.1 ? '(unterbewertet)' : '(fair bewertet)'}</p>
+
+        {/* EPS Source (optional) */}
+        <div className="space-y-2">
+          <Label>EPS-Quelle</Label>
+          <Select value={epsSource} onValueChange={(value: 'without-nri' | 'gaap') => setEpsSource(value)}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="without-nri">EPS (ohne NRI)</SelectItem>
+              <SelectItem value="gaap">EPS (GAAP, diluted)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Chart */}
+        <div className="h-96">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={(value) => new Date(value).toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })}
+              />
+              <YAxis 
+                scale={useLogScale ? 'log' : 'linear'}
+                domain={useLogScale ? ['dataMin', 'dataMax'] : ['auto', 'auto']}
+                tickFormatter={(value) => `${value.toFixed(0)} ${currency}`}
+              />
+              <Tooltip
+                labelFormatter={(value) => new Date(value).toLocaleDateString('de-DE')}
+                formatter={(value: any, name: string) => {
+                  if (name === 'price') return [`${value.toFixed(2)} ${currency}`, 'Kurs (Adjusted Close)'];
+                  if (name === 'fairValue') return [`${value.toFixed(2)} ${currency}`, 'Earnings-Line'];
+                  return [value, name];
+                }}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload || !payload.length) return null;
+                  
+                  const data = payload[0].payload as LynchDataPoint;
+                  
+                  return (
+                    <div className="bg-background border rounded-lg p-3 shadow-lg">
+                      <p className="font-semibold">{new Date(label as string).toLocaleDateString('de-DE')}</p>
+                      <p>Kurs: {data.price.toFixed(2)} {currency}</p>
+                      <p>EPS TTM: {data.epsTTM.toFixed(2)} {currency}</p>
+                      <p>Modus: {data.mode}</p>
+                      {data.fairValue && (
+                        <>
+                          <p>Earnings-Line: {data.fairValue.toFixed(2)} {currency}</p>
+                          {data.deviation !== undefined && (
+                            <p className={data.deviation > 0 ? "text-red-600" : "text-green-600"}>
+                              Abweichung: {data.deviation > 0 ? '+' : ''}{data.deviation.toFixed(1)}%
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                }}
+              />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="price" 
+                stroke="hsl(var(--primary))" 
+                strokeWidth={2}
+                dot={false}
+                name="Aktienkurs"
+              />
+              {mode === 'constant-pe' && (
+                <Line 
+                  type="monotone" 
+                  dataKey="fairValue" 
+                  stroke="hsl(var(--destructive))" 
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  dot={false}
+                  name={`Earnings-Line (P/E ${peMultiple})`}
+                />
+              )}
+              {mode === 'peg-1' && growthRate !== null && (
+                <Line 
+                  type="monotone" 
+                  dataKey="fairValue" 
+                  stroke="hsl(var(--destructive))" 
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  dot={false}
+                  name={`Earnings-Line (PEG=1, ${growthRate.toFixed(1)}%)`}
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* PEG Mode Limitations */}
+        {mode === 'peg-1' && growthRate === null && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              PEG=1 Modus nicht verfügbar: Wachstumsrate unter 5% oder nicht genügend historische Daten.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Current Valuation */}
+        {latestData && (
+          <div className="bg-muted p-4 rounded-lg">
+            <h4 className="font-semibold mb-2">Aktuelle Bewertung</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Aktueller Kurs</p>
+                <p className="font-medium">{latestData.price.toFixed(2)} {currency}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">EPS TTM</p>
+                <p className="font-medium">{latestData.epsTTM.toFixed(2)} {currency}</p>
+              </div>
+              {latestData.fairValue && (
+                <div>
+                  <p className="text-muted-foreground">Fair Value</p>
+                  <p className="font-medium">{latestData.fairValue.toFixed(2)} {currency}</p>
+                </div>
+              )}
+              {latestData.deviation !== undefined && (
+                <div>
+                  <p className="text-muted-foreground">Abweichung</p>
+                  <p className={`font-medium ${latestData.deviation > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {latestData.deviation > 0 ? '+' : ''}{latestData.deviation.toFixed(1)}%
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
-      </div>
-    </div>
+
+        {/* Interpretation */}
+        <div className="text-sm text-muted-foreground space-y-2">
+          <p>
+            <strong>Interpretation:</strong> Liegt der Aktienkurs unter der Earnings-Line, ist die Aktie tendenziell unterbewertet. 
+            Liegt er darüber, ist sie tendenziell überbewertet.
+          </p>
+          <p>
+            <strong>P/E-konstant:</strong> Verwendet einen festen P/E-Multiple zur Bewertung.
+          </p>
+          <p>
+            <strong>PEG=1 (GuruFocus):</strong> Der P/E-Multiple entspricht der 5-Jahres-Wachstumsrate {isBank(ticker) ? 'des Buchwertes je Aktie' : 'des EBITDA je Aktie'}.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
-}
+};
+
+export default PeterLynchChartNew;

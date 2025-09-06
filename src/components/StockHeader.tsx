@@ -58,78 +58,6 @@ const formatMarketCap = (marketCap: number | null, currency: string = 'EUR'): st
   return `${scaledValue.toFixed(2)} ${unit} ${currency}`;
 };
 
-// Deterministic random generator based on seed (for consistent chart data)
-const seededRandom = (seed: number) => {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
-};
-
-// Generate stable data for Peter Lynch Chart
-const generateSampleLynchData = (ticker: string, currentPrice: number | null, currency: string) => {
-  if (!currentPrice || currentPrice <= 0) {
-    return [];
-  }
-
-  const data = [];
-  const currentDate = new Date();
-  const yearsBack = 10; // 10 Jahre Daten
-  const totalDays = yearsBack * 365;
-  
-  // Create a seed based on ticker for consistent data
-  const tickerSeed = ticker.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  
-  // Assume current P/E around 18 for realistic EPS calculation
-  const assumedCurrentPE = 18;
-  const currentEPS = currentPrice / assumedCurrentPE;
-  
-  // Generate data every 7 days for performance (weekly sampling)
-  for (let i = totalDays; i >= 0; i -= 7) {
-    const date = new Date(currentDate);
-    date.setDate(date.getDate() - i);
-    const dateString = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-    
-    // Create unique seed for this date point
-    const dateSeed = tickerSeed + i;
-    
-    // Simulate realistic price progression with daily volatility
-    const timeProgressFactor = (totalDays - i) / totalDays; // 0 to 1 over 10 years
-    
-    // Long-term growth trend (average 8% annually)
-    const annualGrowthRate = 0.08;
-    const yearsElapsed = (totalDays - i) / 365;
-    const baseGrowthFactor = Math.pow(1 + annualGrowthRate, yearsElapsed);
-    
-    // Start from 30% of current price 10 years ago
-    const startingFactor = 0.3;
-    const priceTrend = startingFactor + (1 - startingFactor) * timeProgressFactor;
-    
-    // Add volatility and market cycles (now deterministic)
-    const volatility = 0.85 + seededRandom(dateSeed) * 0.3; // ±15% volatility
-    const cyclicalEffect = 1 + 0.1 * Math.sin((yearsElapsed / 4) * 2 * Math.PI); // 4-year market cycles
-    const seasonality = 1 + 0.02 * Math.sin((date.getMonth() / 12) * 2 * Math.PI); // Small seasonal effect
-    
-    const price = currentPrice * priceTrend * volatility * cyclicalEffect * seasonality;
-    
-    // EPS grows more gradually and stable than price
-    const epsGrowthRate = 0.06; // 6% annual EPS growth
-    const epsGrowthFactor = Math.pow(1 + epsGrowthRate, yearsElapsed);
-    const epsStartingFactor = 0.5; // Start from 50% of current EPS
-    const epsTrend = epsStartingFactor + (1 - epsStartingFactor) * timeProgressFactor;
-    
-    // Less volatility for EPS (quarterly updates smoothed out)
-    const epsVolatility = 0.95 + seededRandom(dateSeed + 1000) * 0.10; // ±5% volatility
-    const eps = currentEPS * epsTrend * epsVolatility;
-    
-    data.push({
-      date: dateString,
-      price: Math.max(Math.round(price * 100) / 100, 0.01),
-      eps: Math.max(Math.round(eps * 100) / 100, 0.01)
-    });
-  }
-  
-  return data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-};
-
 const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
@@ -344,14 +272,15 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-foreground">Peter Lynch Chart</h3>
           <p className="text-sm text-muted-foreground">
-            Vergleicht den Aktienkurs mit der Earnings-Line (EPS × P/E Multiple). 
+            Vergleicht den Aktienkurs mit der Earnings-Line basierend auf EPS TTM und P/E Multiple. 
             Kurs unter der Linie = tendenziell unterbewertet, darüber = überbewertet.
           </p>
           <PeterLynchChart 
-            data={generateSampleLynchData(ticker, price, currency)}
+            ticker={ticker}
             currency={currency}
+            currentPrice={price}
             defaultPE={15}
-            defaultLogScale={true}
+            defaultLogScale={false}
           />
         </div>
       </div>
