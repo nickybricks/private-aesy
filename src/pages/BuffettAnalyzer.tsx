@@ -73,19 +73,11 @@ const IndexContent: React.FC = () => {
             
             {!isLoading && (
               <>
-                <DataMissingAlert />
+                <MetricsSection />
+                <CriteriaTabsSection />
+                <RatingSection />
                 
-                {/* Dashboard Grid Layout */}
-                <div className="space-y-6">
-                  {/* Top Row - Rating Section full width */}
-                  <RatingSection />
-                  
-                  {/* Bottom Row - Metrics and Criteria side by side */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <MetricsSection />
-                    <CriteriaTabsSection />
-                  </div>
-                </div>
+                <DataMissingAlert />
               </>
             )}
           </div>
