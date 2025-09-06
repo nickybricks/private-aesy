@@ -30,7 +30,7 @@ const IndexContent: React.FC = () => {
     gptAvailable,
     stockInfo
   } = useStock();
-  const { analyses } = useSavedAnalyses();
+  const { analyses, loading: analysesLoading } = useSavedAnalyses();
   const { toast } = useToast();
 
   // Track which ticker has been analyzed to prevent duplicate analysis
@@ -41,27 +41,32 @@ const IndexContent: React.FC = () => {
     const ticker = searchParams.get('ticker');
     const loadAnalysisId = searchParams.get('loadAnalysis');
     
-    if (ticker && ticker !== analyzedTicker.current && !isLoading) {
+    // Don't proceed if analyses are still loading or if already processing
+    if (analysesLoading || isLoading) return;
+    
+    if (ticker && ticker !== analyzedTicker.current) {
       analyzedTicker.current = ticker;
       
       if (loadAnalysisId) {
         // Load saved analysis instead of performing new search
         const savedAnalysis = analyses.find(analysis => analysis.id === loadAnalysisId);
         if (savedAnalysis) {
+          console.log('Loading saved analysis:', savedAnalysis);
           loadSavedAnalysis(savedAnalysis.analysis_data);
           toast({
             title: "Analyse geladen",
             description: `${savedAnalysis.title} wurde erfolgreich geladen.`
           });
+          return; // Important: Don't proceed to handleSearch
         } else {
-          // If saved analysis not found, perform new search
-          handleSearch(ticker);
+          console.log('Saved analysis not found, performing new search');
         }
-      } else {
-        handleSearch(ticker);
       }
+      
+      // Only perform new search if no saved analysis was loaded
+      handleSearch(ticker);
     }
-  }, [searchParams, isLoading, analyses, loadSavedAnalysis, toast]); // Added analyses and other dependencies
+  }, [searchParams, isLoading, analysesLoading, analyses, loadSavedAnalysis, toast, handleSearch]);
   
   return (
     <main className="flex-1 overflow-auto bg-background">
