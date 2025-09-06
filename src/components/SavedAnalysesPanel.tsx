@@ -16,7 +16,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useSavedAnalyses, SavedAnalysis } from '@/hooks/useSavedAnalyses';
-import { useStock } from '@/context/StockContext';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -26,7 +25,6 @@ interface SavedAnalysesPanelProps {
 
 export const SavedAnalysesPanel: React.FC<SavedAnalysesPanelProps> = ({ onLoadAnalysis }) => {
   const { analyses, loading, deleteAnalysis, updateAnalysisTitle } = useSavedAnalyses();
-  const { loadSavedAnalysis } = useStock();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -34,16 +32,14 @@ export const SavedAnalysesPanel: React.FC<SavedAnalysesPanelProps> = ({ onLoadAn
   const [editTitle, setEditTitle] = useState('');
 
   const handleLoadAnalysis = (analysis: SavedAnalysis) => {
-    // Load the saved analysis data directly into the context
-    loadSavedAnalysis(analysis.analysis_data);
-    
-    // Navigate to analyzer page
-    navigate('/analyzer');
+    // Navigate to analyzer page with the analysis ID
+    // The BuffettAnalyzer page will handle loading the saved analysis
+    navigate(`/analyzer?ticker=${analysis.ticker}&loadAnalysis=${analysis.id}`);
     
     // Show success message
     toast({
-      title: "Analyse geladen",
-      description: `${analysis.title} wurde erfolgreich geladen.`
+      title: "Analyse wird geladen",
+      description: `${analysis.title} wird geöffnet.`
     });
     
     // Call optional callback if provided (for backwards compatibility)
