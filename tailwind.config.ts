@@ -15,8 +15,11 @@ export default {
 			center: true,
 			padding: '2rem'
 		},
-		extend: {
-			colors: {
+    extend: {
+      screens: {
+        'xs': '480px',
+      },
+      colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

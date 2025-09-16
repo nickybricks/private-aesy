@@ -24,8 +24,8 @@ const App = () => {
   
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-      if (window.innerWidth >= 1024) {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -66,7 +66,7 @@ const App = () => {
           </>
         )}
 
-        <div className={`flex-1 flex flex-col ${location.pathname !== "/auth" ? (isMobile ? 'w-full' : 'ml-0') : 'w-full'}`}>
+        <div className={`flex-1 flex flex-col w-full ${location.pathname !== "/auth" ? '' : ''}`}>
           {location.pathname !== "/auth" && isMobile && (
             <AppHeader 
               onMobileMenuToggle={handleMobileMenuToggle}

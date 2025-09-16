@@ -85,7 +85,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
   };
 
   return (
-    <nav className="w-64 h-full bg-card border-r border-border flex flex-col shadow-lg lg:shadow-none">
+    <nav className="w-64 h-full bg-card border-r border-border flex flex-col shadow-lg md:shadow-none">
       {/* Tool Header */}
       <div className="p-6 border-b border-border flex items-center justify-between">
         <div>
@@ -100,7 +100,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
           variant="ghost"
           size="icon"
           onClick={onMobileClose}
-          className="lg:hidden"
+          className="md:hidden"
         >
           <X className="h-5 w-5" />
         </Button>

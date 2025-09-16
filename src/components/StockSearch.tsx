@@ -574,7 +574,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       )}
       
       
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      <form onSubmit={handleSubmit} className="flex flex-col xs:flex-row gap-2">
         <div className="relative flex-1">
           <Popover open={open} onOpenChange={(newState) => {
             if (!forceKeepOpen || newState) {
@@ -738,7 +738,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         </div>
         <Button 
           type="submit" 
-          className="apple-button"
+          className="apple-button w-full xs:w-auto"
           disabled={isLoading || !ticker.trim() || disabled}
         >
           {isLoading ? 'Analysiere...' : 'Analysieren'}
@@ -758,26 +758,26 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         </Popover>
       </div>
       
-      <div className="mt-6">
-        <p className="text-sm font-medium mb-2">Häufig verwendete Symbole:</p>
-        <div className="flex flex-wrap gap-2">
-          {quickAccessStocks.map((item) => (
-            <Button
-              key={item.symbol}
-              variant="outline"
-              size="sm"
-              className="text-xs py-1 h-auto"
-              onClick={() => {
-                selectQuickAccessStock(item.symbol);
-                setOpen(true);
-                setForceKeepOpen(true);
-              }}
-            >
-              {item.symbol} ({item.name})
-            </Button>
-          ))}
+        <div className="mt-6">
+          <p className="text-sm font-medium mb-2">Häufig verwendete Symbole:</p>
+          <div className="quick-access-buttons">
+            {quickAccessStocks.map((item) => (
+              <Button
+                key={item.symbol}
+                variant="outline"
+                size="sm"
+                className="text-xs py-1 h-auto"
+                onClick={() => {
+                  selectQuickAccessStock(item.symbol);
+                  setOpen(true);
+                  setForceKeepOpen(true);
+                }}
+              >
+                {item.symbol} ({item.name})
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
     </div>
   );
 };
