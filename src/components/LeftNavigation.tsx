@@ -10,12 +10,13 @@ import {
   Bookmark,
   History,
   X,
-  LogOut
+  LogOut,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface LeftNavigationProps {
   onMobileClose?: () => void;
@@ -23,7 +24,7 @@ interface LeftNavigationProps {
 
 const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin, userRole } = useAuth();
   const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
@@ -79,6 +80,21 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
       ]
     }
   ];
+
+  // Add admin section if user is admin
+  if (isAdmin) {
+    navigationItems.push({
+      title: 'Administration',
+      items: [
+        {
+          name: 'Admin Dashboard',
+          path: '/admin',
+          icon: Shield,
+          description: 'Benutzer und System verwalten'
+        }
+      ]
+    });
+  }
 
   const handleLinkClick = () => {
     onMobileClose?.();
@@ -174,19 +190,24 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
         {user && (
           <div className="border-t border-border pt-4">
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-foreground">
-                    {user.email?.split('@')[0]}
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4 text-primary-foreground" />
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {user.email}
+                  <div>
+                    <div className="text-sm font-medium text-foreground flex items-center gap-2">
+                      {user.email?.split('@')[0]}
+                      {userRole && userRole !== 'customer' && (
+                        <Badge variant="secondary" className="text-xs">
+                          {userRole === 'super_admin' ? 'Super Admin' : userRole}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {user.email}
+                    </div>
                   </div>
                 </div>
-              </div>
               <Button
                 variant="ghost"
                 size="icon"

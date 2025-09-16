@@ -12,8 +12,12 @@ import BuffettQuantAnalyzer from "./pages/BuffettQuantAnalyzer";
 import Watchlists from "./pages/Watchlists";
 import WatchlistDetail from "./pages/WatchlistDetail";
 import SavedAnalyses from "./pages/SavedAnalyses";
+import AdminDashboard from "./pages/AdminDashboard";
+import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+import ImpersonationBanner from "./components/ImpersonationBanner";
 import { AuthProvider } from "./context/AuthContext";
 
 const queryClient = new QueryClient();
@@ -74,6 +78,13 @@ const App = () => {
             />
           )}
           
+          {/* Impersonation Banner */}
+          {location.pathname !== "/auth" && (
+            <div className="px-6 pt-6">
+              <ImpersonationBanner />
+            </div>
+          )}
+          
           <Routes>
             <Route path="/" element={<BuffettAnalyzer />} />
             <Route path="/auth" element={<AuthPage />} />
@@ -82,6 +93,12 @@ const App = () => {
             <Route path="/watchlists" element={<Watchlists />} />
             <Route path="/watchlists/:id" element={<WatchlistDetail />} /> 
             <Route path="/saved-analyses" element={<SavedAnalyses />} />
+            <Route path="/admin" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            } />
+            <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
