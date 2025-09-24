@@ -101,6 +101,8 @@ const IndexContent: React.FC = () => {
             
             <ErrorAlert />
             
+            <RatingSection />
+            
             {stockInfo && (
               <StockHeader stockInfo={stockInfo} />
             )}
@@ -111,7 +113,6 @@ const IndexContent: React.FC = () => {
               <>
                 <MetricsSection />
                 <CriteriaTabsSection />
-                <RatingSection />
                 
                 <DataMissingAlert />
               </>
