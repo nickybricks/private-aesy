@@ -21,8 +21,7 @@ const ErrorAlert: React.FC = () => {
           {error.includes('API-Key') ? (
             <>
               Bitte stellen Sie sicher, dass ein gültiger API-Schlüssel verwendet wird. 
-              Die Financial Modeling Prep API benötigt einen gültigen API-Schlüssel, den Sie
-              unter <a href="https://financialmodelingprep.com/developer/docs/" target="_blank" rel="noopener noreferrer" className="underline">financialmodelingprep.com</a> kostenlos erhalten können.
+              Es wird ein gültiger API-Schlüssel für den Zugriff auf Finanzdaten benötigt.
             </>
           ) : (
             'Bitte überprüfen Sie das eingegebene Aktiensymbol oder versuchen Sie es später erneut.'

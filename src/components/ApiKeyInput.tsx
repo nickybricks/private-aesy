@@ -17,14 +17,14 @@ const ApiKeyInput: React.FC = () => {
       <div className="flex items-center space-x-2">
         <Alert>
           <AlertDescription className="flex items-center">
-            <span>Die Anwendung verwendet einen Standard API-Schlüssel für den Zugriff auf Finanzdaten.</span>
+            <span>Die Anwendung verwendet einen integrierten API-Schlüssel für den Zugriff auf Finanzdaten.</span>
             <Popover>
               <PopoverTrigger asChild>
                 <Info size={16} className="ml-2 text-muted-foreground cursor-pointer" />
               </PopoverTrigger>
               <PopoverContent>
                 <p className="max-w-xs">
-                  Der API-Schlüssel für Financial Modeling Prep ist: {DEFAULT_FMP_API_KEY}
+                  Der integrierte API-Schlüssel ist: {DEFAULT_FMP_API_KEY}
                 </p>
               </PopoverContent>
             </Popover>

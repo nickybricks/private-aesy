@@ -8,7 +8,7 @@ const AppFooter: React.FC = () => {
         Aesy - Analysieren Sie Aktien nach bewährten Investmentprinzipien
       </p>
       <p className="mb-2">
-        Dieses Tool verwendet die Financial Modeling Prep API zur Datenabfrage in Echtzeit.
+        Dieses Tool analysiert Aktien in Echtzeit mit aktuellen Finanzdaten.
       </p>
       <p>
         Dieses Tool bietet keine Anlageberatung. Alle Analysen dienen nur zu Informationszwecken.

@@ -758,7 +758,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                 Deep Research AI Analyse
               </Label>
               <p className="text-xs text-muted-foreground mt-1">
-                Aktiviert qualitative Unternehmensanalyse mit aktuellen Marktdaten über Perplexity AI
+                Aktiviert erweiterte qualitative Unternehmensanalyse mit aktuellen Marktdaten
               </p>
             </div>
           </div>
@@ -788,8 +788,8 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
             <Info size={16} className="ml-2 cursor-pointer" />
           </PopoverTrigger>
           <PopoverContent className="max-w-xs p-4">
-            <p className="font-medium mb-2">Hinweis zur API-Nutzung:</p>
-            <p>Dieses Tool verwendet die Financial Modeling Prep API und KI-Technologie für detaillierte Analysen.</p>
+            <p className="font-medium mb-2">Hinweis zur Datenanalyse:</p>
+            <p>Dieses Tool verwendet Echtzeit-Finanzdaten und KI-Technologie für detaillierte Analysen.</p>
           </PopoverContent>
         </Popover>
       </div>
