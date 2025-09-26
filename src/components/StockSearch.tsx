@@ -554,9 +554,9 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   }, [forceKeepOpen]);
 
   return (
-    <div className="buffett-card mb-8 animate-fade-in">
-      <h2 className="text-2xl font-semibold mb-4">Aktienanalyse mit Aesy</h2>
-      <p className="text-buffett-subtext mb-4">
+    <div className="buffett-card mb-6 animate-fade-in">
+      <h2 className="text-xl font-semibold mb-3">Aktienanalyse mit Aesy</h2>
+      <p className="text-buffett-subtext mb-3 text-sm">
         Geben Sie einen Firmennamen oder ein Aktiensymbol ein, um die Buffett-Analyse zu starten.
       </p>
       
@@ -749,18 +749,13 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       </form>
 
       {/* Deep Research AI Analyse Toggle */}
-      <div className="mt-4 p-3 bg-muted/30 rounded-lg border">
+      <div className="mt-3 p-2 bg-muted/30 rounded border">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Brain className="h-5 w-5 text-primary" />
-            <div>
-              <Label htmlFor="deep-research" className="text-sm font-medium cursor-pointer">
-                Deep Research AI Analyse
-              </Label>
-              <p className="text-xs text-muted-foreground mt-1">
-                Aktiviert erweiterte qualitative Unternehmensanalyse mit aktuellen Marktdaten
-              </p>
-            </div>
+          <div className="flex items-center space-x-2">
+            <Brain className="h-4 w-4 text-primary" />
+            <Label htmlFor="deep-research" className="text-sm font-medium cursor-pointer">
+              Deep Research AI Analyse
+            </Label>
           </div>
           <Switch
             id="deep-research"
@@ -771,49 +766,13 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         </div>
         
         {enableDeepResearch && (
-          <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border-l-4 border-blue-500">
+          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border-l-2 border-blue-500">
             <p className="text-xs text-blue-700 dark:text-blue-300">
-              <strong>Erweiterte Analyse aktiviert:</strong> Zusätzlich zu den quantitativen Buffett-Kriterien 
-              werden qualitative Faktoren wie Geschäftsmodell, Wettbewerbsvorteile und Managementqualität 
-              mit aktuellen Marktdaten analysiert.
+              <strong>Erweiterte Analyse:</strong> Qualitative Faktoren werden mit aktuellen Marktdaten analysiert.
             </p>
           </div>
         )}
       </div>
-      
-      <div className="mt-4 text-sm text-buffett-subtext flex items-center">
-        <p>Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung.</p>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Info size={16} className="ml-2 cursor-pointer" />
-          </PopoverTrigger>
-          <PopoverContent className="max-w-xs p-4">
-            <p className="font-medium mb-2">Hinweis zur Datenanalyse:</p>
-            <p>Dieses Tool verwendet Echtzeit-Finanzdaten und KI-Technologie für detaillierte Analysen.</p>
-          </PopoverContent>
-        </Popover>
-      </div>
-      
-        <div className="mt-6">
-          <p className="text-sm font-medium mb-2">Häufig verwendete Symbole:</p>
-          <div className="quick-access-buttons">
-            {quickAccessStocks.map((item) => (
-              <Button
-                key={item.symbol}
-                variant="outline"
-                size="sm"
-                className="text-xs py-1 h-auto"
-                onClick={() => {
-                  selectQuickAccessStock(item.symbol);
-                  setOpen(true);
-                  setForceKeepOpen(true);
-                }}
-              >
-                {item.symbol} ({item.name})
-              </Button>
-            ))}
-          </div>
-        </div>
     </div>
   );
 };
