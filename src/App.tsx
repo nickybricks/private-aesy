@@ -19,6 +19,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import ImpersonationBanner from "./components/ImpersonationBanner";
 import { AuthProvider } from "./context/AuthContext";
+import { StockProvider } from "./context/StockContext";
 
 const queryClient = new QueryClient();
 
@@ -109,12 +110,14 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
-        </TooltipProvider>
+        <StockProvider>
+          <TooltipProvider>
+            <Toaster />
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
+          </TooltipProvider>
+        </StockProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

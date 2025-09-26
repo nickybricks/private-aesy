@@ -68,8 +68,16 @@ export const fetchStockInfo = async (ticker: string) => {
 };
 
 // Funktion, um Buffett-Kriterien zu analysieren
+// Add debug logging to track toggle state
 export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch = false) => {
   console.log(`Analyzing ${ticker} with Buffett criteria (Deep Research: ${enableDeepResearch})`);
+  console.log('Deep Research Toggle Status:', enableDeepResearch);
+  
+  if (enableDeepResearch) {
+    console.log('✅ Deep Research ENABLED - GPT analysis will run');
+  } else {
+    console.log('❌ Deep Research DISABLED - GPT analysis will be skipped');
+  }
   
   // Standardisieren des Tickers für die API
   const standardizedTicker = ticker.trim().toUpperCase();
@@ -456,7 +464,7 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   
   // GPT-basierte Analyse der langfristigen Perspektiven
   let longTermGptAnalysis = null;
-  if (hasOpenAiApiKey()) {
+  if (enableDeepResearch && hasOpenAiApiKey()) {
     try {
       longTermGptAnalysis = await analyzeLongTermProspects(
         companyProfile.companyName,
@@ -498,7 +506,7 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   
   // GPT-basierte Analyse des rationalen Verhaltens
   let rationalBehaviorGptAnalysis = null;
-  if (hasOpenAiApiKey()) {
+  if (enableDeepResearch && hasOpenAiApiKey()) {
     try {
       rationalBehaviorGptAnalysis = await analyzeRationalBehavior(
         companyProfile.companyName,
@@ -531,7 +539,7 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   
   // GPT-basierte Analyse des antizyklischen Verhaltens
   let cyclicalBehaviorGptAnalysis = null;
-  if (hasOpenAiApiKey()) {
+  if (enableDeepResearch && hasOpenAiApiKey()) {
     try {
       cyclicalBehaviorGptAnalysis = await analyzeCyclicalBehavior(
         companyProfile.companyName,
@@ -564,7 +572,7 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   
   // GPT-basierte Analyse der Einmaleffekte
   let oneTimeEffectsGptAnalysis = null;
-  if (hasOpenAiApiKey()) {
+  if (enableDeepResearch && hasOpenAiApiKey()) {
     try {
       oneTimeEffectsGptAnalysis = await analyzeOneTimeEffects(
         companyProfile.companyName,
@@ -597,7 +605,7 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   
   // GPT-basierte Analyse, ob es sich um einen Turnaround-Fall handelt
   let turnaroundGptAnalysis = null;
-  if (hasOpenAiApiKey()) {
+  if (enableDeepResearch && hasOpenAiApiKey()) {
     try {
       turnaroundGptAnalysis = await analyzeTurnaround(
         companyProfile.companyName,

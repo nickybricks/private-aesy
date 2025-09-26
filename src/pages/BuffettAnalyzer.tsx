@@ -134,11 +134,7 @@ const IndexContent: React.FC = () => {
 };
 
 const Index: React.FC = () => {
-  return (
-    <StockProvider>
-      <IndexContent />
-    </StockProvider>
-  );
+  return <IndexContent />;
 };
 
 export default Index;
