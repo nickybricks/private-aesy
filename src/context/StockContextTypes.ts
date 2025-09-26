@@ -1,5 +1,6 @@
 
 import { ReactNode } from 'react';
+import { PredictabilityResult } from '@/services/PredictabilityStarsService';
 
 export interface HistoricalDataItem {
   year: string;
@@ -84,6 +85,7 @@ export interface StockContextType {
   stockCurrency: string;
   hasCriticalDataMissing: boolean;
   dcfData?: DCFData;
+  predictabilityStars: PredictabilityResult | null;
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string) => Promise<void>;

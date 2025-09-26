@@ -5,6 +5,7 @@ import { shouldConvertCurrency, debugDCFData } from '@/utils/currencyConverter';
 import { processFinancialMetrics, calculateBuffettBuyPrice } from './StockDataProcessor';
 import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
 import { DCFCalculationService } from '@/services/DCFCalculationService';
+import { PredictabilityStarsService, PredictabilityResult } from '@/services/PredictabilityStarsService';
 import { StockInfo } from '@/types/stock';
 import { OverallRatingData } from './StockContextTypes';
 
@@ -77,7 +78,7 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
           description: `Für ${info.name} liegen nicht ausreichend Daten für eine Buffett-Analyse vor.`,
           variant: "destructive",
         });
-        return { info, stockCurrency, criticalDataMissing, criteria: null, metricsData: null, rating: null, dcfData: null };
+        return { info, stockCurrency, criticalDataMissing, criteria: null, metricsData: null, rating: null, dcfData: null, predictabilityStars: null };
       }
       
       toast({
@@ -89,15 +90,16 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
       try {
         setLoadingProgress?.(20);
         
-        // Erstelle Promises mit individueller Progress-Updates
+        // Erstelle Promises mit individueller Progress-Updates (inklusive Predictability Stars)
         const promises = [
-          analyzeBuffettCriteria(ticker).then(result => { setLoadingProgress?.(40); return result; }),
-          getFinancialMetrics(ticker).then(result => { setLoadingProgress?.(60); return result; }),
-          getOverallRating(ticker).then(result => { setLoadingProgress?.(80); return result; }),
-          calculateCustomDCF(ticker).then(result => { setLoadingProgress?.(90); return result; })
+          analyzeBuffettCriteria(ticker).then(result => { setLoadingProgress?.(32); return result; }),
+          getFinancialMetrics(ticker).then(result => { setLoadingProgress?.(48); return result; }),
+          getOverallRating(ticker).then(result => { setLoadingProgress?.(64); return result; }),
+          calculateCustomDCF(ticker).then(result => { setLoadingProgress?.(80); return result; }),
+          PredictabilityStarsService.calculatePredictabilityStars(ticker).then(result => { setLoadingProgress?.(90); return result; })
         ];
         
-        const [rawCriteria, rawMetricsData, rating, customDcfData] = await Promise.all(promises);
+        const [rawCriteria, rawMetricsData, rating, customDcfData, predictabilityStars] = await Promise.all(promises);
         
         // KORRIGIERE KRITERIEN-DATEN VOR DER WEITEREN VERARBEITUNG
         const criteria = correctFinancialMetricsCriterion(rawCriteria);
@@ -106,6 +108,7 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
         console.log('Financial Metrics:', JSON.stringify(rawMetricsData, null, 2));
         console.log('Overall Rating:', JSON.stringify(rating, null, 2));
         console.log('Custom DCF Data:', JSON.stringify(customDcfData, null, 2));
+        console.log('Predictability Stars:', JSON.stringify(predictabilityStars, null, 2));
         
         const priceCurrency = info?.currency || 'USD';
         const reportedCurrency = (rawMetricsData as any)?.reportedCurrency;
@@ -272,7 +275,8 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
           criteria, 
           metricsData, 
           rating: updatedRating,
-          dcfData: extractedDcfData
+          dcfData: extractedDcfData,
+          predictabilityStars
         };
       } catch (error) {
         console.error('API-Aufruf oder Datenverarbeitung fehlgeschlagen:', error);

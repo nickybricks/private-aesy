@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData } from './StockContextTypes';
+import { PredictabilityResult } from '@/services/PredictabilityStarsService';
 import { useStockSearch } from './StockSearchService';
 
 // Define a more specific interface for stockInfo
@@ -37,6 +38,7 @@ export function StockProvider({ children }: StockProviderProps) {
   const [stockCurrency, setStockCurrency] = useState<string>('USD');
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
   const [dcfData, setDcfData] = useState<DCFData | undefined>(undefined);
+  const [predictabilityStars, setPredictabilityStars] = useState<PredictabilityResult | null>(null);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
@@ -60,6 +62,7 @@ export function StockProvider({ children }: StockProviderProps) {
       setOverallRating(null);
       setHasCriticalDataMissing(false);
       setDcfData(undefined);
+      setPredictabilityStars(null);
       
       const { 
         info, 
@@ -68,7 +71,8 @@ export function StockProvider({ children }: StockProviderProps) {
         criteria, 
         metricsData, 
         rating,
-        dcfData: newDcfData
+        dcfData: newDcfData,
+        predictabilityStars: newPredictabilityStars
       } = await searchStockInfo(ticker);
       
       // Wenn die dcfData einen intrinsicValue enthält, aktualisiere diesen in den stockInfo-Daten
@@ -104,6 +108,13 @@ export function StockProvider({ children }: StockProviderProps) {
         setFinancialMetrics(metricsData);
         setOverallRating(rating);
         setDcfData(newDcfData);
+        
+        // Only set predictability stars if it's actually a PredictabilityResult
+        if (newPredictabilityStars && typeof newPredictabilityStars === 'object' && 'stars' in newPredictabilityStars) {
+          setPredictabilityStars(newPredictabilityStars as PredictabilityResult);
+        } else {
+          setPredictabilityStars(null);
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
@@ -122,6 +133,7 @@ export function StockProvider({ children }: StockProviderProps) {
       setFinancialMetrics(analysisData.financialMetrics);
       setOverallRating(analysisData.overallRating);
       setDcfData(analysisData.dcfData);
+      setPredictabilityStars(analysisData.predictabilityStars);
       setStockCurrency(analysisData.stockInfo?.currency || 'EUR');
       setError(null);
       setIsLoading(false);
@@ -146,6 +158,7 @@ export function StockProvider({ children }: StockProviderProps) {
       stockCurrency,
       hasCriticalDataMissing,
       dcfData,
+      predictabilityStars,
       setActiveTab,
       setLoadingProgress,
       handleSearch,

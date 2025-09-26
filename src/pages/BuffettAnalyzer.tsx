@@ -8,9 +8,10 @@ import LeftNavigation from '@/components/LeftNavigation';
 import { StockProvider, useStock } from '@/context/StockContext';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
-import CriteriaTabsSection from '@/components/CriteriaTabsSection';
-import MetricsSection from '@/components/MetricsSection';
 import RatingSection from '@/components/RatingSection';
+import MetricsSection from '@/components/MetricsSection';
+import CriteriaTabsSection from '@/components/CriteriaTabsSection';
+import PredictabilityStarsSection from '@/components/PredictabilityStarsSection';
 import DataMissingAlert from '@/components/DataMissingAlert';
 import LoadingSection from '@/components/LoadingSection';
 import ErrorAlert from '@/components/ErrorAlert';
@@ -102,6 +103,8 @@ const IndexContent: React.FC = () => {
             <ErrorAlert />
             
             <RatingSection />
+            
+            <PredictabilityStarsSection />
             
             {stockInfo && (
               <StockHeader stockInfo={stockInfo} />
