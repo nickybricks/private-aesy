@@ -81,14 +81,9 @@ const IndexContent: React.FC = () => {
     <main className="flex-1 overflow-auto bg-background">
         <div className="h-full">
           {/* Main Content Area */}
-      <div className="p-6 w-full">{/* Tool Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-foreground mb-1">
-            Aesy
-          </h1>
-        </div>
-            
-            <KiAvailabilityAlert gptAvailable={gptAvailable} />
+      <div className="p-6 w-full">
+        
+        <KiAvailabilityAlert gptAvailable={gptAvailable} />
             
             {stockInfo && stockInfo.currency && stockInfo.reportedCurrency && 
              needsCurrencyConversion(stockInfo.reportedCurrency, stockInfo.currency) && (

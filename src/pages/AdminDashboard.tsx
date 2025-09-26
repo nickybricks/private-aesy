@@ -166,13 +166,6 @@ const AdminDashboard: React.FC = () => {
     <div className="container mx-auto p-6 space-y-6">
       <ImpersonationBanner />
       
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <Badge variant="secondary">
-          {hasRole('super_admin') ? 'Super Admin' : 'Admin'}
-        </Badge>
-      </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>

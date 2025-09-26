@@ -88,17 +88,9 @@ const Watchlists: React.FC = () => {
   return (
     <main className="flex-1 overflow-auto bg-background">
       <div className="h-full">
-        <div className="p-8 w-full">
+        <div className="p-6 w-full">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                Watchlists
-              </h1>
-              <p className="text-muted-foreground">
-                Verwalten Sie Ihre Aktien-Watchlists und behalten Sie interessante Titel im Blick
-              </p>
-            </div>
+          <div className="flex items-center justify-between mb-6">
 
             {/* Create New Watchlist Dialog */}
             {watchlists.length > 0 && (

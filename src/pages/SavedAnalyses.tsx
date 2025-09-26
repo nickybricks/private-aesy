@@ -6,15 +6,7 @@ const SavedAnalyses: React.FC = () => {
   return (
     <main className="flex-1 overflow-auto bg-background">
       <div className="h-full">
-        <div className="p-8 w-full">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Gespeicherte Analysen
-            </h1>
-            <p className="text-muted-foreground">
-              Verwalten Sie Ihre gespeicherten Aktienanalysen und laden Sie diese bei Bedarf wieder.
-            </p>
-          </div>
+        <div className="p-6 w-full">
 
           <SavedAnalysesPanel />
         </div>
