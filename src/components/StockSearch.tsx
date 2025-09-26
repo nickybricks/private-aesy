@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Info } from 'lucide-react';
+import { Search, Info, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { 
   Tooltip,
   TooltipContent,
@@ -17,7 +19,7 @@ import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { supabase } from '@/integrations/supabase/client';
 
 interface StockSearchProps {
-  onSearch: (ticker: string) => void;
+  onSearch: (ticker: string, enableDeepResearch?: boolean) => void;
   isLoading: boolean;
   disabled?: boolean;
 }
@@ -128,6 +130,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const [ticker, setTicker] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
+  const [enableDeepResearch, setEnableDeepResearch] = useState(false);
   
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<StockSuggestion[]>([]);
@@ -492,7 +495,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       }
       
       setShowAppleCorrection(false);
-      onSearch(ticker.trim().toUpperCase());
+      onSearch(ticker.trim().toUpperCase(), enableDeepResearch);
       setOpen(false);
       setForceKeepOpen(false);
     }
@@ -501,13 +504,13 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   const correctSymbol = (correctTicker: string) => {
     setTicker(correctTicker);
     setShowAppleCorrection(false);
-    onSearch(correctTicker);
+    onSearch(correctTicker, enableDeepResearch);
   };
 
   const selectStock = (stock: StockSuggestion) => {
     console.log("Stock selected:", stock);
     setTicker(stock.symbol);
-    onSearch(stock.symbol);
+    onSearch(stock.symbol, enableDeepResearch);
     setOpen(false);
     setForceKeepOpen(false);
   };
@@ -744,6 +747,39 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
           {isLoading ? 'Analysiere...' : 'Analysieren'}
         </Button>
       </form>
+
+      {/* Deep Research AI Analyse Toggle */}
+      <div className="mt-4 p-3 bg-muted/30 rounded-lg border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Brain className="h-5 w-5 text-primary" />
+            <div>
+              <Label htmlFor="deep-research" className="text-sm font-medium cursor-pointer">
+                Deep Research AI Analyse
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Aktiviert qualitative Unternehmensanalyse mit aktuellen Marktdaten über Perplexity AI
+              </p>
+            </div>
+          </div>
+          <Switch
+            id="deep-research"
+            checked={enableDeepResearch}
+            onCheckedChange={setEnableDeepResearch}
+            disabled={isLoading}
+          />
+        </div>
+        
+        {enableDeepResearch && (
+          <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border-l-4 border-blue-500">
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              <strong>Erweiterte Analyse aktiviert:</strong> Zusätzlich zu den quantitativen Buffett-Kriterien 
+              werden qualitative Faktoren wie Geschäftsmodell, Wettbewerbsvorteile und Managementqualität 
+              mit aktuellen Marktdaten analysiert.
+            </p>
+          </div>
+        )}
+      </div>
       
       <div className="mt-4 text-sm text-buffett-subtext flex items-center">
         <p>Das Tool analysiert automatisch alle 7 Buffett-Kriterien und gibt eine Gesamtbewertung.</p>

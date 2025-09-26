@@ -62,7 +62,7 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
     );
   };
 
-  const searchStockInfo = async (ticker: string) => {
+  const searchStockInfo = async (ticker: string, enableDeepResearch = false) => {
     try {
       let info: StockInfo = await fetchStockInfo(ticker);
       console.log('Stock Info:', JSON.stringify(info, null, 2));
@@ -81,10 +81,11 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
         return { info, stockCurrency, criticalDataMissing, criteria: null, metricsData: null, rating: null, dcfData: null, predictabilityStars: null };
       }
       
-      toast({
-        title: "Analyse läuft",
-        description: `Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
-      });
+        const analysisType = enableDeepResearch ? "Deep Research AI Analyse (inkl. Perplexity)" : "Standard-Analyse";
+        toast({
+          title: "Analyse läuft",
+          description: `${analysisType}: Analysiere ${info.name} (${info.ticker}) nach Warren Buffett's Kriterien...`,
+        });
       
       // Parallele Ausführung aller API-Aufrufe mit Progress-Tracking
       try {
@@ -92,7 +93,7 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
         
         // Erstelle Promises mit individueller Progress-Updates (inklusive Predictability Stars)
         const promises = [
-          analyzeBuffettCriteria(ticker).then(result => { setLoadingProgress?.(32); return result; }),
+          analyzeBuffettCriteria(ticker, enableDeepResearch).then(result => { setLoadingProgress?.(32); return result; }),
           getFinancialMetrics(ticker).then(result => { setLoadingProgress?.(48); return result; }),
           getOverallRating(ticker).then(result => { setLoadingProgress?.(64); return result; }),
           calculateCustomDCF(ticker).then(result => { setLoadingProgress?.(80); return result; }),
@@ -256,7 +257,7 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
         
         toast({
           title: "Analyse abgeschlossen",
-          description: `Die Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
+          description: `Die ${enableDeepResearch ? 'erweiterte Deep Research AI' : 'Standard'}-Analyse für ${info.name} wurde erfolgreich durchgeführt.`,
         });
         
         // Logge die endgültigen Werte für Debugging

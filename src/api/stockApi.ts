@@ -68,8 +68,8 @@ export const fetchStockInfo = async (ticker: string) => {
 };
 
 // Funktion, um Buffett-Kriterien zu analysieren
-export const analyzeBuffettCriteria = async (ticker: string) => {
-  console.log(`Analyzing ${ticker} with Buffett criteria`);
+export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch = false) => {
+  console.log(`Analyzing ${ticker} with Buffett criteria (Deep Research: ${enableDeepResearch})`);
   
   // Standardisieren des Tickers für die API
   const standardizedTicker = ticker.trim().toUpperCase();
@@ -107,7 +107,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   
   // GPT-basierte Analyse des Geschäftsmodells
   let businessModelGptAnalysis = null;
-  if (hasOpenAiApiKey()) {
+  if (enableDeepResearch && hasOpenAiApiKey()) {
     try {
       businessModelGptAnalysis = await analyzeBusinessModel(
         companyProfile.companyName, 
@@ -183,7 +183,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   
   // GPT-basierte Analyse des wirtschaftlichen Burggrabens
   let economicMoatGptAnalysis = null;
-  if (hasOpenAiApiKey()) {
+  if (enableDeepResearch && hasOpenAiApiKey()) {
     try {
       economicMoatGptAnalysis = await analyzeEconomicMoat(
         companyProfile.companyName,
@@ -342,7 +342,7 @@ export const analyzeBuffettCriteria = async (ticker: string) => {
   
   // GPT-basierte Analyse der Managementqualität
   let managementGptAnalysis = null;
-  if (hasOpenAiApiKey()) {
+  if (enableDeepResearch && hasOpenAiApiKey()) {
     try {
       managementGptAnalysis = await analyzeManagementQuality(
         companyProfile.companyName,

@@ -49,7 +49,7 @@ export function StockProvider({ children }: StockProviderProps) {
     }
   }, []);
 
-  const handleSearch = async (ticker: string) => {
+  const handleSearch = async (ticker: string, enableDeepResearch = false) => {
     setIsLoading(true);
     setLoadingProgress(0);
     setLoadingStartTime(Date.now());
@@ -73,7 +73,7 @@ export function StockProvider({ children }: StockProviderProps) {
         rating,
         dcfData: newDcfData,
         predictabilityStars: newPredictabilityStars
-      } = await searchStockInfo(ticker);
+      } = await searchStockInfo(ticker, enableDeepResearch);
       
       // Wenn die dcfData einen intrinsicValue enthält, aktualisiere diesen in den stockInfo-Daten
       if (newDcfData && newDcfData.intrinsicValue !== undefined) {

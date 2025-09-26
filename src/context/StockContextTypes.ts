@@ -88,7 +88,7 @@ export interface StockContextType {
   predictabilityStars: PredictabilityResult | null;
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
-  handleSearch: (ticker: string) => Promise<void>;
+  handleSearch: (ticker: string, enableDeepResearch?: boolean) => Promise<void>;
   loadSavedAnalysis: (analysisData: any) => void;
 }
 
