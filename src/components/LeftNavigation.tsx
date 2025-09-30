@@ -49,6 +49,12 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
       title: 'Tools',
       items: [
         {
+          name: 'Analyzer',
+          path: '/analyzer',
+          icon: BarChart3,
+          description: 'Aktienanalyse nach bewährten Prinzipien'
+        },
+        {
           name: 'Boersen Analyzer',
           path: '/quant',
           icon: BarChart3,
@@ -108,13 +114,17 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
 
   return (
     <nav className="w-64 h-full bg-card border-r border-border flex flex-col shadow-lg md:shadow-none">
-      {/* Tool Header */}
-      <div className="p-6 border-b border-border flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Investment Tools</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Investment Analysis Platform
-          </p>
+      {/* Logo Header */}
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {/* Logo Placeholder */}
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-primary-foreground font-bold text-lg">A</span>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-foreground">Aesy</h1>
+            <p className="text-xs text-muted-foreground">Stock Analysis</p>
+          </div>
         </div>
         
         {/* Mobile Close Button */}

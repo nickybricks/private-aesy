@@ -2,9 +2,7 @@
 import React from 'react';
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import StockSearch from '@/components/StockSearch';
 import StockHeader from '@/components/StockHeader';
-import LeftNavigation from '@/components/LeftNavigation';
 import { StockProvider, useStock } from '@/context/StockContext';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
@@ -16,7 +14,6 @@ import PredictabilityStarsSection from '@/components/PredictabilityStarsSection'
 import DataMissingAlert from '@/components/DataMissingAlert';
 import LoadingSection from '@/components/LoadingSection';
 import ErrorAlert from '@/components/ErrorAlert';
-import AppHeader from '@/components/AppHeader';
 import AppFooter from '@/components/AppFooter';
 import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
 import { useToast } from '@/hooks/use-toast';
@@ -79,13 +76,7 @@ const IndexContent: React.FC = () => {
   }, [searchParams, isLoading, analysesLoading, analyses]);
   
   return (
-    <>
-      <AppHeader 
-        onSearch={handleSearch} 
-        isLoading={isLoading} 
-      />
-      
-      <main className="flex-1 overflow-auto bg-background">
+    <main className="flex-1 overflow-auto bg-background">
         <div className="h-full">
           <div className="p-6 w-full">
             
@@ -130,7 +121,6 @@ const IndexContent: React.FC = () => {
           </div>
         </div>
       </main>
-    </>
   );
 };
 

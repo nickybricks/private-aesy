@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import LeftNavigation from "./components/LeftNavigation";
+import AppHeader from "./components/AppHeader";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import BuffettAnalyzer from "./pages/BuffettAnalyzer";
@@ -47,6 +48,9 @@ const App = () => {
         )}
 
         <div className="flex-1 flex flex-col w-full">
+          {/* Global App Header - on all pages except auth */}
+          {location.pathname !== "/auth" && <AppHeader />}
+          
           {/* Impersonation Banner */}
           {location.pathname !== "/auth" && (
             <div className="px-4 pt-4 md:pl-0">

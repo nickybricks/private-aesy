@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useWatchlists } from '@/hooks/useWatchlists';
 import { useUserStocks } from '@/hooks/useUserStocks';
 import { useStockSearch } from '@/hooks/useStockSearch';
-import PageHeader from '@/components/PageHeader';
 
 const WatchlistDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -69,9 +68,7 @@ const WatchlistDetail: React.FC = () => {
 
   if (!watchlist) {
     return (
-      <>
-        <PageHeader />
-        <main className="flex-1 overflow-auto bg-background">
+      <main className="flex-1 overflow-auto bg-background">
           <div className="p-8 w-full">
             <div className="text-center">
               <h1 className="text-2xl font-bold mb-4">Watchlist nicht gefunden</h1>
@@ -81,14 +78,11 @@ const WatchlistDetail: React.FC = () => {
             </div>
           </div>
         </main>
-      </>
     );
   }
 
   return (
-    <>
-      <PageHeader />
-      <main className="flex-1 overflow-auto bg-background">
+    <main className="flex-1 overflow-auto bg-background">
       <div className="p-6 w-full">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -271,7 +265,6 @@ const WatchlistDetail: React.FC = () => {
         </Card>
       </div>
     </main>
-    </>
   );
 };
 

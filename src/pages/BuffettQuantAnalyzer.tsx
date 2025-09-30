@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart3, Calculator, AlertCircle, Clock } from 'lucide-react';
-import PageHeader from '@/components/PageHeader';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
@@ -155,9 +154,7 @@ const BuffettQuantAnalyzer = () => {
   };
 
   return (
-    <>
-      <PageHeader />
-      <main className="flex-1 overflow-auto bg-background">
+    <main className="flex-1 overflow-auto bg-background">
         <div className="h-full">
           {/* Main Content Area */}
           <div className="p-6 w-full">
@@ -346,7 +343,6 @@ const BuffettQuantAnalyzer = () => {
           </div>
         </div>
       </main>
-    </>
   );
 };
 
