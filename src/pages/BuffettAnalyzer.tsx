@@ -10,6 +10,7 @@ import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
 import RatingSection from '@/components/RatingSection';
 import MetricsSection from '@/components/MetricsSection';
+import PeterLynchSection from '@/components/PeterLynchSection';
 import CriteriaTabsSection from '@/components/CriteriaTabsSection';
 import PredictabilityStarsSection from '@/components/PredictabilityStarsSection';
 import DataMissingAlert from '@/components/DataMissingAlert';
@@ -110,6 +111,7 @@ const IndexContent: React.FC = () => {
             {!isLoading && (
               <>
                 <MetricsSection />
+                <PeterLynchSection />
                 <CriteriaTabsSection />
                 
                 <DataMissingAlert />
