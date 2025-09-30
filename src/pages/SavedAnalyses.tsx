@@ -1,10 +1,13 @@
 import React from 'react';
 import { SavedAnalysesPanel } from '@/components/SavedAnalysesPanel';
 import AppFooter from '@/components/AppFooter';
+import PageHeader from '@/components/PageHeader';
 
 const SavedAnalyses: React.FC = () => {
   return (
-    <main className="flex-1 overflow-auto bg-background">
+    <>
+      <PageHeader />
+      <main className="flex-1 overflow-auto bg-background">
       <div className="h-full">
         <div className="p-6 w-full">
 
@@ -19,6 +22,7 @@ const SavedAnalyses: React.FC = () => {
         </div>
       </div>
     </main>
+    </>
   );
 };
 

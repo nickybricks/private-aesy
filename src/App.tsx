@@ -49,7 +49,7 @@ const App = () => {
         <div className="flex-1 flex flex-col w-full">
           {/* Impersonation Banner */}
           {location.pathname !== "/auth" && (
-            <div className="px-6 pt-6 md:pl-0">
+            <div className="px-4 pt-4 md:pl-0">
               <ImpersonationBanner />
             </div>
           )}

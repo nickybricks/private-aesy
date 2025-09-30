@@ -744,16 +744,35 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
             </PopoverContent>
           </Popover>
         </div>
+        {/* Deep Research AI Analyse Toggle - Compact version */}
+        {compact && (
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <Brain className="h-3.5 w-3.5 text-primary" />
+              <Label htmlFor="deep-research-compact" className="text-xs font-medium cursor-pointer whitespace-nowrap">
+                AI Analyse
+              </Label>
+            </div>
+            <Switch
+              id="deep-research-compact"
+              checked={enableDeepResearch}
+              onCheckedChange={setEnableDeepResearch}
+              disabled={isLoading}
+              className="scale-75"
+            />
+          </div>
+        )}
+        
         <Button 
           type="submit" 
-          className={compact ? "h-9 text-sm px-4" : "apple-button w-full xs:w-auto"}
+          className={compact ? "h-9 text-sm px-4 shrink-0" : "apple-button w-full xs:w-auto"}
           disabled={isLoading || !ticker.trim() || disabled}
         >
           {isLoading ? 'Analysiere...' : 'Analysieren'}
         </Button>
       </form>
 
-      {/* Deep Research AI Analyse Toggle */}
+      {/* Deep Research AI Analyse Toggle - Full version */}
       {!compact && (
         <div className="mt-3 p-2 bg-muted/30 rounded border">
           <div className="flex items-center justify-between">

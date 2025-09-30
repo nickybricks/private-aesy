@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  LineChart, 
+  Home,
   BarChart3, 
   User, 
   Star, 
@@ -34,14 +34,20 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
 
   const navigationItems = [
     {
-      title: 'Tools',
+      title: 'Navigation',
       items: [
         {
-          name: 'Aesy',
-          path: '/analyzer',
-          icon: LineChart,
-          description: 'Aktienanalyse nach bewährten Prinzipien'
-        },
+          name: 'Home',
+          path: '/',
+          icon: Home,
+          description: 'Übersicht und Dashboard',
+          badge: 'Soon'
+        }
+      ]
+    },
+    {
+      title: 'Tools',
+      items: [
         {
           name: 'Boersen Analyzer',
           path: '/quant',

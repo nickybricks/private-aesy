@@ -1,16 +1,9 @@
-
 import React from 'react';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import StockSearch from './StockSearch';
 import { useMobileMenu } from '@/context/MobileMenuContext';
 
-interface AppHeaderProps {
-  onSearch: (ticker: string, enableDeepResearch?: boolean) => void;
-  isLoading: boolean;
-}
-
-const AppHeader: React.FC<AppHeaderProps> = ({ onSearch, isLoading }) => {
+const PageHeader: React.FC = () => {
   const { toggleMobileMenu } = useMobileMenu();
   
   return (
@@ -23,12 +16,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onSearch, isLoading }) => {
       >
         <Menu className="h-5 w-5" />
       </Button>
-
-      <div className="flex-1 flex items-center gap-3 max-w-4xl">
-        <StockSearch onSearch={onSearch} isLoading={isLoading} compact />
-      </div>
     </header>
   );
 };
 
-export default AppHeader;
+export default PageHeader;

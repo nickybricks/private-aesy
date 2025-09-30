@@ -12,6 +12,7 @@ import { Plus, MoreVertical, Edit, Trash2, TrendingUp, Calendar, Star } from 'lu
 import { useWatchlists } from '@/hooks/useWatchlists';
 import { useWatchlistStats } from '@/hooks/useWatchlistStats';
 import { Skeleton } from '@/components/ui/skeleton';
+import PageHeader from '@/components/PageHeader';
 
 const Watchlists: React.FC = () => {
   const navigate = useNavigate();
@@ -69,24 +70,29 @@ const Watchlists: React.FC = () => {
 
   if (loading) {
     return (
-      <main className="flex-1 overflow-auto bg-background">
-        <div className="p-8 w-full">
-          <div className="mb-8">
-            <Skeleton className="h-8 w-64 mb-2" />
-            <Skeleton className="h-4 w-96" />
+      <>
+        <PageHeader />
+        <main className="flex-1 overflow-auto bg-background">
+          <div className="p-8 w-full">
+            <div className="mb-8">
+              <Skeleton className="h-8 w-64 mb-2" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+            <div className="grid gap-6">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
           </div>
-          <div className="grid gap-6">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-32 w-full" />
-            ))}
-          </div>
-        </div>
-      </main>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="flex-1 overflow-auto bg-background">
+    <>
+      <PageHeader />
+      <main className="flex-1 overflow-auto bg-background">
       <div className="h-full">
         <div className="p-6 w-full">
           {/* Header */}
@@ -350,6 +356,7 @@ const Watchlists: React.FC = () => {
         </div>
       </div>
     </main>
+    </>
   );
 };
 
