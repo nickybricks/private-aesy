@@ -1,12 +1,9 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { 
   Home,
   BarChart3, 
-  User, 
-  Star, 
-  Plus,
-  Settings,
+  User,
   Bookmark,
   History,
   X,
@@ -15,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { NavItem } from '@/components/ui/nav-item';
 import { useAuth } from '@/hooks/useAuth';
 
 interface LeftNavigationProps {
@@ -113,16 +110,15 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
   };
 
   return (
-    <nav className="w-64 h-full bg-card border-r border-border flex flex-col shadow-lg md:shadow-none">
+    <nav className="w-[280px] h-[calc(100vh-4.5rem)] sticky top-18 glass-sidebar flex flex-col">
       {/* Logo Header */}
-      <div className="p-4 border-b border-border flex items-center justify-between">
+      <div className="p-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {/* Logo Placeholder */}
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground font-bold text-lg">A</span>
+          <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shrink-0 shadow-sm">
+            <span className="text-primary-foreground font-semibold text-lg">A</span>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground">Aesy</h1>
+            <h1 className="text-base font-semibold tracking-tight">Aesy</h1>
             <p className="text-xs text-muted-foreground">Stock Analysis</p>
           </div>
         </div>
@@ -139,103 +135,64 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
       </div>
       
       {/* Navigation Content */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="space-y-6">
+      <div className="flex-1 px-4 overflow-y-auto">
+        <div className="space-y-8">
           {navigationItems.map((section, sectionIndex) => (
-          <div key={section.title} className="space-y-3">
-            {sectionIndex > 0 && <Separator className="my-4" />}
-            
-            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              {section.title}
-            </h3>
-            
-            <div className="space-y-1">
-              {section.items.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.path);
-                
-                return (
-                  <div key={item.path}>
-                    {item.badge ? (
-                      <div className="flex items-center justify-between p-3 rounded-lg text-muted-foreground/70 bg-muted/30">
-                        <div className="flex items-center space-x-3">
-                          <Icon className="h-5 w-5" />
-                          <div>
-                            <div className="text-sm font-medium">
-                              {item.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {item.description}
-                            </div>
-                          </div>
-                        </div>
-                        <Badge variant="secondary" className="text-xs">
-                          {item.badge}
-                        </Badge>
-                      </div>
-                    ) : (
-                      <Link
-                        to={item.path}
-                        onClick={handleLinkClick}
-                        className={`flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 ${
-                          active
-                            ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
-                            : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:shadow-sm'
-                        }`}
-                      >
-                        <Icon className={`h-5 w-5 ${active ? 'text-primary' : ''}`} />
-                        <div>
-                          <div className="text-sm font-medium">
-                            {item.name}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {item.description}
-                          </div>
-                        </div>
-                      </Link>
-                    )}
-                  </div>
-                );
-              })}
+            <div key={section.title} className="space-y-3">
+              <h3 className="px-3 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+                {section.title}
+              </h3>
+              
+              <div className="space-y-1">
+                {section.items.map((item) => (
+                  <NavItem
+                    key={item.path}
+                    to={item.path}
+                    icon={item.icon}
+                    label={item.name}
+                    description={item.description}
+                    badge={item.badge}
+                    disabled={!!item.badge}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
           ))}
         </div>
-        
-        {/* User Section */}
-        {user && (
-          <div className="border-t border-border pt-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-foreground flex items-center gap-2">
-                      {user.email?.split('@')[0]}
-                      {userRole && userRole !== 'customer' && (
-                        <Badge variant="secondary" className="text-xs">
-                          {userRole === 'super_admin' ? 'Super Admin' : userRole}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {user.email}
-                    </div>
-                  </div>
-                </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleSignOut}
-                className="h-8 w-8"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* User Section */}
+      {user && (
+        <div className="p-4 border-t border-border/50">
+          <div className="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-muted/30">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <User className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-foreground truncate">
+                  {user.email?.split('@')[0]}
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {userRole && userRole !== 'customer' ? (
+                    userRole === 'super_admin' ? 'Super Admin' : userRole
+                  ) : (
+                    user.email
+                  )}
+                </div>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              className="h-8 w-8 shrink-0"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
