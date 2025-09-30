@@ -327,11 +327,68 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
         <div className="border-t pt-6 mt-2">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Finanzielle Entwicklung (10 Jahre)</h3>
-...
-            <p className="mt-2">
-              <span className="font-medium">EPS (Earnings Per Share):</span> Der Gewinn pro Aktie zeigt, wie viel Gewinn auf eine einzelne Aktie entfällt.
-              Buffett achtet besonders auf einen stabilen oder wachsenden EPS über viele Jahre.
-            </p>
+            <ClickableTooltip
+              content={
+                <div className="space-y-2">
+                  <p>
+                    <span className="font-medium">Umsatz (Revenue):</span> Der Gesamtumsatz des Unternehmens pro Jahr.
+                    Buffett bevorzugt Unternehmen mit stabilem oder wachsendem Umsatz.
+                  </p>
+                  <p className="mt-2">
+                    <span className="font-medium">Gewinn (Earnings):</span> Der Nettogewinn nach allen Kosten und Steuern.
+                    Idealerweise sollte der Gewinn über die Jahre steigen.
+                  </p>
+                  <p className="mt-2">
+                    <span className="font-medium">EPS (Earnings Per Share):</span> Der Gewinn pro Aktie zeigt, wie viel Gewinn auf eine einzelne Aktie entfällt.
+                    Buffett achtet besonders auf einen stabilen oder wachsenden EPS über viele Jahre.
+                  </p>
+                </div>
+              }
+            >
+              <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
+                <HelpCircle size={16} className="text-gray-600" />
+              </button>
+            </ClickableTooltip>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Jahr</TableHead>
+                  <TableHead className="text-right">Umsatz</TableHead>
+                  <TableHead className="text-right">Gewinn</TableHead>
+                  <TableHead className="text-right">EPS</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {historicalData.revenue.slice().reverse().map((revenueItem, index) => {
+                  const earningsItem = historicalData.earnings?.slice().reverse()[index];
+                  const epsItem = historicalData.eps?.slice().reverse()[index];
+                  
+                  const revenueValue = revenueItem.originalCurrency && shouldConvertCurrency(currency, revenueItem.originalCurrency)
+                    ? formatCurrency(revenueItem.value, currency, true, revenueItem.originalValue, revenueItem.originalCurrency)
+                    : formatScaledNumber(revenueItem.value, currency);
+                    
+                  const earningsValue = earningsItem?.originalCurrency && shouldConvertCurrency(currency, earningsItem.originalCurrency)
+                    ? formatCurrency(earningsItem.value, currency, true, earningsItem.originalValue, earningsItem.originalCurrency)
+                    : formatScaledNumber(earningsItem?.value || 0, currency);
+                    
+                  const epsValue = epsItem?.originalCurrency && shouldConvertCurrency(currency, epsItem.originalCurrency)
+                    ? formatCurrency(epsItem.value, currency, true, epsItem.originalValue, epsItem.originalCurrency)
+                    : formatCurrency(epsItem?.value || 0, currency);
+                  
+                  return (
+                    <TableRow key={revenueItem.year}>
+                      <TableCell className="font-medium">{revenueItem.year}</TableCell>
+                      <TableCell className="text-right">{revenueValue}</TableCell>
+                      <TableCell className="text-right">{earningsValue}</TableCell>
+                      <TableCell className="text-right">{epsValue}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}
