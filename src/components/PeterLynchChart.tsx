@@ -377,16 +377,6 @@ const PeterLynchChartNew: React.FC<Props> = ({
             ))}
           </div>
         </div>
-        
-        {/* Growth Rate Display */}
-        {growthRate !== null && (
-          <div className="space-y-2">
-            <Label>Wachstumsrate (5J-CAGR)</Label>
-            <div className="p-2 bg-muted rounded-md text-sm">
-              {growthRate.toFixed(1)}%
-            </div>
-          </div>
-        )}
 
         {/* Chart */}
         <div className="h-96">
@@ -481,6 +471,12 @@ const PeterLynchChartNew: React.FC<Props> = ({
                 <p className="text-muted-foreground">EPS TTM</p>
                 <p className="font-medium">{latestData.epsTTM.toFixed(2)} {currency}</p>
               </div>
+              {growthRate !== null && (
+                <div>
+                  <p className="text-muted-foreground">Wachstumsrate (5J-CAGR)</p>
+                  <p className="font-medium">{growthRate.toFixed(1)}%</p>
+                </div>
+              )}
               {latestData.fairValue && (
                 <div>
                   <p className="text-muted-foreground">Fair Value</p>
@@ -500,13 +496,10 @@ const PeterLynchChartNew: React.FC<Props> = ({
         )}
 
         {/* Interpretation */}
-        <div className="text-sm text-muted-foreground space-y-2">
+        <div className="text-sm text-muted-foreground">
           <p>
             <strong>Interpretation:</strong> Liegt der Aktienkurs unter der Earnings-Line, ist die Aktie tendenziell unterbewertet. 
             Liegt er darüber, ist sie tendenziell überbewertet.
-          </p>
-          <p>
-            <strong>PEG=1 (GuruFocus):</strong> Der P/E-Multiple entspricht der 5-Jahres-Wachstumsrate {isBank(ticker) ? 'des Buchwertes je Aktie' : 'des EBITDA je Aktie'}.
           </p>
         </div>
       </CardContent>
