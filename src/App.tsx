@@ -2,9 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
 import LeftNavigation from "./components/LeftNavigation";
-import AppHeader from "./components/AppHeader";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import BuffettAnalyzer from "./pages/BuffettAnalyzer";
@@ -15,42 +13,19 @@ import SavedAnalyses from "./pages/SavedAnalyses";
 import AdminDashboard from "./pages/AdminDashboard";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
-import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import ImpersonationBanner from "./components/ImpersonationBanner";
 import { AuthProvider } from "./context/AuthContext";
 import { StockProvider } from "./context/StockContext";
+import { MobileMenuProvider, useMobileMenu } from "./context/MobileMenuContext";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const handleMobileMenuToggle = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const handleMobileMenuClose = () => {
-    setIsMobileMenuOpen(false);
-  };
-
   // Component to access location
   const AppContent = () => {
     const location = useLocation();
+    const { isMobileMenuOpen, isMobile, closeMobileMenu } = useMobileMenu();
     
     return (
       <div className="min-h-screen bg-background flex">
@@ -58,30 +33,23 @@ const App = () => {
         {location.pathname !== "/auth" && (
           <>
             <div className={`${isMobile ? 'fixed inset-0 z-50 transform transition-transform' : ''} ${isMobile && !isMobileMenuOpen ? '-translate-x-full' : ''}`}>
-              <LeftNavigation onMobileClose={handleMobileMenuClose} />
+              <LeftNavigation onMobileClose={closeMobileMenu} />
             </div>
             
             {/* Mobile overlay */}
             {isMobile && isMobileMenuOpen && (
               <div 
                 className="fixed inset-0 bg-black bg-opacity-50 z-40"
-                onClick={handleMobileMenuClose}
+                onClick={closeMobileMenu}
               />
             )}
           </>
         )}
 
-        <div className={`flex-1 flex flex-col w-full ${location.pathname !== "/auth" ? '' : ''}`}>
-          {location.pathname !== "/auth" && isMobile && (
-            <AppHeader 
-              onMobileMenuToggle={handleMobileMenuToggle}
-              isMobileMenuOpen={isMobileMenuOpen}
-            />
-          )}
-          
+        <div className="flex-1 flex flex-col w-full">
           {/* Impersonation Banner */}
           {location.pathname !== "/auth" && (
-            <div className="px-6 pt-6">
+            <div className="px-6 pt-6 md:pl-0">
               <ImpersonationBanner />
             </div>
           )}
@@ -110,14 +78,16 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <StockProvider>
-          <TooltipProvider>
-            <Toaster />
-            <BrowserRouter>
-              <AppContent />
-            </BrowserRouter>
-          </TooltipProvider>
-        </StockProvider>
+        <MobileMenuProvider>
+          <StockProvider>
+            <TooltipProvider>
+              <Toaster />
+              <BrowserRouter>
+                <AppContent />
+              </BrowserRouter>
+            </TooltipProvider>
+          </StockProvider>
+        </MobileMenuProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

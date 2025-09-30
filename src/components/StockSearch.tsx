@@ -22,6 +22,7 @@ interface StockSearchProps {
   onSearch: (ticker: string, enableDeepResearch?: boolean) => void;
   isLoading: boolean;
   disabled?: boolean;
+  compact?: boolean;
 }
 
 interface StockSuggestion {
@@ -126,7 +127,7 @@ const isCryptoAsset = (stock: StockSuggestion): boolean => {
   return false;
 };
 
-const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false }) => {
+const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false, compact = false }) => {
   const [ticker, setTicker] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
@@ -554,11 +555,15 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
   }, [forceKeepOpen]);
 
   return (
-    <div className="buffett-card mb-6 animate-fade-in">
-      <h2 className="text-xl font-semibold mb-3">Aktienanalyse mit Aesy</h2>
-      <p className="text-buffett-subtext mb-3 text-sm">
-        Geben Sie einen Firmennamen oder ein Aktiensymbol ein, um die Buffett-Analyse zu starten.
-      </p>
+    <div className={compact ? "" : "buffett-card mb-6 animate-fade-in"}>
+      {!compact && (
+        <>
+          <h2 className="text-xl font-semibold mb-3">Aktienanalyse mit Aesy</h2>
+          <p className="text-buffett-subtext mb-3 text-sm">
+            Geben Sie einen Firmennamen oder ein Aktiensymbol ein, um die Buffett-Analyse zu starten.
+          </p>
+        </>
+      )}
       
       {showAppleCorrection && (
         <Alert className="mb-4 border-buffett-blue bg-buffett-blue bg-opacity-5">
@@ -577,7 +582,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       )}
       
       
-      <form onSubmit={handleSubmit} className="flex flex-col xs:flex-row gap-2">
+      <form onSubmit={handleSubmit} className={compact ? "flex flex-row gap-2" : "flex flex-col xs:flex-row gap-2"}>
         <div className="relative flex-1">
           <Popover open={open} onOpenChange={(newState) => {
             if (!forceKeepOpen || newState) {
@@ -603,11 +608,11 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                   }}
                   onFocus={handleInputFocus}
                   onClick={handleInputFocus}
-                  placeholder="Aktienname, Symbol oder ISIN eingeben..."
-                  className="apple-input pl-10"
+                  placeholder={compact ? "Aktie suchen..." : "Aktienname, Symbol oder ISIN eingeben..."}
+                  className={compact ? "h-9 pl-9 text-sm" : "apple-input pl-10"}
                   disabled={disabled || isLoading}
                 />
-                <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+                <Search className={compact ? "absolute left-2.5 top-2.5 text-gray-400" : "absolute left-3 top-3 text-gray-400"} size={compact ? 16 : 20} />
               </div>
             </PopoverTrigger>
             <PopoverContent 
@@ -741,7 +746,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         </div>
         <Button 
           type="submit" 
-          className="apple-button w-full xs:w-auto"
+          className={compact ? "h-9 text-sm px-4" : "apple-button w-full xs:w-auto"}
           disabled={isLoading || !ticker.trim() || disabled}
         >
           {isLoading ? 'Analysiere...' : 'Analysieren'}
@@ -749,30 +754,32 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       </form>
 
       {/* Deep Research AI Analyse Toggle */}
-      <div className="mt-3 p-2 bg-muted/30 rounded border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Brain className="h-4 w-4 text-primary" />
-            <Label htmlFor="deep-research" className="text-sm font-medium cursor-pointer">
-              Deep Research AI Analyse
-            </Label>
+      {!compact && (
+        <div className="mt-3 p-2 bg-muted/30 rounded border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Brain className="h-4 w-4 text-primary" />
+              <Label htmlFor="deep-research" className="text-sm font-medium cursor-pointer">
+                Deep Research AI Analyse
+              </Label>
+            </div>
+            <Switch
+              id="deep-research"
+              checked={enableDeepResearch}
+              onCheckedChange={setEnableDeepResearch}
+              disabled={isLoading}
+            />
           </div>
-          <Switch
-            id="deep-research"
-            checked={enableDeepResearch}
-            onCheckedChange={setEnableDeepResearch}
-            disabled={isLoading}
-          />
+          
+          {enableDeepResearch && (
+            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border-l-2 border-blue-500">
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                <strong>Erweiterte Analyse:</strong> Qualitative Faktoren werden mit aktuellen Marktdaten analysiert.
+              </p>
+            </div>
+          )}
         </div>
-        
-        {enableDeepResearch && (
-          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border-l-2 border-blue-500">
-            <p className="text-xs text-blue-700 dark:text-blue-300">
-              <strong>Erweiterte Analyse:</strong> Qualitative Faktoren werden mit aktuellen Marktdaten analysiert.
-            </p>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };

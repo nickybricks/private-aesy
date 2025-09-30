@@ -79,12 +79,17 @@ const IndexContent: React.FC = () => {
   }, [searchParams, isLoading, analysesLoading, analyses]);
   
   return (
-    <main className="flex-1 overflow-auto bg-background">
+    <>
+      <AppHeader 
+        onSearch={handleSearch} 
+        isLoading={isLoading} 
+      />
+      
+      <main className="flex-1 overflow-auto bg-background">
         <div className="h-full">
-          {/* Main Content Area */}
-      <div className="p-6 w-full">
-        
-        <KiAvailabilityAlert gptAvailable={gptAvailable} />
+          <div className="p-6 w-full">
+            
+            <KiAvailabilityAlert gptAvailable={gptAvailable} />
             
             {stockInfo && stockInfo.currency && stockInfo.reportedCurrency && 
              needsCurrencyConversion(stockInfo.reportedCurrency, stockInfo.currency) && (
@@ -93,8 +98,6 @@ const IndexContent: React.FC = () => {
                 stockCurrency={stockInfo.currency} 
               />
             )}
-            
-            <StockSearch onSearch={handleSearch} isLoading={isLoading} />
             
             <ErrorAlert />
             
@@ -127,6 +130,7 @@ const IndexContent: React.FC = () => {
           </div>
         </div>
       </main>
+    </>
   );
 };
 
