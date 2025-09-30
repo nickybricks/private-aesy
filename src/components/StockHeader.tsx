@@ -270,12 +270,7 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
         
         {/* Peter Lynch Chart */}
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-foreground">Peter Lynch Chart</h3>
-          <p className="text-sm text-muted-foreground">
-            Vergleicht den Aktienkurs mit der Earnings-Line basierend auf EPS TTM und P/E Multiple. 
-            Kurs unter der Linie = tendenziell unterbewertet, darüber = überbewertet.
-          </p>
-          <PeterLynchChart 
+          <PeterLynchChart
             ticker={ticker}
             currency={currency}
             currentPrice={price}

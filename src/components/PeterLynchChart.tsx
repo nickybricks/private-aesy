@@ -90,11 +90,12 @@ const PeterLynchChartNew: React.FC<Props> = ({
   defaultPE = 15,
   defaultLogScale = false
 }) => {
-  const [mode, setMode] = useState<'constant-pe' | 'peg-1'>(defaultMode);
-  const [peMultiple, setPeMultiple] = useState(defaultPE);
-  const [useLogScale, setUseLogScale] = useState(defaultLogScale);
+  // Fixed settings - no user controls
+  const mode: 'constant-pe' | 'peg-1' = 'peg-1';
+  const peMultiple = 15;
+  const useLogScale = false;
   const [selectedRange, setSelectedRange] = useState('5years');
-  const [epsSource, setEpsSource] = useState<'without-nri' | 'gaap'>('without-nri');
+  const epsSource: 'without-nri' | 'gaap' = 'without-nri';
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -268,14 +269,9 @@ const PeterLynchChartNew: React.FC<Props> = ({
       let currentPeMultiple: number | undefined;
       let currentGrowthRate: number | undefined;
 
-      if (currentEPS > 0) {
-        if (mode === 'constant-pe') {
-          fairValue = currentEPS * peMultiple;
-          currentPeMultiple = peMultiple;
-        } else if (mode === 'peg-1' && growthRate !== null) {
-          fairValue = currentEPS * growthRate;
-          currentGrowthRate = growthRate;
-        }
+      if (currentEPS > 0 && growthRate !== null) {
+        fairValue = currentEPS * growthRate;
+        currentGrowthRate = growthRate;
       }
 
       const deviation = fairValue ? (pricePoint.adjClose / fairValue - 1) * 100 : undefined;
@@ -285,7 +281,7 @@ const PeterLynchChartNew: React.FC<Props> = ({
         price: pricePoint.adjClose,
         epsTTM: currentEPS,
         fairValue,
-        mode: mode === 'constant-pe' ? `P/E ${peMultiple}` : `PEG=1 (${growthRate?.toFixed(1)}%)`,
+        mode: `PEG=1 (${growthRate?.toFixed(1)}%)`,
         peMultiple: currentPeMultiple,
         growthRate: currentGrowthRate,
         deviation
@@ -365,90 +361,32 @@ const PeterLynchChartNew: React.FC<Props> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Time Range */}
-          <div className="space-y-2">
-            <Label>Zeitraum</Label>
-            <div className="flex gap-1">
-              {TIME_RANGES.map(range => (
-                <Button
-                  key={range.value}
-                  variant={selectedRange === range.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedRange(range.value)}
-                >
-                  {range.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Mode Switch */}
-          <div className="space-y-2">
-            <Label>Modus</Label>
-            <Select value={mode} onValueChange={(value: 'constant-pe' | 'peg-1') => setMode(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="constant-pe">P/E konstant</SelectItem>
-                <SelectItem value="peg-1">PEG = 1 (GuruFocus)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* P/E Multiple (only in constant-pe mode) */}
-          {mode === 'constant-pe' && (
-            <div className="space-y-2">
-              <Label>P/E Multiple</Label>
-              <Input
-                type="number"
-                min="5"
-                max="30"
-                step="0.5"
-                value={peMultiple}
-                onChange={(e) => setPeMultiple(parseFloat(e.target.value) || 15)}
-                className="w-full"
-              />
-            </div>
-          )}
-
-          {/* Growth Rate Display (PEG mode) */}
-          {mode === 'peg-1' && (
-            <div className="space-y-2">
-              <Label>Wachstumsrate (5J-CAGR)</Label>
-              <div className="p-2 bg-muted rounded-md text-sm">
-                {growthRate !== null ? `${growthRate.toFixed(1)}%` : 'Nicht berechenbar'}
-              </div>
-            </div>
-          )}
-
-          {/* Log Scale Toggle */}
-          <div className="space-y-2">
-            <Label>Logarithmische Skala</Label>
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={useLogScale}
-                onCheckedChange={setUseLogScale}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* EPS Source (optional) */}
+        {/* Time Range Controls */}
         <div className="space-y-2">
-          <Label>EPS-Quelle</Label>
-          <Select value={epsSource} onValueChange={(value: 'without-nri' | 'gaap') => setEpsSource(value)}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="without-nri">EPS (ohne NRI)</SelectItem>
-              <SelectItem value="gaap">EPS (GAAP, diluted)</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label>Zeitraum</Label>
+          <div className="flex gap-1">
+            {TIME_RANGES.map(range => (
+              <Button
+                key={range.value}
+                variant={selectedRange === range.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedRange(range.value)}
+              >
+                {range.label}
+              </Button>
+            ))}
+          </div>
         </div>
+        
+        {/* Growth Rate Display */}
+        {growthRate !== null && (
+          <div className="space-y-2">
+            <Label>Wachstumsrate (5J-CAGR)</Label>
+            <div className="p-2 bg-muted rounded-md text-sm">
+              {growthRate.toFixed(1)}%
+            </div>
+          </div>
+        )}
 
         {/* Chart */}
         <div className="h-96">
@@ -505,18 +443,7 @@ const PeterLynchChartNew: React.FC<Props> = ({
                 dot={false}
                 name="Aktienkurs"
               />
-              {mode === 'constant-pe' && (
-                <Line 
-                  type="monotone" 
-                  dataKey="fairValue" 
-                  stroke="hsl(var(--destructive))" 
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={false}
-                  name={`Earnings-Line (P/E ${peMultiple})`}
-                />
-              )}
-              {mode === 'peg-1' && growthRate !== null && (
+              {growthRate !== null && (
                 <Line 
                   type="monotone" 
                   dataKey="fairValue" 
@@ -532,7 +459,7 @@ const PeterLynchChartNew: React.FC<Props> = ({
         </div>
 
         {/* PEG Mode Limitations */}
-        {mode === 'peg-1' && growthRate === null && (
+        {growthRate === null && (
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
@@ -577,9 +504,6 @@ const PeterLynchChartNew: React.FC<Props> = ({
           <p>
             <strong>Interpretation:</strong> Liegt der Aktienkurs unter der Earnings-Line, ist die Aktie tendenziell unterbewertet. 
             Liegt er darüber, ist sie tendenziell überbewertet.
-          </p>
-          <p>
-            <strong>P/E-konstant:</strong> Verwendet einen festen P/E-Multiple zur Bewertung.
           </p>
           <p>
             <strong>PEG=1 (GuruFocus):</strong> Der P/E-Multiple entspricht der 5-Jahres-Wachstumsrate {isBank(ticker) ? 'des Buchwertes je Aktie' : 'des EBITDA je Aktie'}.
