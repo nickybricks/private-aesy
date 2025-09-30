@@ -298,11 +298,11 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
   );
   
   return (
-    <div className="animate-fade-in">
+    <Card className="buffett-card p-6 animate-fade-in">
       <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
       
       {hasConvertedMetrics && (
-        <Card className="p-4 mb-4 bg-yellow-50 border-yellow-200">
+        <div className="p-4 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="flex items-start gap-2">
             <AlertTriangle className="text-yellow-500 h-5 w-5 mt-0.5" />
             <div>
@@ -314,7 +314,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
               </p>
             </div>
           </div>
-        </Card>
+        </div>
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -324,140 +324,18 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       </div>
       
       {historicalData && historicalData.revenue && historicalData.revenue.length > 0 && (
-        <Card className="buffett-card p-6">
+        <div className="border-t pt-6 mt-2">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Finanzielle Entwicklung (10 Jahre)</h3>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
-                  <HelpCircle size={16} className="text-gray-600" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="max-w-xs p-3">
-                <div className="space-y-2">
-                  <p className="font-medium">Warum diese Daten wichtig sind:</p>
-                  <p>Warren Buffett analysiert die finanzielle Entwicklung über mindestens 10 Jahre, 
-                     um langfristige Trends und die Beständigkeit des Geschäftsmodells zu bewerten.</p>
-                  <p className="mt-1">Besonders achtet er auf:</p>
-                  <ul className="list-disc pl-4 space-y-1 text-sm">
-                    <li>Stabiles Umsatzwachstum</li>
-                    <li>Steigende Gewinne</li>
-                    <li>Kontinuierlichen Anstieg des Gewinns pro Aktie</li>
-                  </ul>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-          
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Jahr</TableHead>
-                <TableHead className="text-right">Umsatz</TableHead>
-                <TableHead className="text-right">Gewinn</TableHead>
-                <TableHead className="text-right">EPS</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {historicalData.revenue.map((item, i) => {
-                const epsDataForYear = historicalData.eps && historicalData.eps.find(e => e.year === item.year);
-                const earningsDataForYear = historicalData.earnings && historicalData.earnings.find(e => e.year === item.year);
-                
-                let revenueValue = item.value;
-                let earningsValue = earningsDataForYear?.value;
-                let epsValue = epsDataForYear?.value;
-                
-                const originalRevenueValue = item.originalValue || item.value;
-                const originalEarningsValue = earningsDataForYear?.originalValue || earningsDataForYear?.value;
-                const originalEpsValue = epsDataForYear?.originalValue || epsDataForYear?.value;
-                
-                const showOriginalRevenue = item.originalValue && item.originalCurrency && 
-                                           shouldConvertCurrency(currency, item.originalCurrency);
-                                           
-                const showOriginalEarnings = earningsDataForYear?.originalValue && 
-                                            earningsDataForYear.originalCurrency && 
-                                            shouldConvertCurrency(currency, earningsDataForYear.originalCurrency);
-                                            
-                const showOriginalEps = epsDataForYear?.originalValue && 
-                                       epsDataForYear.originalCurrency && 
-                                       shouldConvertCurrency(currency, epsDataForYear.originalCurrency);
-                
-                return (
-                  <TableRow key={item.year || i}>
-                    <TableCell>{item.year || 'N/A'}</TableCell>
-                    <TableCell className="text-right">
-                      {typeof revenueValue === 'number' && revenueValue !== 0 
-                        ? (showOriginalRevenue 
-                           ? (
-                              <ClickableTooltip
-                                content={`Originalwert: ${formatScaledNumber(originalRevenueValue, item.originalCurrency || currency)}`}
-                              >
-                                <span className="underline decoration-dotted cursor-help">
-                                  {formatScaledNumber(revenueValue, currency)}
-                                </span>
-                              </ClickableTooltip>
-                            )
-                           : formatScaledNumber(revenueValue, currency))
-                        : 'N/A'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {earningsValue && 
-                      typeof earningsValue === 'number' && 
-                      earningsValue !== 0
-                        ? (showOriginalEarnings
-                           ? (
-                              <ClickableTooltip
-                                content={`Originalwert: ${formatScaledNumber(originalEarningsValue, earningsDataForYear.originalCurrency || currency)}`}
-                              >
-                                <span className="underline decoration-dotted cursor-help">
-                                  {formatScaledNumber(earningsValue, currency)}
-                                </span>
-                              </ClickableTooltip>
-                            )
-                           : formatScaledNumber(earningsValue, currency))
-                        : 'N/A'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {epsValue && 
-                      typeof epsValue === 'number' && 
-                      epsValue !== 0
-                        ? (showOriginalEps
-                           ? (
-                              <ClickableTooltip
-                                content={`Originalwert: ${originalEpsValue.toLocaleString('de-DE', {
-                                  maximumFractionDigits: getCurrencyDecimalPlaces(epsDataForYear.originalCurrency || currency)
-                                })} ${epsDataForYear.originalCurrency || currency}`}
-                              >
-                                <span className="underline decoration-dotted cursor-help">
-                                  {epsValue.toFixed(decimalPlaces)} {currency}
-                                </span>
-                              </ClickableTooltip>
-                            )
-                           : `${epsValue.toFixed(decimalPlaces)} ${currency}`)
-                        : 'N/A'}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-          
-          <div className="mt-4 text-sm text-buffett-subtext">
-            <p>Hinweis: 'N/A' bedeutet, dass keine Daten verfügbar sind.</p>
-            {hasConvertedMetrics && (
-              <p className="mt-2 font-medium text-buffett-subtext">
-                Diese Werte wurden in {currency} umgerechnet, um eine bessere Vergleichbarkeit zu gewährleisten.
-              </p>
-            )}
+...
             <p className="mt-2">
               <span className="font-medium">EPS (Earnings Per Share):</span> Der Gewinn pro Aktie zeigt, wie viel Gewinn auf eine einzelne Aktie entfällt.
               Buffett achtet besonders auf einen stabilen oder wachsenden EPS über viele Jahre.
             </p>
           </div>
-        </Card>
+        </div>
       )}
-    </div>
+    </Card>
   );
 };
 
