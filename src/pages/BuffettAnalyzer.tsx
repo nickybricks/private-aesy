@@ -104,7 +104,7 @@ const IndexContent: React.FC = () => {
                 <StockQuoteHeader />
                 
                 {/* Stock Chart Section */}
-                <Card className="p-6 h-full">
+                <Card className="p-6">
                   <StockChart 
                     symbol={stockInfo.ticker}
                     currency={stockInfo.currency}

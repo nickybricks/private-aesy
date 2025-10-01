@@ -312,6 +312,33 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
     return historicalData.filter(item => item.date >= cutoffDate);
   };
 
+  const calculatePerformanceStats = () => {
+    const filteredData = getFilteredData();
+    if (filteredData.length === 0) return null;
+
+    const currentPrice = filteredData[filteredData.length - 1]?.price;
+    const startPrice = filteredData[0]?.price;
+    
+    if (!currentPrice || !startPrice) return null;
+
+    // Calculate performance
+    const performance = ((currentPrice - startPrice) / startPrice) * 100;
+
+    // Calculate high and low
+    const prices = filteredData.map(d => d.price);
+    const low = Math.min(...prices);
+    const high = Math.max(...prices);
+
+    const aboveLow = ((currentPrice - low) / low) * 100;
+    const belowHigh = ((currentPrice - high) / high) * 100;
+
+    return {
+      performance,
+      aboveLow,
+      belowHigh
+    };
+  };
+
   if (isLoading) {
     return (
       <div className="w-full h-[400px] flex items-center justify-center">
@@ -334,27 +361,58 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
   }
 
   const filteredData = getFilteredData();
+  const performanceStats = calculatePerformanceStats();
   
   // Only include intrinsic value line if it's a valid number
   const showIntrinsicLine = intrinsicValue !== null && 
                            intrinsicValue !== undefined && 
                            !isNaN(Number(intrinsicValue));
 
+  // Get readable range label
+  const getRangeLabel = () => {
+    const range = TIME_RANGES.find(r => r.value === selectedRange);
+    return range?.value || selectedRange;
+  };
+
   return (
     <div className="w-full space-y-4">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {TIME_RANGES.map((range) => (
           <Button
             key={range.value}
             variant={selectedRange === range.value ? 'default' : 'outline'}
+            size="sm"
             onClick={() => setSelectedRange(range.value)}
+            className="text-sm"
           >
             {range.label}
           </Button>
         ))}
       </div>
       
-      <div className="w-full h-[600px] overflow-hidden">
+      {/* Performance Stats */}
+      {performanceStats && (
+        <div className="flex flex-wrap gap-4 text-sm">
+          <div>
+            <span className="font-medium">{getRangeLabel()}: </span>
+            <span className={performanceStats.performance >= 0 ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
+              {performanceStats.performance >= 0 ? '+' : ''}{performanceStats.performance.toFixed(2)}%
+            </span>
+          </div>
+          <div>
+            <span className="font-medium">Above Low: </span>
+            <span className="text-success font-semibold">+{performanceStats.aboveLow.toFixed(2)}%</span>
+          </div>
+          <div>
+            <span className="font-medium">Below High: </span>
+            <span className={performanceStats.belowHigh >= 0 ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
+              {performanceStats.belowHigh.toFixed(2)}%
+            </span>
+          </div>
+        </div>
+      )}
+      
+      <div className="w-full h-[300px] md:h-[400px] overflow-hidden">
         <ChartContainer
           config={{
             line1: { theme: { light: 'hsl(221, 83%, 53%)', dark: 'hsl(221, 83%, 70%)' } },
@@ -362,8 +420,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
             area: { theme: { light: 'hsl(221, 83%, 95%)', dark: 'hsl(221, 83%, 30%)' } },
           }}
         >
-          <ResponsiveContainer width="100%" height={580}>
-            <ComposedChart data={getFilteredData()} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={getFilteredData()} margin={{ top: 10, right: 10, left: 0, bottom: 30 }}>
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>

@@ -111,7 +111,7 @@ const StockQuoteHeader: React.FC = () => {
   };
 
   return (
-    <Card className="p-6 h-full">
+    <Card className="p-6">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-4">
           {/* Company Logo Placeholder - can be added later */}
