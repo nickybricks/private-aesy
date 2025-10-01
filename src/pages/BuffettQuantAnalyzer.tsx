@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
 import MarketSelector from '@/components/MarketSelector';
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
+import { Shell, ShellHeader, ShellTitle, ShellDescription, ShellContent } from '@/components/layout/Shell';
 import { analyzeMarket, QuantAnalysisResult, marketOptions } from '@/api/quantAnalyzerApi';
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -154,111 +154,128 @@ const BuffettQuantAnalyzer = () => {
   };
 
   return (
-    <main className="flex-1 overflow-auto bg-background">
-        <div className="h-full">
-          {/* Main Content Area */}
-          <div className="p-6 w-full">
+    <main id="main-content" className="flex-1 overflow-auto bg-background">
+      <Shell>
+        <ShellHeader>
+          <ShellTitle>Markt-Scanner</ShellTitle>
+          <ShellDescription>Analysiere hunderte Aktien nach quantitativen Kriterien</ShellDescription>
+        </ShellHeader>
 
-      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 mb-8">
-        <div className="flex items-center mb-4">
-          <Calculator className="h-6 w-6 text-buffett-blue mr-2" />
-          <h2 className="text-xl font-semibold">Marktanalyse</h2>
-        </div>
-        
-        <div className="space-y-6">
-          {/* Marktauswahl */}
-          <MarketSelector 
-            selectedMarket={selectedMarket} 
-            onMarketChange={handleMarketChange} 
-          />
-          
-          {/* Sektorenfilter */}
-          <div className="mb-6">
-            <Label htmlFor="sector" className="block text-sm font-medium mb-2">Sektor / Branche</Label>
-            <Select value={selectedSector} onValueChange={handleSectorChange}>
-              <SelectTrigger className="w-full md:w-80" id="sector">
-                <SelectValue placeholder="Sektor auswählen" />
-              </SelectTrigger>
-              <SelectContent>
-                {sectors.map(sector => (
-                  <SelectItem key={sector.id} value={sector.id}>
-                    {sector.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-gray-500 mt-2">
-              Schränken Sie die Analyse auf einen bestimmten Sektor ein.
-            </p>
+        <ShellContent>
+          <div className="bg-card p-6 rounded-2xl shadow-sm border border-border mb-8">
+            <div className="flex items-center gap-2 mb-6">
+              <Calculator className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold">Marktanalyse-Konfiguration</h2>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Marktauswahl */}
+              <div className="space-y-3">
+                <Label htmlFor="market" className="text-sm font-medium">Markt auswählen</Label>
+                <MarketSelector 
+                  selectedMarket={selectedMarket} 
+                  onMarketChange={handleMarketChange} 
+                />
+                <p className="text-xs text-muted-foreground">
+                  Analysiert die liquidesten Titel des ausgewählten Index
+                </p>
+              </div>
+              
+              {/* Sektorenfilter */}
+              <div className="space-y-3">
+                <Label htmlFor="sector" className="text-sm font-medium">Sektor (optional)</Label>
+                <Select value={selectedSector} onValueChange={handleSectorChange}>
+                  <SelectTrigger className="w-full md:w-80" id="sector">
+                    <SelectValue placeholder="Sektor auswählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sectors.map(sector => (
+                      <SelectItem key={sector.id} value={sector.id}>
+                        {sector.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Schränke die Suche auf eine Branche ein
+                </p>
+              </div>
+              
+              {/* Anzahl der Aktien festlegen */}
+              <div className="space-y-3">
+                <Label htmlFor="stockLimit" className="text-sm font-medium">Anzahl Aktien</Label>
+                <Select value={stockLimit.toString()} onValueChange={handleStockLimitChange}>
+                  <SelectTrigger className="w-full md:w-80" id="stockLimit">
+                    <SelectValue placeholder="Anzahl auswählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stockLimitOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value.toString()}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Geschätzte Dauer:</span>
+                  <Badge variant="secondary" className="font-mono">{estimatedTime}</Badge>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          {/* Anzahl der Aktien festlegen */}
-          <div className="mb-6">
-            <Label htmlFor="stockLimit" className="block text-sm font-medium mb-2">Anzahl der Aktien</Label>
-            <Select value={stockLimit.toString()} onValueChange={handleStockLimitChange}>
-              <SelectTrigger className="w-full md:w-80" id="stockLimit">
-                <SelectValue placeholder="Anzahl auswählen" />
-              </SelectTrigger>
-              <SelectContent>
-                {stockLimitOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value.toString()}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-gray-500 mt-2 flex items-center">
-              <Clock className="h-4 w-4 mr-1 inline" />
-              Geschätzte Analysezeit: <span className="font-medium ml-1">{estimatedTime}</span>
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              Die Analyse läuft in Batches mit Wartezeiten, um API-Limits zu umgehen.
-            </p>
-          </div>
-          
-          <div>
+
+          {/* Sticky CTA Bar */}
+          <div className="sticky bottom-0 bg-card border-t border-border pt-4 pb-6 -mx-8 px-8 mt-6">
             <Button 
+              size="lg"
               onClick={() => stockLimit >= 1000 ? setShowWarningDialog(true) : startAnalysis()} 
-              disabled={isLoading}
-              className="bg-buffett-blue hover:bg-blue-700"
+              disabled={isLoading || !selectedMarket}
+              className="w-full sm:w-auto min-w-[200px]"
             >
-              <BarChart3 className="mr-2 h-4 w-4" />
-              {isLoading ? "Analysiere..." : "Markt analysieren"}
+              {isLoading ? (
+                <>
+                  <Clock className="mr-2 h-4 w-4 animate-spin" />
+                  Analysiere...
+                </>
+              ) : (
+                <>
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Jetzt scannen
+                </>
+              )}
             </Button>
-            <p className="text-sm text-gray-500 mt-2">
-              Die Analyse läuft in mehreren Durchgängen mit Wartezeiten zwischen den Batches.
+          </div>
+
+          {/* Fortschrittsanzeige während der Analyse */}
+          {isLoading && (
+            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border mb-8">
+              <div className="mb-4 flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-medium">{currentOperation}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Batch-Verarbeitung mit Wartezeiten zwischen API-Calls
+                  </p>
+                </div>
+                <span className="text-2xl font-bold text-primary">{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-3" />
+            </div>
+          )}
+
+          {(hasAnalyzed || isLoading) && (
+            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
+              <QuantAnalysisTable results={results} isLoading={isLoading} />
+            </div>
+          )}
+
+          <div className="mt-8 bg-card p-6 rounded-2xl shadow-sm border border-border">
+            <h2 className="text-xl font-semibold mb-4">Über den Markt-Scanner</h2>
+            <p className="text-muted-foreground mb-4">
+              Der Aesy Markt-Scanner bewertet Aktien ausschließlich auf Basis von harten Finanzkennzahlen, 
+              gemäß bewährten Investmentprinzipien. Für jedes der 12 Kriterien wird 1 Punkt vergeben, 
+              wenn die Aktie den Zielwert erreicht.
             </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Fortschrittsanzeige während der Analyse */}
-      {isLoading && (
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 mb-8">
-          <div className="mb-2 flex justify-between">
-            <span className="text-sm font-medium">{currentOperation}</span>
-            <span className="text-sm font-medium">{progress}%</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-          <p className="text-xs text-gray-500 mt-2">
-            Die Analyse läuft in Batches von 50 Aktien mit 65 Sekunden Wartezeit zwischen den Batches.
-          </p>
-        </div>
-      )}
-
-      {(hasAnalyzed || isLoading) && (
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-          <QuantAnalysisTable results={results} isLoading={isLoading} />
-        </div>
-      )}
-
-      <div className="mt-8 bg-white p-6 rounded-lg shadow-md border border-gray-100">
-        <h2 className="text-xl font-semibold mb-4">Über den Boersen Analyzer</h2>
-        <p className="text-gray-600 mb-4">
-          Der Aesy Boersen Analyzer bewertet Aktien ausschließlich auf Basis von harten Finanzkennzahlen, 
-          gemäß bewährten Investmentprinzipien. Für jedes der 12 Kriterien wird 1 Punkt vergeben, 
-          wenn die Aktie den Zielwert erreicht.
-        </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -278,44 +295,37 @@ const BuffettQuantAnalyzer = () => {
               <li><strong>Innerer Wert mit 20% Sicherheitsmarge &gt; Aktienkurs</strong></li>
             </ul>
           </div>
+            
+            <div>
+              <h3 className="font-semibold mb-2 text-foreground">Bewertungslegende:</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-center">
+                  <Badge variant="success" className="mr-2">🟢 Kandidat</Badge>
+                  <span className="text-sm">Score 9-12: Starke Buffett-Kandidaten</span>
+                </li>
+                <li className="flex items-center">
+                  <Badge variant="warning" className="mr-2">🟡 Beobachten</Badge>
+                  <span className="text-sm">Score 6-8: Moderate Buffett-Konformität</span>
+                </li>
+                <li className="flex items-center">
+                  <Badge variant="danger" className="mr-2">🔴 Vermeiden</Badge>
+                  <span className="text-sm">Score &lt;6: Nicht Buffett-konform</span>
+                </li>
+              </ul>
+            </div>
+          </div>
           
-          <div>
-            <h3 className="font-semibold mb-2">Bewertungslegende:</h3>
-            <ul className="pl-6 text-gray-600 space-y-2">
-              <li className="flex items-center">
-                <Badge className="bg-green-100 text-green-800 mr-2">🟢 Kandidat</Badge>
-                <span>Score 9-12: Starke Buffett-Kandidaten</span>
-              </li>
-              <li className="flex items-center">
-                <Badge className="bg-yellow-100 text-yellow-800 mr-2">🟡 Beobachten</Badge>
-                <span>Score 6-8: Moderate Buffett-Konformität</span>
-              </li>
-              <li className="flex items-center">
-                <Badge className="bg-red-100 text-red-800 mr-2">🔴 Vermeiden</Badge>
-                <span>Score &lt;6: Nicht Buffett-konform</span>
-              </li>
-            </ul>
+          <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
+            <h3 className="font-semibold mb-2 text-primary">Batch-Verarbeitung</h3>
+            <p className="text-sm text-muted-foreground">
+              Um API-Limits zu umgehen, läuft die Analyse in Batches von 50 Aktien. 
+              Zwischen den Batches wird 65 Sekunden gewartet, um das 300-Calls/Minute-Limit zu respektieren. 
+              Dies ermöglicht die Analyse von deutlich mehr Aktien als zuvor.
+            </p>
           </div>
         </div>
-        
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h3 className="font-semibold mb-2 text-blue-800">Batch-Verarbeitung</h3>
-          <p className="text-blue-700 text-sm">
-            Um API-Limits zu umgehen, läuft die Analyse in Batches von 50 Aktien. 
-            Zwischen den Batches wird 65 Sekunden gewartet, um das 300-Calls/Minute-Limit zu respektieren. 
-            Dies ermöglicht die Analyse von deutlich mehr Aktien als zuvor.
-          </p>
-        </div>
-      </div>
-
-      <footer className="mt-12 pt-8 border-t border-gray-200 text-buffett-subtext text-sm text-center">
-        <p>
-          Aesy Boersen Analyzer - Quantitative Analyse nach bewährten Prinzipien
-        </p>
-        <p className="mt-1 text-xs">
-          Datenquelle: Financial Modeling Prep API
-        </p>
-      </footer>
+      </ShellContent>
+    </Shell>
 
       {/* Warnungsdialog für große Analysen */}
       <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
@@ -326,12 +336,12 @@ const BuffettQuantAnalyzer = () => {
               Sie haben {stockLimit} Aktien zur Analyse ausgewählt. Dies wird in mehreren Batches verarbeitet 
               und kann {estimatedTime} dauern.
               
-              <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200 flex items-center">
-                <AlertCircle className="text-yellow-500 h-5 w-5 mr-2" />
-                <span>Die Analyse läuft automatisch in Batches mit Wartezeiten zwischen den API-Calls.</span>
+              <div className="mt-3 p-3 bg-warning/10 rounded-lg border border-warning/20 flex items-start gap-2">
+                <AlertCircle className="text-warning h-5 w-5 mt-0.5 shrink-0" />
+                <span className="text-sm">Die Analyse läuft automatisch in Batches mit Wartezeiten zwischen den API-Calls.</span>
               </div>
               
-              <div className="mt-3">Möchten Sie mit der Analyse fortfahren?</div>
+              <div className="mt-3 text-sm">Möchten Sie mit der Analyse fortfahren?</div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -340,9 +350,7 @@ const BuffettQuantAnalyzer = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-          </div>
-        </div>
-      </main>
+    </main>
   );
 };
 

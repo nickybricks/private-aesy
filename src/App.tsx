@@ -4,8 +4,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import LeftNavigation from "./components/LeftNavigation";
 import AppHeader from "./components/AppHeader";
-import Index from "./pages/Index";
-import AuthPage from "./pages/AuthPage";
+import LandingPage from './pages/LandingPage';
+import Dashboard from './pages/Dashboard';
+import AuthPage from './pages/AuthPage';
+import ProtectedRoute from "./components/ProtectedRoute";
 import BuffettAnalyzer from "./pages/BuffettAnalyzer";
 import BuffettQuantAnalyzer from "./pages/BuffettQuantAnalyzer";
 import Watchlists from "./pages/Watchlists";
@@ -59,13 +61,30 @@ const App = () => {
           )}
           
           <Routes>
-            <Route path="/" element={<BuffettAnalyzer />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/landing" element={<LandingPage />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/analyzer" element={<BuffettAnalyzer />} />
             <Route path="/quant" element={<BuffettQuantAnalyzer />} />
-            <Route path="/watchlists" element={<Watchlists />} />
-            <Route path="/watchlists/:id" element={<WatchlistDetail />} /> 
-            <Route path="/saved-analyses" element={<SavedAnalyses />} />
+            <Route path="/watchlists" element={
+              <ProtectedRoute>
+                <Watchlists />
+              </ProtectedRoute>
+            } />
+            <Route path="/watchlists/:watchlistId" element={
+              <ProtectedRoute>
+                <WatchlistDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/saved-analyses" element={
+              <ProtectedRoute>
+                <SavedAnalyses />
+              </ProtectedRoute>
+            } />
             <Route path="/admin" element={
               <AdminRoute>
                 <AdminDashboard />

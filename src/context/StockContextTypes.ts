@@ -86,6 +86,8 @@ export interface StockContextType {
   hasCriticalDataMissing: boolean;
   dcfData?: DCFData;
   predictabilityStars: PredictabilityResult | null;
+  enableDeepResearch: boolean;
+  setEnableDeepResearch: (enabled: boolean) => void;
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string, enableDeepResearch?: boolean) => Promise<void>;

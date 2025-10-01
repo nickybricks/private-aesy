@@ -143,15 +143,10 @@ const Watchlists: React.FC = () => {
             )}
           </div>
 
-          {/* Tabs */}
+          {/* Page Title */}
           <div className="mb-6">
-            <div className="border-b border-border">
-              <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                <button className="border-primary text-primary whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium">
-                  MEINE WATCHLISTS
-                </button>
-              </nav>
-            </div>
+            <h1 className="text-3xl font-semibold tracking-tight">Watchlists</h1>
+            <p className="text-muted-foreground mt-2">Organisiere und verfolge deine Favoriten.</p>
           </div>
 
           {/* Watchlists Grid */}
