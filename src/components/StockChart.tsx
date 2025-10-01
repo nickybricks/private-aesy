@@ -362,16 +362,31 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
 
   const filteredData = getFilteredData();
   const performanceStats = calculatePerformanceStats();
-  
-  // Only include intrinsic value line if it's a valid number
-  const showIntrinsicLine = intrinsicValue !== null && 
-                           intrinsicValue !== undefined && 
-                           !isNaN(Number(intrinsicValue));
 
   // Get readable range label
   const getRangeLabel = () => {
     const range = TIME_RANGES.find(r => r.value === selectedRange);
     return range?.value || selectedRange;
+  };
+
+  // Format X-axis based on selected range
+  const formatXAxis = (date: Date) => {
+    switch (selectedRange) {
+      case '5D':
+      case '1M':
+        return format(date, 'dd.MM', { locale: de });
+      case '3M':
+      case 'YTD':
+      case '1Y':
+        return format(date, 'MMM yy', { locale: de });
+      case '3Y':
+      case '5Y':
+      case '10Y':
+      case 'MAX':
+        return format(date, 'yyyy', { locale: de });
+      default:
+        return format(date, 'dd.MM.yy', { locale: de });
+    }
   };
 
   return (
@@ -431,17 +446,18 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="date"
-                tickFormatter={(date) => format(new Date(date), 'dd.MM.yy', { locale: de })}
-                height={70}
-                tickMargin={30}
+                tickFormatter={(date) => formatXAxis(new Date(date))}
+                height={50}
+                tickMargin={10}
               />
               <YAxis
+                orientation="right"
                 domain={['auto', 'auto']}
                 tickFormatter={(value) => {
                   if (typeof value === 'number') {
-                    return `${value.toFixed(2)} ${currency}`;
+                    return value.toFixed(2);
                   }
-                  return `${value} ${currency}`;
+                  return value.toString();
                 }}
               />
               <Tooltip
@@ -458,11 +474,6 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                             ? payload[0].value.toFixed(2) 
                             : payload[0].value} {currency}
                         </p>
-                        {dataPoint.intrinsicValue && !isNaN(Number(dataPoint.intrinsicValue)) && (
-                          <p className="text-sm text-green-700">
-                            Innerer Wert: {Number(dataPoint.intrinsicValue).toFixed(2)} {currency}
-                          </p>
-                        )}
                       </div>
                     );
                   }
@@ -475,15 +486,6 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                 stroke="hsl(221, 83%, 53%)"
                 fillOpacity={1}
                 fill="url(#colorPrice)"
-              />
-              <Line
-                type="monotone"
-                dataKey="intrinsicValue"
-                stroke="hsl(142, 76%, 36%)"
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                dot={false}
-                connectNulls={false}
               />
             </ComposedChart>
           </ResponsiveContainer>
