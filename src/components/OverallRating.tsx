@@ -314,11 +314,6 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
         </div>
       )}
       
-      <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-        Gesamtbewertung {analysisMode === 'standard' && '(Standard-Analyse)'}
-        <RatingExplanation rating={buffettAnalysis.rating} />
-      </h2>
-      
       {/* Three Metrics Section */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         <QualityMetricsCard 
