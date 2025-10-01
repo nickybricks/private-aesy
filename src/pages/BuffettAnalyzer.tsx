@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import StockHeader from '@/components/StockHeader';
 import StockQuoteHeader from '@/components/StockQuoteHeader';
-import StockChartSection from '@/components/StockChartSection';
 import { StockProvider, useStock } from '@/context/StockContext';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
@@ -94,11 +93,8 @@ const IndexContent: React.FC = () => {
             
             <ErrorAlert />
             
-            {/* Two-column layout for Stock Quote Header and Chart */}
-            <div className="flex flex-col lg:flex-row gap-6">
-              <StockQuoteHeader />
-              <StockChartSection />
-            </div>
+            {/* New Stock Quote Header - Left side, half width */}
+            <StockQuoteHeader />
             
             <RatingSection />
             
