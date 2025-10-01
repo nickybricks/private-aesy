@@ -37,6 +37,7 @@ interface ChartData {
 }
 
 const TIME_RANGES = [
+  { label: '1T', value: '1D' },
   { label: '5T', value: '5D' },
   { label: '1M', value: '1M' },
   { label: '3M', value: '3M' },
@@ -279,6 +280,9 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
     let cutoffDate = new Date();
     
     switch (selectedRange) {
+      case '1D':
+        cutoffDate.setDate(now.getDate() - 1);
+        break;
       case '5D':
         cutoffDate.setDate(now.getDate() - 5);
         break;
@@ -372,6 +376,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
   // Format X-axis based on selected range
   const formatXAxis = (date: Date) => {
     switch (selectedRange) {
+      case '1D':
       case '5D':
         return format(date, 'HH:mm', { locale: de });
       case '1M':
