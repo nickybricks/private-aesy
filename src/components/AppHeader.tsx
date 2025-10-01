@@ -17,33 +17,40 @@ const AppHeader: React.FC = () => {
   };
   
   return (
-    <header className="fixed top-0 left-0 md:left-[280px] right-0 z-50 h-18 glass-header">
-      <div className="h-full px-6 flex items-center gap-4">
-        {/* Mobile Menu Toggle */}
-        <Button
-          variant="ghost" 
-          size="icon"
-          onClick={toggleMobileMenu}
-          className="md:hidden shrink-0 -ml-2"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        
-        {/* Logo - Always visible, positioned at very left */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-sm">
-            <span className="text-primary-foreground font-semibold text-lg">A</span>
+    <header className="fixed top-0 left-0 right-0 z-50 h-18 glass-header">
+      <div className="h-full flex items-center">
+        {/* Left section: Logo area (280px on desktop to match navigation) */}
+        <div className="w-full md:w-[280px] px-6 flex items-center gap-3 shrink-0">
+          {/* Mobile Menu Toggle */}
+          <Button
+            variant="ghost" 
+            size="icon"
+            onClick={toggleMobileMenu}
+            className="md:hidden shrink-0 -ml-2"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-sm">
+              <span className="text-primary-foreground font-semibold text-lg">A</span>
+            </div>
+            <span className="text-lg font-semibold tracking-tight">Aesy</span>
           </div>
-          <span className="text-lg font-semibold tracking-tight">Aesy</span>
         </div>
 
-        {/* Centered Search Field */}
-        <div className="flex-1 max-w-2xl mx-auto">
-          <StockSearch onSearch={handleStockSearch} isLoading={isLoading} compact />
+        {/* Right section: Centered Search Field (hidden on mobile, shown on desktop) */}
+        <div className="hidden md:flex flex-1 px-6 justify-center">
+          <div className="w-full max-w-2xl">
+            <StockSearch onSearch={handleStockSearch} isLoading={isLoading} compact />
+          </div>
         </div>
-        
-        {/* Spacer for balance - Desktop only */}
-        <div className="hidden md:block w-[120px]"></div>
+      </div>
+      
+      {/* Mobile Search Field - Below header content */}
+      <div className="md:hidden px-6 pb-3">
+        <StockSearch onSearch={handleStockSearch} isLoading={isLoading} compact />
       </div>
     </header>
   );
