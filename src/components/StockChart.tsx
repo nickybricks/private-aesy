@@ -416,17 +416,17 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         <div className="flex flex-wrap gap-4 text-sm">
           <div>
             <span className="font-medium">{getRangeLabel()}: </span>
-            <span className={performanceStats.performance >= 0 ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
+            <span className={performanceStats.performance >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
               {performanceStats.performance >= 0 ? '+' : ''}{performanceStats.performance.toFixed(2)}%
             </span>
           </div>
           <div>
             <span className="font-medium">Above Low: </span>
-            <span className="text-success font-semibold">+{performanceStats.aboveLow.toFixed(2)}%</span>
+            <span className="text-green-600 font-semibold">+{performanceStats.aboveLow.toFixed(2)}%</span>
           </div>
           <div>
             <span className="font-medium">Below High: </span>
-            <span className={performanceStats.belowHigh >= 0 ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
+            <span className={performanceStats.belowHigh >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
               {performanceStats.belowHigh.toFixed(2)}%
             </span>
           </div>

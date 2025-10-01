@@ -145,7 +145,7 @@ const StockQuoteHeader: React.FC = () => {
             ${price?.toFixed(2) ?? 'N/A'}
           </span>
           {change !== null && changePercent !== null && (
-            <div className={`flex items-center gap-1 text-lg font-medium ${isPositive ? 'text-success' : 'text-destructive'}`}>
+            <div className={`flex items-center gap-1 text-lg font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
               {isPositive ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
               <span>
                 {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
