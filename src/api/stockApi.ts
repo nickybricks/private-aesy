@@ -1182,6 +1182,81 @@ export const getFinancialMetrics = async (ticker: string) => {
       });
     }
 
+    // P/E Ratio (KGV) Metrik
+    const pe = safeValue(latestRatios?.priceEarningsRatio);
+    if (pe !== null && pe > 0) {
+      metrics.push({
+        name: 'P/E-Verhältnis (KGV)',
+        value: pe,
+        formula: 'Aktienkurs ÷ Gewinn pro Aktie',
+        explanation: 'Verhältnis zwischen Aktienkurs und Gewinn pro Aktie',
+        threshold: 'Buffett bevorzugt < 25',
+        status: pe < 15 ? 'pass' : pe < 25 ? 'warning' : 'fail' as const,
+        isPercentage: false,
+        isMultiplier: true
+      });
+    }
+
+    // P/B Ratio (KBV) Metrik
+    const pb = safeValue(latestRatios?.priceToBookRatio);
+    if (pb !== null && pb > 0) {
+      metrics.push({
+        name: 'P/B-Verhältnis (KBV)',
+        value: pb,
+        formula: 'Aktienkurs ÷ Buchwert pro Aktie',
+        explanation: 'Verhältnis zwischen Marktpreis und Buchwert der Aktie',
+        threshold: 'Buffett bevorzugt < 3',
+        status: pb < 1.5 ? 'pass' : pb < 3 ? 'warning' : 'fail' as const,
+        isPercentage: false,
+        isMultiplier: true
+      });
+    }
+
+    // Volume Metrik
+    const volume = safeValue(quoteData?.volume);
+    if (volume !== null) {
+      metrics.push({
+        name: 'Handelsvolumen (Ø 3M)',
+        value: volume,
+        formula: 'Durchschnittliches Handelsvolumen der letzten 3 Monate',
+        explanation: 'Anzahl der gehandelten Aktien pro Tag im Durchschnitt',
+        threshold: 'Höheres Volumen zeigt bessere Liquidität',
+        status: volume > 1000000 ? 'pass' : volume > 100000 ? 'warning' : 'fail' as const,
+        isPercentage: false,
+        isMultiplier: false
+      });
+    }
+
+    // Average Volume Metrik
+    const avgVolume = safeValue(quoteData?.avgVolume);
+    if (avgVolume !== null) {
+      metrics.push({
+        name: 'Durchschnittliches Volumen',
+        value: avgVolume,
+        formula: 'Durchschnittliches Handelsvolumen',
+        explanation: 'Durchschnittliche Anzahl der täglich gehandelten Aktien',
+        threshold: 'Höheres Volumen zeigt bessere Liquidität',
+        status: avgVolume > 1000000 ? 'pass' : avgVolume > 100000 ? 'warning' : 'fail' as const,
+        isPercentage: false,
+        isMultiplier: false
+      });
+    }
+
+    // Enterprise Value Metrik
+    const enterpriseValue = safeValue(latestMetrics?.enterpriseValue);
+    if (enterpriseValue !== null) {
+      metrics.push({
+        name: 'Enterprise Value',
+        value: enterpriseValue,
+        formula: 'Marktkapitalisierung + Nettoschulden',
+        explanation: 'Gesamtwert des Unternehmens inklusive Schulden',
+        threshold: 'Vergleichswert für Bewertungsanalysen',
+        status: 'pass' as const,
+        isPercentage: false,
+        isMultiplier: false
+      });
+    }
+
     return {
       // Rendite-Kennzahlen
       eps,
