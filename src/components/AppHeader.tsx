@@ -17,7 +17,7 @@ const AppHeader: React.FC = () => {
   };
   
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-18 glass-header">
+    <header className="fixed top-0 left-0 md:left-[280px] right-0 z-50 h-18 glass-header">
       <div className="h-full px-6 flex items-center gap-4">
         {/* Mobile Menu Toggle */}
         <Button

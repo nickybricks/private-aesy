@@ -582,8 +582,8 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       )}
       
       
-      <form onSubmit={handleSubmit} className={compact ? "flex flex-row gap-2" : "flex flex-col xs:flex-row gap-2"}>
-        <div className="relative flex-1">
+      <form onSubmit={handleSubmit} className={compact ? "flex flex-col sm:flex-row gap-2" : "flex flex-col xs:flex-row gap-2"}>
+        <div className="relative flex-1 min-w-0">
           <Popover open={open} onOpenChange={(newState) => {
             if (!forceKeepOpen || newState) {
               setOpen(newState);
@@ -616,7 +616,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
               </div>
             </PopoverTrigger>
             <PopoverContent 
-              className="p-0 w-[300px] md:w-[400px] z-50" 
+              className="p-0 w-[calc(100vw-2rem)] sm:w-[400px] md:w-[500px] max-w-[500px] z-50" 
               align="start" 
               sideOffset={5}
               onInteractOutside={(e) => {
@@ -746,10 +746,10 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         </div>
         {/* Deep Research AI Analyse Toggle - Compact version */}
         {compact && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 justify-between sm:justify-start">
             <div className="flex items-center gap-1.5">
               <Brain className="h-3.5 w-3.5 text-primary" />
-              <Label htmlFor="deep-research-compact" className="text-xs font-medium cursor-pointer whitespace-nowrap">
+              <Label htmlFor="deep-research-compact" className="text-2xs sm:text-xs font-medium cursor-pointer whitespace-nowrap">
                 AI Analyse
               </Label>
             </div>
@@ -765,7 +765,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
         
         <Button 
           type="submit" 
-          className={compact ? "h-9 text-sm px-4 shrink-0" : "apple-button w-full xs:w-auto"}
+          className={compact ? "h-9 text-2xs sm:text-sm px-3 sm:px-4 shrink-0 w-full sm:w-auto" : "apple-button w-full xs:w-auto"}
           disabled={isLoading || !ticker.trim() || disabled}
         >
           {isLoading ? 'Analysiere...' : 'Analysieren'}
