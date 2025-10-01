@@ -3,6 +3,7 @@ import React from 'react';
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import StockHeader from '@/components/StockHeader';
+import StockQuoteHeader from '@/components/StockQuoteHeader';
 import { StockProvider, useStock } from '@/context/StockContext';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
@@ -91,6 +92,9 @@ const IndexContent: React.FC = () => {
             )}
             
             <ErrorAlert />
+            
+            {/* New Stock Quote Header - Left side, half width */}
+            <StockQuoteHeader />
             
             <RatingSection />
             
