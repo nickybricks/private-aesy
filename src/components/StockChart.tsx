@@ -312,6 +312,46 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
     return historicalData.filter(item => item.date >= cutoffDate);
   };
 
+  const calculatePerformanceStats = () => {
+    const filteredData = getFilteredData();
+    if (filteredData.length === 0) return null;
+
+    const currentPrice = filteredData[filteredData.length - 1].price;
+    const startPrice = filteredData[0].price;
+    const allPrices = filteredData.map(d => d.price);
+    const lowPrice = Math.min(...allPrices);
+    const highPrice = Math.max(...allPrices);
+
+    const periodChange = ((currentPrice - startPrice) / startPrice) * 100;
+    const aboveLow = ((currentPrice - lowPrice) / lowPrice) * 100;
+    const belowHigh = ((currentPrice - highPrice) / highPrice) * 100;
+
+    return {
+      periodChange,
+      aboveLow,
+      belowHigh
+    };
+  };
+
+  const formatXAxis = (date: Date) => {
+    switch (selectedRange) {
+      case '5D':
+      case '1M':
+        return format(date, 'dd.MM', { locale: de });
+      case '3M':
+      case '1Y':
+      case 'YTD':
+        return format(date, 'MMM yy', { locale: de });
+      case '3Y':
+      case '5Y':
+      case '10Y':
+      case 'MAX':
+        return format(date, 'yyyy', { locale: de });
+      default:
+        return format(date, 'dd.MM.yy', { locale: de });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full h-[400px] flex items-center justify-center">
@@ -334,25 +374,46 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
   }
 
   const filteredData = getFilteredData();
-  
-  // Only include intrinsic value line if it's a valid number
-  const showIntrinsicLine = intrinsicValue !== null && 
-                           intrinsicValue !== undefined && 
-                           !isNaN(Number(intrinsicValue));
+  const stats = calculatePerformanceStats();
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {TIME_RANGES.map((range) => (
           <Button
             key={range.value}
             variant={selectedRange === range.value ? 'default' : 'outline'}
+            size="sm"
             onClick={() => setSelectedRange(range.value)}
+            className="rounded-xl"
           >
             {range.label}
           </Button>
         ))}
       </div>
+      
+      {stats && (
+        <div className="flex flex-wrap gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground">{TIME_RANGES.find(r => r.value === selectedRange)?.label}: </span>
+            <span className={stats.periodChange >= 0 ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
+              {stats.periodChange >= 0 ? '+' : ''}{stats.periodChange.toFixed(2)}%
+            </span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Über Tief: </span>
+            <span className="text-success font-semibold">
+              +{stats.aboveLow.toFixed(2)}%
+            </span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Unter Hoch: </span>
+            <span className="text-destructive font-semibold">
+              {stats.belowHigh.toFixed(2)}%
+            </span>
+          </div>
+        </div>
+      )}
       
       <div className="w-full h-[600px] overflow-hidden">
         <ChartContainer
@@ -373,7 +434,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="date"
-                tickFormatter={(date) => format(new Date(date), 'dd.MM.yy', { locale: de })}
+                tickFormatter={(date) => formatXAxis(new Date(date))}
                 height={70}
                 tickMargin={30}
               />
@@ -414,18 +475,10 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
               <Area
                 type="monotone"
                 dataKey="price"
-                stroke="hsl(221, 83%, 53%)"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorPrice)"
-              />
-              <Line
-                type="monotone"
-                dataKey="intrinsicValue"
-                stroke="hsl(142, 76%, 36%)"
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                dot={false}
-                connectNulls={false}
               />
             </ComposedChart>
           </ResponsiveContainer>
