@@ -141,7 +141,7 @@ const IndexContent: React.FC = () => {
                       value="statistics" 
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
                     >
-                      Statistics
+                      Deep-Research Analyse
                     </TabsTrigger>
                     <TabsTrigger 
                       value="metrics" 
@@ -190,7 +190,7 @@ const IndexContent: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="statistics" className="mt-6">
-                    <div className="text-muted-foreground">Statistics content coming soon...</div>
+                    <CriteriaTabsSection />
                   </TabsContent>
                   
                   <TabsContent value="metrics" className="mt-6">
@@ -222,8 +222,6 @@ const IndexContent: React.FC = () => {
             
             {!isLoading && (
               <>
-                <CriteriaTabsSection />
-                
                 <DataMissingAlert />
               </>
             )}
