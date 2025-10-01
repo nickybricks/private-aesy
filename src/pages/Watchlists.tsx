@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +11,8 @@ import { Plus, MoreVertical, Edit, Trash2, TrendingUp, Calendar, Star } from 'lu
 import { useWatchlists } from '@/hooks/useWatchlists';
 import { useWatchlistStats } from '@/hooks/useWatchlistStats';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Shell, ShellHeader, ShellTitle, ShellDescription, ShellContent } from '@/components/layout/Shell';
+import { Section } from '@/components/layout/Section';
 
 const Watchlists: React.FC = () => {
   const navigate = useNavigate();
@@ -70,29 +71,35 @@ const Watchlists: React.FC = () => {
   if (loading) {
     return (
       <main className="flex-1 overflow-auto bg-background">
-          <div className="p-8 w-full">
-            <div className="mb-8">
-              <Skeleton className="h-8 w-64 mb-2" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-            <div className="grid gap-6">
+        <Shell>
+          <ShellHeader>
+            <Skeleton className="h-10 w-64 mb-2" />
+            <Skeleton className="h-5 w-96" />
+          </ShellHeader>
+          <ShellContent>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-32 w-full" />
+                <Skeleton key={i} className="h-40 w-full rounded-2xl" />
               ))}
             </div>
-          </div>
-        </main>
+          </ShellContent>
+        </Shell>
+      </main>
     );
   }
 
   return (
     <main className="flex-1 overflow-auto bg-background">
-      <div className="h-full">
-        <div className="p-6 w-full">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+      <Shell>
+        <ShellHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <ShellTitle>Watchlists</ShellTitle>
+              <ShellDescription>
+                Organisiere und verfolge deine Aktien in individuellen Listen
+              </ShellDescription>
+            </div>
 
-            {/* Create New Watchlist Dialog */}
             {watchlists.length > 0 && (
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
@@ -142,22 +149,17 @@ const Watchlists: React.FC = () => {
               </Dialog>
             )}
           </div>
+        </ShellHeader>
 
-          {/* Tabs */}
-          <div className="mb-6">
-            <div className="border-b border-border">
-              <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                <button className="border-primary text-primary whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium">
-                  MEINE WATCHLISTS
-                </button>
-              </nav>
-            </div>
-          </div>
+        <ShellContent>
 
-          {/* Watchlists Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {watchlists.map((watchlist) => (
-              <Card key={watchlist.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/watchlists/${watchlist.id}`)}>
+              <Card 
+                key={watchlist.id} 
+                className="transition-shadow cursor-pointer hover:shadow-lg" 
+                onClick={() => navigate(`/watchlists/${watchlist.id}`)}
+              >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-lg font-medium">{watchlist.name}</CardTitle>
                   <DropdownMenu>
@@ -189,22 +191,19 @@ const Watchlists: React.FC = () => {
                   )}
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>{stats[watchlist.id]?.stockCount || 0} Positionen</span>
-                    <span>Erstellt: {new Date(watchlist.created_at).toLocaleDateString('de-DE')}</span>
-                  </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    Aktualisiert: {new Date(watchlist.updated_at).toLocaleDateString('de-DE')}
+                    <span>{new Date(watchlist.created_at).toLocaleDateString('de-DE')}</span>
                   </div>
                 </CardContent>
               </Card>
             ))}
 
             {watchlists.length === 0 && (
-              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+              <Section variant="subtle" className="col-span-full flex flex-col items-center justify-center py-16 text-center">
                 <TrendingUp className="h-16 w-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-medium text-foreground mb-2">
+                <h2 className="text-xl font-medium mb-2">
                   Noch keine Watchlists erstellt
-                </h3>
-                <p className="text-muted-foreground mb-6 max-w-md">
+                </h2>
+                <p className="text-sm text-muted-foreground mb-6 max-w-md">
                   Erstelle deine erste Watchlist, um Aktien zu organisieren und zu verfolgen.
                 </p>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -224,9 +223,9 @@ const Watchlists: React.FC = () => {
                       </DialogHeader>
                       <div className="space-y-4 py-4">
                         <div>
-                          <Label htmlFor="create-name">Name</Label>
+                          <Label htmlFor="create-name-empty">Name</Label>
                           <Input
-                            id="create-name"
+                            id="create-name-empty"
                             value={formData.name}
                             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                             placeholder="z.B. Tech-Aktien"
@@ -234,9 +233,9 @@ const Watchlists: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="create-description">Beschreibung (Optional)</Label>
+                          <Label htmlFor="create-description-empty">Beschreibung (Optional)</Label>
                           <Textarea
-                            id="create-description"
+                            id="create-description-empty"
                             value={formData.description}
                             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                             placeholder="Kurze Beschreibung der Watchlist..."
@@ -253,7 +252,7 @@ const Watchlists: React.FC = () => {
                     </form>
                   </DialogContent>
                 </Dialog>
-              </div>
+              </Section>
             )}
           </div>
 
@@ -309,11 +308,13 @@ const Watchlists: React.FC = () => {
 
           {/* Stats */}
           {watchlists.length > 0 && (
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <Star className="h-5 w-5 text-primary" />
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-primary/10">
+                      <Star className="h-6 w-6 text-primary" />
+                    </div>
                     <div>
                       <p className="text-2xl font-bold">{watchlists.length}</p>
                       <p className="text-sm text-muted-foreground">Watchlists</p>
@@ -323,9 +324,11 @@ const Watchlists: React.FC = () => {
               </Card>
               
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <TrendingUp className="h-5 w-5 text-green-500" />
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-success/10">
+                      <TrendingUp className="h-6 w-6 text-success" />
+                    </div>
                     <div>
                       <p className="text-2xl font-bold">{getTotalStocks()}</p>
                       <p className="text-sm text-muted-foreground">Gesamte Positionen</p>
@@ -335,9 +338,11 @@ const Watchlists: React.FC = () => {
               </Card>
               
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-5 w-5 text-blue-500" />
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-info/10">
+                      <Calendar className="h-6 w-6 text-info" />
+                    </div>
                     <div>
                       <p className="text-2xl font-bold">{getActiveListsCount()}</p>
                       <p className="text-sm text-muted-foreground">Aktive Listen</p>
@@ -347,8 +352,8 @@ const Watchlists: React.FC = () => {
               </Card>
             </div>
           )}
-        </div>
-      </div>
+        </ShellContent>
+      </Shell>
     </main>
   );
 };
