@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import StockHeader from '@/components/StockHeader';
 import StockQuoteHeader from '@/components/StockQuoteHeader';
 import { StockProvider, useStock } from '@/context/StockContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
 import RatingSection from '@/components/RatingSection';
@@ -96,13 +97,109 @@ const IndexContent: React.FC = () => {
             {/* New Stock Quote Header - Left side, half width */}
             <StockQuoteHeader />
             
-            <RatingSection />
-            
-            <PredictabilityStarsSection />
-            
+            {/* Tab Navigation */}
             {stockInfo && (
-              <StockHeader stockInfo={stockInfo} />
+              <div className="mb-8">
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList className="w-full justify-start h-12 bg-transparent border-b border-border rounded-none p-0">
+                    <TabsTrigger 
+                      value="overview" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                    >
+                      Overview
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="financials" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                    >
+                      Financials
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="forecast" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                    >
+                      Forecast
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="statistics" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                    >
+                      Statistics
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="metrics" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                    >
+                      Metrics
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="dividends" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                    >
+                      Dividends
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="history" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                    >
+                      History
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="profile" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                    >
+                      Profile
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="chart" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                    >
+                      Chart
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="overview" className="mt-6">
+                    <RatingSection />
+                    <PredictabilityStarsSection />
+                    <StockHeader stockInfo={stockInfo} />
+                  </TabsContent>
+                  
+                  <TabsContent value="financials" className="mt-6">
+                    <div className="text-muted-foreground">Financials content coming soon...</div>
+                  </TabsContent>
+                  
+                  <TabsContent value="forecast" className="mt-6">
+                    <div className="text-muted-foreground">Forecast content coming soon...</div>
+                  </TabsContent>
+                  
+                  <TabsContent value="statistics" className="mt-6">
+                    <div className="text-muted-foreground">Statistics content coming soon...</div>
+                  </TabsContent>
+                  
+                  <TabsContent value="metrics" className="mt-6">
+                    <div className="text-muted-foreground">Metrics content coming soon...</div>
+                  </TabsContent>
+                  
+                  <TabsContent value="dividends" className="mt-6">
+                    <div className="text-muted-foreground">Dividends content coming soon...</div>
+                  </TabsContent>
+                  
+                  <TabsContent value="history" className="mt-6">
+                    <div className="text-muted-foreground">History content coming soon...</div>
+                  </TabsContent>
+                  
+                  <TabsContent value="profile" className="mt-6">
+                    <div className="text-muted-foreground">Profile content coming soon...</div>
+                  </TabsContent>
+                  
+                  <TabsContent value="chart" className="mt-6">
+                    <div className="text-muted-foreground">Chart content coming soon...</div>
+                  </TabsContent>
+                </Tabs>
+              </div>
             )}
+            
+            {!stockInfo && <RatingSection />}
             
             <LoadingSection />
             
