@@ -136,10 +136,10 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
   
   return (
     <Card key={index} className={`border-l-4 ${getStatusColor(displayStatus)}`}>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 pt-3 px-4">
         <div className="flex justify-between items-start">
           <div className="flex items-center">
-            <CardTitle className="text-lg">{criterion.title}</CardTitle>
+            <CardTitle className="text-base">{criterion.title}</CardTitle>
             <BuffettScoreDisplay criterion={{
               ...criterion,
               status: displayStatus,
@@ -156,47 +156,47 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
              'Nicht erfüllt'}
           </Badge>
         </div>
-        <CardDescription>{criterion.description}</CardDescription>
+        <CardDescription className="text-xs">{criterion.description}</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-1 text-sm">
-          <ul className="list-disc pl-5 space-y-1 mb-3">
+      <CardContent className="px-4 pb-4">
+        <div className="space-y-1 text-xs">
+          <ul className="list-disc pl-4 space-y-0.5 mb-2">
             {criterion.details.map((detail, i) => (
               <li key={i} className="text-gray-700">{detail}</li>
             ))}
           </ul>
           
           {showPartialFulfillment && (
-            <div className="mt-2 mb-3">
-              <div className="flex items-center justify-between mb-1 text-xs text-gray-700">
+            <div className="mt-1.5 mb-2">
+              <div className="flex items-center justify-between mb-0.5 text-2xs text-gray-700">
                 <span>Erfüllte Teilaspekte:</span>
                 <span className="font-medium">{fulfillmentCount} von {totalCount}</span>
               </div>
               <Progress 
                 value={(fulfillmentCount / totalCount) * 100} 
-                className="h-2" 
+                className="h-1.5" 
               />
               
               {/* Score from unified scoring */}
-              <div className="flex justify-end mt-1">
-                <span className="text-xs font-medium text-gray-700">
+              <div className="flex justify-end mt-0.5">
+                <span className="text-2xs font-medium text-gray-700">
                   {unifiedScore.toFixed(1)}/10 Punkten
                 </span>
               </div>
               
               {/* Detail which specific subcriteria are fulfilled */}
               {criteriaQuestions.length > 0 && (
-                <div className="mt-2">
-                  <ul className="space-y-1">
+                <div className="mt-1.5">
+                  <ul className="space-y-0.5">
                     {criteriaQuestions.map((item, idx) => (
                       <li key={idx} className="flex items-start">
                         {item.fulfilled ? 
-                          <CheckCircle className="text-green-500 h-4 w-4 mt-0.5 mr-1 flex-shrink-0" /> :
-                          <XCircle className="text-red-500 h-4 w-4 mt-0.5 mr-1 flex-shrink-0" />
+                          <CheckCircle className="text-green-500 h-3 w-3 mt-0.5 mr-1 flex-shrink-0" /> :
+                          <XCircle className="text-red-500 h-3 w-3 mt-0.5 mr-1 flex-shrink-0" />
                         }
                         <div>
-                          <span className="text-xs font-medium">{item.question}</span>
-                          <p className="text-xs text-gray-600">{item.answer}</p>
+                          <span className="text-2xs font-medium">{item.question}</span>
+                          <p className="text-2xs text-gray-600">{item.answer}</p>
                         </div>
                       </li>
                     ))}
@@ -207,20 +207,20 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
           )}
           
           {criterion.gptAnalysis && (
-            <Collapsible className="mt-3 pt-3 border-t border-gray-200">
-              <CollapsibleTrigger className="flex items-center gap-2 mb-2 w-full">
-                <Bot size={16} className="text-blue-500" />
-                <span className="font-medium text-blue-700">KI-Analyse</span>
-                <ChevronDown className="h-4 w-4 text-blue-500 ml-auto transition-transform duration-200" />
+            <Collapsible className="mt-2 pt-2 border-t border-gray-200">
+              <CollapsibleTrigger className="flex items-center gap-1.5 mb-1.5 w-full">
+                <Bot size={14} className="text-blue-500" />
+                <span className="font-medium text-xs text-blue-700">KI-Analyse</span>
+                <ChevronDown className="h-3.5 w-3.5 text-blue-500 ml-auto transition-transform duration-200" />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="text-gray-700 ki-analysis prose prose-sm max-w-none">
+                <div className="text-gray-700 ki-analysis prose prose-sm max-w-none text-xs">
                   <ReactMarkdown components={{
                     strong: ({ node, ...props }) => <span className="font-bold" {...props} />,
-                    p: ({ node, ...props }) => <div className="mb-2" {...props} />,
-                    ul: ({ node, ...props }) => <ul className="list-disc pl-5 mt-1 mb-2" {...props} />,
-                    ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mt-1 mb-2" {...props} />,
-                    li: ({ node, ...props }) => <li className="mb-1" {...props} />
+                    p: ({ node, ...props }) => <div className="mb-1.5" {...props} />,
+                    ul: ({ node, ...props }) => <ul className="list-disc pl-4 mt-0.5 mb-1.5" {...props} />,
+                    ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mt-0.5 mb-1.5" {...props} />,
+                    li: ({ node, ...props }) => <li className="mb-0.5" {...props} />
                   }}>
                     {criterion.gptAnalysis}
                   </ReactMarkdown>

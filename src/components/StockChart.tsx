@@ -432,15 +432,15 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
   };
 
   return (
-    <div className="w-full space-y-4">
-      <div className="flex flex-wrap gap-2">
+    <div className="w-full space-y-3">
+      <div className="flex flex-wrap gap-1.5">
         {TIME_RANGES.map((range) => (
           <Button
             key={range.value}
             variant={selectedRange === range.value ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedRange(range.value)}
-            className="text-sm"
+            className="text-xs h-8 px-3"
           >
             {range.label}
           </Button>
@@ -449,7 +449,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       
       {/* Performance Stats */}
       {performanceStats && (
-        <div className="flex flex-wrap gap-4 text-sm">
+        <div className="flex flex-wrap gap-3 text-xs">
           <div>
             <span className="font-medium">{getRangeLabel()}: </span>
             <span className={performanceStats.performance >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>

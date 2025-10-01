@@ -111,17 +111,17 @@ const StockQuoteHeader: React.FC = () => {
   };
 
   return (
-    <Card className="p-4 md:p-5">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-4">
+    <Card className="p-3 md:p-4">
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-3">
           {/* Company Logo Placeholder - can be added later */}
-          <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-muted flex items-center justify-center text-xl md:text-2xl font-bold text-muted-foreground">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-muted flex items-center justify-center text-lg md:text-xl font-bold text-muted-foreground">
             {name.charAt(0)}
           </div>
           
           <div>
-            <h1 className="text-xl md:text-2xl font-bold mb-1">{name}</h1>
-            <div className="text-sm text-muted-foreground">
+            <h1 className="text-lg md:text-xl font-bold mb-0.5">{name}</h1>
+            <div className="text-xs text-muted-foreground">
               {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
             </div>
           </div>
@@ -139,34 +139,34 @@ const StockQuoteHeader: React.FC = () => {
       </div>
 
       {/* Price Section */}
-      <div className="mb-3">
-        <div className="flex items-baseline gap-3 mb-1">
-          <span className="text-3xl md:text-4xl font-bold">
+      <div className="mb-2">
+        <div className="flex items-baseline gap-2 mb-0.5">
+          <span className="text-2xl md:text-3xl font-bold">
             ${price?.toFixed(2) ?? 'N/A'}
           </span>
           {change !== null && changePercent !== null && (
-            <div className={`flex items-center gap-1 text-lg font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-              {isPositive ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+            <div className={`flex items-center gap-1 text-base font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              {isPositive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
               <span>
                 {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
               </span>
             </div>
           )}
         </div>
-        <div className="text-sm text-muted-foreground">
+        <div className="text-xs text-muted-foreground">
           {currentTime} EST
         </div>
       </div>
 
       {/* Buffett Predictability Stars */}
       {predictabilityStars && (
-        <div className="mb-4">
+        <div className="mb-3">
           {renderStars(predictabilityStars.stars)}
         </div>
       )}
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-1.5 text-xs">
         <div>
           <div className="text-muted-foreground">P/E:</div>
           <div className="font-semibold">{peRatio?.toFixed(2) ?? 'N/A'}</div>

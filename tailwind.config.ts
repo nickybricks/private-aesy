@@ -23,6 +23,9 @@ export default {
         '18': '4.5rem',
         '72': '18rem',
       },
+      fontSize: {
+        '2xs': '0.625rem', // 10px
+      },
       backdropBlur: {
         '2xl': '28px',
       },

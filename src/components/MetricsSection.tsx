@@ -11,7 +11,7 @@ const MetricsSection: React.FC = () => {
   }
 
   return (
-    <div className="mb-10">
+    <div className="mb-6">
       <FinancialMetrics 
         metrics={financialMetrics.metrics} 
         historicalData={financialMetrics.historicalData} 

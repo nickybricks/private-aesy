@@ -219,27 +219,27 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   }
   
   return (
-    <Card className="metric-card p-4">
+    <Card className="metric-card p-3">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-lg font-medium">{name}</h3>
+        <h3 className="text-base font-medium">{name}</h3>
         
         {detailedExplanation && (
           <Popover>
             <PopoverTrigger asChild>
               <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
-                <Info size={14} className="text-gray-600" />
+                <Info size={12} className="text-gray-600" />
               </button>
             </PopoverTrigger>
-            <PopoverContent className="max-w-sm p-4">
-              <div className="space-y-2">
-                <h4 className="font-semibold">{name}</h4>
-                <p>{detailedExplanation.whatItIs}</p>
+            <PopoverContent className="max-w-sm p-3">
+              <div className="space-y-1.5">
+                <h4 className="font-semibold text-sm">{name}</h4>
+                <p className="text-xs">{detailedExplanation.whatItIs}</p>
                 
-                <div className="space-y-1 pt-2">
-                  <p><span className="font-medium">Berechnung:</span> {detailedExplanation.howCalculated}</p>
-                  <p><span className="font-medium">Warum wichtig:</span> {detailedExplanation.whyImportant}</p>
-                  <p><span className="font-medium">Buffett-Maßstab:</span> {detailedExplanation.buffettGuideline}</p>
-                  <p><span className="font-medium">Gute Werte:</span> {detailedExplanation.goodValue}</p>
+                <div className="space-y-1 pt-1.5">
+                  <p className="text-xs"><span className="font-medium">Berechnung:</span> {detailedExplanation.howCalculated}</p>
+                  <p className="text-xs"><span className="font-medium">Warum wichtig:</span> {detailedExplanation.whyImportant}</p>
+                  <p className="text-xs"><span className="font-medium">Buffett-Maßstab:</span> {detailedExplanation.buffettGuideline}</p>
+                  <p className="text-xs"><span className="font-medium">Gute Werte:</span> {detailedExplanation.goodValue}</p>
                 </div>
               </div>
             </PopoverContent>
@@ -247,15 +247,15 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         )}
       </div>
       
-      <div className="text-2xl font-semibold mb-2">{cleanedDisplayValue}</div>
+      <div className="text-xl font-semibold mb-1.5">{cleanedDisplayValue}</div>
       
-      <div className="text-sm text-buffett-subtext mb-1">
+      <div className="text-xs text-buffett-subtext mb-1">
         <span className="font-medium">Formel:</span> {formula}
       </div>
       
-      <p className="text-sm mb-3">{explanation}</p>
+      <p className="text-xs mb-2">{explanation}</p>
       
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center justify-between text-xs">
         <div>
           <span className="font-medium">Buffett-Schwelle:</span> {threshold}
         </div>
@@ -298,16 +298,16 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
   );
   
   return (
-    <Card className="buffett-card p-6 animate-fade-in">
-      <h2 className="text-2xl font-semibold mb-6">Finanzkennzahlen</h2>
+    <Card className="buffett-card p-4 animate-fade-in">
+      <h2 className="text-lg font-semibold mb-4">Finanzkennzahlen</h2>
       
       {hasConvertedMetrics && (
-        <div className="p-4 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="p-3 mb-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="flex items-start gap-2">
-            <AlertTriangle className="text-yellow-500 h-5 w-5 mt-0.5" />
+            <AlertTriangle className="text-yellow-500 h-4 w-4 mt-0.5" />
             <div>
-              <h3 className="font-medium text-yellow-700">Währungshinweis</h3>
-              <p className="text-yellow-600 text-sm">
+              <h3 className="font-medium text-xs text-yellow-700">Währungshinweis</h3>
+              <p className="text-yellow-600 text-2xs">
                 Einige Finanzdaten werden in einer anderen Währung berichtet als der Aktienkurs ({currency}).
                 Diese Werte wurden in {currency} umgerechnet, um eine korrekte Analyse zu ermöglichen.
                 Die Originalwerte werden in Klammern angezeigt.
@@ -317,28 +317,28 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6">
         {metricsArray.map((metric, index) => (
           <MetricCard key={index} metric={metric} currency={currency} />
         ))}
       </div>
       
       {historicalData && historicalData.revenue && historicalData.revenue.length > 0 && (
-        <div className="border-t pt-6 mt-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Finanzielle Entwicklung (10 Jahre)</h3>
+        <div className="border-t pt-4 mt-2">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-semibold">Finanzielle Entwicklung (10 Jahre)</h3>
             <ClickableTooltip
               content={
-                <div className="space-y-2">
-                  <p>
+                <div className="space-y-1.5">
+                  <p className="text-xs">
                     <span className="font-medium">Umsatz (Revenue):</span> Der Gesamtumsatz des Unternehmens pro Jahr.
                     Buffett bevorzugt Unternehmen mit stabilem oder wachsendem Umsatz.
                   </p>
-                  <p className="mt-2">
+                  <p className="text-xs">
                     <span className="font-medium">Gewinn (Earnings):</span> Der Nettogewinn nach allen Kosten und Steuern.
                     Idealerweise sollte der Gewinn über die Jahre steigen.
                   </p>
-                  <p className="mt-2">
+                  <p className="text-xs">
                     <span className="font-medium">EPS (Earnings Per Share):</span> Der Gewinn pro Aktie zeigt, wie viel Gewinn auf eine einzelne Aktie entfällt.
                     Buffett achtet besonders auf einen stabilen oder wachsenden EPS über viele Jahre.
                   </p>
@@ -346,7 +346,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
               }
             >
               <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
-                <HelpCircle size={16} className="text-gray-600" />
+                <HelpCircle size={14} className="text-gray-600" />
               </button>
             </ClickableTooltip>
           </div>
