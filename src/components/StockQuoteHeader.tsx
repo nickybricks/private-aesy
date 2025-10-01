@@ -67,10 +67,10 @@ const StockQuoteHeader: React.FC = () => {
     return value.toFixed(0);
   };
 
-  // Extract metrics from financialMetrics array
+  // Extract metrics from financialMetrics.metrics array
   const getMetricValue = (metricName: string): number | null => {
-    if (!financialMetrics || !Array.isArray(financialMetrics)) return null;
-    const metric = financialMetrics.find(m => m.name === metricName);
+    if (!financialMetrics || !financialMetrics.metrics || !Array.isArray(financialMetrics.metrics)) return null;
+    const metric = financialMetrics.metrics.find((m: any) => m.name === metricName);
     return metric?.value ?? null;
   };
 
