@@ -39,7 +39,6 @@ export function StockProvider({ children }: StockProviderProps) {
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
   const [dcfData, setDcfData] = useState<DCFData | undefined>(undefined);
   const [predictabilityStars, setPredictabilityStars] = useState<PredictabilityResult | null>(null);
-  const [enableDeepResearch, setEnableDeepResearch] = useState(false);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
@@ -170,8 +169,6 @@ export function StockProvider({ children }: StockProviderProps) {
       hasCriticalDataMissing,
       dcfData,
       predictabilityStars,
-      enableDeepResearch,
-      setEnableDeepResearch,
       setActiveTab,
       setLoadingProgress,
       handleSearch,

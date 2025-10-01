@@ -1,17 +1,14 @@
 import React from 'react';
-import { Menu, Info } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import StockSearch from './StockSearch';
 import { useMobileMenu } from '@/context/MobileMenuContext';
 import { useStock } from '@/context/StockContext';
 
 const AppHeader: React.FC = () => {
   const { toggleMobileMenu } = useMobileMenu();
-  const { handleSearch, isLoading, enableDeepResearch, setEnableDeepResearch } = useStock();
+  const { handleSearch, isLoading } = useStock();
   const navigate = useNavigate();
   
   const handleStockSearch = (ticker: string, enableDeepResearch?: boolean) => {
@@ -21,14 +18,6 @@ const AppHeader: React.FC = () => {
   
   return (
     <header className="sticky top-0 z-40 h-18 glass-header">
-      {/* Skip to main content link for accessibility */}
-      <a 
-        href="#main-content" 
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-lg"
-      >
-        Zum Inhalt springen
-      </a>
-      
       <div className="h-full max-w-[1440px] mx-auto px-4 md:px-8 flex items-center gap-4">
         {/* Mobile Menu Toggle */}
         <Button
@@ -36,7 +25,6 @@ const AppHeader: React.FC = () => {
           size="icon"
           onClick={toggleMobileMenu}
           className="md:hidden shrink-0"
-          aria-label="Menü öffnen"
         >
           <Menu className="h-5 w-5" />
         </Button>
@@ -54,36 +42,8 @@ const AppHeader: React.FC = () => {
           <StockSearch onSearch={handleStockSearch} isLoading={isLoading} compact />
         </div>
         
-        {/* AI Toggle with Tooltip - Desktop only */}
-        <div className="hidden md:flex items-center gap-2 shrink-0">
-          <TooltipProvider>
-            <Tooltip>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="ai-toggle" className="text-sm font-medium cursor-pointer">
-                  KI-Einschätzung
-                </Label>
-                <Switch 
-                  id="ai-toggle" 
-                  checked={enableDeepResearch} 
-                  onCheckedChange={setEnableDeepResearch}
-                  aria-label="KI-Analyse aktivieren"
-                />
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-              </div>
-              <TooltipContent className="max-w-xs" side="bottom">
-                <p className="text-xs">
-                  Nutzt GPT-4 für qualitative Einschätzung des Managements, 
-                  Wettbewerbsvorteile und Branchentrends.
-                </p>
-                <p className="text-xs mt-1 text-muted-foreground">
-                  Erfordert API-Key in Profil-Einstellungen.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+        {/* Spacer for balance - Desktop only */}
+        <div className="hidden md:block w-[120px]"></div>
       </div>
     </header>
   );

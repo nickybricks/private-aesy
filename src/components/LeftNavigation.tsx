@@ -34,10 +34,11 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
       title: 'Navigation',
       items: [
         {
-          name: 'Dashboard',
+          name: 'Home',
           path: '/',
           icon: Home,
-          description: 'Übersicht und Schnellzugriff'
+          description: 'Übersicht und Dashboard',
+          badge: 'Soon'
         }
       ]
     },
@@ -51,10 +52,10 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
           description: 'Aktienanalyse nach bewährten Prinzipien'
         },
         {
-          name: 'Markt-Scanner',
+          name: 'Boersen Analyzer',
           path: '/quant',
           icon: BarChart3,
-          description: 'Marktweite quantitative Analyse'
+          description: 'Erweiterte quantitative Analyse'
         }
       ]
     },
@@ -68,10 +69,10 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
           description: 'Verwalte deine Aktien-Watchlists'
         },
         {
-          name: 'Verlauf',
+          name: 'Gespeicherte Analysen',
           path: '/saved-analyses',
           icon: History,
-          description: 'Gespeicherte Analyse-Snapshots'
+          description: 'Zugriff auf gespeicherte Momentaufnahmen'
         }
       ]
     },
