@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStock } from '@/context/StockContext';
-import { Star, TrendingUp, TrendingDown } from 'lucide-react';
+import { Star, TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { AddToWatchlistButton } from './AddToWatchlistButton';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const StockQuoteHeader: React.FC = () => {
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { 
     stockInfo, 
     predictabilityStars,
@@ -81,7 +84,7 @@ const StockQuoteHeader: React.FC = () => {
   const avgVolume = getMetricValue('Durchschnittliches Volumen');
 
   // Render stars
-  const renderStars = (stars: number | 'NR') => {
+  const renderStars = (stars: number | 'NR', clickable: boolean = false) => {
     if (stars === 'NR') {
       return <span className="text-muted-foreground font-medium">NR</span>;
     }
@@ -91,7 +94,13 @@ const StockQuoteHeader: React.FC = () => {
     const totalStars = 5;
 
     return (
-      <div className="flex items-center gap-0.5">
+      <div 
+        className={`flex items-center gap-0.5 ${clickable ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+        onClick={clickable ? () => setDialogOpen(true) : undefined}
+        role={clickable ? 'button' : undefined}
+        tabIndex={clickable ? 0 : undefined}
+        onKeyDown={clickable ? (e) => e.key === 'Enter' && setDialogOpen(true) : undefined}
+      >
         {Array.from({ length: totalStars }, (_, index) => {
           const starIndex = index + 1;
           let starClass = 'text-muted-foreground/30';
@@ -106,98 +115,208 @@ const StockQuoteHeader: React.FC = () => {
             <Star key={index} size={20} className={starClass} />
           );
         })}
+        {clickable && <Info size={14} className="ml-1 text-muted-foreground" />}
       </div>
     );
   };
 
+  const getRatingDescription = (stars: number | 'NR') => {
+    if (stars === 'NR') return 'Nicht bewertet';
+    if (stars >= 4.5) return 'Sehr vorhersehbar';
+    if (stars >= 3.5) return 'Gut vorhersehbar';
+    if (stars >= 2.5) return 'Moderat vorhersehbar';
+    if (stars >= 1.5) return 'Wenig vorhersehbar';
+    return 'Nicht vorhersehbar';
+  };
+
   return (
-    <Card className="p-3 md:p-4">
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-3">
-          {/* Company Logo Placeholder - can be added later */}
-          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-muted flex items-center justify-center text-lg md:text-xl font-bold text-muted-foreground">
-            {name.charAt(0)}
+    <>
+      <Card className="p-3 md:p-4">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-3">
+            {/* Company Logo Placeholder - can be added later */}
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-muted flex items-center justify-center text-lg md:text-xl font-bold text-muted-foreground">
+              {name.charAt(0)}
+            </div>
+            
+            <div>
+              <h1 className="text-lg md:text-xl font-bold mb-0.5">{name}</h1>
+              <div className="text-xs text-muted-foreground">
+                {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
+              </div>
+            </div>
+          </div>
+
+          {/* Add to Watchlist Button */}
+          {buffettCriteria && financialMetrics && overallRating && (
+            <AddToWatchlistButton
+              stockInfo={stockInfo}
+              buffettCriteria={buffettCriteria}
+              financialMetrics={financialMetrics}
+              overallRating={overallRating}
+            />
+          )}
+        </div>
+
+        {/* Price Section */}
+        <div className="mb-2">
+          <div className="flex items-baseline gap-2 mb-0.5">
+            <span className="text-2xl md:text-3xl font-bold">
+              ${price?.toFixed(2) ?? 'N/A'}
+            </span>
+            {change !== null && changePercent !== null && (
+              <div className={`flex items-center gap-1 text-base font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                {isPositive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                <span>
+                  {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {currentTime} EST
+          </div>
+        </div>
+
+        {/* Buffett Predictability Stars */}
+        {predictabilityStars && (
+          <div className="mb-3">
+            {renderStars(predictabilityStars.stars, true)}
+          </div>
+        )}
+
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-1.5 text-xs">
+          <div>
+            <div className="text-muted-foreground">P/E:</div>
+            <div className="font-semibold">{peRatio?.toFixed(2) ?? 'N/A'}</div>
           </div>
           
           <div>
-            <h1 className="text-lg md:text-xl font-bold mb-0.5">{name}</h1>
-            <div className="text-xs text-muted-foreground">
-              {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
-            </div>
+            <div className="text-muted-foreground">P/B:</div>
+            <div className="font-semibold">{pbRatio?.toFixed(2) ?? 'N/A'}</div>
+          </div>
+          
+          <div>
+            <div className="text-muted-foreground">Market Cap:</div>
+            <div className="font-semibold">{formatNumber(marketCap)}</div>
+          </div>
+          
+          <div>
+            <div className="text-muted-foreground">Enterprise V:</div>
+            <div className="font-semibold">{formatNumber(enterpriseValue)}</div>
+          </div>
+          
+          <div>
+            <div className="text-muted-foreground">Volume:</div>
+            <div className="font-semibold">{formatVolume(volume)}</div>
+          </div>
+          
+          <div>
+            <div className="text-muted-foreground">Avg Vol (2M):</div>
+            <div className="font-semibold">{formatVolume(avgVolume)}</div>
           </div>
         </div>
+      </Card>
 
-        {/* Add to Watchlist Button */}
-        {buffettCriteria && financialMetrics && overallRating && (
-          <AddToWatchlistButton
-            stockInfo={stockInfo}
-            buffettCriteria={buffettCriteria}
-            financialMetrics={financialMetrics}
-            overallRating={overallRating}
-          />
-        )}
-      </div>
-
-      {/* Price Section */}
-      <div className="mb-2">
-        <div className="flex items-baseline gap-2 mb-0.5">
-          <span className="text-2xl md:text-3xl font-bold">
-            ${price?.toFixed(2) ?? 'N/A'}
-          </span>
-          {change !== null && changePercent !== null && (
-            <div className={`flex items-center gap-1 text-base font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-              {isPositive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-              <span>
-                {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
-              </span>
-            </div>
-          )}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {currentTime} EST
-        </div>
-      </div>
-
-      {/* Buffett Predictability Stars */}
+      {/* Stars Explanation Dialog */}
       {predictabilityStars && (
-        <div className="mb-3">
-          {renderStars(predictabilityStars.stars)}
-        </div>
-      )}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Star className="text-yellow-500 fill-yellow-500" size={20} />
+                Buffett Predictability Stars - Berechnungsmethode
+              </DialogTitle>
+              <DialogDescription>
+                So wird die Vorhersagbarkeit der Unternehmensgewinne berechnet
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 mt-4">
+              <div>
+                <h4 className="font-semibold mb-2">Bewertung</h4>
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  {renderStars(predictabilityStars.stars)}
+                  <span className="text-sm text-muted-foreground">
+                    {getRatingDescription(predictabilityStars.stars)}
+                  </span>
+                </div>
+              </div>
 
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-1.5 text-xs">
-        <div>
-          <div className="text-muted-foreground">P/E:</div>
-          <div className="font-semibold">{peRatio?.toFixed(2) ?? 'N/A'}</div>
-        </div>
-        
-        <div>
-          <div className="text-muted-foreground">P/B:</div>
-          <div className="font-semibold">{pbRatio?.toFixed(2) ?? 'N/A'}</div>
-        </div>
-        
-        <div>
-          <div className="text-muted-foreground">Market Cap:</div>
-          <div className="font-semibold">{formatNumber(marketCap)}</div>
-        </div>
-        
-        <div>
-          <div className="text-muted-foreground">Enterprise V:</div>
-          <div className="font-semibold">{formatNumber(enterpriseValue)}</div>
-        </div>
-        
-        <div>
-          <div className="text-muted-foreground">Volume:</div>
-          <div className="font-semibold">{formatVolume(volume)}</div>
-        </div>
-        
-        <div>
-          <div className="text-muted-foreground">Avg Vol (2M):</div>
-          <div className="font-semibold">{formatVolume(avgVolume)}</div>
-        </div>
-      </div>
-    </Card>
+              <div>
+                <h4 className="font-semibold mb-2">Zusammenfassung</h4>
+                <p className="text-sm text-muted-foreground">
+                  {predictabilityStars.explain.summary}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Analysezeitraum</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {predictabilityStars.explain.data_window_years} Jahre
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Methode</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {predictabilityStars.explain.method}
+                  </p>
+                </div>
+              </div>
+
+              {(predictabilityStars.explain as any).calculation_details && (
+                <div>
+                  <h4 className="font-semibold mb-2">Berechnungsdetails</h4>
+                  <div className="text-sm text-muted-foreground space-y-2">
+                    {Object.entries((predictabilityStars.explain as any).calculation_details).map(([key, value]) => (
+                      <div key={key} className="flex justify-between p-2 bg-muted/30 rounded">
+                        <span className="font-medium">{key}:</span>
+                        <span>{typeof value === 'number' ? (value as number).toFixed(2) : String(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-2">Bewertungsskala</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="flex">{Array.from({ length: 5 }, (_, i) => <Star key={i} size={12} className="text-yellow-500 fill-yellow-500" />)}</div>
+                    <span>≥ 4.5 Sterne: Sehr vorhersehbar</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex">{Array.from({ length: 4 }, (_, i) => <Star key={i} size={12} className="text-yellow-500 fill-yellow-500" />)}</div>
+                    <span>≥ 3.5 Sterne: Gut vorhersehbar</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex">{Array.from({ length: 3 }, (_, i) => <Star key={i} size={12} className="text-yellow-500 fill-yellow-500" />)}</div>
+                    <span>≥ 2.5 Sterne: Moderat vorhersehbar</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex">{Array.from({ length: 2 }, (_, i) => <Star key={i} size={12} className="text-yellow-500 fill-yellow-500" />)}</div>
+                    <span>≥ 1.5 Sterne: Wenig vorhersehbar</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex">{Array.from({ length: 1 }, (_, i) => <Star key={i} size={12} className="text-yellow-500 fill-yellow-500" />)}</div>
+                    <span>&lt; 1.5 Sterne: Nicht vorhersehbar</span>
+                  </div>
+                </div>
+              </div>
+
+              <Button 
+                onClick={() => setDialogOpen(false)} 
+                className="w-full"
+              >
+                Schließen
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };
 
