@@ -175,7 +175,6 @@ const IndexContent: React.FC = () => {
                   </TabsList>
                   
                   <TabsContent value="overview" className="mt-6">
-                    <StockHeader stockInfo={stockInfo} />
                   </TabsContent>
                   
                   <TabsContent value="financials" className="mt-6">
