@@ -111,31 +111,19 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
 
   return (
     <nav className="w-[280px] h-[calc(100vh-4.5rem)] sticky top-18 glass-sidebar flex flex-col">
-      {/* Logo Header */}
-      <div className="p-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shrink-0 shadow-sm">
-            <span className="text-primary-foreground font-semibold text-lg">A</span>
-          </div>
-          <div>
-            <h1 className="text-base font-semibold tracking-tight">Aesy</h1>
-            <p className="text-xs text-muted-foreground">Stock Analysis</p>
-          </div>
-        </div>
-        
-        {/* Mobile Close Button */}
+      {/* Mobile Close Button */}
+      <div className="p-4 flex justify-end md:hidden">
         <Button
           variant="ghost"
           size="icon"
           onClick={onMobileClose}
-          className="md:hidden"
         >
           <X className="h-5 w-5" />
         </Button>
       </div>
       
       {/* Navigation Content */}
-      <div className="flex-1 px-4 overflow-y-auto">
+      <div className="flex-1 px-4 pt-6 overflow-y-auto">
         <div className="space-y-8">
           {navigationItems.map((section, sectionIndex) => (
             <div key={section.title} className="space-y-3">

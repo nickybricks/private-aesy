@@ -18,7 +18,7 @@ const AppHeader: React.FC = () => {
   
   return (
     <header className="sticky top-0 z-40 h-18 glass-header">
-      <div className="h-full max-w-[1440px] mx-auto px-4 md:px-8 flex items-center gap-4">
+      <div className="h-full px-4 md:px-8 flex items-center gap-4">
         {/* Mobile Menu Toggle */}
         <Button
           variant="ghost" 
@@ -29,8 +29,8 @@ const AppHeader: React.FC = () => {
           <Menu className="h-5 w-5" />
         </Button>
         
-        {/* Logo - Desktop only */}
-        <div className="hidden md:flex items-center gap-3 shrink-0">
+        {/* Logo - Always visible */}
+        <div className="flex items-center gap-3 shrink-0">
           <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-sm">
             <span className="text-primary-foreground font-semibold text-lg">A</span>
           </div>
