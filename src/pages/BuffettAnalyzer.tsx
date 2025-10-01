@@ -14,7 +14,6 @@ import RatingSection from '@/components/RatingSection';
 import MetricsSection from '@/components/MetricsSection';
 import PeterLynchSection from '@/components/PeterLynchSection';
 import CriteriaTabsSection from '@/components/CriteriaTabsSection';
-import PredictabilityStarsSection from '@/components/PredictabilityStarsSection';
 import DataMissingAlert from '@/components/DataMissingAlert';
 import LoadingSection from '@/components/LoadingSection';
 import ErrorAlert from '@/components/ErrorAlert';
@@ -177,7 +176,6 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="overview" className="mt-6">
                     <RatingSection />
-                    <PredictabilityStarsSection />
                     <StockHeader stockInfo={stockInfo} />
                   </TabsContent>
                   
