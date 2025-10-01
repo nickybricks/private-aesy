@@ -4,8 +4,10 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import StockHeader from '@/components/StockHeader';
 import StockQuoteHeader from '@/components/StockQuoteHeader';
+import StockChart from '@/components/StockChart';
 import { StockProvider, useStock } from '@/context/StockContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
 import RatingSection from '@/components/RatingSection';
@@ -29,7 +31,8 @@ const IndexContent: React.FC = () => {
     handleSearch,
     loadSavedAnalysis,
     gptAvailable,
-    stockInfo
+    stockInfo,
+    overallRating
   } = useStock();
   const { analyses, loading: analysesLoading } = useSavedAnalyses();
   const { toast } = useToast();
@@ -94,8 +97,22 @@ const IndexContent: React.FC = () => {
             
             <ErrorAlert />
             
-            {/* New Stock Quote Header - Left side, half width */}
-            <StockQuoteHeader />
+            {/* Stock Quote Header and Chart Grid */}
+            {stockInfo && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* Stock Quote Section */}
+                <StockQuoteHeader />
+                
+                {/* Stock Chart Section */}
+                <Card className="p-6 h-full">
+                  <StockChart 
+                    symbol={stockInfo.ticker}
+                    currency={stockInfo.currency}
+                    intrinsicValue={overallRating?.intrinsicValue ?? null}
+                  />
+                </Card>
+              </div>
+            )}
             
             {/* Tab Navigation */}
             {stockInfo && (
