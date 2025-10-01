@@ -99,7 +99,7 @@ const IndexContent: React.FC = () => {
             
             {/* Stock Quote Header and Chart Grid */}
             {stockInfo && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-6 mb-8">
                 {/* Stock Quote Section */}
                 <StockQuoteHeader />
                 

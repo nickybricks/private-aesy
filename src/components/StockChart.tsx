@@ -433,7 +433,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         </div>
       )}
       
-      <div className="w-full h-[300px] md:h-[400px] overflow-hidden">
+      <div className="w-full h-[260px] md:h-[320px] overflow-hidden">
         <ChartContainer
           config={{
             line1: { theme: { light: 'hsl(221, 83%, 53%)', dark: 'hsl(221, 83%, 70%)' } },
