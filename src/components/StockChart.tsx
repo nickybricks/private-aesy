@@ -60,7 +60,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       setIsLoading(true);
       setError(null);
       try {
-        console.log(`Fetching historical data for ${symbol} with currency ${currency}`);
+        console.log(`Fetching historical data for ${symbol} with currency ${currency}, range: ${selectedRange}`);
         
         // Debug intrinsic value
         if (intrinsicValue === undefined || intrinsicValue === null || isNaN(Number(intrinsicValue))) {
@@ -69,9 +69,26 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           console.log(`Using intrinsic value: ${intrinsicValue} ${currency}`);
         }
         
+        // Determine which API endpoint to use based on selected range
+        let priceEndpoint: string;
+        let isIntradayData = false;
+        
+        if (selectedRange === '1D') {
+          // 5-minute intraday data for 1-day view
+          priceEndpoint = `https://financialmodelingprep.com/api/v3/historical-chart/5min/${symbol}?apikey=${DEFAULT_FMP_API_KEY}`;
+          isIntradayData = true;
+        } else if (selectedRange === '5D') {
+          // 1-hour intraday data for 5-day view
+          priceEndpoint = `https://financialmodelingprep.com/api/v3/historical-chart/1hour/${symbol}?apikey=${DEFAULT_FMP_API_KEY}`;
+          isIntradayData = true;
+        } else {
+          // Daily historical data for longer ranges
+          priceEndpoint = `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${DEFAULT_FMP_API_KEY}`;
+        }
+        
         // Fetch both historical price data and financial data in parallel
         const [priceResponse, financialResponse] = await Promise.all([
-          fetch(`https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${DEFAULT_FMP_API_KEY}`),
+          fetch(priceEndpoint),
           fetch(`https://financialmodelingprep.com/api/v3/income-statement/${symbol}?period=quarter&limit=40&apikey=${DEFAULT_FMP_API_KEY}`)
         ]);
         
@@ -81,15 +98,34 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         }
 
         const priceData = await priceResponse.json();
-        if (!priceData.historical || !Array.isArray(priceData.historical) || priceData.historical.length === 0) {
-          console.error('No historical data available', priceData);
-          throw new Error('Keine historischen Daten verfügbar');
-        }
+        
+        // Handle different response formats
+        let processedData: HistoricalDataPoint[];
+        
+        if (isIntradayData) {
+          // Intraday data comes as a direct array with 'date' field containing datetime
+          if (!Array.isArray(priceData) || priceData.length === 0) {
+            console.error('No intraday data available', priceData);
+            throw new Error('Keine Intraday-Daten verfügbar');
+          }
+          
+          processedData = priceData.map((item: any) => ({
+            date: item.date, // Format: "2024-01-15 15:30:00"
+            close: item.close,
+          })).reverse(); // Reverse to get chronological order (API returns newest first)
+          
+        } else {
+          // Daily data comes wrapped in 'historical' property
+          if (!priceData.historical || !Array.isArray(priceData.historical) || priceData.historical.length === 0) {
+            console.error('No historical data available', priceData);
+            throw new Error('Keine historischen Daten verfügbar');
+          }
 
-        let processedData: HistoricalDataPoint[] = priceData.historical.map((item: any) => ({
-          date: item.date,
-          close: item.close,
-        }));
+          processedData = priceData.historical.map((item: any) => ({
+            date: item.date,
+            close: item.close,
+          }));
+        }
 
         // Normalize currency codes
         const normalizedCurrency = normalizeCurrencyCode(currency);
@@ -271,7 +307,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
     if (symbol) {
       fetchHistoricalData();
     }
-  }, [symbol, currency, intrinsicValue]);
+  }, [symbol, currency, intrinsicValue, selectedRange]);
 
   const getFilteredData = () => {
     if (!historicalData.length) return [];
