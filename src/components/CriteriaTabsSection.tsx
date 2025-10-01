@@ -20,9 +20,13 @@ const CriteriaTabsSection: React.FC = () => {
     return null;
   }
 
+  // Set default tab based on GPT availability
+  const defaultTab = gptAvailable ? 'gpt' : 'standard';
+  const currentTab = activeTab || defaultTab;
+
   return (
     <div className="mb-10">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={currentTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="standard">Standard-Analyse (3 Kriterien)</TabsTrigger>
           <TabsTrigger value="gpt" disabled={!gptAvailable}>
