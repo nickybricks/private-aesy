@@ -39,9 +39,10 @@ interface OverallRatingProps {
     originalBestBuyPrice?: number | null;
     criteria?: BuffettCriteriaProps;
   } | null;
+  analysisMode?: 'standard' | 'gpt';
 }
 
-// Calculate real Buffett score from criteria
+// Calculate real Buffett score from criteria (all 11 criteria)
 const calculateBuffettScore = (criteria?: BuffettCriteriaProps): number => {
   if (!criteria) return 0;
   
@@ -63,6 +64,34 @@ const calculateBuffettScore = (criteria?: BuffettCriteriaProps): number => {
   let maxTotalWeightedScore = 0;
 
   criteriaArray.forEach(({ criterion, weight }) => {
+    const score = getUnifiedCriterionScore(criterion);
+    const maxScore = 10;
+    
+    const weightedContribution = score * (weight.weight / 100);
+    const maxWeightedContribution = maxScore * (weight.weight / 100);
+    
+    totalWeightedScore += weightedContribution;
+    maxTotalWeightedScore += maxWeightedContribution;
+  });
+
+  return Math.round((totalWeightedScore / maxTotalWeightedScore) * 100 * 10) / 10;
+};
+
+// Calculate standard Buffett score from only quantitative criteria (3, 4, 6)
+const calculateStandardBuffettScore = (criteria?: BuffettCriteriaProps): number => {
+  if (!criteria) return 0;
+  
+  // Only quantitative criteria with adjusted weights
+  const standardCriteriaArray = [
+    { criterion: criteria.financialMetrics, weight: { weight: 35 } },      // ROE, Margins, EPS Growth
+    { criterion: criteria.financialStability, weight: { weight: 30 } },    // Debt, Liquidity
+    { criterion: criteria.valuation, weight: { weight: 35 } }              // Margin of Safety
+  ];
+
+  let totalWeightedScore = 0;
+  let maxTotalWeightedScore = 0;
+
+  standardCriteriaArray.forEach(({ criterion, weight }) => {
     const score = getUnifiedCriterionScore(criterion);
     const maxScore = 10;
     
@@ -188,7 +217,7 @@ const determineBuffettConformity = (
   };
 };
 
-const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
+const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'gpt' }) => {
   if (!rating) return null;
   
   let { 
@@ -204,10 +233,12 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
     criteria
   } = rating;
   
-  // Calculate real Buffett score from criteria instead of using hardcoded value
-  const realBuffettScore = calculateBuffettScore(criteria);
+  // Calculate real Buffett score based on analysis mode
+  const realBuffettScore = analysisMode === 'standard' 
+    ? calculateStandardBuffettScore(criteria)
+    : calculateBuffettScore(criteria);
   
-  console.log('OverallRating - Real Buffett Score calculated:', realBuffettScore);
+  console.log(`OverallRating - ${analysisMode === 'standard' ? 'Standard' : 'Full'} Buffett Score calculated:`, realBuffettScore);
   
   // Prüfe auf negativen DCF-Wert anstatt fehlende Daten
   const hasNegativeDcfValue = intrinsicValue !== null && 
@@ -249,6 +280,18 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
   
   return (
     <div className="buffett-card animate-fade-in">
+      {analysisMode === 'standard' && (
+        <div className="mb-6">
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertTriangle className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-blue-700">
+              Diese Bewertung basiert nur auf quantitativen Kriterien (Finanzkennzahlen, Verschuldung, Bewertung). 
+              Für eine vollständige Bewertung nach Buffetts 11 Kriterien aktivieren Sie die KI-Analyse.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+      
       {hasNegativeDcfValue && (
         <div className="mb-6">
           <Alert className="bg-blue-50 border-blue-200">
@@ -272,7 +315,7 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating }) => {
       )}
       
       <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-        Gesamtbewertung
+        Gesamtbewertung {analysisMode === 'standard' && '(Standard-Analyse)'}
         <RatingExplanation rating={buffettAnalysis.rating} />
       </h2>
       

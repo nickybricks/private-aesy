@@ -24,13 +24,13 @@ const CriteriaTabsSection: React.FC = () => {
     <div className="mb-10">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
-          <TabsTrigger value="standard">Standard-Analyse</TabsTrigger>
+          <TabsTrigger value="standard">Standard-Analyse (3 Kriterien)</TabsTrigger>
           <TabsTrigger value="gpt" disabled={!gptAvailable}>
             {gptAvailable ? 'KI-Analyse (11 Kriterien)' : 'KI-Analyse (Nicht verfügbar)'}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="standard">
-          <BuffettCriteria criteria={buffettCriteria} />
+          <BuffettCriteria criteria={buffettCriteria} analysisMode="standard" />
         </TabsContent>
         <TabsContent value="gpt">
           {gptAvailable ? (

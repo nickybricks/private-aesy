@@ -5,7 +5,7 @@ import OverallRating from '@/components/OverallRating';
 import { debugDCFData } from '@/utils/currencyConverter';
 
 const RatingSection: React.FC = () => {
-  const { overallRating, isLoading, hasCriticalDataMissing, dcfData, stockInfo, buffettCriteria } = useStock();
+  const { overallRating, isLoading, hasCriticalDataMissing, dcfData, stockInfo, buffettCriteria, gptAvailable } = useStock();
   
   useEffect(() => {
     console.log('RatingSection mounted or dcfData changed');
@@ -56,9 +56,12 @@ const RatingSection: React.FC = () => {
     criteria: buffettCriteria
   } : null;
   
+  // Determine analysis mode based on GPT availability
+  const analysisMode = gptAvailable ? 'gpt' : 'standard';
+  
   return (
     <div className="mb-8">
-      <OverallRating rating={enhancedRating} />
+      <OverallRating rating={enhancedRating} analysisMode={analysisMode} />
     </div>
   );
 };

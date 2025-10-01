@@ -14,6 +14,7 @@ import {
   HelpCircle,
   Info
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ClickableTooltip } from './ClickableTooltip';
 import { extractGptAssessmentStatus, getUnifiedCriterionScore } from '@/utils/buffettUtils';
 
@@ -35,6 +36,7 @@ interface BuffettCriteriaProps {
     valuation: CriteriaResult;
     longTermOutlook: CriteriaResult;
   } | null;
+  analysisMode?: 'standard' | 'gpt';
 }
 
 const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
@@ -322,7 +324,7 @@ const CriterionCard: React.FC<{
   );
 };
 
-const BuffettCriteria: React.FC<BuffettCriteriaProps> = ({ criteria }) => {
+const BuffettCriteria: React.FC<BuffettCriteriaProps> = ({ criteria, analysisMode = 'gpt' }) => {
   if (!criteria) return null;
   
   const criteriaEntries = Object.entries(criteria) as [
@@ -330,11 +332,32 @@ const BuffettCriteria: React.FC<BuffettCriteriaProps> = ({ criteria }) => {
     CriteriaResult
   ][];
   
+  // Filter für Standard-Modus: nur quantitative Kriterien (3, 4, 6)
+  const quantitativeCriteriaNames = ['financialMetrics', 'financialStability', 'valuation'];
+  
+  const filteredCriteria = analysisMode === 'standard' 
+    ? criteriaEntries.filter(([name]) => quantitativeCriteriaNames.includes(name))
+    : criteriaEntries;
+  
+  const title = analysisMode === 'standard' 
+    ? 'Buffett-Kriterien Analyse (Quantitative Kriterien)'
+    : 'Buffett-Kriterien Analyse';
+  
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold mb-4">Buffett-Kriterien Analyse</h2>
+      <h2 className="text-2xl font-semibold mb-4">{title}</h2>
       
-      {criteriaEntries.map(([name, criterion], index) => (
+      {analysisMode === 'standard' && (
+        <Alert className="bg-blue-50 border-blue-200 mb-4">
+          <AlertTriangle className="h-4 w-4 text-blue-500" />
+          <AlertDescription className="text-blue-700">
+            Diese Standard-Analyse basiert ausschließlich auf quantitativen Finanzkennzahlen (ROE, Verschuldung, Bewertung). 
+            Für eine umfassende Bewertung inklusive qualitativer Faktoren aktivieren Sie die KI-Analyse.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {filteredCriteria.map(([name, criterion], index) => (
         <CriterionCard 
           key={name} 
           name={name} 
