@@ -99,12 +99,12 @@ const IndexContent: React.FC = () => {
             
             {/* Stock Quote Header and Chart Grid */}
             {stockInfo && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-6 mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-6 mb-4">
                 {/* Stock Quote Section */}
                 <StockQuoteHeader />
                 
                 {/* Stock Chart Section */}
-                <Card className="p-6">
+                <Card className="p-4 md:p-5">
                   <StockChart 
                     symbol={stockInfo.ticker}
                     currency={stockInfo.currency}

@@ -111,16 +111,16 @@ const StockQuoteHeader: React.FC = () => {
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-start justify-between mb-4">
+    <Card className="p-4 md:p-5">
+      <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-4">
           {/* Company Logo Placeholder - can be added later */}
-          <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center text-2xl font-bold text-muted-foreground">
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-muted flex items-center justify-center text-xl md:text-2xl font-bold text-muted-foreground">
             {name.charAt(0)}
           </div>
           
           <div>
-            <h1 className="text-2xl font-bold mb-1">{name}</h1>
+            <h1 className="text-xl md:text-2xl font-bold mb-1">{name}</h1>
             <div className="text-sm text-muted-foreground">
               {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
             </div>
@@ -139,9 +139,9 @@ const StockQuoteHeader: React.FC = () => {
       </div>
 
       {/* Price Section */}
-      <div className="mb-4">
+      <div className="mb-3">
         <div className="flex items-baseline gap-3 mb-1">
-          <span className="text-4xl font-bold">
+          <span className="text-3xl md:text-4xl font-bold">
             ${price?.toFixed(2) ?? 'N/A'}
           </span>
           {change !== null && changePercent !== null && (
@@ -160,13 +160,13 @@ const StockQuoteHeader: React.FC = () => {
 
       {/* Buffett Predictability Stars */}
       {predictabilityStars && (
-        <div className="mb-6">
+        <div className="mb-4">
           {renderStars(predictabilityStars.stars)}
         </div>
       )}
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-3 text-sm">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
         <div>
           <div className="text-muted-foreground">P/E:</div>
           <div className="font-semibold">{peRatio?.toFixed(2) ?? 'N/A'}</div>
