@@ -132,10 +132,10 @@ const IndexContent: React.FC = () => {
                       Financials
                     </TabsTrigger>
                     <TabsTrigger 
-                      value="forecast" 
+                      value="peter-lynch" 
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
                     >
-                      Forecast
+                      Peter Lynch Chart
                     </TabsTrigger>
                     <TabsTrigger 
                       value="statistics" 
@@ -185,8 +185,8 @@ const IndexContent: React.FC = () => {
                     <div className="text-muted-foreground">Financials content coming soon...</div>
                   </TabsContent>
                   
-                  <TabsContent value="forecast" className="mt-6">
-                    <div className="text-muted-foreground">Forecast content coming soon...</div>
+                  <TabsContent value="peter-lynch" className="mt-6">
+                    <PeterLynchSection />
                   </TabsContent>
                   
                   <TabsContent value="statistics" className="mt-6">
@@ -223,7 +223,6 @@ const IndexContent: React.FC = () => {
             {!isLoading && (
               <>
                 <MetricsSection />
-                <PeterLynchSection />
                 <CriteriaTabsSection />
                 
                 <DataMissingAlert />
