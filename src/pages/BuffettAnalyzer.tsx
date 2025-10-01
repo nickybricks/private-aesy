@@ -1,64 +1,49 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React from 'react';
+import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useStock } from '@/context/StockContext';
-import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
-import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AnalyzerHeader } from '@/components/analyzer/AnalyzerHeader';
-import { OverviewTab } from '@/components/analyzer/OverviewTab';
-import { FinancialsTab } from '@/components/analyzer/FinancialsTab';
-import { PeterLynchTab } from '@/components/analyzer/PeterLynchTab';
-import { BuffettTab } from '@/components/analyzer/BuffettTab';
-import { NewsTab } from '@/components/analyzer/NewsTab';
+import StockHeader from '@/components/StockHeader';
+import { StockProvider, useStock } from '@/context/StockContext';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
-import ErrorAlert from '@/components/ErrorAlert';
-import LoadingSection from '@/components/LoadingSection';
+import RatingSection from '@/components/RatingSection';
+import MetricsSection from '@/components/MetricsSection';
+import PeterLynchSection from '@/components/PeterLynchSection';
+import CriteriaTabsSection from '@/components/CriteriaTabsSection';
+import PredictabilityStarsSection from '@/components/PredictabilityStarsSection';
 import DataMissingAlert from '@/components/DataMissingAlert';
+import LoadingSection from '@/components/LoadingSection';
+import ErrorAlert from '@/components/ErrorAlert';
 import AppFooter from '@/components/AppFooter';
-import { SaveAnalysisButton } from '@/components/SaveAnalysisButton';
+import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
+import { useToast } from '@/hooks/use-toast';
+
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 
 const IndexContent: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
+  const [searchParams] = useSearchParams();
   const { 
     isLoading,
     handleSearch,
     loadSavedAnalysis,
     gptAvailable,
-    stockInfo,
-    buffettCriteria
+    stockInfo
   } = useStock();
   const { analyses, loading: analysesLoading } = useSavedAnalyses();
   const { toast } = useToast();
 
+  // Track what has been processed to prevent duplicate actions
   const processedRef = useRef<string | null>(null);
 
-  // Sync tab with URL
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab && tab !== activeTab) {
-      setActiveTab(tab);
-    }
-  }, [searchParams]);
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    setSearchParams(prev => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set('tab', value);
-      return newParams;
-    });
-  };
-
-  // Handle ticker search
+  // Check for ticker parameter in URL and trigger search
   useEffect(() => {
     const ticker = searchParams.get('ticker');
     const loadAnalysisId = searchParams.get('loadAnalysis');
     
+    // Create unique key for this request
     const requestKey = `${ticker}-${loadAnalysisId || 'new'}`;
     
+    // Don't proceed if analyses are still loading, already processing this request, or currently loading
     if (analysesLoading || isLoading || processedRef.current === requestKey) {
       return;
     }
@@ -67,119 +52,75 @@ const IndexContent: React.FC = () => {
       processedRef.current = requestKey;
       
       if (loadAnalysisId) {
+        // Load saved analysis instead of performing new search
+        console.log('Searching for saved analysis with ID:', loadAnalysisId);
+        console.log('Available analyses:', analyses.map(a => a.id));
+        
         const savedAnalysis = analyses.find(analysis => analysis.id === loadAnalysisId);
         if (savedAnalysis) {
+          console.log('Found saved analysis, loading:', savedAnalysis.title);
           loadSavedAnalysis(savedAnalysis.analysis_data);
           toast({
             title: "Analyse geladen",
             description: `${savedAnalysis.title} wurde erfolgreich geladen.`
           });
         } else {
+          console.log('Saved analysis not found, performing new search');
           handleSearch(ticker);
         }
       } else {
+        console.log('No loadAnalysis parameter, performing new search');
         handleSearch(ticker);
       }
     }
   }, [searchParams, isLoading, analysesLoading, analyses]);
-
-  const handleAddToWatchlist = () => {
-    toast({
-      title: "Watchlist Feature",
-      description: "Diese Funktion wird bald verfügbar sein."
-    });
-  };
-
+  
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <AnalyzerHeader
-        ticker={stockInfo?.ticker}
-        companyName={stockInfo?.companyName}
-        exchange={stockInfo?.exchange || 'NASDAQ'}
-        currency={stockInfo?.currency}
-        onAddToWatchlist={handleAddToWatchlist}
-      />
-
-      {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
-        {/* Alerts */}
-        <div className="space-y-4 mb-6">
-          <KiAvailabilityAlert gptAvailable={gptAvailable} />
+    <main className="flex-1 overflow-auto bg-background">
+        <div className="h-full">
+          <div className="p-6 w-full">
+            
+            <KiAvailabilityAlert gptAvailable={gptAvailable} />
+            
+            {stockInfo && stockInfo.currency && stockInfo.reportedCurrency && 
+             needsCurrencyConversion(stockInfo.reportedCurrency, stockInfo.currency) && (
+              <CurrencyAlert 
+                reportedCurrency={stockInfo.reportedCurrency} 
+                stockCurrency={stockInfo.currency} 
+              />
+            )}
+            
+            <ErrorAlert />
+            
+            <RatingSection />
+            
+            <PredictabilityStarsSection />
+            
+            {stockInfo && (
+              <StockHeader stockInfo={stockInfo} />
+            )}
+            
+            <LoadingSection />
+            
+            {!isLoading && (
+              <>
+                <MetricsSection />
+                <PeterLynchSection />
+                <CriteriaTabsSection />
+                
+                <DataMissingAlert />
+              </>
+            )}
+          </div>
           
-          {stockInfo && stockInfo.currency && stockInfo.reportedCurrency && 
-           needsCurrencyConversion(stockInfo.reportedCurrency, stockInfo.currency) && (
-            <CurrencyAlert 
-              reportedCurrency={stockInfo.reportedCurrency} 
-              stockCurrency={stockInfo.currency} 
-            />
-          )}
-          
-          <ErrorAlert />
-        </div>
-
-        {/* Loading State */}
-        {isLoading && <LoadingSection />}
-
-        {/* Content */}
-        {!isLoading && stockInfo && (
-          <>
-            {/* Action Bar */}
-            <div className="flex justify-end mb-6">
-              <SaveAnalysisButton />
+          {/* Footer */}
+          <div className="border-t border-border mt-12">
+            <div className="w-full">
+              <AppFooter />
             </div>
-
-            {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-              <TabsList className="glass w-full justify-start overflow-x-auto">
-                <TabsTrigger value="overview" className="flex-1 sm:flex-initial">
-                  Übersicht
-                </TabsTrigger>
-                <TabsTrigger value="financials" className="flex-1 sm:flex-initial">
-                  Finanzkennzahlen
-                </TabsTrigger>
-                <TabsTrigger value="peter-lynch" className="flex-1 sm:flex-initial">
-                  Peter Lynch Chart
-                </TabsTrigger>
-                <TabsTrigger value="buffett" className="flex-1 sm:flex-initial">
-                  Buffett-Kriterien KI-Analyse
-                </TabsTrigger>
-                <TabsTrigger value="news" className="flex-1 sm:flex-initial">
-                  News
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-6">
-                <OverviewTab />
-              </TabsContent>
-
-              <TabsContent value="financials" className="space-y-6">
-                <FinancialsTab />
-              </TabsContent>
-
-              <TabsContent value="peter-lynch" className="space-y-6">
-                <PeterLynchTab />
-              </TabsContent>
-
-              <TabsContent value="buffett" className="space-y-6">
-                <BuffettTab />
-              </TabsContent>
-
-              <TabsContent value="news" className="space-y-6">
-                <NewsTab />
-              </TabsContent>
-            </Tabs>
-
-            <DataMissingAlert />
-          </>
-        )}
+          </div>
+        </div>
       </main>
-
-      {/* Footer */}
-      <div className="border-t border-border mt-12">
-        <AppFooter />
-      </div>
-    </div>
   );
 };
 
