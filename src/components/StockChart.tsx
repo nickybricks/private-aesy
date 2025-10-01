@@ -373,6 +373,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
   const formatXAxis = (date: Date) => {
     switch (selectedRange) {
       case '5D':
+        return format(date, 'HH:mm', { locale: de });
       case '1M':
         return format(date, 'dd.MM', { locale: de });
       case '3M':
