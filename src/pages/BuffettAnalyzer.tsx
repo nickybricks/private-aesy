@@ -93,15 +93,8 @@ const IndexContent: React.FC = () => {
             
             <ErrorAlert />
             
-            {/* Two column layout for Stock Quote and new section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <StockQuoteHeader />
-              
-              {/* New empty section */}
-              <div className="glass-panel p-6 rounded-2xl h-full">
-                <p className="text-muted-foreground">Inhalt folgt...</p>
-              </div>
-            </div>
+            {/* New Stock Quote Header - Left side, half width */}
+            <StockQuoteHeader />
             
             <RatingSection />
             
