@@ -29,31 +29,36 @@ const App = () => {
     const { isMobileMenuOpen, isMobile, closeMobileMenu } = useMobileMenu();
     
     return (
-      <div className="min-h-screen bg-background flex">
+      <div className="min-h-screen bg-background">
         {/* Check if we're on auth page */}
         {location.pathname !== "/auth" && (
           <>
-            <div className={`${isMobile ? 'fixed inset-0 z-50 transform transition-transform' : ''} ${isMobile && !isMobileMenuOpen ? '-translate-x-full' : ''}`}>
+            {/* App Header - Fixed at top */}
+            <AppHeader />
+            
+            {/* Left Navigation - Fixed at left, below header */}
+            <div className={`${isMobile ? 'fixed inset-0 z-40 transform transition-transform' : ''} ${isMobile && !isMobileMenuOpen ? '-translate-x-full' : ''}`}>
               <LeftNavigation onMobileClose={closeMobileMenu} />
             </div>
             
             {/* Mobile overlay */}
             {isMobile && isMobileMenuOpen && (
               <div 
-                className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                className="fixed inset-0 bg-black bg-opacity-50 z-35"
                 onClick={closeMobileMenu}
               />
             )}
           </>
         )}
 
-        <div className="flex-1 flex flex-col w-full">
-          {/* Global App Header - on all pages except auth */}
-          {location.pathname !== "/auth" && <AppHeader />}
-          
+        {/* Main content area */}
+        <main className={`
+          ${location.pathname !== "/auth" ? 'pt-18 md:ml-[280px]' : ''}
+          min-h-screen
+        `}>
           {/* Impersonation Banner */}
           {location.pathname !== "/auth" && (
-            <div className="px-4 pt-4 md:pl-0">
+            <div className="px-4 pt-4">
               <ImpersonationBanner />
             </div>
           )}
@@ -74,7 +79,7 @@ const App = () => {
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </div>
+        </main>
       </div>
     );
   };
