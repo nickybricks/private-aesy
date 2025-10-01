@@ -2,6 +2,7 @@ import React from 'react';
 import { useStock } from '@/context/StockContext';
 import { Star, TrendingUp, TrendingDown } from 'lucide-react';
 import { AddToWatchlistButton } from './AddToWatchlistButton';
+import { Card } from '@/components/ui/card';
 
 const StockQuoteHeader: React.FC = () => {
   const { 
@@ -110,7 +111,7 @@ const StockQuoteHeader: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel p-6 rounded-2xl h-full">
+    <Card className="mb-6 p-6 lg:w-1/2">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-4">
           {/* Company Logo Placeholder - can be added later */}
@@ -196,7 +197,7 @@ const StockQuoteHeader: React.FC = () => {
           <div className="font-semibold">{formatVolume(avgVolume)}</div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 
