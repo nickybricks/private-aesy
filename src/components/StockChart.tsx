@@ -312,45 +312,6 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
     return historicalData.filter(item => item.date >= cutoffDate);
   };
 
-  const calculatePerformanceStats = () => {
-    const filteredData = getFilteredData();
-    if (filteredData.length === 0) return null;
-
-    const currentPrice = filteredData[filteredData.length - 1]?.price || 0;
-    const startPrice = filteredData[0]?.price || 0;
-    const allTimeLow = Math.min(...historicalData.map(d => d.price));
-    const allTimeHigh = Math.max(...historicalData.map(d => d.price));
-
-    const periodChange = startPrice !== 0 ? ((currentPrice - startPrice) / startPrice) * 100 : 0;
-    const aboveLow = allTimeLow !== 0 ? ((currentPrice - allTimeLow) / allTimeLow) * 100 : 0;
-    const belowHigh = allTimeHigh !== 0 ? ((currentPrice - allTimeHigh) / allTimeHigh) * 100 : 0;
-
-    return {
-      periodChange,
-      aboveLow,
-      belowHigh,
-    };
-  };
-
-  const formatXAxis = (date: Date) => {
-    switch (selectedRange) {
-      case '5D':
-      case '1M':
-        return format(date, 'dd.MM', { locale: de });
-      case '3M':
-      case 'YTD':
-      case '1Y':
-        return format(date, 'MMM yy', { locale: de });
-      case '3Y':
-      case '5Y':
-      case '10Y':
-      case 'MAX':
-        return format(date, 'yyyy', { locale: de });
-      default:
-        return format(date, 'dd.MM.yy', { locale: de });
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="w-full h-[400px] flex items-center justify-center">
@@ -373,55 +334,36 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
   }
 
   const filteredData = getFilteredData();
-  const stats = calculatePerformanceStats();
+  
+  // Only include intrinsic value line if it's a valid number
+  const showIntrinsicLine = intrinsicValue !== null && 
+                           intrinsicValue !== undefined && 
+                           !isNaN(Number(intrinsicValue));
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2">
         {TIME_RANGES.map((range) => (
           <Button
             key={range.value}
-            size="sm"
             variant={selectedRange === range.value ? 'default' : 'outline'}
             onClick={() => setSelectedRange(range.value)}
-            className="rounded-xl"
           >
             {range.label}
           </Button>
         ))}
       </div>
       
-      {stats && (
-        <div className="flex flex-wrap gap-4 text-sm">
-          <div>
-            <span className="text-muted-foreground">{TIME_RANGES.find(r => r.value === selectedRange)?.label}: </span>
-            <span className={stats.periodChange >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-              {stats.periodChange >= 0 ? '+' : ''}{stats.periodChange.toFixed(2)}%
-            </span>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Above Low: </span>
-            <span className="text-green-600 font-semibold">
-              +{stats.aboveLow.toFixed(2)}%
-            </span>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Below High: </span>
-            <span className="text-red-600 font-semibold">
-              {stats.belowHigh.toFixed(2)}%
-            </span>
-          </div>
-        </div>
-      )}
-      
-      <div className="w-full h-[500px] overflow-hidden">
+      <div className="w-full h-[600px] overflow-hidden">
         <ChartContainer
           config={{
+            line1: { theme: { light: 'hsl(221, 83%, 53%)', dark: 'hsl(221, 83%, 70%)' } },
+            line2: { theme: { light: 'hsl(142, 76%, 36%)', dark: 'hsl(142, 76%, 50%)' } },
             area: { theme: { light: 'hsl(221, 83%, 95%)', dark: 'hsl(221, 83%, 30%)' } },
           }}
         >
-          <ResponsiveContainer width="100%" height={480}>
-            <ComposedChart data={getFilteredData()} margin={{ top: 10, right: 30, left: 0, bottom: 40 }}>
+          <ResponsiveContainer width="100%" height={580}>
+            <ComposedChart data={getFilteredData()} margin={{ top: 10, right: 30, left: 0, bottom: 80 }}>
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
@@ -431,9 +373,9 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="date"
-                tickFormatter={(date) => formatXAxis(new Date(date))}
-                height={50}
-                tickMargin={10}
+                tickFormatter={(date) => format(new Date(date), 'dd.MM.yy', { locale: de })}
+                height={70}
+                tickMargin={30}
               />
               <YAxis
                 domain={['auto', 'auto']}
@@ -449,8 +391,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                   if (active && payload && payload.length > 0) {
                     const dataPoint = payload[0].payload;
                     return (
-                      <div className="bg-background/95 backdrop-blur-sm p-3 border border-border rounded-lg shadow-lg">
-                        <p className="text-sm text-muted-foreground">
+                      <div className="bg-white p-2 border border-gray-200 rounded shadow-lg">
+                        <p className="text-sm text-gray-600">
                           {format(new Date(dataPoint.date), 'dd. MMMM yyyy', { locale: de })}
                         </p>
                         <p className="text-sm font-semibold">
@@ -458,6 +400,11 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                             ? payload[0].value.toFixed(2) 
                             : payload[0].value} {currency}
                         </p>
+                        {dataPoint.intrinsicValue && !isNaN(Number(dataPoint.intrinsicValue)) && (
+                          <p className="text-sm text-green-700">
+                            Innerer Wert: {Number(dataPoint.intrinsicValue).toFixed(2)} {currency}
+                          </p>
+                        )}
                       </div>
                     );
                   }
@@ -470,6 +417,15 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                 stroke="hsl(221, 83%, 53%)"
                 fillOpacity={1}
                 fill="url(#colorPrice)"
+              />
+              <Line
+                type="monotone"
+                dataKey="intrinsicValue"
+                stroke="hsl(142, 76%, 36%)"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={false}
+                connectNulls={false}
               />
             </ComposedChart>
           </ResponsiveContainer>
