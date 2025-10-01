@@ -469,29 +469,32 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         </div>
       )}
       
-      <div className="w-full h-[220px] md:h-[260px] overflow-hidden">
+      <div className="w-full h-[220px] md:h-[260px]">
         <ChartContainer
           config={{
             line1: { theme: { light: 'hsl(221, 83%, 53%)', dark: 'hsl(221, 83%, 70%)' } },
             line2: { theme: { light: 'hsl(142, 76%, 36%)', dark: 'hsl(142, 76%, 50%)' } },
             area: { theme: { light: 'hsl(221, 83%, 95%)', dark: 'hsl(221, 83%, 30%)' } },
           }}
+          className="h-full w-full aspect-auto"
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={getFilteredData()} margin={{ top: 8, right: 8, left: 0, bottom: 20 }}>
-              <defs>
-                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="date"
-                tickFormatter={(date) => formatXAxis(new Date(date))}
-                height={40}
-                tickMargin={6}
-              />
+          <ComposedChart data={getFilteredData()} margin={{ top: 8, right: 8, left: 0, bottom: 36 }}>
+            <defs>
+              <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(date) => formatXAxis(new Date(date))}
+              height={36}
+              tickMargin={8}
+              minTickGap={10}
+              interval="preserveStartEnd"
+              tick={{ fontSize: 11 }}
+            />
               <YAxis
                 orientation="right"
                 domain={['auto', 'auto']}
@@ -522,15 +525,14 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                   return null;
                 }}
               />
-              <Area
-                type="monotone"
-                dataKey="price"
-                stroke="hsl(221, 83%, 53%)"
-                fillOpacity={1}
-                fill="url(#colorPrice)"
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+            <Area
+              type="monotone"
+              dataKey="price"
+              stroke="hsl(221, 83%, 53%)"
+              fillOpacity={1}
+              fill="url(#colorPrice)"
+            />
+          </ComposedChart>
         </ChartContainer>
       </div>
     </div>
