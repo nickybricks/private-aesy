@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import StockHeader from '@/components/StockHeader';
 import StockQuoteHeader from '@/components/StockQuoteHeader';
+import StockChart from '@/components/StockChart';
 import { StockProvider, useStock } from '@/context/StockContext';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
@@ -93,8 +94,19 @@ const IndexContent: React.FC = () => {
             
             <ErrorAlert />
             
-            {/* New Stock Quote Header - Left side, half width */}
-            <StockQuoteHeader />
+            {/* Stock Quote Header and Chart - Two column layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <StockQuoteHeader />
+              {stockInfo && (
+                <div className="glass-panel p-6 rounded-2xl">
+                  <StockChart 
+                    symbol={stockInfo.symbol} 
+                    currency={stockInfo.currency}
+                    intrinsicValue={null}
+                  />
+                </div>
+              )}
+            </div>
             
             <RatingSection />
             
