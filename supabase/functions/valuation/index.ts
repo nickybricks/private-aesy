@@ -154,6 +154,48 @@ async function calculateWACC(ticker: string, data: any): Promise<number> {
   return parseFloat(clampedWacc.toFixed(2));
 }
 
+// Calculate EPS w/o NRI (quarterly adjusted)
+async function calculateEpsWoNri(ticker: string): Promise<number> {
+  const FMP_API_KEY = Deno.env.get('FMP_API_KEY');
+  if (!FMP_API_KEY) throw new Error('FMP_API_KEY not configured');
+
+  const res = await fetch(`https://financialmodelingprep.com/api/v3/income-statement/${ticker}?period=quarter&limit=40&apikey=${FMP_API_KEY}`);
+  if (!res.ok) return 0;
+  
+  const quarters = await res.json();
+  if (!Array.isArray(quarters) || quarters.length < 4) return 0;
+
+  // Calculate EPS w/o NRI for last 4 quarters (TTM)
+  let ttmEpsWoNri = 0;
+  for (let i = 0; i < 4; i++) {
+    const q = quarters[i];
+    
+    // Get tax rate
+    const preTax = q.incomeBeforeTax || 0;
+    const tax = q.incomeTaxExpense || 0;
+    const taxRate = (preTax > 0 && tax > 0) ? Math.min(Math.max(tax / preTax, 0), 0.5) : 0.21;
+    
+    // Get NI continuing ops
+    const niCont = q.netIncomeFromContinuingOperations || q.netIncome || 0;
+    
+    // Get unusuals (pretax)
+    const unusualPretax = (q.unusualItems || 0) + (q.goodwillImpairment || 0) + (q.impairmentOfGoodwillAndIntangibleAssets || 0);
+    const unusualAfterTax = unusualPretax * (1 - taxRate);
+    
+    // Calculate NI w/o NRI
+    const niWoNri = niCont - unusualAfterTax;
+    
+    // Get diluted shares
+    const shares = q.weightedAverageShsOutDil || 0;
+    if (shares <= 0) continue;
+    
+    // Add quarterly EPS w/o NRI
+    ttmEpsWoNri += niWoNri / shares;
+  }
+  
+  return ttmEpsWoNri;
+}
+
 // Calculate starting value based on mode with smoothing
 function calculateStartValue(mode: BasisMode, data: any): number {
   const income = data.income;
@@ -164,20 +206,8 @@ function calculateStartValue(mode: BasisMode, data: any): number {
   const sharesOutstanding = profile.sharesOutstanding || 1;
   
   if (mode === 'EPS_WO_NRI') {
-    // EPS without non-recurring items - use trimmed mean of last 3-5 years for smoothing
-    const recentEps = income.slice(0, 5)
-      .map((i: any) => i.eps || i.epsdiluted || 0)
-      .filter((v: number) => v > 0);
-    
-    if (recentEps.length >= 3) {
-      // Use trimmed mean (remove top/bottom 20%)
-      return trimmedMean(recentEps, 0.2);
-    } else if (recentEps.length >= 1) {
-      // Fallback to median if not enough data
-      return median(recentEps);
-    }
-    
-    return 0;
+    // This will be calculated separately using quarterly data
+    return 0; // Placeholder, will be replaced in main function
   }
   
   if (mode === 'FCF_PER_SHARE') {
@@ -434,7 +464,14 @@ serve(async (req) => {
     console.log(`Calculated WACC: ${wacc.toFixed(2)}%`);
     
     // Calculate start value based on mode
-    const startValue = calculateStartValue(mode, data);
+    let startValue = calculateStartValue(mode, data);
+    
+    // For EPS_WO_NRI, use quarterly calculation
+    if (mode === 'EPS_WO_NRI') {
+      startValue = await calculateEpsWoNri(ticker);
+      console.log(`EPS w/o NRI (TTM): ${startValue.toFixed(2)}`);
+    }
+    
     console.log(`Start value for mode ${mode}: ${startValue.toFixed(2)}`);
     
     // Warnings array for data quality issues

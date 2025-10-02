@@ -13,6 +13,8 @@ interface FmpIncomeQuarterRaw {
   goodwillImpairment?: number; // pretax
   impairmentOfGoodwillAndIntangibleAssets?: number; // pretax
   weightedAverageShsOutDil?: number; // diluted shares
+  eps?: number;
+  epsdiluted?: number;
 }
 
 export interface EpsWoNriQuarter {
@@ -37,6 +39,14 @@ export interface EpsWoNriGrowthRates {
   cagr10y: number | null;
 }
 
+export interface EpsWoNriDiagnostics {
+  eps_wonri_ttm: number | null;
+  eps_gaap_ttm: number | null;
+  nri_adjustment_ttm: number | null;
+  ttm_complete: boolean;
+  nri_data_missing: boolean;
+}
+
 export interface EpsWoNriResult {
   quarters: EpsWoNriQuarter[]; // sorted desc by date
   ttm: { value: number | null; complete: boolean };
@@ -44,6 +54,7 @@ export interface EpsWoNriResult {
   growth: EpsWoNriGrowthRates;
   peWoNri: number | null;
   warnings: string[];
+  diagnostics: EpsWoNriDiagnostics;
 }
 
 async function getFmpApiKey(): Promise<string> {
@@ -193,12 +204,32 @@ export async function calculateEpsWithoutNri(ticker: string, currentPrice?: numb
   const anySharesMissing = raw.some((r) => !r.weightedAverageShsOutDil || r.weightedAverageShsOutDil <= 0);
   if (anySharesMissing) warnings.push('Verwässerte Aktienanzahl teilweise fehlend – betroffene Quartale ignoriert');
 
-  return { quarters: quartersDesc, ttm, annual, growth, peWoNri, warnings };
+  // Calculate diagnostics
+  const nri_adjustment_ttm = quartersDesc.length >= 4 
+    ? quartersDesc.slice(0, 4).reduce((sum, q) => sum + (q.unusualsAfterTax / q.dilutedShares), 0)
+    : null;
+
+  const eps_gaap_ttm = raw.length >= 4
+    ? raw.slice(0, 4).reduce((sum, r) => {
+        const eps = r.epsdiluted ?? r.eps ?? 0;
+        return sum + eps;
+      }, 0)
+    : null;
+
+  const diagnostics: EpsWoNriDiagnostics = {
+    eps_wonri_ttm: ttm.value,
+    eps_gaap_ttm,
+    nri_adjustment_ttm,
+    ttm_complete: ttm.complete,
+    nri_data_missing: !anyUnusualAvailable,
+  };
+
+  return { quarters: quartersDesc, ttm, annual, growth, peWoNri, warnings, diagnostics };
 }
 
 export const EpsWoNriTexts = {
   tooltip:
-    'Gewinn je Aktie ohne Sondereffekte. Zeigt die laufende Ertragskraft stabiler als das rohe EPS.',
+    'EPS w/o NRI (TTM): Gewinn je Aktie ohne Sondereffekte. Pro Quartal steuerbereinigt berechnet und anschließend die letzten 4 Quartale aufsummiert; je Quartal durch verwässerte Aktienzahl geteilt.',
   hint:
     'Hinweis: Cashflow je Aktie ist langfristig oft der robustere Indikator; Differenzen prüfen.',
 };
