@@ -35,6 +35,40 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
   }
 };
 
+// Funktion, um Stock News zu holen
+export const fetchStockNews = async (ticker: string) => {
+  console.log(`Fetching stock news for ${ticker}`);
+  const standardizedTicker = ticker.trim().toUpperCase();
+  
+  const newsData = await fetchFromFMP(`/v4/stock_news`, { 
+    tickers: standardizedTicker,
+    limit: 50
+  });
+  
+  if (!newsData || newsData.length === 0) {
+    return [];
+  }
+  
+  return newsData;
+};
+
+// Funktion, um Press Releases zu holen
+export const fetchPressReleases = async (ticker: string) => {
+  console.log(`Fetching press releases for ${ticker}`);
+  const standardizedTicker = ticker.trim().toUpperCase();
+  
+  const pressData = await fetchFromFMP(`/v4/press-releases`, { 
+    symbol: standardizedTicker,
+    limit: 50
+  });
+  
+  if (!pressData || pressData.length === 0) {
+    return [];
+  }
+  
+  return pressData;
+};
+
 // Funktion, um Aktieninformationen zu holen
 export const fetchStockInfo = async (ticker: string) => {
   console.log(`Fetching stock info for ${ticker}`);

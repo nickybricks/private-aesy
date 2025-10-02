@@ -1,6 +1,15 @@
-
 import { ReactNode } from 'react';
 import { PredictabilityResult } from '@/services/PredictabilityStarsService';
+
+export interface NewsItem {
+  title: string;
+  image: string;
+  url: string;
+  publishedDate: string;
+  site: string;
+  symbol: string;
+  text?: string;
+}
 
 export interface HistoricalDataItem {
   year: string;
@@ -86,6 +95,8 @@ export interface StockContextType {
   hasCriticalDataMissing: boolean;
   dcfData?: DCFData;
   predictabilityStars: PredictabilityResult | null;
+  newsItems: NewsItem[];
+  pressReleases: NewsItem[];
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string, enableDeepResearch?: boolean) => Promise<void>;

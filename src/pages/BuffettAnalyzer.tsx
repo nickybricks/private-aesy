@@ -7,6 +7,7 @@ import StockQuoteHeader from '@/components/StockQuoteHeader';
 import StockChart from '@/components/StockChart';
 import { StockProvider, useStock } from '@/context/StockContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import NewsSection from '@/components/NewsSection';
 import { Card } from '@/components/ui/card';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
@@ -31,7 +32,9 @@ const IndexContent: React.FC = () => {
     loadSavedAnalysis,
     gptAvailable,
     stockInfo,
-    overallRating
+    overallRating,
+    newsItems,
+    pressReleases
   } = useStock();
   const { analyses, loading: analysesLoading } = useSavedAnalyses();
   const { toast } = useToast();
@@ -175,6 +178,10 @@ const IndexContent: React.FC = () => {
                   </TabsList>
                   
                   <TabsContent value="news" className="mt-6">
+                    <NewsSection 
+                      newsItems={newsItems} 
+                      pressReleases={pressReleases}
+                    />
                   </TabsContent>
                   
                   <TabsContent value="financials" className="mt-6">

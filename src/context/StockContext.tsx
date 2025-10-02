@@ -1,8 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData } from './StockContextTypes';
+import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem } from './StockContextTypes';
 import { PredictabilityResult } from '@/services/PredictabilityStarsService';
 import { useStockSearch } from './StockSearchService';
+import { fetchStockNews, fetchPressReleases } from '@/api/stockApi';
 
 // Define a more specific interface for stockInfo
 interface StockInfo {
@@ -39,6 +40,8 @@ export function StockProvider({ children }: StockProviderProps) {
   const [hasCriticalDataMissing, setHasCriticalDataMissing] = useState(false);
   const [dcfData, setDcfData] = useState<DCFData | undefined>(undefined);
   const [predictabilityStars, setPredictabilityStars] = useState<PredictabilityResult | null>(null);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [pressReleases, setPressReleases] = useState<NewsItem[]>([]);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
@@ -65,8 +68,20 @@ export function StockProvider({ children }: StockProviderProps) {
       setHasCriticalDataMissing(false);
       setDcfData(undefined);
       setPredictabilityStars(null);
+      setNewsItems([]);
+      setPressReleases([]);
       
-      const { 
+      // Fetch news in parallel with stock search
+      const newsPromise = fetchStockNews(ticker).catch(err => {
+        console.error('Error fetching news:', err);
+        return [];
+      });
+      const pressPromise = fetchPressReleases(ticker).catch(err => {
+        console.error('Error fetching press releases:', err);
+        return [];
+      });
+      
+      const {
         info, 
         stockCurrency: currency, 
         criticalDataMissing, 
@@ -126,6 +141,12 @@ export function StockProvider({ children }: StockProviderProps) {
           setPredictabilityStars(null);
         }
       }
+      
+      // Wait for news to load
+      const [news, press] = await Promise.all([newsPromise, pressPromise]);
+      setNewsItems(news);
+      setPressReleases(press);
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
       setError(errorMessage);
@@ -169,6 +190,8 @@ export function StockProvider({ children }: StockProviderProps) {
       hasCriticalDataMissing,
       dcfData,
       predictabilityStars,
+      newsItems,
+      pressReleases,
       setActiveTab,
       setLoadingProgress,
       handleSearch,
