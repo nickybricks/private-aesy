@@ -149,7 +149,7 @@ const IndexContent: React.FC = () => {
                       value="metrics" 
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
                     >
-                      Metrics
+                      Innerer Wert
                     </TabsTrigger>
                     <TabsTrigger 
                       value="dividends" 
