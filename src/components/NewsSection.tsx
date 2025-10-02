@@ -12,8 +12,7 @@ interface NewsSectionProps {
 }
 
 const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) => {
-  const [showAllNews, setShowAllNews] = useState(false);
-  const [showAllPress, setShowAllPress] = useState(false);
+  const [displayCount, setDisplayCount] = useState(10);
   
   // Combine and sort all news by date
   const allNews = useMemo(() => {
@@ -23,7 +22,8 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
     );
   }, [newsItems, pressReleases]);
   
-  const displayedNews = showAllNews ? allNews : allNews.slice(0, 6);
+  const displayedNews = allNews.slice(0, displayCount);
+  const hasMore = displayCount < allNews.length;
   
   const formatTimeAgo = (dateString: string) => {
     try {
@@ -53,31 +53,19 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
   
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Nachrichten & Press Releases</h2>
-        {allNews.length > 6 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowAllNews(!showAllNews)}
-            className="text-primary hover:text-primary/80"
-          >
-            {showAllNews ? 'Weniger anzeigen' : 'Mehr anzeigen'}
-          </Button>
-        )}
-      </div>
+      <h2 className="text-2xl font-semibold mb-6">Nachrichten & Press Releases</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-3">
         {displayedNews.map((item, index) => (
           <Card
             key={`${item.url}-${index}`}
             className="group cursor-pointer hover:shadow-md transition-all duration-200 overflow-hidden"
             onClick={() => handleNewsClick(item.url)}
           >
-            <CardContent className="p-0">
-              <div className="flex flex-col">
+            <CardContent className="p-4">
+              <div className="flex gap-4">
                 {item.image && (
-                  <div className="relative w-full h-48 overflow-hidden bg-muted">
+                  <div className="relative w-32 h-24 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
                     <img
                       src={item.image}
                       alt={item.title}
@@ -91,7 +79,11 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
                   </div>
                 )}
                 
-                <div className="p-4 space-y-2">
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground uppercase">
+                    {item.site}
+                  </div>
+                  
                   <h3 className="font-semibold text-base line-clamp-2 group-hover:text-primary transition-colors">
                     {item.title}
                   </h3>
@@ -102,12 +94,9 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
                     </p>
                   )}
                   
-                  <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
-                    <span className="font-medium">{item.site}</span>
-                    <div className="flex items-center gap-2">
-                      <span>{formatTimeAgo(item.publishedDate)}</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </div>
+                  <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
+                    <span>{formatTimeAgo(item.publishedDate)}</span>
+                    <ExternalLink className="w-3 h-3" />
                   </div>
                 </div>
               </div>
@@ -116,14 +105,14 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
         ))}
       </div>
       
-      {!showAllNews && allNews.length > 6 && (
+      {hasMore && (
         <div className="text-center pt-4">
           <Button
             variant="outline"
-            onClick={() => setShowAllNews(true)}
+            onClick={() => setDisplayCount(prev => prev + 10)}
             className="w-full md:w-auto"
           >
-            {allNews.length - 6} weitere Nachrichten anzeigen
+            Weitere Nachrichten anzeigen
           </Button>
         </div>
       )}
