@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
+import { Info, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 type BasisMode = 'EPS_WO_NRI' | 'FCF_PER_SHARE' | 'ADJUSTED_DIVIDEND';
 
@@ -14,43 +15,64 @@ interface ValuationTabProps {
 
 export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   const [selectedMode, setSelectedMode] = useState<BasisMode>('EPS_WO_NRI');
+  const [loading, setLoading] = useState(false);
+  const [valuationData, setValuationData] = useState<any>(null);
+  const { toast } = useToast();
 
-  // Mock-Daten für initiale Implementierung
-  const mockData = {
-    EPS_WO_NRI: {
-      startValue: 12.45,
-      growthRate: 8.3,
-      terminalRate: 4.0,
-      wacc: 11.0,
-      pvPhase1: 142.18,
-      pvPhase2: 89.32,
-      tangibleBook: 4.43,
-      fairValue: 231.50,
-    },
-    FCF_PER_SHARE: {
-      startValue: 8.92,
-      growthRate: 7.5,
-      terminalRate: 4.0,
-      wacc: 11.0,
-      pvPhase1: 101.23,
-      pvPhase2: 63.77,
-      tangibleBook: 4.43,
-      fairValue: 165.00,
-    },
-    ADJUSTED_DIVIDEND: {
-      startValue: 5.12,
-      growthRate: 8.3,
-      terminalRate: 4.0,
-      wacc: 11.0,
-      pvPhase1: 57.21,
-      pvPhase2: 36.33,
-      tangibleBook: 4.43,
-      fairValue: 93.53,
-    },
+  // Fetch valuation data from API
+  useEffect(() => {
+    const fetchValuation = async () => {
+      if (!ticker) return;
+      
+      setLoading(true);
+      try {
+        const url = `https://slpruxtkowlxawssqyup.supabase.co/functions/v1/valuation?ticker=${encodeURIComponent(ticker)}&mode=${selectedMode}&price=${currentPrice}`;
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setValuationData(data);
+        console.log('Valuation data loaded:', data);
+      } catch (error) {
+        console.error('Error fetching valuation:', error);
+        toast({
+          title: 'Fehler beim Laden',
+          description: 'Die Bewertungsdaten konnten nicht geladen werden.',
+          variant: 'destructive'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchValuation();
+  }, [ticker, selectedMode, currentPrice]);
+
+  // Show loading state
+  if (loading || !valuationData) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const data = {
+    startValue: valuationData.components.startValuePerShare,
+    growthRate: valuationData.assumptions.growthRatePct,
+    terminalRate: valuationData.assumptions.terminalRatePct,
+    wacc: valuationData.assumptions.discountRatePct,
+    pvPhase1: valuationData.components.pvPhase1,
+    pvPhase2: valuationData.components.pvPhase2,
+    tangibleBook: valuationData.assumptions.tangibleBookPerShare,
+    fairValue: valuationData.fairValuePerShare,
   };
-
-  const data = mockData[selectedMode];
-  const marginOfSafety = ((data.fairValue - currentPrice) / currentPrice) * 100;
+  
+  const marginOfSafety = valuationData.marginOfSafetyPct;
 
   const getMoSStatus = (mos: number): { label: string; variant: 'default' | 'secondary' | 'destructive' } => {
     if (mos >= 30) return { label: 'Unterbewertet', variant: 'default' };
