@@ -116,13 +116,13 @@ const IndexContent: React.FC = () => {
             {/* Tab Navigation */}
             {stockInfo && (
               <div className="mb-8">
-                <Tabs defaultValue="overview" className="w-full">
+                <Tabs defaultValue="news" className="w-full">
                   <TabsList className="w-full justify-start h-12 bg-transparent border-b border-border rounded-none p-0">
                     <TabsTrigger 
-                      value="overview" 
+                      value="news" 
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
                     >
-                      Overview
+                      News
                     </TabsTrigger>
                     <TabsTrigger 
                       value="financials" 
@@ -174,7 +174,7 @@ const IndexContent: React.FC = () => {
                     </TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="overview" className="mt-6">
+                  <TabsContent value="news" className="mt-6">
                   </TabsContent>
                   
                   <TabsContent value="financials" className="mt-6">
