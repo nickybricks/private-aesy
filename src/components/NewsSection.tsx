@@ -55,7 +55,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold mb-6">Nachrichten & Press Releases</h2>
       
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {displayedNews.map((item, index) => (
           <Card
             key={`${item.url}-${index}`}
@@ -65,7 +65,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
             <CardContent className="p-4">
               <div className="flex gap-4">
                 {item.image && (
-                  <div className="relative w-32 h-24 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
+                  <div className="relative w-28 h-28 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
                     <img
                       src={item.image}
                       alt={item.title}
@@ -84,12 +84,12 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
                     {item.site}
                   </div>
                   
-                  <h3 className="font-semibold text-base line-clamp-2 group-hover:text-primary transition-colors">
+                  <h3 className="font-semibold text-sm line-clamp-2 group-hover:text-primary transition-colors">
                     {item.title}
                   </h3>
                   
                   {item.text && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-xs text-muted-foreground line-clamp-2">
                       {item.text}
                     </p>
                   )}
