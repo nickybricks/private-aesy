@@ -1,9 +1,10 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem } from './StockContextTypes';
+import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem, ValuationData } from './StockContextTypes';
 import { PredictabilityResult } from '@/services/PredictabilityStarsService';
 import { useStockSearch } from './StockSearchService';
 import { fetchStockNews, fetchPressReleases } from '@/api/stockApi';
+import { fetchValuation } from '@/services/ValuationService';
 
 // Define a more specific interface for stockInfo
 interface StockInfo {
@@ -42,6 +43,7 @@ export function StockProvider({ children }: StockProviderProps) {
   const [predictabilityStars, setPredictabilityStars] = useState<PredictabilityResult | null>(null);
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [pressReleases, setPressReleases] = useState<NewsItem[]>([]);
+  const [valuationData, setValuationData] = useState<ValuationData | undefined>(undefined);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
@@ -70,6 +72,7 @@ export function StockProvider({ children }: StockProviderProps) {
       setPredictabilityStars(null);
       setNewsItems([]);
       setPressReleases([]);
+      setValuationData(undefined);
       
       // Fetch news in parallel with stock search
       const newsPromise = fetchStockNews(ticker).catch(err => {
@@ -148,6 +151,19 @@ export function StockProvider({ children }: StockProviderProps) {
       setNewsItems(news);
       setPressReleases(press);
       
+      // Fetch valuation data in background (non-blocking)
+      if (info && info.price) {
+        fetchValuation(ticker, 'EPS_WO_NRI', info.price)
+          .then((valuation) => {
+            console.log('✅ Valuation fetched:', valuation);
+            setValuationData(valuation);
+          })
+          .catch((err) => {
+            console.error('Error fetching valuation (non-critical):', err);
+            // Don't set error state, valuation is optional
+          });
+      }
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
       setError(errorMessage);
@@ -167,6 +183,7 @@ export function StockProvider({ children }: StockProviderProps) {
       setDcfData(analysisData.dcfData);
       setPredictabilityStars(analysisData.predictabilityStars);
       setStockCurrency(analysisData.stockInfo?.currency || 'EUR');
+      setValuationData(analysisData.valuationData);
       setError(null);
       setIsLoading(false);
     } catch (error) {
@@ -190,6 +207,7 @@ export function StockProvider({ children }: StockProviderProps) {
       stockCurrency,
       hasCriticalDataMissing,
       dcfData,
+      valuationData,
       predictabilityStars,
       newsItems,
       pressReleases,

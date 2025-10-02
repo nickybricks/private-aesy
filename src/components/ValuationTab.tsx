@@ -6,6 +6,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useStock } from '@/context/StockContext';
+import { fetchValuation } from '@/services/ValuationService';
 
 type BasisMode = 'EPS_WO_NRI' | 'FCF_PER_SHARE' | 'ADJUSTED_DIVIDEND';
 
@@ -19,23 +21,24 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   const [loading, setLoading] = useState(false);
   const [valuationData, setValuationData] = useState<any>(null);
   const { toast } = useToast();
+  const { valuationData: contextValuationData } = useStock();
 
-  // Fetch valuation data from API
+  // Use context data if available and matches current mode
   useEffect(() => {
-    const fetchValuation = async () => {
+    if (contextValuationData && contextValuationData.mode === selectedMode) {
+      console.log('Using valuation data from context:', contextValuationData);
+      setValuationData(contextValuationData);
+      setLoading(false);
+      return;
+    }
+    
+    // Otherwise fetch fresh data
+    const fetchValuationData = async () => {
       if (!ticker) return;
       
       setLoading(true);
       try {
-        const url = `https://slpruxtkowlxawssqyup.supabase.co/functions/v1/valuation?ticker=${encodeURIComponent(ticker)}&mode=${selectedMode}&price=${currentPrice}`;
-        
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const data = await fetchValuation(ticker, selectedMode, currentPrice);
         setValuationData(data);
         console.log('Valuation data loaded:', data);
       } catch (error) {
@@ -50,8 +53,8 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
       }
     };
     
-    fetchValuation();
-  }, [ticker, selectedMode, currentPrice]);
+    fetchValuationData();
+  }, [ticker, selectedMode, currentPrice, contextValuationData]);
 
   // Show loading state
   if (loading || !valuationData) {

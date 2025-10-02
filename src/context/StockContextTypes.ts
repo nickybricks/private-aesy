@@ -80,6 +80,32 @@ export interface DCFData {
   equityValue: number;
 }
 
+export interface ValuationData {
+  ticker: string;
+  price: number;
+  mode: 'EPS_WO_NRI' | 'FCF_PER_SHARE' | 'ADJUSTED_DIVIDEND';
+  fairValuePerShare: number;
+  marginOfSafetyPct: number;
+  assumptions: {
+    discountRatePct: number;
+    growthYears: number;
+    growthRatePct: number;
+    terminalYears: number;
+    terminalRatePct: number;
+    tangibleBookPerShare: number;
+    includeTangibleBook: boolean;
+    predictability: string;
+  };
+  components: {
+    startValuePerShare: number;
+    pvPhase1: number;
+    pvPhase2: number;
+    tangibleBookAdded: number;
+  };
+  asOf: string;
+  warnings?: string[];
+}
+
 export interface StockContextType {
   isLoading: boolean;
   loadingProgress: number;
@@ -94,6 +120,7 @@ export interface StockContextType {
   stockCurrency: string;
   hasCriticalDataMissing: boolean;
   dcfData?: DCFData;
+  valuationData?: ValuationData;
   predictabilityStars: PredictabilityResult | null;
   newsItems: NewsItem[];
   pressReleases: NewsItem[];
