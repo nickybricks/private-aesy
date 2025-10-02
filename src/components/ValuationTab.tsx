@@ -105,14 +105,6 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Innerer Wert (20-Jahre-Modell)</h2>
-        <p className="text-muted-foreground">
-          Zwei Phasen, per Share, diskontiert mit WACC. Annahmen serverseitig festgelegt.
-        </p>
-      </div>
-
       {/* Warnings */}
       {warnings.length > 0 && (
         <Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
