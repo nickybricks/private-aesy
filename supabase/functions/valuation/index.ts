@@ -149,9 +149,9 @@ async function calculateWACC(ticker: string, data: any): Promise<number> {
   // Clamp WACC between 8% and 12%
   const clampedWacc = clamp(wacc * 100, 8, 12);
   
-  console.log(`WACC calculation: E=${E}, D=${D}, Re=${Re.toFixed(4)}, Rd=${Rd.toFixed(4)}, Tax=${taxRate.toFixed(2)}, WACC=${clampedWacc.toFixed(2)}%`);
+  console.log(`WACC calculation: E=${E.toFixed(2)}, D=${D.toFixed(2)}, Re=${(Re * 100).toFixed(2)}%, Rd=${(Rd * 100).toFixed(2)}%, Tax=${(taxRate * 100).toFixed(2)}%, WACC=${clampedWacc.toFixed(2)}%`);
   
-  return clampedWacc;
+  return parseFloat(clampedWacc.toFixed(2));
 }
 
 // Calculate starting value based on mode with smoothing
@@ -248,7 +248,7 @@ function calculateGrowthRate(mode: BasisMode, data: any): number {
       const endEps = epsValues[0];
       const cagr = (Math.pow(endEps / startEps, 1 / 10) - 1) * 100;
       console.log(`Using 10Y EPS CAGR: ${cagr.toFixed(2)}%`);
-      return cagr;
+      return parseFloat(cagr.toFixed(2));
     }
     
     // Fallback to 5Y CAGR
@@ -257,7 +257,7 @@ function calculateGrowthRate(mode: BasisMode, data: any): number {
       const endEps = epsValues[0];
       const cagr = (Math.pow(endEps / startEps, 1 / 5) - 1) * 100;
       console.log(`Using 5Y EPS CAGR: ${cagr.toFixed(2)}%`);
-      return cagr;
+      return parseFloat(cagr.toFixed(2));
     }
     
     // Fallback to 3Y CAGR
@@ -266,7 +266,7 @@ function calculateGrowthRate(mode: BasisMode, data: any): number {
       const endEps = epsValues[0];
       const cagr = (Math.pow(endEps / startEps, 1 / 3) - 1) * 100;
       console.log(`Using 3Y EPS CAGR: ${cagr.toFixed(2)}%`);
-      return cagr;
+      return parseFloat(cagr.toFixed(2));
     }
     
     // If not enough data, return conservative default
@@ -287,7 +287,7 @@ function calculateGrowthRate(mode: BasisMode, data: any): number {
       const endFcf = fcfValues[0];
       const cagr = (Math.pow(endFcf / startFcf, 1 / 10) - 1) * 100;
       console.log(`Using 10Y FCF CAGR: ${cagr.toFixed(2)}%`);
-      return cagr;
+      return parseFloat(cagr.toFixed(2));
     }
     
     // Fallback to 5Y CAGR
@@ -296,7 +296,7 @@ function calculateGrowthRate(mode: BasisMode, data: any): number {
       const endFcf = fcfValues[0];
       const cagr = (Math.pow(endFcf / startFcf, 1 / 5) - 1) * 100;
       console.log(`Using 5Y FCF CAGR: ${cagr.toFixed(2)}%`);
-      return cagr;
+      return parseFloat(cagr.toFixed(2));
     }
     
     // Fallback to 3Y CAGR
@@ -305,7 +305,7 @@ function calculateGrowthRate(mode: BasisMode, data: any): number {
       const endFcf = fcfValues[0];
       const cagr = (Math.pow(endFcf / startFcf, 1 / 3) - 1) * 100;
       console.log(`Using 3Y FCF CAGR: ${cagr.toFixed(2)}%`);
-      return cagr;
+      return parseFloat(cagr.toFixed(2));
     }
     
     // If not enough data, return conservative default
@@ -332,7 +332,7 @@ function calculateGrowthRate(mode: BasisMode, data: any): number {
       const endDiv = currentDivPerShare;
       const cagr = (Math.pow(endDiv / startDiv, 1 / 10) - 1) * 100;
       console.log(`Using 10Y Dividend CAGR: ${cagr.toFixed(2)}%`);
-      return cagr;
+      return parseFloat(cagr.toFixed(2));
     }
     
     // Fallback to 5Y CAGR
@@ -341,7 +341,7 @@ function calculateGrowthRate(mode: BasisMode, data: any): number {
       const endDiv = currentDivPerShare;
       const cagr = (Math.pow(endDiv / startDiv, 1 / 5) - 1) * 100;
       console.log(`Using 5Y Dividend CAGR: ${cagr.toFixed(2)}%`);
-      return cagr;
+      return parseFloat(cagr.toFixed(2));
     }
     
     // Fallback to 3Y CAGR
@@ -350,7 +350,7 @@ function calculateGrowthRate(mode: BasisMode, data: any): number {
       const endDiv = currentDivPerShare;
       const cagr = (Math.pow(endDiv / startDiv, 1 / 3) - 1) * 100;
       console.log(`Using 3Y Dividend CAGR: ${cagr.toFixed(2)}%`);
-      return cagr;
+      return parseFloat(cagr.toFixed(2));
     }
     
     // If not enough data, return conservative default
@@ -485,15 +485,15 @@ serve(async (req) => {
       ticker: ticker.toUpperCase(),
       price: currentPrice,
       mode,
-      fairValuePerShare: result.fairValue,
+      fairValuePerShare: parseFloat(result.fairValue.toFixed(2)),
       marginOfSafetyPct: parseFloat(marginOfSafety.toFixed(2)),
       assumptions: {
-        discountRatePct: wacc,
+        discountRatePct: parseFloat(wacc.toFixed(2)),
         growthYears,
-        growthRatePct: growthRate,
+        growthRatePct: parseFloat(growthRate.toFixed(2)),
         terminalYears,
-        terminalRatePct: terminalRate,
-        tangibleBookPerShare: tangibleBook,
+        terminalRatePct: parseFloat(terminalRate.toFixed(2)),
+        tangibleBookPerShare: parseFloat(tangibleBook.toFixed(2)),
         includeTangibleBook: includeTBV,
         predictability: 'medium'
       },
