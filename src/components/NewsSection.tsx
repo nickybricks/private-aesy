@@ -13,6 +13,7 @@ interface NewsSectionProps {
 
 const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) => {
   const [displayCount, setDisplayCount] = useState(10);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'news' | 'press'>('all');
   
   // Combine and sort all news by date
   const allNews = useMemo(() => {
@@ -22,8 +23,23 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
     );
   }, [newsItems, pressReleases]);
   
-  const displayedNews = allNews.slice(0, displayCount);
-  const hasMore = displayCount < allNews.length;
+  // Filter based on active filter
+  const filteredNews = useMemo(() => {
+    if (activeFilter === 'news') {
+      return newsItems.sort((a, b) => 
+        new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime()
+      );
+    }
+    if (activeFilter === 'press') {
+      return pressReleases.sort((a, b) => 
+        new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime()
+      );
+    }
+    return allNews;
+  }, [activeFilter, newsItems, pressReleases, allNews]);
+  
+  const displayedNews = filteredNews.slice(0, displayCount);
+  const hasMore = displayCount < filteredNews.length;
   
   const formatTimeAgo = (dateString: string) => {
     try {
@@ -53,7 +69,38 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
   
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-semibold mb-6">Nachrichten & Press Releases</h2>
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant={activeFilter === 'all' ? 'default' : 'ghost'}
+          onClick={() => {
+            setActiveFilter('all');
+            setDisplayCount(10);
+          }}
+          className="text-base font-semibold"
+        >
+          Alle
+        </Button>
+        <Button
+          variant={activeFilter === 'news' ? 'default' : 'ghost'}
+          onClick={() => {
+            setActiveFilter('news');
+            setDisplayCount(10);
+          }}
+          className="text-base font-semibold"
+        >
+          Nachrichten
+        </Button>
+        <Button
+          variant={activeFilter === 'press' ? 'default' : 'ghost'}
+          onClick={() => {
+            setActiveFilter('press');
+            setDisplayCount(10);
+          }}
+          className="text-base font-semibold"
+        >
+          Pressemitteilungen
+        </Button>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {displayedNews.map((item, index) => (
