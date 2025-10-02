@@ -35,17 +35,21 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
   }
 };
 
-// Funktion, um Stock News zu holen
+// Funktion, um Stock News zu holen (verwendet stable API)
 export const fetchStockNews = async (ticker: string) => {
   console.log(`Fetching stock news for ${ticker}`);
   const standardizedTicker = ticker.trim().toUpperCase();
   
   try {
-    const newsData = await fetchFromFMP(`/v3/stock_news`, { 
-      tickers: standardizedTicker,
-      limit: 50
+    // Use full URL for stable API endpoint
+    const response = await axios.get('https://financialmodelingprep.com/stable/news/stock', {
+      params: {
+        symbols: standardizedTicker,
+        apikey: DEFAULT_FMP_API_KEY
+      }
     });
     
+    const newsData = response.data;
     console.log('Stock news data:', newsData?.length || 0, 'items');
     
     if (!newsData || newsData.length === 0) {
@@ -59,16 +63,21 @@ export const fetchStockNews = async (ticker: string) => {
   }
 };
 
-// Funktion, um Press Releases zu holen
+// Funktion, um Press Releases zu holen (verwendet stable API)
 export const fetchPressReleases = async (ticker: string) => {
   console.log(`Fetching press releases for ${ticker}`);
   const standardizedTicker = ticker.trim().toUpperCase();
   
   try {
-    const pressData = await fetchFromFMP(`/v3/press-releases/${standardizedTicker}`, { 
-      limit: 50
+    // Use full URL for stable API endpoint
+    const response = await axios.get('https://financialmodelingprep.com/stable/news/press-releases', {
+      params: {
+        symbols: standardizedTicker,
+        apikey: DEFAULT_FMP_API_KEY
+      }
     });
     
+    const pressData = response.data;
     console.log('Press releases data:', pressData?.length || 0, 'items');
     
     if (!pressData || pressData.length === 0) {
