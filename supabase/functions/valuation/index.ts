@@ -231,68 +231,130 @@ function calculateStartValue(mode: BasisMode, data: any): number {
   return 0;
 }
 
-// Calculate historical growth rate with improved smoothing
+// Calculate historical growth rate (10Y CAGR preferred, fallback to 5Y, then 3Y)
 function calculateGrowthRate(mode: BasisMode, data: any): number {
   const income = data.income;
   const cashFlow = data.cashFlow;
   
   if (mode === 'EPS_WO_NRI') {
-    // Calculate EPS CAGR over 5-10 years (prefer 5, fallback to 10)
+    // Get EPS values for up to 11 years (10Y CAGR needs 11 data points)
     const epsValues = income.slice(0, 11)
       .map((i: any) => i.eps || i.epsdiluted || 0)
       .filter((v: number) => v > 0);
     
-    if (epsValues.length >= 6) {
-      // Use 5-year CAGR
-      const startEps = epsValues[5];
+    // Try 10Y CAGR first
+    if (epsValues.length >= 11) {
+      const startEps = epsValues[10];
       const endEps = epsValues[0];
-      const years = 5;
-      const cagr = (Math.pow(endEps / startEps, 1 / years) - 1) * 100;
-      return clamp(cagr, 0, 15);
-    } else if (epsValues.length >= 3) {
-      // Fallback to available years
-      const startEps = epsValues[epsValues.length - 1];
-      const endEps = epsValues[0];
-      const years = epsValues.length - 1;
-      const cagr = (Math.pow(endEps / startEps, 1 / years) - 1) * 100;
-      return clamp(cagr, 0, 15);
+      const cagr = (Math.pow(endEps / startEps, 1 / 10) - 1) * 100;
+      console.log(`Using 10Y EPS CAGR: ${cagr.toFixed(2)}%`);
+      return cagr;
     }
     
-    // Default conservative growth
+    // Fallback to 5Y CAGR
+    if (epsValues.length >= 6) {
+      const startEps = epsValues[5];
+      const endEps = epsValues[0];
+      const cagr = (Math.pow(endEps / startEps, 1 / 5) - 1) * 100;
+      console.log(`Using 5Y EPS CAGR: ${cagr.toFixed(2)}%`);
+      return cagr;
+    }
+    
+    // Fallback to 3Y CAGR
+    if (epsValues.length >= 4) {
+      const startEps = epsValues[3];
+      const endEps = epsValues[0];
+      const cagr = (Math.pow(endEps / startEps, 1 / 3) - 1) * 100;
+      console.log(`Using 3Y EPS CAGR: ${cagr.toFixed(2)}%`);
+      return cagr;
+    }
+    
+    // If not enough data, return conservative default
+    console.log('Not enough EPS data for CAGR, using 5% default');
     return 5;
   }
   
   if (mode === 'FCF_PER_SHARE') {
-    // Calculate FCF CAGR over 5-10 years
     const profile = data.profile;
     const sharesOutstanding = profile.sharesOutstanding || 1;
     const fcfValues = cashFlow.slice(0, 11)
       .map((cf: any) => (cf.freeCashFlow || 0) / sharesOutstanding)
       .filter((v: number) => v > 0);
     
-    if (fcfValues.length >= 6) {
-      // Use 5-year CAGR
-      const startFcf = fcfValues[5];
+    // Try 10Y CAGR first
+    if (fcfValues.length >= 11) {
+      const startFcf = fcfValues[10];
       const endFcf = fcfValues[0];
-      const years = 5;
-      const cagr = (Math.pow(endFcf / startFcf, 1 / years) - 1) * 100;
-      return clamp(cagr, 0, 15);
-    } else if (fcfValues.length >= 3) {
-      // Fallback to available years
-      const startFcf = fcfValues[fcfValues.length - 1];
-      const endFcf = fcfValues[0];
-      const years = fcfValues.length - 1;
-      const cagr = (Math.pow(endFcf / startFcf, 1 / years) - 1) * 100;
-      return clamp(cagr, 0, 15);
+      const cagr = (Math.pow(endFcf / startFcf, 1 / 10) - 1) * 100;
+      console.log(`Using 10Y FCF CAGR: ${cagr.toFixed(2)}%`);
+      return cagr;
     }
     
-    // Default conservative growth
+    // Fallback to 5Y CAGR
+    if (fcfValues.length >= 6) {
+      const startFcf = fcfValues[5];
+      const endFcf = fcfValues[0];
+      const cagr = (Math.pow(endFcf / startFcf, 1 / 5) - 1) * 100;
+      console.log(`Using 5Y FCF CAGR: ${cagr.toFixed(2)}%`);
+      return cagr;
+    }
+    
+    // Fallback to 3Y CAGR
+    if (fcfValues.length >= 4) {
+      const startFcf = fcfValues[3];
+      const endFcf = fcfValues[0];
+      const cagr = (Math.pow(endFcf / startFcf, 1 / 3) - 1) * 100;
+      console.log(`Using 3Y FCF CAGR: ${cagr.toFixed(2)}%`);
+      return cagr;
+    }
+    
+    // If not enough data, return conservative default
+    console.log('Not enough FCF data for CAGR, using 4% default');
     return 4;
   }
   
   if (mode === 'ADJUSTED_DIVIDEND') {
-    // Use conservative dividend growth (5% default, max 10%)
-    // Could enhance this by calculating historical dividend growth if available
+    // Calculate historical dividend growth using same approach
+    const metrics = data.metrics;
+    const currentDivPerShare = metrics?.dividendPerShareTTM || 0;
+    
+    // Get historical dividends from income statements
+    const divValues = income.slice(0, 11)
+      .map((i: any) => {
+        const shares = data.profile.sharesOutstanding || 1;
+        return (i.dividendsPaid ? Math.abs(i.dividendsPaid) / shares : 0);
+      })
+      .filter((v: number) => v > 0);
+    
+    // Try 10Y CAGR first
+    if (divValues.length >= 11 && currentDivPerShare > 0) {
+      const startDiv = divValues[10];
+      const endDiv = currentDivPerShare;
+      const cagr = (Math.pow(endDiv / startDiv, 1 / 10) - 1) * 100;
+      console.log(`Using 10Y Dividend CAGR: ${cagr.toFixed(2)}%`);
+      return cagr;
+    }
+    
+    // Fallback to 5Y CAGR
+    if (divValues.length >= 6 && currentDivPerShare > 0) {
+      const startDiv = divValues[5];
+      const endDiv = currentDivPerShare;
+      const cagr = (Math.pow(endDiv / startDiv, 1 / 5) - 1) * 100;
+      console.log(`Using 5Y Dividend CAGR: ${cagr.toFixed(2)}%`);
+      return cagr;
+    }
+    
+    // Fallback to 3Y CAGR
+    if (divValues.length >= 4 && currentDivPerShare > 0) {
+      const startDiv = divValues[3];
+      const endDiv = currentDivPerShare;
+      const cagr = (Math.pow(endDiv / startDiv, 1 / 3) - 1) * 100;
+      console.log(`Using 3Y Dividend CAGR: ${cagr.toFixed(2)}%`);
+      return cagr;
+    }
+    
+    // If not enough data, return conservative default
+    console.log('Not enough Dividend data for CAGR, using 5% default');
     return 5;
   }
   
