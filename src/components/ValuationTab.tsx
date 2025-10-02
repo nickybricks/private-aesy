@@ -4,11 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, Loader2, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { Info, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useStock } from '@/context/StockContext';
 import { fetchValuation } from '@/services/ValuationService';
-import { ValuationGauge } from './ValuationGauge';
 
 type BasisMode = 'EPS_WO_NRI' | 'FCF_PER_SHARE' | 'ADJUSTED_DIVIDEND';
 
@@ -153,185 +152,98 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
         </div>
       </Card>
 
-      {/* Summary with Gauge */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Left: Key Metrics */}
-        <Card className="p-6">
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Aktueller Preis</p>
-              <p className="text-3xl font-bold">${currentPrice.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Fair Value ({modeConfig[selectedMode].label})</p>
-              <p className="text-4xl font-bold text-primary">${data.fairValue.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Margin of Safety</p>
-              <div className="flex items-center gap-3">
-                <p className="text-3xl font-bold">{marginOfSafety.toFixed(2)}%</p>
-                <Badge variant={mosStatus.variant} className="text-base px-3 py-1">
-                  {mosStatus.label}
-                </Badge>
-              </div>
-            </div>
-            
-            {/* Recommendation */}
-            <div className="pt-4 border-t">
-              {marginOfSafety >= 0 ? (
-                <div className="flex items-start gap-2">
-                  <TrendingUp className="h-5 w-5 text-green-600 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-green-600">Kaufgelegenheit</p>
-                    <p className="text-sm text-muted-foreground">
-                      Die Aktie handelt {Math.abs(marginOfSafety).toFixed(0)}% unter dem fairen Wert.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-start gap-2">
-                  <TrendingDown className="h-5 w-5 text-red-600 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-red-600">Überbewertet</p>
-                    <p className="text-sm text-muted-foreground">
-                      Die Aktie handelt {Math.abs(marginOfSafety).toFixed(0)}% über dem fairen Wert.
-                    </p>
-                  </div>
-                </div>
-              )}
+      {/* Summary */}
+      <Card className="p-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Aktueller Preis</p>
+            <p className="text-2xl font-bold">${currentPrice.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Fair Value</p>
+            <p className="text-3xl font-bold text-primary">${data.fairValue.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Margin of Safety</p>
+            <div className="flex items-center gap-2">
+              <p className="text-2xl font-bold">{marginOfSafety.toFixed(2)}%</p>
+              <Badge variant={mosStatus.variant}>{mosStatus.label}</Badge>
             </div>
           </div>
-        </Card>
-
-        {/* Right: Gauge */}
-        <Card className="p-6 flex items-center justify-center">
-          <ValuationGauge
-            marginOfSafety={marginOfSafety}
-            fairValue={data.fairValue}
-            currentPrice={currentPrice}
-          />
-        </Card>
-      </div>
+        </div>
+      </Card>
 
       {/* Calculation Details */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          Berechnung (20-Jahre-Modell, 2 Phasen)
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-4 w-4 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-sm">
-                <p>Diskontierung mit WACC über 20 Jahre: 10 Jahre Wachstum, 10 Jahre Terminal-Phase.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </h3>
+        <h3 className="text-lg font-semibold mb-4">Berechnung</h3>
         <div className="space-y-4">
           <div className="grid gap-2">
-            <div className="flex justify-between items-center py-2 border-b bg-muted/30 px-3 rounded">
-              <span className="font-medium">Startwert (per Share)</span>
-              <span className="font-bold text-lg">${data.startValue.toFixed(2)}</span>
+            <div className="flex justify-between items-center py-2 border-b">
+              <span className="text-muted-foreground">Startwert (per Share)</span>
+              <span className="font-semibold">${data.startValue.toFixed(2)}</span>
             </div>
             
-            <div className="bg-gradient-to-r from-primary/5 to-transparent p-4 rounded-lg space-y-2">
+            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
               <div className="flex justify-between items-center">
-                <div>
-                  <span className="text-sm font-medium">Phase 1: Wachstum</span>
-                  <p className="text-xs text-muted-foreground">10 Jahre @ {data.growthRate.toFixed(1)}% p.a.</p>
-                </div>
-                <span className="font-bold text-lg">${data.pvPhase1.toFixed(2)}</span>
+                <span className="text-sm">Phase 1 (10 Jahre, {data.growthRate}% p.a.)</span>
+                <span className="font-semibold">${data.pvPhase1.toFixed(2)}</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Barwert mit WACC {data.wacc.toFixed(1)}% diskontiert
+                Diskontiert mit WACC {data.wacc}%
               </p>
             </div>
 
-            <div className="bg-gradient-to-r from-secondary/10 to-transparent p-4 rounded-lg space-y-2">
+            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
               <div className="flex justify-between items-center">
-                <div>
-                  <span className="text-sm font-medium">Phase 2: Terminal</span>
-                  <p className="text-xs text-muted-foreground">10 Jahre @ {data.terminalRate.toFixed(1)}% p.a.</p>
-                </div>
-                <span className="font-bold text-lg">${data.pvPhase2.toFixed(2)}</span>
+                <span className="text-sm">Phase 2 (10 Jahre, {data.terminalRate}% p.a.)</span>
+                <span className="font-semibold">${data.pvPhase2.toFixed(2)}</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Konservatives Terminal-Wachstum
+                Terminal Growth Rate {data.terminalRate}%
               </p>
             </div>
 
-            <div className="flex justify-between items-center py-3 border-t-2 border-b bg-muted/20 px-3 rounded">
+            <div className="flex justify-between items-center py-2 border-t border-b">
               <span className="font-semibold">Summe (PV Phase 1 + Phase 2)</span>
-              <span className="font-bold text-xl">${(data.pvPhase1 + data.pvPhase2).toFixed(2)}</span>
+              <span className="font-bold">${(data.pvPhase1 + data.pvPhase2).toFixed(2)}</span>
             </div>
 
-            <div className="flex justify-between items-center py-2 text-muted-foreground px-3">
-              <span className="text-sm flex items-center gap-2">
-                <Info className="h-3 w-3" />
-                Tangible Book per Share (optional)
-              </span>
+            <div className="flex justify-between items-center py-2 text-muted-foreground">
+              <span className="text-sm">+ Tangible Book per Share (optional)</span>
               <span className="text-sm">${data.tangibleBook.toFixed(2)} (nicht einbezogen)</span>
             </div>
 
-            <div className="flex justify-between items-center py-4 border-t-2 border-primary bg-primary/5 px-4 rounded-lg">
-              <span className="text-xl font-bold">Fair Value per Share</span>
-              <span className="text-3xl font-bold text-primary">${data.fairValue.toFixed(2)}</span>
+            <div className="flex justify-between items-center py-3 border-t-2 border-primary">
+              <span className="text-lg font-bold">Fair Value per Share</span>
+              <span className="text-2xl font-bold text-primary">${data.fairValue.toFixed(2)}</span>
             </div>
           </div>
         </div>
       </Card>
 
       {/* Assumptions */}
-      <Card className="p-6 bg-muted/30">
-        <h3 className="text-lg font-semibold mb-4">Annahmen (Serverseitig berechnet)</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">WACC (Diskontierungssatz)</p>
-              <p className="text-lg font-bold">{data.wacc.toFixed(2)}%</p>
-              <p className="text-xs text-muted-foreground">
-                CAPM + Buchwert-Schulden
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Wachstumsphase</p>
-              <p className="text-lg font-bold">10 Jahre @ {data.growthRate.toFixed(1)}%</p>
-              <p className="text-xs text-muted-foreground">
-                Historischer 5J-CAGR
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Terminal-Phase</p>
-              <p className="text-lg font-bold">10 Jahre @ {data.terminalRate.toFixed(1)}%</p>
-              <p className="text-xs text-muted-foreground">
-                Konservatives Terminal-Wachstum
-              </p>
-            </div>
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Annahmen (Read-only)</h3>
+        <div className="grid gap-3 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">WACC (Diskontierungssatz)</span>
+            <span className="font-semibold">{data.wacc}%</span>
           </div>
-          
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Tangible Book per Share</p>
-              <p className="text-lg font-bold">${data.tangibleBook.toFixed(2)}</p>
-              <p className="text-xs text-muted-foreground">
-                Optional einbeziehbar
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Predictability</p>
-              <Badge variant="secondary" className="text-sm">Medium</Badge>
-              <p className="text-xs text-muted-foreground mt-1">
-                Basierend auf historischer Stabilität
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Datenquelle</p>
-              <p className="text-sm font-medium">FMP (10J Historie)</p>
-              <p className="text-xs text-muted-foreground">
-                Stand: {valuationData.asOf}
-              </p>
-            </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Wachstumsphase</span>
+            <span className="font-semibold">10 Jahre @ {data.growthRate}%</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Terminal-Phase</span>
+            <span className="font-semibold">10 Jahre @ {data.terminalRate}%</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Tangible Book per Share</span>
+            <span className="font-semibold">${data.tangibleBook.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Predictability</span>
+            <Badge variant="secondary">Medium</Badge>
           </div>
         </div>
       </Card>
