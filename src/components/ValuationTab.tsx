@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStock } from '@/context/StockContext';
 import { fetchValuation } from '@/api/valuationApi';
 import { ValuationMode, ValuationResponse } from '@/types/valuation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { InfoIcon, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 const ValuationTab = () => {
   const { stockInfo } = useStock();
@@ -93,31 +94,28 @@ const ValuationTab = () => {
         </CardHeader>
         <CardContent>
           <TooltipProvider>
-            <ToggleGroup
-              type="single"
-              value={selectedMode}
-              onValueChange={(value) => value && setSelectedMode(value as ValuationMode)}
-              className="grid grid-cols-1 md:grid-cols-3 gap-2"
-            >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               {(Object.keys(modeLabels) as ValuationMode[]).map((mode) => (
                 <Tooltip key={mode}>
                   <TooltipTrigger asChild>
-                    <ToggleGroupItem
-                      value={mode}
-                      className="h-auto py-3 px-4 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                    <Button
+                      variant={selectedMode === mode ? "default" : "outline"}
+                      onClick={() => setSelectedMode(mode)}
+                      className={cn(
+                        "h-auto py-3 px-4 flex items-center gap-2",
+                        selectedMode === mode && "bg-primary text-primary-foreground"
+                      )}
                     >
-                      <div className="flex items-center gap-2">
-                        {modeLabels[mode]}
-                        <InfoIcon className="h-3 w-3 opacity-50" />
-                      </div>
-                    </ToggleGroupItem>
+                      {modeLabels[mode]}
+                      <InfoIcon className="h-3 w-3 opacity-50" />
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="max-w-xs">{modeTooltips[mode]}</p>
                   </TooltipContent>
                 </Tooltip>
               ))}
-            </ToggleGroup>
+            </div>
           </TooltipProvider>
         </CardContent>
       </Card>
