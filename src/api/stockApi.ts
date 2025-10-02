@@ -1198,14 +1198,15 @@ export const getFinancialMetrics = async (ticker: string) => {
 
     // Nettomarge Metrik
     if (netMargin !== null) {
-      console.log(`DEBUG: Raw netMargin from API: ${netMargin}`);
+      const netMarginPercent = netMargin * 100; // Convert decimal to percentage
+      console.log(`DEBUG: Raw netMargin from API: ${netMargin}, as percentage: ${netMarginPercent}%`);
       metrics.push({
         name: 'Nettomarge',
         value: netMargin,
         formula: 'Jahresüberschuss ÷ Umsatz × 100',
         explanation: 'Anteil des Umsatzes, der als Gewinn übrig bleibt',
         threshold: 'Buffett bevorzugt > 10%',
-        status: netMargin > 10 ? 'pass' : netMargin > 5 ? 'warning' : 'fail' as const,
+        status: netMarginPercent > 10 ? 'pass' : netMarginPercent > 5 ? 'warning' : 'fail' as const,
         isPercentage: true,
         isMultiplier: false,
         isAlreadyPercent: false // Net margin comes as decimal from API
