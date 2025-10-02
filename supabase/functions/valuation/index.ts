@@ -89,57 +89,72 @@ async function fetchFinancialData(ticker: string) {
   return { income, balance, cashFlow, profile: profile[0], metrics: metrics?.[0] };
 }
 
-// Calculate WACC
+// Calculate WACC with improved debt handling
 async function calculateWACC(ticker: string, data: any): Promise<number> {
   const profile = data.profile;
   const balance = data.balance;
+  const income = data.income;
   
   // Market cap (E)
   const marketCap = profile.mktCap || 0;
   
-  // Average debt from last 4 quarters (we'll use annual for simplicity)
+  // Average debt from last 4 quarters (including lease liabilities)
   const recentBalances = balance.slice(0, 4);
   const avgDebt = recentBalances.reduce((sum: number, b: any) => {
-    const totalDebt = (b.shortTermDebt || 0) + (b.longTermDebt || 0);
+    const shortTermDebt = b.shortTermDebt || 0;
+    const longTermDebt = b.longTermDebt || 0;
+    const operatingLeases = b.operatingLeaseNonCurrent || 0; // Include lease liabilities
+    const totalDebt = shortTermDebt + longTermDebt + operatingLeases;
     return sum + totalDebt;
-  }, 0) / recentBalances.length;
+  }, 0) / Math.max(1, recentBalances.length);
   
   const D = Math.max(0, avgDebt);
-  const E = marketCap;
-  const V = Math.max(1, E + D);
+  const E = Math.max(1, marketCap);
+  const V = E + D;
   
-  // Risk-free rate (assume 4% for now)
+  // Risk-free rate (assume 4% for 10-year US Treasury)
   const rf = 0.04;
   
-  // Beta (from profile or default to 1.0)
+  // Beta (from profile, clamped between 0.5 and 2.5)
   const rawBeta = profile.beta || 1.0;
   const beta = clamp(rawBeta, 0.5, 2.5);
   
-  // Market risk premium (default 6%)
+  // Market risk premium (6% default)
   const mrp = 0.06;
   
   // Cost of equity (Re = rf + beta * mrp)
   const Re = rf + beta * mrp;
   
-  // Cost of debt (Rd = Interest / Debt)
-  const income = data.income;
-  const recentIncome = income[0] || {};
-  const interestExpense = Math.abs(recentIncome.interestExpense || 0);
-  const Rd = D > 0 ? Math.max(0, interestExpense / D) : 0;
+  // Cost of debt (Rd = Interest / Average Debt)
+  const recentIncome = income.slice(0, 4);
+  const avgInterestExpense = recentIncome.reduce((sum: number, i: any) => {
+    return sum + Math.abs(i.interestExpense || 0);
+  }, 0) / Math.max(1, recentIncome.length);
   
-  // Tax rate
-  const taxRate = recentIncome.incomeTaxExpense && recentIncome.incomeBeforeTax
-    ? Math.min(0.5, Math.max(0, recentIncome.incomeTaxExpense / recentIncome.incomeBeforeTax))
+  // Handle negative or zero interest
+  const Rd = (D > 0 && avgInterestExpense > 0) ? avgInterestExpense / D : 0;
+  
+  // Tax rate (smoothed over last 4 years)
+  const taxRates = recentIncome
+    .filter((i: any) => i.incomeTaxExpense && i.incomeBeforeTax && i.incomeBeforeTax > 0)
+    .map((i: any) => i.incomeTaxExpense / i.incomeBeforeTax);
+  
+  const taxRate = taxRates.length > 0
+    ? clamp(taxRates.reduce((a: number, b: number) => a + b, 0) / taxRates.length, 0, 0.5)
     : 0.21;
   
   // WACC = (E/V)*Re + (D/V)*Rd*(1-Tc)
   const wacc = (E / V) * Re + (D / V) * Rd * (1 - taxRate);
   
   // Clamp WACC between 8% and 12%
-  return clamp(wacc * 100, 8, 12);
+  const clampedWacc = clamp(wacc * 100, 8, 12);
+  
+  console.log(`WACC calculation: E=${E}, D=${D}, Re=${Re.toFixed(4)}, Rd=${Rd.toFixed(4)}, Tax=${taxRate.toFixed(2)}, WACC=${clampedWacc.toFixed(2)}%`);
+  
+  return clampedWacc;
 }
 
-// Calculate starting value based on mode
+// Calculate starting value based on mode with smoothing
 function calculateStartValue(mode: BasisMode, data: any): number {
   const income = data.income;
   const cashFlow = data.cashFlow;
@@ -149,90 +164,140 @@ function calculateStartValue(mode: BasisMode, data: any): number {
   const sharesOutstanding = profile.sharesOutstanding || 1;
   
   if (mode === 'EPS_WO_NRI') {
-    // EPS without non-recurring items (TTM)
-    const ttmEps = income[0]?.eps || income[0]?.epsdiluted || 0;
-    return Math.max(0, ttmEps);
-  }
-  
-  if (mode === 'FCF_PER_SHARE') {
-    // Free Cash Flow per share
-    const recentCashFlows = cashFlow.slice(0, 3);
-    const ttmFCF = recentCashFlows[0]?.freeCashFlow || 0;
-    
-    if (ttmFCF > 0) {
-      return ttmFCF / sharesOutstanding;
-    }
-    
-    // If TTM is negative, use median of last 3 years
-    const fcfValues = recentCashFlows
-      .map((cf: any) => (cf.freeCashFlow || 0) / sharesOutstanding)
+    // EPS without non-recurring items - use trimmed mean of last 3-5 years for smoothing
+    const recentEps = income.slice(0, 5)
+      .map((i: any) => i.eps || i.epsdiluted || 0)
       .filter((v: number) => v > 0);
     
-    if (fcfValues.length > 0) {
-      return median(fcfValues);
+    if (recentEps.length >= 3) {
+      // Use trimmed mean (remove top/bottom 20%)
+      return trimmedMean(recentEps, 0.2);
+    } else if (recentEps.length >= 1) {
+      // Fallback to median if not enough data
+      return median(recentEps);
     }
     
     return 0;
   }
   
+  if (mode === 'FCF_PER_SHARE') {
+    // Free Cash Flow per share with robust handling
+    const recentCashFlows = cashFlow.slice(0, 5);
+    const fcfPerShareValues = recentCashFlows
+      .map((cf: any) => (cf.freeCashFlow || 0) / sharesOutstanding);
+    
+    // Filter positive values
+    const positiveFcf = fcfPerShareValues.filter((v: number) => v > 0);
+    
+    // Use trimmed mean for smoothing if we have enough data
+    if (positiveFcf.length >= 3) {
+      return trimmedMean(positiveFcf, 0.2);
+    }
+    
+    // If TTM is negative but median is positive, use median
+    const allFcf = fcfPerShareValues.filter((v: number) => !isNaN(v));
+    if (allFcf.length >= 3) {
+      const medianFcf = median(allFcf);
+      if (medianFcf > 0) {
+        return medianFcf;
+      }
+    }
+    
+    // Last resort: use TTM if positive
+    const ttmFcfPerShare = fcfPerShareValues[0] || 0;
+    return Math.max(0, ttmFcfPerShare);
+  }
+  
   if (mode === 'ADJUSTED_DIVIDEND') {
-    // Dividend + Net Buyback per share
+    // Dividend + Net Buyback per share - smoothed over 3 years
     const dividendPerShare = metrics?.dividendPerShareTTM || 0;
     
-    // Net buyback = (shares repurchased - shares issued) * price
-    const recentCashFlow = cashFlow[0] || {};
-    const stockRepurchased = Math.abs(recentCashFlow.commonStockRepurchased || 0);
-    const stockIssued = recentCashFlow.commonStockIssued || 0;
-    const netBuyback = stockRepurchased - stockIssued;
-    const netBuybackPerShare = netBuyback / sharesOutstanding;
+    // Calculate net buyback smoothed over 3 years
+    const recentCashFlows = cashFlow.slice(0, 3);
+    const buybackPerShareValues = recentCashFlows.map((cf: any) => {
+      const stockRepurchased = Math.abs(cf.commonStockRepurchased || 0);
+      const stockIssued = cf.commonStockIssued || 0;
+      const netBuyback = stockRepurchased - stockIssued;
+      return netBuyback / sharesOutstanding;
+    });
     
-    return Math.max(0, dividendPerShare + netBuybackPerShare);
+    const avgBuybackPerShare = buybackPerShareValues.length > 0
+      ? buybackPerShareValues.reduce((a, b) => a + b, 0) / buybackPerShareValues.length
+      : 0;
+    
+    return Math.max(0, dividendPerShare + avgBuybackPerShare);
   }
   
   return 0;
 }
 
-// Calculate historical growth rate
+// Calculate historical growth rate with improved smoothing
 function calculateGrowthRate(mode: BasisMode, data: any): number {
   const income = data.income;
   const cashFlow = data.cashFlow;
   
   if (mode === 'EPS_WO_NRI') {
-    // Calculate 5-year EPS CAGR
-    const epsValues = income.slice(0, 6).map((i: any) => i.eps || i.epsdiluted || 0).filter((v: number) => v > 0);
-    if (epsValues.length >= 2) {
+    // Calculate EPS CAGR over 5-10 years (prefer 5, fallback to 10)
+    const epsValues = income.slice(0, 11)
+      .map((i: any) => i.eps || i.epsdiluted || 0)
+      .filter((v: number) => v > 0);
+    
+    if (epsValues.length >= 6) {
+      // Use 5-year CAGR
+      const startEps = epsValues[5];
+      const endEps = epsValues[0];
+      const years = 5;
+      const cagr = (Math.pow(endEps / startEps, 1 / years) - 1) * 100;
+      return clamp(cagr, 0, 15);
+    } else if (epsValues.length >= 3) {
+      // Fallback to available years
       const startEps = epsValues[epsValues.length - 1];
       const endEps = epsValues[0];
       const years = epsValues.length - 1;
       const cagr = (Math.pow(endEps / startEps, 1 / years) - 1) * 100;
       return clamp(cagr, 0, 15);
     }
+    
+    // Default conservative growth
+    return 5;
   }
   
   if (mode === 'FCF_PER_SHARE') {
-    // Calculate 5-year FCF CAGR
+    // Calculate FCF CAGR over 5-10 years
     const profile = data.profile;
     const sharesOutstanding = profile.sharesOutstanding || 1;
-    const fcfValues = cashFlow.slice(0, 6)
+    const fcfValues = cashFlow.slice(0, 11)
       .map((cf: any) => (cf.freeCashFlow || 0) / sharesOutstanding)
       .filter((v: number) => v > 0);
     
-    if (fcfValues.length >= 2) {
+    if (fcfValues.length >= 6) {
+      // Use 5-year CAGR
+      const startFcf = fcfValues[5];
+      const endFcf = fcfValues[0];
+      const years = 5;
+      const cagr = (Math.pow(endFcf / startFcf, 1 / years) - 1) * 100;
+      return clamp(cagr, 0, 15);
+    } else if (fcfValues.length >= 3) {
+      // Fallback to available years
       const startFcf = fcfValues[fcfValues.length - 1];
       const endFcf = fcfValues[0];
       const years = fcfValues.length - 1;
       const cagr = (Math.pow(endFcf / startFcf, 1 / years) - 1) * 100;
       return clamp(cagr, 0, 15);
     }
+    
+    // Default conservative growth
+    return 4;
   }
   
   if (mode === 'ADJUSTED_DIVIDEND') {
-    // Use conservative dividend growth (default 5%)
+    // Use conservative dividend growth (5% default, max 10%)
+    // Could enhance this by calculating historical dividend growth if available
     return 5;
   }
   
-  // Default growth rate
-  return 8;
+  // Default conservative growth rate
+  return 6;
 }
 
 // Calculate finite horizon valuation (20 years, 2 phases)
@@ -310,22 +375,27 @@ serve(async (req) => {
     const startValue = calculateStartValue(mode, data);
     console.log(`Start value for mode ${mode}: ${startValue.toFixed(2)}`);
     
+    // Warnings array for data quality issues
+    const warnings: string[] = [];
+    
     if (startValue <= 0) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'INSUFFICIENT_DATA', 
-          details: `No valid start value for mode ${mode}` 
-        }),
-        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      warnings.push(`Keine ausreichenden Daten für Modus ${mode}. Berechnung mit konservativen Annahmen.`);
+      // Don't throw error, continue with warning
     }
+    
+    // Use a minimum start value if needed
+    const effectiveStartValue = Math.max(startValue, 0.01);
     
     // Calculate growth rate
     const growthRate = calculateGrowthRate(mode, data);
     console.log(`Calculated growth rate: ${growthRate.toFixed(2)}%`);
     
-    // Settings
-    const terminalRate = 4.0;
+    if (growthRate < 1) {
+      warnings.push('Historisches Wachstum sehr niedrig. Ergebnis ist sehr konservativ.');
+    }
+    
+    // Settings with conservative defaults
+    const terminalRate = clamp(4.0, 0, 6); // Terminal rate capped at 6%
     const growthYears = 10;
     const terminalYears = 10;
     const tangibleBook = data.metrics?.tangibleBookValuePerShareTTM || 0;
@@ -333,7 +403,7 @@ serve(async (req) => {
     
     // Calculate valuation
     const result = calculateFiniteHorizonValuation(
-      startValue,
+      effectiveStartValue,
       wacc,
       growthRate,
       terminalRate,
@@ -366,13 +436,18 @@ serve(async (req) => {
         predictability: 'medium'
       },
       components: {
-        startValuePerShare: parseFloat(startValue.toFixed(2)),
+        startValuePerShare: parseFloat(effectiveStartValue.toFixed(2)),
         pvPhase1: result.pvPhase1,
         pvPhase2: result.pvPhase2,
         tangibleBookAdded: result.tbvAdded
       },
       asOf: new Date().toISOString().split('T')[0]
     };
+    
+    // Add warnings to response if any
+    if (warnings.length > 0) {
+      (response as any).warnings = warnings;
+    }
     
     console.log(`Valuation result:`, response);
     

@@ -3,7 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 type BasisMode = 'EPS_WO_NRI' | 'FCF_PER_SHARE' | 'ADJUSTED_DIVIDEND';
@@ -73,6 +74,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   };
   
   const marginOfSafety = valuationData.marginOfSafetyPct;
+  const warnings = valuationData.warnings || [];
 
   const getMoSStatus = (mos: number): { label: string; variant: 'default' | 'secondary' | 'destructive' } => {
     if (mos >= 30) return { label: 'Unterbewertet', variant: 'default' };
@@ -107,6 +109,20 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
           Zwei Phasen, per Share, diskontiert mit WACC. Annahmen serverseitig festgelegt.
         </p>
       </div>
+
+      {/* Warnings */}
+      {warnings.length > 0 && (
+        <Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription>
+            <ul className="list-disc list-inside space-y-1">
+              {warnings.map((warning, index) => (
+                <li key={index} className="text-sm">{warning}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Mode Selection */}
       <Card className="p-4">
