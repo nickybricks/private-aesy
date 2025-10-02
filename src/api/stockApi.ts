@@ -40,16 +40,23 @@ export const fetchStockNews = async (ticker: string) => {
   console.log(`Fetching stock news for ${ticker}`);
   const standardizedTicker = ticker.trim().toUpperCase();
   
-  const newsData = await fetchFromFMP(`/v4/stock_news`, { 
-    tickers: standardizedTicker,
-    limit: 50
-  });
-  
-  if (!newsData || newsData.length === 0) {
+  try {
+    const newsData = await fetchFromFMP(`/v3/stock_news`, { 
+      tickers: standardizedTicker,
+      limit: 50
+    });
+    
+    console.log('Stock news data:', newsData?.length || 0, 'items');
+    
+    if (!newsData || newsData.length === 0) {
+      return [];
+    }
+    
+    return newsData;
+  } catch (error) {
+    console.error('Error fetching stock news:', error);
     return [];
   }
-  
-  return newsData;
 };
 
 // Funktion, um Press Releases zu holen
@@ -57,16 +64,22 @@ export const fetchPressReleases = async (ticker: string) => {
   console.log(`Fetching press releases for ${ticker}`);
   const standardizedTicker = ticker.trim().toUpperCase();
   
-  const pressData = await fetchFromFMP(`/v4/press-releases`, { 
-    symbol: standardizedTicker,
-    limit: 50
-  });
-  
-  if (!pressData || pressData.length === 0) {
+  try {
+    const pressData = await fetchFromFMP(`/v3/press-releases/${standardizedTicker}`, { 
+      limit: 50
+    });
+    
+    console.log('Press releases data:', pressData?.length || 0, 'items');
+    
+    if (!pressData || pressData.length === 0) {
+      return [];
+    }
+    
+    return pressData;
+  } catch (error) {
+    console.error('Error fetching press releases:', error);
     return [];
   }
-  
-  return pressData;
 };
 
 // Funktion, um Aktieninformationen zu holen
