@@ -19,7 +19,6 @@ import DataMissingAlert from '@/components/DataMissingAlert';
 import LoadingSection from '@/components/LoadingSection';
 import ErrorAlert from '@/components/ErrorAlert';
 import AppFooter from '@/components/AppFooter';
-import ValuationTab from '@/components/ValuationTab';
 import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
 import { useToast } from '@/hooks/use-toast';
 
@@ -199,7 +198,7 @@ const IndexContent: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="metrics" className="mt-6">
-                    <ValuationTab />
+                    <div className="text-muted-foreground">Metrics content coming soon...</div>
                   </TabsContent>
                   
                   <TabsContent value="dividends" className="mt-6">
