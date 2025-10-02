@@ -69,34 +69,37 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
   
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-2 mb-4">
         <Button
           variant={activeFilter === 'all' ? 'default' : 'ghost'}
+          size="sm"
           onClick={() => {
             setActiveFilter('all');
             setDisplayCount(10);
           }}
-          className="text-base font-semibold"
+          className="text-sm h-9 px-4"
         >
           Alle
         </Button>
         <Button
           variant={activeFilter === 'news' ? 'default' : 'ghost'}
+          size="sm"
           onClick={() => {
             setActiveFilter('news');
             setDisplayCount(10);
           }}
-          className="text-base font-semibold"
+          className="text-sm h-9 px-4"
         >
           Nachrichten
         </Button>
         <Button
           variant={activeFilter === 'press' ? 'default' : 'ghost'}
+          size="sm"
           onClick={() => {
             setActiveFilter('press');
             setDisplayCount(10);
           }}
-          className="text-base font-semibold"
+          className="text-sm h-9 px-4"
         >
           Pressemitteilungen
         </Button>
