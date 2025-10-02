@@ -23,6 +23,7 @@ import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
 import { useToast } from '@/hooks/use-toast';
 
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
+import { ValuationTab } from '@/components/ValuationTab';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -198,7 +199,10 @@ const IndexContent: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="metrics" className="mt-6">
-                    <div className="text-muted-foreground">Metrics content coming soon...</div>
+                    <ValuationTab 
+                      ticker={stockInfo.ticker}
+                      currentPrice={stockInfo.price}
+                    />
                   </TabsContent>
                   
                   <TabsContent value="dividends" className="mt-6">
