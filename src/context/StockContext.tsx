@@ -144,6 +144,7 @@ export function StockProvider({ children }: StockProviderProps) {
       
       // Wait for news to load
       const [news, press] = await Promise.all([newsPromise, pressPromise]);
+      console.log('✅ News fetched:', { news: news.length, press: press.length });
       setNewsItems(news);
       setPressReleases(press);
       

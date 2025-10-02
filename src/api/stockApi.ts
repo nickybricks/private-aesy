@@ -12,6 +12,7 @@ import {
 } from './openaiApi';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { convertCurrency, shouldConvertCurrency } from '@/utils/currencyConverter';
+import { NewsItem } from '@/context/StockContextTypes';
 
 // Base URL for the Financial Modeling Prep API
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
@@ -35,56 +36,80 @@ const fetchFromFMP = async (endpoint: string, params = {}) => {
   }
 };
 
-// Funktion, um Stock News zu holen (verwendet stable API)
-export const fetchStockNews = async (ticker: string) => {
+// Helper to normalize news to unified shape
+const normalizeNewsItems = (items: any[]): NewsItem[] => {
+  if (!Array.isArray(items)) return [];
+  return items.map((i) => {
+    const url = i.url || i.link || '';
+    let site = i.site || i.source || '';
+    if (!site && url) {
+      try { site = new URL(url).hostname.replace('www.', ''); } catch {}
+    }
+    const symbol = i.symbol || i.ticker || (Array.isArray(i.tickers) ? i.tickers[0] : '') || (Array.isArray(i.symbols) ? i.symbols[0] : '');
+    return {
+      title: i.title || i.headline || '',
+      image: i.image || i.image_url || '',
+      url,
+      publishedDate: i.publishedDate || i.date || i.published_at || '',
+      site: site || 'News',
+      symbol: symbol || '',
+      text: i.text || i.summary || ''
+    } as NewsItem;
+  }).filter(n => n.title && n.url);
+};
+
+// Funktion, um Stock News zu holen (stable mit Fallback v3)
+export const fetchStockNews = async (ticker: string): Promise<NewsItem[]> => {
   console.log(`Fetching stock news for ${ticker}`);
   const standardizedTicker = ticker.trim().toUpperCase();
   
   try {
-    // Use full URL for stable API endpoint
-    const response = await axios.get('https://financialmodelingprep.com/stable/news/stock', {
-      params: {
-        symbols: standardizedTicker,
-        apikey: DEFAULT_FMP_API_KEY
-      }
+    // Try stable endpoint first
+    const stableResp = await axios.get('https://financialmodelingprep.com/stable/news/stock', {
+      params: { symbols: standardizedTicker, apikey: DEFAULT_FMP_API_KEY }
     });
+    let data = normalizeNewsItems(stableResp.data);
+    console.log('Stable stock news:', data.length);
     
-    const newsData = response.data;
-    console.log('Stock news data:', newsData?.length || 0, 'items');
-    
-    if (!newsData || newsData.length === 0) {
-      return [];
+    if (data.length === 0) {
+      // Fallback to v3 endpoint
+      const v3 = await axios.get('https://financialmodelingprep.com/api/v3/stock_news', {
+        params: { tickers: standardizedTicker, limit: 50, apikey: DEFAULT_FMP_API_KEY }
+      });
+      data = normalizeNewsItems(v3.data);
+      console.log('Fallback v3 stock news:', data.length);
     }
     
-    return newsData;
+    return data;
   } catch (error) {
     console.error('Error fetching stock news:', error);
     return [];
   }
 };
 
-// Funktion, um Press Releases zu holen (verwendet stable API)
-export const fetchPressReleases = async (ticker: string) => {
+// Funktion, um Press Releases zu holen (stable mit Fallback v3)
+export const fetchPressReleases = async (ticker: string): Promise<NewsItem[]> => {
   console.log(`Fetching press releases for ${ticker}`);
   const standardizedTicker = ticker.trim().toUpperCase();
   
   try {
-    // Use full URL for stable API endpoint
-    const response = await axios.get('https://financialmodelingprep.com/stable/news/press-releases', {
-      params: {
-        symbols: standardizedTicker,
-        apikey: DEFAULT_FMP_API_KEY
-      }
+    // Try stable endpoint first
+    const stableResp = await axios.get('https://financialmodelingprep.com/stable/news/press-releases', {
+      params: { symbols: standardizedTicker, apikey: DEFAULT_FMP_API_KEY }
     });
+    let data = normalizeNewsItems(stableResp.data);
+    console.log('Stable press releases:', data.length);
     
-    const pressData = response.data;
-    console.log('Press releases data:', pressData?.length || 0, 'items');
-    
-    if (!pressData || pressData.length === 0) {
-      return [];
+    if (data.length === 0) {
+      // Fallback to v3 endpoint
+      const v3 = await axios.get(`https://financialmodelingprep.com/api/v3/press-releases/${standardizedTicker}`, {
+        params: { limit: 50, apikey: DEFAULT_FMP_API_KEY }
+      });
+      data = normalizeNewsItems(v3.data);
+      console.log('Fallback v3 press releases:', data.length);
     }
     
-    return pressData;
+    return data;
   } catch (error) {
     console.error('Error fetching press releases:', error);
     return [];
