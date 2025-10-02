@@ -146,21 +146,44 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
 
       {/* Summary */}
       <Card className="p-6">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-4">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Aktueller Preis</p>
             <p className="text-2xl font-bold">${currentPrice.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground mb-1">Fair Value</p>
-            <p className="text-3xl font-bold text-primary">${data.fairValue.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground mb-1">Fair Value pro Aktie</p>
+            <p className="text-2xl font-bold text-primary">${data.fairValue.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground mb-1">Margin of Safety</p>
+            <p className="text-sm text-muted-foreground mb-1">Sicherheitsmarge</p>
             <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold">{marginOfSafety.toFixed(2)}%</p>
+              <p className={`text-2xl font-bold ${
+                marginOfSafety >= 5 ? 'text-green-600 dark:text-green-400' : 
+                marginOfSafety <= -5 ? 'text-red-600 dark:text-red-400' : 
+                'text-muted-foreground'
+              }`}>
+                {marginOfSafety.toFixed(1)}%
+              </p>
               <Badge variant={mosStatus.variant}>{mosStatus.label}</Badge>
             </div>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Über/Unterbewertung</p>
+            <p className={`text-xl font-semibold ${
+              currentPrice < data.fairValue ? 'text-green-600 dark:text-green-400' : 
+              currentPrice > data.fairValue * 1.05 ? 'text-red-600 dark:text-red-400' : 
+              'text-muted-foreground'
+            }`}>
+              {currentPrice < data.fairValue ? '−' : '+'}{Math.abs(currentPrice - data.fairValue).toFixed(2)} $
+            </p>
+            <p className={`text-sm ${
+              currentPrice < data.fairValue ? 'text-green-600 dark:text-green-400' : 
+              currentPrice > data.fairValue * 1.05 ? 'text-red-600 dark:text-red-400' : 
+              'text-muted-foreground'
+            }`}>
+              ({currentPrice < data.fairValue ? '−' : '+'}{Math.abs(((currentPrice - data.fairValue) / data.fairValue) * 100).toFixed(1)}%)
+            </p>
           </div>
         </div>
       </Card>
