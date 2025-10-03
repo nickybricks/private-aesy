@@ -515,8 +515,8 @@ serve(async (req) => {
     // Current price
     const currentPrice = priceStr ? parseFloat(priceStr) : data.profile.price;
     
-    // Margin of safety
-    const marginOfSafety = ((result.fairValue - currentPrice) / currentPrice) * 100;
+    // Margin of safety (MoS = (Fair Value - Price) / Fair Value × 100%)
+    const marginOfSafety = ((result.fairValue - currentPrice) / result.fairValue) * 100;
     
     const response: ValuationResponse = {
       ticker: ticker.toUpperCase(),
