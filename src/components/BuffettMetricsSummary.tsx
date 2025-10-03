@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, AlertTriangle } from 'lucide-react';
+import { Check, X, AlertTriangle, HelpCircle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import BuffettCheckSheet from './BuffettCheckSheet';
 import {
   Tooltip,
   TooltipContent,
@@ -13,15 +15,19 @@ interface BuffettCriterion {
   status: 'pass' | 'warning' | 'fail';
   value: string;
   threshold: string;
+  explanation?: string;
 }
 
 interface BuffettMetricsSummaryProps {
   criteria: BuffettCriterion[];
+  onFilterChange?: (filter: string | null) => void;
 }
 
-const BuffettMetricsSummary: React.FC<BuffettMetricsSummaryProps> = ({ criteria }) => {
+const BuffettMetricsSummary: React.FC<BuffettMetricsSummaryProps> = ({ criteria, onFilterChange }) => {
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const passCount = criteria.filter(c => c.status === 'pass').length;
   const totalCount = criteria.length;
+  const progressValue = (passCount / totalCount) * 100;
   
   const getStatusIcon = (status: 'pass' | 'warning' | 'fail') => {
     switch (status) {
@@ -45,15 +51,41 @@ const BuffettMetricsSummary: React.FC<BuffettMetricsSummaryProps> = ({ criteria 
     }
   };
   
+  const handlePillClick = (criterionName: string) => {
+    const newFilter = activeFilter === criterionName ? null : criterionName;
+    setActiveFilter(newFilter);
+    onFilterChange?.(newFilter);
+  };
+  
+  // Enrich criteria with explanations
+  const enrichedCriteria = criteria.map(c => ({
+    ...c,
+    explanation: c.explanation || `Buffett bevorzugt ${c.name} ${c.threshold}`
+  }));
+  
   return (
     <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <h3 className="text-sm font-semibold text-gray-900">Buffett-Check</h3>
-          <Badge variant="outline" className="bg-white">
-            {passCount}/{totalCount} ✓
+          <Badge variant="outline" className="bg-white font-semibold">
+            {passCount}/{totalCount} Kriterien erfüllt
           </Badge>
+          <BuffettCheckSheet criteria={enrichedCriteria}>
+            <button className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+              <HelpCircle className="h-3.5 w-3.5" />
+              Warum {passCount}?
+            </button>
+          </BuffettCheckSheet>
         </div>
+      </div>
+      
+      {/* Progress Bar */}
+      <div className="mb-4">
+        <Progress value={progressValue} className="h-2" />
+        <p className="text-xs text-gray-600 mt-1">
+          {progressValue.toFixed(0)}% der Buffett-Kriterien erfüllt
+        </p>
       </div>
       
       <TooltipProvider>
@@ -63,7 +95,10 @@ const BuffettMetricsSummary: React.FC<BuffettMetricsSummaryProps> = ({ criteria 
               <TooltipTrigger asChild>
                 <Badge 
                   variant="outline" 
-                  className={`cursor-help transition-colors ${getStatusColor(criterion.status)}`}
+                  className={`cursor-pointer transition-all ${getStatusColor(criterion.status)} ${
+                    activeFilter === criterion.name ? 'ring-2 ring-blue-400 ring-offset-1' : ''
+                  }`}
+                  onClick={() => handlePillClick(criterion.name)}
                 >
                   <span className="flex items-center gap-1">
                     {getStatusIcon(criterion.status)}
@@ -82,6 +117,12 @@ const BuffettMetricsSummary: React.FC<BuffettMetricsSummaryProps> = ({ criteria 
           ))}
         </div>
       </TooltipProvider>
+      
+      {activeFilter && (
+        <p className="text-xs text-blue-700 mt-3">
+          Gefiltert nach: <span className="font-semibold">{activeFilter}</span> • Klicken Sie erneut, um den Filter zu entfernen
+        </p>
+      )}
     </div>
   );
 };

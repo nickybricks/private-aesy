@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -8,7 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Check, AlertTriangle, X, Info, HelpCircle } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Check, AlertTriangle, X, Info, HelpCircle, Download } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -16,6 +24,8 @@ import {
 } from "@/components/ui/popover";
 import { ClickableTooltip } from './ClickableTooltip';
 import BuffettMetricsSummary from './BuffettMetricsSummary';
+import MetricThermometer from './MetricThermometer';
+import MiniSparkline from './MiniSparkline';
 import { 
   formatCurrency, 
   shouldConvertCurrency,
@@ -161,7 +171,12 @@ const MetricStatus: React.FC<{ status: 'pass' | 'warning' | 'fail' | 'positive' 
   }
 };
 
-const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ metric, currency }) => {
+const MetricCard: React.FC<{ 
+  metric: FinancialMetric; 
+  currency: string;
+  isHighlighted?: boolean;
+  historicalValues?: number[];
+}> = ({ metric, currency, isHighlighted = false, historicalValues = [] }) => {
   const { name, value, formula, explanation, threshold, status, originalValue, originalCurrency, isPercentage, isMultiplier, isAlreadyPercent } = metric;
   
   const isValueMissing = value === 'N/A' || 
@@ -175,26 +190,30 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   
   let cleanedDisplayValue = displayValue;
   let numericValue: number | null = null;
+  let unit = '';
   
   if (!isValueMissing) {
     if (metric.isPercentage) {
       if (isAlreadyPercent) {
         numericValue = typeof displayValue === 'number' ? displayValue : null;
         cleanedDisplayValue = typeof displayValue === 'number' 
-          ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`
+          ? `${displayValue.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
           : displayValue;
+        unit = '%';
       } else {
         const percentageValue = typeof displayValue === 'number' ? displayValue * 100 : null;
         numericValue = percentageValue;
         cleanedDisplayValue = typeof displayValue === 'number' 
-          ? `${percentageValue!.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`
+          ? `${percentageValue!.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
           : displayValue;
+        unit = '%';
       }
     } else if (metric.isMultiplier) {
       numericValue = typeof displayValue === 'number' ? displayValue : null;
       cleanedDisplayValue = typeof displayValue === 'number'
-        ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}×`
+        ? `${Math.round(displayValue)}×`
         : displayValue;
+      unit = '×';
     } else if (originalCurrency && originalValue && shouldConvertCurrency(currency, originalCurrency)) {
       numericValue = typeof value === 'number' ? value : null;
       cleanedDisplayValue = formatCurrency(
@@ -209,21 +228,47 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
       );
     } else {
       numericValue = typeof displayValue === 'number' ? displayValue : null;
-      cleanedDisplayValue = formatCurrency(
-        displayValue, 
-        currency,
-        false,
-        undefined,
-        undefined,
-        metric.isPercentage,
-        metric.isMultiplier,
-        metric.isAlreadyPercent
-      );
+      if (typeof displayValue === 'number' && displayValue > 1000000000) {
+        // Abbreviate large numbers
+        cleanedDisplayValue = `${(displayValue / 1000000000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} Mrd. ${currency}`;
+      } else if (typeof displayValue === 'number' && displayValue > 1000000) {
+        cleanedDisplayValue = `${(displayValue / 1000000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} Mio. ${currency}`;
+      } else {
+        cleanedDisplayValue = formatCurrency(
+          displayValue, 
+          currency,
+          false,
+          undefined,
+          undefined,
+          metric.isPercentage,
+          metric.isMultiplier,
+          metric.isAlreadyPercent
+        );
+      }
     }
   }
   
-  // Determine trend (mock for now - would come from historical data in real implementation)
-  const trendIndicator = numericValue && numericValue > 0 ? '↑' : numericValue && numericValue < 0 ? '↓' : '';
+  // Calculate delta vs. 5-year average
+  let deltaText = '';
+  if (historicalValues.length >= 5 && numericValue !== null) {
+    const last5Years = historicalValues.slice(-5);
+    const avg5Y = last5Years.reduce((a, b) => a + b, 0) / last5Years.length;
+    const delta = numericValue - avg5Y;
+    const deltaFormatted = isPercentage 
+      ? `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pp`
+      : `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}${unit}`;
+    deltaText = `${delta >= 0 ? '↑' : '↓'} ${deltaFormatted} ggü. 5J-Ø`;
+  }
+  
+  // Determine if metric is "higher is better" for thermometer
+  const isHigherBetter = name.includes('ROE') || 
+                         name.includes('ROIC') || 
+                         name.includes('Marge') ||
+                         name.includes('Zinsdeckung') ||
+                         name.includes('Wachstum');
+  
+  // Parse threshold for thermometer
+  const thresholdValue = parseFloat(threshold.replace(/[^0-9.-]/g, '')) || 0;
   
   // Status badge
   const getStatusBadge = () => {
@@ -232,21 +277,21 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
     switch (status) {
       case 'pass':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
             <Check className="h-3 w-3" />
             Erfüllt
           </span>
         );
       case 'warning':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
             <AlertTriangle className="h-3 w-3" />
             Bedingt
           </span>
         );
       case 'fail':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
             <X className="h-3 w-3" />
             Nicht erfüllt
           </span>
@@ -255,10 +300,17 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   };
   
   return (
-    <Card className="metric-card p-4 hover:shadow-md transition-shadow">
-      {/* Zone 1: Titel + Info-Icon */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900" style={{ fontSize: '13px' }}>{name}</h3>
+    <Card className={`metric-card p-4 hover:shadow-lg transition-all ${isHighlighted ? 'ring-2 ring-blue-400 shadow-lg' : ''}`}>
+      {/* Top Badge: TTM / FY2024 */}
+      <div className="absolute top-2 right-2">
+        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
+          TTM
+        </Badge>
+      </div>
+      
+      {/* Line 1: Titel + Info-Icon */}
+      <div className="flex items-center justify-between mb-3 pr-12">
+        <h3 className="text-sm font-semibold text-gray-900">{name}</h3>
         
         {detailedExplanation && (
           <Popover>
@@ -285,32 +337,47 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         )}
       </div>
       
-      {/* Zone 2: Primärwert groß + Mini-Trend */}
-      <div className="mb-3">
+      {/* Line 2: Hauptwert + Delta + Sparkline */}
+      <div className="mb-3 flex items-center justify-between">
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-semibold text-gray-900" style={{ fontSize: '30px' }}>
+          <span className="text-3xl font-semibold text-gray-900">
             {cleanedDisplayValue}
           </span>
-          {trendIndicator && (
-            <span className="text-sm text-gray-500">
-              {trendIndicator}
+          {deltaText && (
+            <span className="text-xs text-gray-500 font-medium">
+              {deltaText}
             </span>
           )}
         </div>
+        {historicalValues.length > 0 && (
+          <MiniSparkline data={historicalValues} />
+        )}
       </div>
       
-      {/* Zone 3: Kontextzeile - Buffett-Schwelle + Status */}
+      {/* Thermometer */}
+      {!isValueMissing && numericValue !== null && (
+        <div className="mb-3">
+          <MetricThermometer 
+            value={numericValue}
+            threshold={thresholdValue}
+            isHigherBetter={isHigherBetter}
+            unit={unit}
+          />
+        </div>
+      )}
+      
+      {/* Line 3: Schwelle + Status */}
       {!isValueMissing && (
-        <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
-          <span className="text-xs text-gray-600" style={{ fontSize: '12px' }}>
-            {threshold} bevorzugt
+        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+          <span className="text-xs text-gray-600">
+            Schwelle: {threshold}
           </span>
           {getStatusBadge()}
         </div>
       )}
       
-      {/* Zone 4: Meta-Fußnote */}
-      <div className="text-xs text-gray-400" style={{ fontSize: '11px' }}>
+      {/* Meta-Fußnote */}
+      <div className="text-xs text-gray-400 mt-3">
         {explanation}
       </div>
     </Card>
@@ -318,6 +385,11 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
 };
 
 const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historicalData, currency = 'USD' }) => {
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'impact' | 'alphabetical' | 'status'>('impact');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pass' | 'warning' | 'fail'>('all');
+  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  
   if (!metrics) return null;
   
   const metricsArray = Array.isArray(metrics) ? metrics.map(metric => {
@@ -383,7 +455,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       name: 'KGV',
       status: kgv.value < 15 ? 'pass' : kgv.value < 20 ? 'warning' : 'fail',
       value: kgv.value.toFixed(1),
-      threshold: '< 15'
+      threshold: '< 15',
+      explanation: 'Buffett bevorzugt ein niedriges KGV, idealerweise unter 15'
     });
   }
   
@@ -394,7 +467,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       name: 'KBV',
       status: kbv.value < 1.5 ? 'pass' : kbv.value < 3 ? 'warning' : 'fail',
       value: kbv.value.toFixed(2),
-      threshold: '< 1.5'
+      threshold: '< 1.5',
+      explanation: 'Buffett bevorzugt ein KBV nahe 1, maximal 1,5'
     });
   }
   
@@ -406,7 +480,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       name: 'ROIC',
       status: roicPct > 12 ? 'pass' : roicPct > 8 ? 'warning' : 'fail',
       value: `${roicPct.toFixed(1)}%`,
-      threshold: '> 12%'
+      threshold: '> 12%',
+      explanation: 'Buffett bevorzugt Unternehmen mit ROIC über 12%, idealerweise über viele Jahre'
     });
   }
   
@@ -418,7 +493,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       name: 'ROE',
       status: roePct > 15 ? 'pass' : roePct > 10 ? 'warning' : 'fail',
       value: `${roePct.toFixed(1)}%`,
-      threshold: '> 15%'
+      threshold: '> 15%',
+      explanation: 'Buffett sucht nach Unternehmen mit konstant hoher ROE über viele Jahre'
     });
   }
   
@@ -428,8 +504,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
     buffettCriteria.push({
       name: 'Schulden',
       status: debt.value < 1 ? 'pass' : debt.value < 2 ? 'warning' : 'fail',
-      value: `${debt.value.toFixed(2)}x`,
-      threshold: '< 1.0x'
+      value: `${debt.value.toFixed(2)}×`,
+      threshold: '< 1.0×',
+      explanation: 'Buffett bevorzugt Unternehmen mit niedriger Verschuldung'
     });
   }
   
@@ -439,8 +516,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
     buffettCriteria.push({
       name: 'Zinsdeckung',
       status: interest.value > 8 ? 'pass' : interest.value > 3 ? 'warning' : 'fail',
-      value: `${interest.value.toFixed(1)}x`,
-      threshold: '> 8x'
+      value: `${interest.value.toFixed(1)}×`,
+      threshold: '> 8×',
+      explanation: 'Hohe Zinsdeckung zeigt die Fähigkeit, Schulden komfortabel zu bedienen'
     });
   }
   
@@ -452,7 +530,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       name: 'Marge',
       status: marginPct > 15 ? 'pass' : marginPct > 10 ? 'warning' : 'fail',
       value: `${marginPct.toFixed(1)}%`,
-      threshold: '> 15%'
+      threshold: '> 15%',
+      explanation: 'Höhere Margen deuten auf einen stärkeren Wettbewerbsvorteil (Burggraben) hin'
     });
   }
   
@@ -465,7 +544,8 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       name: 'EPS-Wachstum',
       status: growth > 5 ? 'pass' : growth > 0 ? 'warning' : 'fail',
       value: `${growth.toFixed(1)}%`,
-      threshold: 'positiv'
+      threshold: 'positiv',
+      explanation: 'Buffett sucht stabiles oder steigendes EPS über viele Jahre'
     });
   }
   
@@ -478,24 +558,73 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       name: 'Moat',
       status: avgReturn > 15 ? 'pass' : avgReturn > 10 ? 'warning' : 'fail',
       value: `${avgReturn.toFixed(1)}%`,
-      threshold: 'stark'
+      threshold: 'stark',
+      explanation: 'Hohe und stabile Renditen deuten auf einen starken Wettbewerbsvorteil hin'
     });
   }
   
+  // Handle filter from BuffettMetricsSummary
+  const handleFilterChange = (filter: string | null) => {
+    setActiveFilter(filter);
+    
+    // Scroll to the metric if filter is active
+    if (filter) {
+      const metric = metricsArray.find(m => m.name.includes(filter));
+      if (metric) {
+        const category = categorizeMetric(metric.name);
+        const sectionEl = sectionRefs.current[category];
+        if (sectionEl) {
+          sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
+  };
+  
+  // Sort metrics within each category
+  const sortMetrics = (categoryMetrics: FinancialMetric[]) => {
+    let sorted = [...categoryMetrics];
+    
+    switch (sortBy) {
+      case 'alphabetical':
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'status':
+        const statusOrder = { pass: 0, warning: 1, fail: 2 };
+        sorted.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+        break;
+      case 'impact':
+        // Keep original order (by importance)
+        break;
+    }
+    
+    return sorted;
+  };
+  
+  // Filter metrics by status
+  const filterByStatus = (categoryMetrics: FinancialMetric[]) => {
+    if (statusFilter === 'all') return categoryMetrics;
+    return categoryMetrics.filter(m => m.status === statusFilter);
+  };
+  
+  // Check if metric should be highlighted
+  const isMetricHighlighted = (metricName: string): boolean => {
+    if (!activeFilter) return false;
+    return metricName.includes(activeFilter);
+  };
+  
   return (
-    <Card className="buffett-card p-4 animate-fade-in">
+    <Card className="buffett-card p-6 animate-fade-in">
       <h2 className="text-lg font-semibold mb-4">Finanzkennzahlen</h2>
       
       {hasConvertedMetrics && (
-        <div className="p-3 mb-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="p-3 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="flex items-start gap-2">
             <AlertTriangle className="text-yellow-500 h-4 w-4 mt-0.5" />
             <div>
               <h3 className="font-medium text-xs text-yellow-700">Währungshinweis</h3>
-              <p className="text-yellow-600 text-2xs">
+              <p className="text-yellow-600 text-xs">
                 Einige Finanzdaten werden in einer anderen Währung berichtet als der Aktienkurs ({currency}).
-                Diese Werte wurden in {currency} umgerechnet, um eine korrekte Analyse zu ermöglichen.
-                Die Originalwerte werden in Klammern angezeigt.
+                Diese Werte wurden in {currency} umgerechnet.
               </p>
             </div>
           </div>
@@ -503,18 +632,68 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       )}
       
       {/* Buffett Check Summary */}
-      {buffettCriteria.length > 0 && <BuffettMetricsSummary criteria={buffettCriteria} />}
+      {buffettCriteria.length > 0 && (
+        <BuffettMetricsSummary 
+          criteria={buffettCriteria} 
+          onFilterChange={handleFilterChange}
+        />
+      )}
+      
+      {/* Sort & Filter Bar */}
+      <div className="flex items-center justify-between mb-6 p-3 bg-gray-50 rounded-lg">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-gray-700">Sortieren:</span>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+            <SelectTrigger className="w-[160px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="impact">Nach Wichtigkeit</SelectItem>
+              <SelectItem value="alphabetical">Alphabetisch</SelectItem>
+              <SelectItem value="status">Nach Status</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-gray-700">Status:</span>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle</SelectItem>
+              <SelectItem value="pass">✓ Erfüllt</SelectItem>
+              <SelectItem value="warning">! Bedingt</SelectItem>
+              <SelectItem value="fail">✕ Nicht erfüllt</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
       
       {/* Categorized Metrics */}
       {Object.entries(categories).map(([key, category]) => {
-        if (category.metrics.length === 0) return null;
+        const filteredMetrics = filterByStatus(sortMetrics(category.metrics));
+        if (filteredMetrics.length === 0) return null;
         
         return (
-          <div key={key} className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">{category.title}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {category.metrics.map((metric, index) => (
-                <MetricCard key={index} metric={metric} currency={currency} />
+          <div 
+            key={key} 
+            ref={(el) => { sectionRefs.current[key] = el; }}
+            className="mb-8"
+          >
+            <h3 className="text-sm font-semibold text-gray-700 mb-4 sticky top-0 bg-white/95 backdrop-blur-sm py-2 z-10 border-b border-gray-200">
+              {category.title}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredMetrics.map((metric, index) => (
+                <MetricCard 
+                  key={index} 
+                  metric={metric} 
+                  currency={currency}
+                  isHighlighted={isMetricHighlighted(metric.name)}
+                  historicalValues={[]} // TODO: Extract historical data for this metric
+                />
               ))}
             </div>
           </div>
@@ -522,38 +701,41 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
       })}
       
       {historicalData && historicalData.revenue && historicalData.revenue.length > 0 && (
-        <div className="border-t pt-4 mt-2">
-          <div className="flex items-center justify-between mb-3">
+        <div className="border-t pt-6 mt-4">
+          <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-semibold">Finanzielle Entwicklung (10 Jahre)</h3>
-            <ClickableTooltip
-              content={
-                <div className="space-y-1.5">
-                  <p className="text-xs">
-                    <span className="font-medium">Umsatz (Revenue):</span> Der Gesamtumsatz des Unternehmens pro Jahr.
-                    Buffett bevorzugt Unternehmen mit stabilem oder wachsendem Umsatz.
-                  </p>
-                  <p className="text-xs">
-                    <span className="font-medium">Gewinn (Earnings):</span> Der Nettogewinn nach allen Kosten und Steuern.
-                    Idealerweise sollte der Gewinn über die Jahre steigen.
-                  </p>
-                  <p className="text-xs">
-                    <span className="font-medium">EPS (Earnings Per Share):</span> Der Gewinn pro Aktie zeigt, wie viel Gewinn auf eine einzelne Aktie entfällt.
-                    Buffett achtet besonders auf einen stabilen oder wachsenden EPS über viele Jahre.
-                  </p>
-                </div>
-              }
-            >
-              <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
-                <HelpCircle size={14} className="text-gray-600" />
+            <div className="flex items-center gap-2">
+              <ClickableTooltip
+                content={
+                  <div className="space-y-1.5">
+                    <p className="text-xs">
+                      <span className="font-medium">Umsatz:</span> Gesamtumsatz pro Jahr (Buffett bevorzugt stabiles Wachstum)
+                    </p>
+                    <p className="text-xs">
+                      <span className="font-medium">Gewinn:</span> Nettogewinn nach allen Kosten
+                    </p>
+                    <p className="text-xs">
+                      <span className="font-medium">EPS:</span> Gewinn pro Aktie (Buffett achtet auf stetiges Wachstum)
+                    </p>
+                  </div>
+                }
+              >
+                <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
+                  <HelpCircle size={14} className="text-gray-600" />
+                </button>
+              </ClickableTooltip>
+              <button className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                <Download size={14} />
+                Als CSV
               </button>
-            </ClickableTooltip>
+            </div>
           </div>
           
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Jahr</TableHead>
+                  <TableHead className="sticky left-0 bg-white z-10">Jahr</TableHead>
                   <TableHead className="text-right">Umsatz</TableHead>
                   <TableHead className="text-right">Gewinn</TableHead>
                   <TableHead className="text-right">EPS</TableHead>
@@ -578,7 +760,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
                   
                   return (
                     <TableRow key={revenueItem.year}>
-                      <TableCell className="font-medium">{revenueItem.year}</TableCell>
+                      <TableCell className="font-medium sticky left-0 bg-white">{revenueItem.year}</TableCell>
                       <TableCell className="text-right">{revenueValue}</TableCell>
                       <TableCell className="text-right">{earningsValue}</TableCell>
                       <TableCell className="text-right">{epsValue}</TableCell>
