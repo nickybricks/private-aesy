@@ -478,7 +478,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           }}
           className="h-full w-full aspect-auto"
         >
-          <ComposedChart data={getFilteredData()} margin={{ top: 8, right: 8, left: 0, bottom: 36 }}>
+          <ComposedChart data={getFilteredData()} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <defs>
               <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="hsl(221, 83%, 95%)" stopOpacity={0.8}/>
@@ -489,8 +489,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
             <XAxis
               dataKey="date"
               tickFormatter={(date) => formatXAxis(new Date(date))}
-              height={36}
-              tickMargin={8}
+              height={28}
+              tickMargin={4}
               minTickGap={10}
               interval="preserveStartEnd"
               tick={{ fontSize: 11 }}
