@@ -615,7 +615,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
   return (
     <Card className="buffett-card p-6 animate-fade-in">
       {hasConvertedMetrics && (
-        <div className="p-3 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="p-3 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg max-w-4xl">
           <div className="flex items-start gap-2">
             <AlertTriangle className="text-yellow-500 h-4 w-4 mt-0.5" />
             <div>
@@ -651,7 +651,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
             <h3 className="text-sm font-semibold text-gray-700 mb-4 sticky top-0 bg-white/95 backdrop-blur-sm py-2 z-10 border-b border-gray-200">
               {category.title}
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredMetrics.map((metric, index) => (
                 <MetricCard 
                   key={index} 
