@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, Loader2, AlertTriangle } from 'lucide-react';
+import { Info, Loader2, AlertTriangle, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useStock } from '@/context/StockContext';
 import { fetchValuation } from '@/services/ValuationService';
@@ -104,164 +104,201 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Warnings */}
-      {warnings.length > 0 && (
-        <Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          <AlertDescription>
-            <ul className="list-disc list-inside space-y-1">
-              {warnings.map((warning, index) => (
-                <li key={index} className="text-sm">{warning}</li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
+    <div className="flex gap-6">
+      {/* Main Content */}
+      <div className="flex-1 space-y-6">
+        {/* Warnings */}
+        {warnings.length > 0 && (
+          <Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription>
+              <ul className="list-disc list-inside space-y-1">
+                {warnings.map((warning, index) => (
+                  <li key={index} className="text-sm">{warning}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {/* Mode Selection */}
-      <Card className="p-4">
-        <div className="flex gap-2 flex-wrap">
-          {(Object.keys(modeConfig) as BasisMode[]).map((mode) => (
-            <TooltipProvider key={mode}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={selectedMode === mode ? 'default' : 'outline'}
-                    onClick={() => setSelectedMode(mode)}
-                    className="flex items-center gap-2"
-                  >
-                    {modeConfig[mode].label}
-                    <Info className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">{modeConfig[mode].tooltip}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ))}
-        </div>
-      </Card>
+        {/* Mode Selection */}
+        <Card className="p-4">
+          <div className="flex gap-2 flex-wrap">
+            {(Object.keys(modeConfig) as BasisMode[]).map((mode) => (
+              <TooltipProvider key={mode}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={selectedMode === mode ? 'default' : 'outline'}
+                      onClick={() => setSelectedMode(mode)}
+                      className="flex items-center gap-2"
+                    >
+                      {modeConfig[mode].label}
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">{modeConfig[mode].tooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+          </div>
+        </Card>
 
-      {/* Summary */}
-      <Card className="p-6">
-        <div className="grid gap-6 md:grid-cols-4">
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">Aktueller Preis</p>
-            <p className="text-2xl font-bold">${currentPrice.toFixed(2)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">Fair Value pro Aktie</p>
-            <p className="text-2xl font-bold text-primary">${data.fairValue.toFixed(2)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">Sicherheitsmarge</p>
-            <div className="flex items-center gap-2">
-              <p className={`text-2xl font-bold ${
-                marginOfSafety >= 5 ? 'text-green-600 dark:text-green-400' : 
-                marginOfSafety <= -5 ? 'text-red-600 dark:text-red-400' : 
+        {/* Summary */}
+        <Card className="p-6">
+          <div className="grid gap-6 md:grid-cols-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Aktueller Preis</p>
+              <p className="text-2xl font-bold">${currentPrice.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Fair Value pro Aktie</p>
+              <p className="text-2xl font-bold text-primary">${data.fairValue.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Sicherheitsmarge</p>
+              <div className="flex items-center gap-2">
+                <p className={`text-2xl font-bold ${
+                  marginOfSafety >= 5 ? 'text-green-600 dark:text-green-400' : 
+                  marginOfSafety <= -5 ? 'text-red-600 dark:text-red-400' : 
+                  'text-muted-foreground'
+                }`}>
+                  {marginOfSafety.toFixed(1)}%
+                </p>
+                <Badge variant={mosStatus.variant}>{mosStatus.label}</Badge>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Über/Unterbewertung</p>
+              <p className={`text-xl font-semibold ${
+                currentPrice < data.fairValue ? 'text-green-600 dark:text-green-400' : 
+                currentPrice > data.fairValue * 1.05 ? 'text-red-600 dark:text-red-400' : 
                 'text-muted-foreground'
               }`}>
-                {marginOfSafety.toFixed(1)}%
+                {currentPrice < data.fairValue ? '−' : '+'}{Math.abs(currentPrice - data.fairValue).toFixed(2)} $
               </p>
-              <Badge variant={mosStatus.variant}>{mosStatus.label}</Badge>
+              <p className={`text-sm ${
+                currentPrice < data.fairValue ? 'text-green-600 dark:text-green-400' : 
+                currentPrice > data.fairValue * 1.05 ? 'text-red-600 dark:text-red-400' : 
+                'text-muted-foreground'
+              }`}>
+                ({currentPrice < data.fairValue ? '−' : '+'}{Math.abs(((currentPrice - data.fairValue) / data.fairValue) * 100).toFixed(1)}%)
+              </p>
             </div>
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">Über/Unterbewertung</p>
-            <p className={`text-xl font-semibold ${
-              currentPrice < data.fairValue ? 'text-green-600 dark:text-green-400' : 
-              currentPrice > data.fairValue * 1.05 ? 'text-red-600 dark:text-red-400' : 
-              'text-muted-foreground'
-            }`}>
-              {currentPrice < data.fairValue ? '−' : '+'}{Math.abs(currentPrice - data.fairValue).toFixed(2)} $
-            </p>
-            <p className={`text-sm ${
-              currentPrice < data.fairValue ? 'text-green-600 dark:text-green-400' : 
-              currentPrice > data.fairValue * 1.05 ? 'text-red-600 dark:text-red-400' : 
-              'text-muted-foreground'
-            }`}>
-              ({currentPrice < data.fairValue ? '−' : '+'}{Math.abs(((currentPrice - data.fairValue) / data.fairValue) * 100).toFixed(1)}%)
-            </p>
-          </div>
-        </div>
-      </Card>
+        </Card>
 
-      {/* Calculation Details */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Berechnung</h3>
-        <div className="space-y-4">
-          <div className="grid gap-2">
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-muted-foreground">Startwert (per Share)</span>
-              <span className="font-semibold">${data.startValue.toFixed(2)}</span>
-            </div>
-            
-            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Phase 1 (10 Jahre, {data.growthRate}% p.a.)</span>
-                <span className="font-semibold">${data.pvPhase1.toFixed(2)}</span>
+        {/* Calculation Details */}
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Berechnung</h3>
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-muted-foreground">Startwert (per Share)</span>
+                <span className="font-semibold">${data.startValue.toFixed(2)}</span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Diskontiert mit WACC {data.wacc}%
-              </p>
-            </div>
-
-            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Phase 2 (10 Jahre, {data.terminalRate}% p.a.)</span>
-                <span className="font-semibold">${data.pvPhase2.toFixed(2)}</span>
+              
+              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Phase 1 (10 Jahre, {data.growthRate}% p.a.)</span>
+                  <span className="font-semibold">${data.pvPhase1.toFixed(2)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Diskontiert mit WACC {data.wacc}%
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Terminal Growth Rate {data.terminalRate}%
-              </p>
-            </div>
 
-            <div className="flex justify-between items-center py-2 border-t border-b">
-              <span className="font-semibold">Summe (PV Phase 1 + Phase 2)</span>
-              <span className="font-bold">${(data.pvPhase1 + data.pvPhase2).toFixed(2)}</span>
-            </div>
+              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Phase 2 (10 Jahre, {data.terminalRate}% p.a.)</span>
+                  <span className="font-semibold">${data.pvPhase2.toFixed(2)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Terminal Growth Rate {data.terminalRate}%
+                </p>
+              </div>
 
-            <div className="flex justify-between items-center py-2 text-muted-foreground">
-              <span className="text-sm">+ Tangible Book per Share (optional)</span>
-              <span className="text-sm">${data.tangibleBook.toFixed(2)} (nicht einbezogen)</span>
-            </div>
+              <div className="flex justify-between items-center py-2 border-t border-b">
+                <span className="font-semibold">Summe (PV Phase 1 + Phase 2)</span>
+                <span className="font-bold">${(data.pvPhase1 + data.pvPhase2).toFixed(2)}</span>
+              </div>
 
-            <div className="flex justify-between items-center py-3 border-t-2 border-primary">
-              <span className="text-lg font-bold">Fair Value per Share</span>
-              <span className="text-2xl font-bold text-primary">${data.fairValue.toFixed(2)}</span>
+              <div className="flex justify-between items-center py-2 text-muted-foreground">
+                <span className="text-sm">+ Tangible Book per Share (optional)</span>
+                <span className="text-sm">${data.tangibleBook.toFixed(2)} (nicht einbezogen)</span>
+              </div>
+
+              <div className="flex justify-between items-center py-3 border-t-2 border-primary">
+                <span className="text-lg font-bold">Fair Value per Share</span>
+                <span className="text-2xl font-bold text-primary">${data.fairValue.toFixed(2)}</span>
+              </div>
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
 
-      {/* Assumptions */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Annahmen (Read-only)</h3>
-        <div className="grid gap-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">WACC (Diskontierungssatz)</span>
-            <span className="font-semibold">{data.wacc}%</span>
+      {/* Right Sidebar - Assumptions */}
+      <aside className="w-80 sticky top-6 self-start">
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Annahmen (Read-only)</h3>
+          <div className="space-y-4">
+            <AssumptionItem 
+              label="WACC (Diskontierungssatz)" 
+              value={`${data.wacc}%`}
+            />
+            <AssumptionItem 
+              label="Wachstumsphase" 
+              value={`10 Jahre @ ${data.growthRate}%`}
+            />
+            <AssumptionItem 
+              label="Terminal-Phase" 
+              value={`10 Jahre @ ${data.terminalRate}%`}
+            />
+            <AssumptionItem 
+              label="Tangible Book per Share" 
+              value={`$${data.tangibleBook.toFixed(2)}`}
+            />
+            <div className="flex justify-between items-center py-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Predictability</span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Edit className="h-3 w-3 text-muted-foreground/40 cursor-not-allowed" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">In diesem Modus nicht bearbeitbar</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Badge variant="secondary">Medium</Badge>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Wachstumsphase</span>
-            <span className="font-semibold">10 Jahre @ {data.growthRate}%</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Terminal-Phase</span>
-            <span className="font-semibold">10 Jahre @ {data.terminalRate}%</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Tangible Book per Share</span>
-            <span className="font-semibold">${data.tangibleBook.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Predictability</span>
-            <Badge variant="secondary">Medium</Badge>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      </aside>
     </div>
   );
 };
+
+// Helper component for assumption items with edit icon
+const AssumptionItem = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex justify-between items-center py-2">
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Edit className="h-3 w-3 text-muted-foreground/40 cursor-not-allowed" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">In diesem Modus nicht bearbeitbar</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+    <span className="text-sm font-semibold">{value}</span>
+  </div>
+);
