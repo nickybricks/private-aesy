@@ -288,11 +288,18 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
       {analysisMode === 'standard' && (
         <div className="mb-6">
           <Alert className="bg-blue-50 border-blue-200">
-            <AlertTriangle className="h-4 w-4 text-blue-500" />
-            <AlertDescription className="text-blue-700">
-              Diese Bewertung basiert nur auf quantitativen Kriterien (Finanzkennzahlen, Verschuldung, Bewertung). 
-              Für eine vollständige Bewertung nach Buffetts 11 Kriterien aktivieren Sie die KI-Analyse.
-            </AlertDescription>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-start gap-2 flex-1">
+                <AlertTriangle className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                <AlertDescription className="text-blue-700">
+                  Diese Bewertung basiert nur auf quantitativen Kriterien (Finanzkennzahlen, Verschuldung, Bewertung). 
+                  Für eine vollständige Bewertung nach Buffetts 11 Kriterien aktivieren Sie die KI-Analyse.
+                </AlertDescription>
+              </div>
+              {!deepResearchPerformed && (
+                <StartDeepResearchButton compact />
+              )}
+            </div>
           </Alert>
         </div>
       )}
@@ -362,13 +369,6 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
           currency={currency}
         />
       </div>
-      
-      {/* Show Deep Research Button if not performed */}
-      {!deepResearchPerformed && analysisMode === 'standard' && (
-        <div className="mb-8">
-          <StartDeepResearchButton />
-        </div>
-      )}
       
       {/* Detailed Analysis */}
       {deepResearchPerformed ? (
