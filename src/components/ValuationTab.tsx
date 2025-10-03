@@ -176,17 +176,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
                 </p>
               </div>
 
-              <div className="flex justify-between items-center py-2 border-t border-b">
-                <span className="font-semibold text-sm">Summe (PV Phase 1+2)</span>
-                <span className="font-bold">${(data.pvPhase1 + data.pvPhase2).toFixed(2)}</span>
-              </div>
-
-              <div className="flex justify-between items-center py-2 text-muted-foreground">
-                <span className="text-xs">+ TBV/Aktie (opt.)</span>
-                <span className="text-xs">${data.tangibleBook.toFixed(2)}</span>
-              </div>
-
-              <div className="flex justify-between items-center py-3 border-t-2 border-primary">
+              <div className="flex justify-between items-center py-3 border-t-2 border-primary mt-4">
                 <span className="font-bold">Fair Value</span>
                 <span className="text-xl font-bold text-primary">${data.fairValue.toFixed(2)}</span>
               </div>
