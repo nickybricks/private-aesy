@@ -41,9 +41,10 @@ const CriteriaTabsSection: React.FC = () => {
           {deepResearchPerformed ? (
             <BuffettCriteriaGPT criteria={buffettCriteria} />
           ) : (
-            <div className="relative min-h-[500px] bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 opacity-40" />
-              <div className="absolute inset-0 backdrop-blur-md bg-white/50 flex items-center justify-center">
+            <div className="relative min-h-[500px] bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden p-6">
+              <h3 className="font-semibold text-lg mb-4 relative z-10">Warren Buffetts 11 Kriterien</h3>
+              <div className="absolute inset-0 top-16 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 opacity-40" />
+              <div className="absolute inset-0 top-16 backdrop-blur-md bg-white/50 flex items-center justify-center">
                 <div className="text-center px-6 py-8 bg-white/90 rounded-xl shadow-lg max-w-md">
                   <InfoIcon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
                   <h3 className="text-xl font-bold text-gray-900 mb-2">

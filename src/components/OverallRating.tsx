@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AlertTriangle, BarChart3 } from 'lucide-react';
+import { AlertTriangle, BarChart3, TrendingUp } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import RatingExplanation from './RatingExplanation';
 import { QualityMetricsCard } from './QualityMetricsCard';
@@ -328,8 +328,12 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
           />
         ) : (
           <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col h-48 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 opacity-40" />
-            <div className="absolute inset-0 backdrop-blur-md bg-white/50 flex items-center justify-center">
+            <div className="flex items-center gap-2 mb-2 relative z-10">
+              <TrendingUp size={18} className="text-blue-600" />
+              <h4 className="font-semibold">Kriterienbewertung</h4>
+            </div>
+            <div className="absolute inset-0 top-12 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 opacity-40" />
+            <div className="absolute inset-0 top-12 backdrop-blur-md bg-white/50 flex items-center justify-center">
               <div className="text-center px-4">
                 <div className="text-sm font-semibold text-gray-700 mb-1">
                   KI-Analyse erforderlich
@@ -375,8 +379,9 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
         />
       ) : (
         <div className="mb-8 bg-white rounded-lg p-6 border border-gray-200 shadow-sm relative overflow-hidden min-h-[300px]">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 opacity-40" />
-          <div className="absolute inset-0 backdrop-blur-md bg-white/50 flex items-center justify-center">
+          <h3 className="font-semibold mb-4 text-lg relative z-10">Detailanalyse</h3>
+          <div className="absolute inset-0 top-16 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 opacity-40" />
+          <div className="absolute inset-0 top-16 backdrop-blur-md bg-white/50 flex items-center justify-center">
             <div className="text-center px-6 py-8 bg-white/90 rounded-xl shadow-lg max-w-md">
               <BarChart3 className="h-12 w-12 text-blue-600 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">
