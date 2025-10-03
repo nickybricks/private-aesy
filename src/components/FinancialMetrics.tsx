@@ -15,6 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ClickableTooltip } from './ClickableTooltip';
+import BuffettMetricsSummary from './BuffettMetricsSummary';
 import { 
   formatCurrency, 
   shouldConvertCurrency,
@@ -297,6 +298,143 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
     metric => metric.originalCurrency && shouldConvertCurrency(currency, metric.originalCurrency)
   );
   
+  // Categorize metrics
+  const categorizeMetric = (metricName: string): string => {
+    if (metricName.includes('Gewinn pro Aktie') || metricName.includes('Nettomarge')) return 'profitability';
+    if (metricName.includes('ROE') || metricName.includes('ROIC')) return 'returns';
+    if (metricName.includes('KGV') || metricName.includes('P/B') || metricName.includes('KBV') || metricName.includes('EV/')) return 'valuation';
+    if (metricName.includes('Schulden') || metricName.includes('Zinsdeckung') || metricName.includes('Deckungsgrad')) return 'balance';
+    if (metricName.includes('Volumen') || metricName.includes('Cashflow') || metricName.includes('Liquidität')) return 'liquidity';
+    return 'other';
+  };
+  
+  const categories = {
+    profitability: { title: 'Profitabilität', metrics: [] as FinancialMetric[] },
+    returns: { title: 'Renditen', metrics: [] as FinancialMetric[] },
+    valuation: { title: 'Bewertung', metrics: [] as FinancialMetric[] },
+    balance: { title: 'Bilanz & Verschuldung', metrics: [] as FinancialMetric[] },
+    liquidity: { title: 'Liquidität & Cashflow', metrics: [] as FinancialMetric[] },
+    other: { title: 'Weitere Kennzahlen', metrics: [] as FinancialMetric[] }
+  };
+  
+  metricsArray.forEach(metric => {
+    const category = categorizeMetric(metric.name);
+    categories[category as keyof typeof categories].metrics.push(metric);
+  });
+  
+  // Generate Buffett criteria
+  const getMetricValue = (name: string): FinancialMetric | undefined => {
+    return metricsArray.find(m => m.name.includes(name));
+  };
+  
+  const buffettCriteria = [];
+  
+  // KGV
+  const kgv = getMetricValue('KGV');
+  if (kgv && typeof kgv.value === 'number') {
+    buffettCriteria.push({
+      name: 'KGV',
+      status: kgv.value < 15 ? 'pass' : kgv.value < 20 ? 'warning' : 'fail',
+      value: kgv.value.toFixed(1),
+      threshold: '< 15'
+    });
+  }
+  
+  // KBV / P/B
+  const kbv = getMetricValue('P/B') || getMetricValue('KBV');
+  if (kbv && typeof kbv.value === 'number') {
+    buffettCriteria.push({
+      name: 'KBV',
+      status: kbv.value < 1.5 ? 'pass' : kbv.value < 3 ? 'warning' : 'fail',
+      value: kbv.value.toFixed(2),
+      threshold: '< 1.5'
+    });
+  }
+  
+  // ROIC
+  const roic = getMetricValue('ROIC');
+  if (roic && typeof roic.value === 'number') {
+    const roicPct = roic.isAlreadyPercent ? roic.value : roic.value * 100;
+    buffettCriteria.push({
+      name: 'ROIC',
+      status: roicPct > 12 ? 'pass' : roicPct > 8 ? 'warning' : 'fail',
+      value: `${roicPct.toFixed(1)}%`,
+      threshold: '> 12%'
+    });
+  }
+  
+  // ROE
+  const roe = getMetricValue('ROE');
+  if (roe && typeof roe.value === 'number') {
+    const roePct = roe.isAlreadyPercent ? roe.value : roe.value * 100;
+    buffettCriteria.push({
+      name: 'ROE',
+      status: roePct > 15 ? 'pass' : roePct > 10 ? 'warning' : 'fail',
+      value: `${roePct.toFixed(1)}%`,
+      threshold: '> 15%'
+    });
+  }
+  
+  // Schuldenquote
+  const debt = getMetricValue('Schulden zu EBITDA');
+  if (debt && typeof debt.value === 'number') {
+    buffettCriteria.push({
+      name: 'Schulden',
+      status: debt.value < 1 ? 'pass' : debt.value < 2 ? 'warning' : 'fail',
+      value: `${debt.value.toFixed(2)}x`,
+      threshold: '< 1.0x'
+    });
+  }
+  
+  // Zinsdeckung
+  const interest = getMetricValue('Zinsdeckung');
+  if (interest && typeof interest.value === 'number') {
+    buffettCriteria.push({
+      name: 'Zinsdeckung',
+      status: interest.value > 8 ? 'pass' : interest.value > 3 ? 'warning' : 'fail',
+      value: `${interest.value.toFixed(1)}x`,
+      threshold: '> 8x'
+    });
+  }
+  
+  // Nettomarge
+  const margin = getMetricValue('Nettomarge');
+  if (margin && typeof margin.value === 'number') {
+    const marginPct = margin.isAlreadyPercent ? margin.value : margin.value * 100;
+    buffettCriteria.push({
+      name: 'Marge',
+      status: marginPct > 15 ? 'pass' : marginPct > 10 ? 'warning' : 'fail',
+      value: `${marginPct.toFixed(1)}%`,
+      threshold: '> 15%'
+    });
+  }
+  
+  // EPS-Wachstum (from historical data)
+  if (historicalData?.eps && historicalData.eps.length >= 2) {
+    const recentEps = historicalData.eps[historicalData.eps.length - 1].value;
+    const oldEps = historicalData.eps[0].value;
+    const growth = ((recentEps - oldEps) / Math.abs(oldEps)) * 100;
+    buffettCriteria.push({
+      name: 'EPS-Wachstum',
+      status: growth > 5 ? 'pass' : growth > 0 ? 'warning' : 'fail',
+      value: `${growth.toFixed(1)}%`,
+      threshold: 'positiv'
+    });
+  }
+  
+  // Moat-Proxy (average of ROIC and ROE consistency)
+  if (roic && roe && typeof roic.value === 'number' && typeof roe.value === 'number') {
+    const roicPct = roic.isAlreadyPercent ? roic.value : roic.value * 100;
+    const roePct = roe.isAlreadyPercent ? roe.value : roe.value * 100;
+    const avgReturn = (roicPct + roePct) / 2;
+    buffettCriteria.push({
+      name: 'Moat',
+      status: avgReturn > 15 ? 'pass' : avgReturn > 10 ? 'warning' : 'fail',
+      value: `${avgReturn.toFixed(1)}%`,
+      threshold: 'stark'
+    });
+  }
+  
   return (
     <Card className="buffett-card p-4 animate-fade-in">
       <h2 className="text-lg font-semibold mb-4">Finanzkennzahlen</h2>
@@ -317,11 +455,24 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6">
-        {metricsArray.map((metric, index) => (
-          <MetricCard key={index} metric={metric} currency={currency} />
-        ))}
-      </div>
+      {/* Buffett Check Summary */}
+      {buffettCriteria.length > 0 && <BuffettMetricsSummary criteria={buffettCriteria} />}
+      
+      {/* Categorized Metrics */}
+      {Object.entries(categories).map(([key, category]) => {
+        if (category.metrics.length === 0) return null;
+        
+        return (
+          <div key={key} className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">{category.title}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {category.metrics.map((metric, index) => (
+                <MetricCard key={index} metric={metric} currency={currency} />
+              ))}
+            </div>
+          </div>
+        );
+      })}
       
       {historicalData && historicalData.revenue && historicalData.revenue.length > 0 && (
         <div className="border-t pt-4 mt-2">
