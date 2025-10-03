@@ -222,7 +222,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2">
                 <p className={`text-2xl font-bold ${
                   marginOfSafety >= 5 ? 'text-green-600 dark:text-green-400' : 
                   marginOfSafety <= -5 ? 'text-red-600 dark:text-red-400' : 
@@ -232,13 +232,6 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
                 </p>
                 <Badge variant={mosStatus.variant}>{mosStatus.label}</Badge>
               </div>
-              <p className={`text-sm ${
-                currentPrice < data.fairValue ? 'text-green-600 dark:text-green-400' : 
-                currentPrice > data.fairValue * 1.05 ? 'text-red-600 dark:text-red-400' : 
-                'text-muted-foreground'
-              }`}>
-                {currentPrice < data.fairValue ? '−' : '+'}{Math.abs(currentPrice - data.fairValue).toFixed(2)} $ ({currentPrice < data.fairValue ? '−' : '+'}{Math.abs(((currentPrice - data.fairValue) / data.fairValue) * 100).toFixed(1)}%)
-              </p>
             </div>
           </div>
         </Card>
