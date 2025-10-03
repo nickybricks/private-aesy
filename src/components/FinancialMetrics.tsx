@@ -614,8 +614,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
   
   return (
     <Card className="buffett-card p-6 animate-fade-in">
-      <h2 className="text-lg font-semibold mb-4">Finanzkennzahlen</h2>
-      
       {hasConvertedMetrics && (
         <div className="p-3 mb-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="flex items-start gap-2">
