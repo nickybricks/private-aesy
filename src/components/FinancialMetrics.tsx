@@ -174,27 +174,29 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
   const detailedExplanation = getMetricDetailedExplanation(name);
   
   let cleanedDisplayValue = displayValue;
+  let numericValue: number | null = null;
   
   if (!isValueMissing) {
     if (metric.isPercentage) {
-      // Check if value is already in percentage format or needs conversion
       if (isAlreadyPercent) {
-        // Value is already a percentage (e.g., 15.5 for 15.5%)
+        numericValue = typeof displayValue === 'number' ? displayValue : null;
         cleanedDisplayValue = typeof displayValue === 'number' 
-          ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} %`
+          ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`
           : displayValue;
       } else {
-        // Value is decimal and needs conversion to percentage (e.g., 0.155 for 15.5%)
-        const percentageValue = typeof displayValue === 'number' ? displayValue * 100 : displayValue;
+        const percentageValue = typeof displayValue === 'number' ? displayValue * 100 : null;
+        numericValue = percentageValue;
         cleanedDisplayValue = typeof displayValue === 'number' 
-          ? `${percentageValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })} %`
+          ? `${percentageValue!.toLocaleString('de-DE', { maximumFractionDigits: 2 })}%`
           : displayValue;
       }
     } else if (metric.isMultiplier) {
+      numericValue = typeof displayValue === 'number' ? displayValue : null;
       cleanedDisplayValue = typeof displayValue === 'number'
-        ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}x`
+        ? `${displayValue.toLocaleString('de-DE', { maximumFractionDigits: 2 })}×`
         : displayValue;
     } else if (originalCurrency && originalValue && shouldConvertCurrency(currency, originalCurrency)) {
+      numericValue = typeof value === 'number' ? value : null;
       cleanedDisplayValue = formatCurrency(
         value, 
         currency, 
@@ -206,6 +208,7 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         metric.isAlreadyPercent
       );
     } else {
+      numericValue = typeof displayValue === 'number' ? displayValue : null;
       cleanedDisplayValue = formatCurrency(
         displayValue, 
         currency,
@@ -219,24 +222,58 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
     }
   }
   
+  // Determine trend (mock for now - would come from historical data in real implementation)
+  const trendIndicator = numericValue && numericValue > 0 ? '↑' : numericValue && numericValue < 0 ? '↓' : '';
+  
+  // Status badge
+  const getStatusBadge = () => {
+    if (isValueMissing) return null;
+    
+    switch (status) {
+      case 'pass':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+            <Check className="h-3 w-3" />
+            Erfüllt
+          </span>
+        );
+      case 'warning':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+            <AlertTriangle className="h-3 w-3" />
+            Bedingt
+          </span>
+        );
+      case 'fail':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+            <X className="h-3 w-3" />
+            Nicht erfüllt
+          </span>
+        );
+    }
+  };
+  
   return (
-    <Card className="metric-card p-3">
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="text-base font-medium">{name}</h3>
+    <Card className="metric-card p-4 hover:shadow-md transition-shadow">
+      {/* Zone 1: Titel + Info-Icon */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-900" style={{ fontSize: '13px' }}>{name}</h3>
         
         {detailedExplanation && (
           <Popover>
             <PopoverTrigger asChild>
-              <button className="rounded-full p-1 bg-gray-100 hover:bg-gray-200 transition-colors">
-                <Info size={12} className="text-gray-600" />
+              <button className="rounded-full p-1 hover:bg-gray-100 transition-colors">
+                <Info size={14} className="text-gray-500" />
               </button>
             </PopoverTrigger>
             <PopoverContent className="max-w-sm p-3">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <h4 className="font-semibold text-sm">{name}</h4>
-                <p className="text-xs">{detailedExplanation.whatItIs}</p>
+                <p className="text-xs text-gray-600">{detailedExplanation.whatItIs}</p>
                 
-                <div className="space-y-1 pt-1.5">
+                <div className="space-y-1.5 pt-2 border-t">
+                  <p className="text-xs"><span className="font-medium">Formel:</span> {formula}</p>
                   <p className="text-xs"><span className="font-medium">Berechnung:</span> {detailedExplanation.howCalculated}</p>
                   <p className="text-xs"><span className="font-medium">Warum wichtig:</span> {detailedExplanation.whyImportant}</p>
                   <p className="text-xs"><span className="font-medium">Buffett-Maßstab:</span> {detailedExplanation.buffettGuideline}</p>
@@ -248,23 +285,33 @@ const MetricCard: React.FC<{ metric: FinancialMetric; currency: string }> = ({ m
         )}
       </div>
       
-      <div className="text-xl font-semibold mb-1.5">{cleanedDisplayValue}</div>
-      
-      <div className="text-xs text-buffett-subtext mb-1">
-        <span className="font-medium">Formel:</span> {formula}
+      {/* Zone 2: Primärwert groß + Mini-Trend */}
+      <div className="mb-3">
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-semibold text-gray-900" style={{ fontSize: '30px' }}>
+            {cleanedDisplayValue}
+          </span>
+          {trendIndicator && (
+            <span className="text-sm text-gray-500">
+              {trendIndicator}
+            </span>
+          )}
+        </div>
       </div>
       
-      <p className="text-xs mb-2">{explanation}</p>
-      
-      <div className="flex items-center justify-between text-xs">
-        <div>
-          <span className="font-medium">Buffett-Schwelle:</span> {threshold}
+      {/* Zone 3: Kontextzeile - Buffett-Schwelle + Status */}
+      {!isValueMissing && (
+        <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
+          <span className="text-xs text-gray-600" style={{ fontSize: '12px' }}>
+            {threshold} bevorzugt
+          </span>
+          {getStatusBadge()}
         </div>
-        {!isValueMissing ? (
-          <MetricStatus status={status} />
-        ) : (
-          <span className="text-gray-500 font-medium">Nicht bewertbar</span>
-        )}
+      )}
+      
+      {/* Zone 4: Meta-Fußnote */}
+      <div className="text-xs text-gray-400" style={{ fontSize: '11px' }}>
+        {explanation}
       </div>
     </Card>
   );
