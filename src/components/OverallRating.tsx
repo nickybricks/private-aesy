@@ -322,12 +322,24 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
       
       {/* Three Metrics Section */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {deepResearchPerformed && (
+        <div className="relative">
           <QualityMetricsCard 
-            buffettScore={realBuffettScore}
-            criteria={criteria}
+            buffettScore={deepResearchPerformed ? realBuffettScore : 87.5}
+            criteria={deepResearchPerformed ? criteria : undefined}
           />
-        )}
+          {!deepResearchPerformed && (
+            <div className="absolute inset-0 backdrop-blur-md bg-white/30 rounded-lg flex items-center justify-center cursor-not-allowed">
+              <div className="text-center px-4">
+                <div className="text-sm font-semibold text-gray-700 mb-1">
+                  KI-Analyse erforderlich
+                </div>
+                <div className="text-xs text-gray-600">
+                  Starten Sie die Analyse unten
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         
         <MarginOfSafetyCard 
           marginOfSafetyValue={calculatedMarginOfSafety?.value || 0}
