@@ -36,17 +36,6 @@ interface ValuationResponse {
     tangibleBookAdded: number;
   };
   asOf: string;
-  diagnostics?: {
-    cfo_ttm?: number;
-    capex_ttm?: number;
-    fcf_ttm?: number;
-    fcf_ps_q?: number[];
-    fcf_ps_ttm?: number;
-    diluted_shares_q?: number[];
-    units?: { cashflow: string };
-    suspicious_units?: boolean;
-    shares_mismatch?: boolean;
-  };
 }
 
 // Helper functions
@@ -207,208 +196,6 @@ async function calculateEpsWoNri(ticker: string): Promise<number> {
   return ttmEpsWoNri;
 }
 
-// Calculate FCF per Share (quarterly adjusted) with diagnostics
-async function calculateFcfPerShare(ticker: string, profile: any): Promise<{
-  fcfPerShareTtm: number;
-  diagnostics: {
-    cfo_ttm: number;
-    capex_ttm: number;
-    fcf_ttm: number;
-    fcf_ps_q: number[];
-    fcf_ps_ttm: number;
-    diluted_shares_q: number[];
-    units: { cashflow: string };
-    suspicious_units: boolean;
-    shares_mismatch: boolean;
-  };
-}> {
-  const FMP_API_KEY = Deno.env.get('FMP_API_KEY');
-  if (!FMP_API_KEY) throw new Error('FMP_API_KEY not configured');
-
-  // Fetch quarterly cash flow statements
-  const res = await fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${ticker}?period=quarter&limit=40&apikey=${FMP_API_KEY}`);
-  if (!res.ok) {
-    throw new Error('Failed to fetch quarterly cash flow data');
-  }
-  
-  const quarters = await res.json();
-  if (!Array.isArray(quarters) || quarters.length < 4) {
-    throw new Error('Not enough quarterly cash flow data');
-  }
-
-  // Get annual data for shares mismatch check
-  const annualRes = await fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${ticker}?period=annual&limit=1&apikey=${FMP_API_KEY}`);
-  const annualData = annualRes.ok ? await annualRes.json() : [];
-  const annualShares = annualData[0]?.weightedAverageShsOutDil || 0;
-
-  const fcfPsQuarters: number[] = [];
-  const dilutedSharesQuarters: number[] = [];
-  let cfoTtm = 0;
-  let capexTtm = 0;
-  let fcfTtm = 0;
-  
-  // Detect units - check if values are in millions
-  const firstCfo = Math.abs(quarters[0]?.operatingCashFlow || 0);
-  const firstPrice = profile.price || 100;
-  const unitsAreMillion = firstCfo > 0 && firstCfo < firstPrice * 1000;
-  const unitsLabel = unitsAreMillion ? "USDm" : "USD";
-  const unitMultiplier = unitsAreMillion ? 1e6 : 1;
-
-  // Calculate quarterly FCF per share for last 4 quarters
-  for (let i = 0; i < 4; i++) {
-    const q = quarters[i];
-    
-    // Get CFO (operating cash flow)
-    let cfo = q.operatingCashFlow || 0;
-    
-    // Get CapEx (capital expenditures) - handle negative values
-    let capex = q.capitalExpenditure || 0;
-    // CapEx is usually negative in cash flow statement, make it positive
-    if (capex > 0) {
-      capex = -capex;
-    }
-    capex = Math.abs(capex);
-    
-    // Calculate quarterly FCF
-    const fcfQ = (cfo * unitMultiplier) - (capex * unitMultiplier);
-    
-    // Get diluted weighted average shares for this quarter
-    const shares = q.weightedAverageShsOutDil || 0;
-    
-    if (shares <= 0) {
-      console.warn(`Quarter ${i}: No diluted shares data, skipping`);
-      continue;
-    }
-    
-    // Calculate FCF per share for this quarter
-    const fcfPsQ = fcfQ / shares;
-    fcfPsQuarters.push(parseFloat(fcfPsQ.toFixed(2)));
-    dilutedSharesQuarters.push(shares);
-    
-    // Accumulate for TTM
-    cfoTtm += cfo * unitMultiplier;
-    capexTtm += capex * unitMultiplier;
-    fcfTtm += fcfQ;
-  }
-
-  // TTM FCF per share is the sum of quarterly FCF per share
-  const fcfPerShareTtm = fcfPsQuarters.reduce((sum, v) => sum + v, 0);
-
-  // Sanity checks
-  let suspiciousUnits = false;
-  let sharesMismatch = false;
-
-  // Check 1: If |fcfPerShareTtm| > price * 2, units are probably wrong
-  if (Math.abs(fcfPerShareTtm) > firstPrice * 2) {
-    suspiciousUnits = true;
-    console.warn(`Suspicious units detected: FCF/Share TTM (${fcfPerShareTtm}) > Price * 2 (${firstPrice * 2})`);
-  }
-
-  // Check 2: If FCF_TTM / (Revenue or Market Cap) > 80%, suspicious
-  const marketCap = profile.mktCap || 0;
-  if (marketCap > 0 && Math.abs(fcfTtm) / marketCap > 0.8) {
-    suspiciousUnits = true;
-    console.warn(`Suspicious units: FCF_TTM / Market Cap > 80%`);
-  }
-
-  // Check 3: Shares mismatch - average quarterly shares should be close to annual
-  if (annualShares > 0) {
-    const avgQuarterlyShares = dilutedSharesQuarters.reduce((a, b) => a + b, 0) / Math.max(1, dilutedSharesQuarters.length);
-    const diff = Math.abs(avgQuarterlyShares - annualShares) / annualShares;
-    if (diff > 0.05) {
-      sharesMismatch = true;
-      console.warn(`Shares mismatch: Quarterly avg (${avgQuarterlyShares}) vs Annual (${annualShares}), diff: ${(diff * 100).toFixed(1)}%`);
-    }
-  }
-
-  console.log(`FCF per Share (quarterly TTM): ${fcfPerShareTtm.toFixed(2)}`);
-  console.log(`CFO TTM: ${cfoTtm.toFixed(2)}, CapEx TTM: ${capexTtm.toFixed(2)}, FCF TTM: ${fcfTtm.toFixed(2)}`);
-  console.log(`Quarterly FCF/Share: [${fcfPsQuarters.join(', ')}]`);
-
-  return {
-    fcfPerShareTtm,
-    diagnostics: {
-      cfo_ttm: parseFloat(cfoTtm.toFixed(2)),
-      capex_ttm: parseFloat(capexTtm.toFixed(2)),
-      fcf_ttm: parseFloat(fcfTtm.toFixed(2)),
-      fcf_ps_q: fcfPsQuarters,
-      fcf_ps_ttm: parseFloat(fcfPerShareTtm.toFixed(2)),
-      diluted_shares_q: dilutedSharesQuarters,
-      units: { cashflow: unitsLabel },
-      suspicious_units: suspiciousUnits,
-      shares_mismatch: sharesMismatch
-    }
-  };
-}
-
-// Calculate historical FCF per Share growth rate (10Y CAGR from annuals)
-async function calculateFcfPerShareGrowthRate(ticker: string, profile: any): Promise<number> {
-  const FMP_API_KEY = Deno.env.get('FMP_API_KEY');
-  if (!FMP_API_KEY) throw new Error('FMP_API_KEY not configured');
-
-  // Fetch annual cash flow statements
-  const res = await fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${ticker}?period=annual&limit=11&apikey=${FMP_API_KEY}`);
-  if (!res.ok) return 0;
-  
-  const annuals = await res.json();
-  if (!Array.isArray(annuals) || annuals.length < 4) return 0;
-
-  // Detect units
-  const firstCfo = Math.abs(annuals[0]?.operatingCashFlow || 0);
-  const firstPrice = profile.price || 100;
-  const unitsAreMillion = firstCfo > 0 && firstCfo < firstPrice * 1000;
-  const unitMultiplier = unitsAreMillion ? 1e6 : 1;
-
-  // Calculate FCF per share for each year
-  const fcfPsValues: number[] = [];
-  
-  for (const year of annuals) {
-    const cfo = (year.operatingCashFlow || 0) * unitMultiplier;
-    let capex = year.capitalExpenditure || 0;
-    if (capex > 0) capex = -capex;
-    capex = Math.abs(capex) * unitMultiplier;
-    
-    const shares = year.weightedAverageShsOutDil || 0;
-    if (shares <= 0) continue;
-    
-    const fcfPs = (cfo - capex) / shares;
-    if (fcfPs > 0) {
-      fcfPsValues.push(fcfPs);
-    }
-  }
-
-  // Try 10Y CAGR first
-  if (fcfPsValues.length >= 11) {
-    const startFcf = fcfPsValues[10];
-    const endFcf = fcfPsValues[0];
-    const cagr = (Math.pow(endFcf / startFcf, 1 / 10) - 1) * 100;
-    console.log(`Using 10Y FCF/Share CAGR: ${cagr.toFixed(2)}%`);
-    return parseFloat(cagr.toFixed(2));
-  }
-  
-  // Fallback to 5Y CAGR
-  if (fcfPsValues.length >= 6) {
-    const startFcf = fcfPsValues[5];
-    const endFcf = fcfPsValues[0];
-    const cagr = (Math.pow(endFcf / startFcf, 1 / 5) - 1) * 100;
-    console.log(`Using 5Y FCF/Share CAGR: ${cagr.toFixed(2)}%`);
-    return parseFloat(cagr.toFixed(2));
-  }
-  
-  // Fallback to 3Y CAGR
-  if (fcfPsValues.length >= 4) {
-    const startFcf = fcfPsValues[3];
-    const endFcf = fcfPsValues[0];
-    const cagr = (Math.pow(endFcf / startFcf, 1 / 3) - 1) * 100;
-    console.log(`Using 3Y FCF/Share CAGR: ${cagr.toFixed(2)}%`);
-    return parseFloat(cagr.toFixed(2));
-  }
-  
-  // Default
-  console.log('Not enough FCF/Share data for CAGR, using 0% default');
-  return 0;
-}
-
 // Calculate starting value based on mode with smoothing
 function calculateStartValue(mode: BasisMode, data: any): number {
   const income = data.income;
@@ -424,8 +211,31 @@ function calculateStartValue(mode: BasisMode, data: any): number {
   }
   
   if (mode === 'FCF_PER_SHARE') {
-    // This will be calculated separately using quarterly data
-    return 0; // Placeholder, will be replaced in main function
+    // Free Cash Flow per share with robust handling
+    const recentCashFlows = cashFlow.slice(0, 5);
+    const fcfPerShareValues = recentCashFlows
+      .map((cf: any) => (cf.freeCashFlow || 0) / sharesOutstanding);
+    
+    // Filter positive values
+    const positiveFcf = fcfPerShareValues.filter((v: number) => v > 0);
+    
+    // Use trimmed mean for smoothing if we have enough data
+    if (positiveFcf.length >= 3) {
+      return trimmedMean(positiveFcf, 0.2);
+    }
+    
+    // If TTM is negative but median is positive, use median
+    const allFcf = fcfPerShareValues.filter((v: number) => !isNaN(v));
+    if (allFcf.length >= 3) {
+      const medianFcf = median(allFcf);
+      if (medianFcf > 0) {
+        return medianFcf;
+      }
+    }
+    
+    // Last resort: use TTM if positive
+    const ttmFcfPerShare = fcfPerShareValues[0] || 0;
+    return Math.max(0, ttmFcfPerShare);
   }
   
   if (mode === 'ADJUSTED_DIVIDEND') {
@@ -655,48 +465,14 @@ serve(async (req) => {
     
     // Calculate start value based on mode
     let startValue = calculateStartValue(mode, data);
-    let fcfDiagnostics: any = undefined;
-    let growthRate = 0;
     
     // For EPS_WO_NRI, use quarterly calculation
     if (mode === 'EPS_WO_NRI') {
       startValue = await calculateEpsWoNri(ticker);
       console.log(`EPS w/o NRI (TTM): ${startValue.toFixed(2)}`);
-      growthRate = calculateGrowthRate(mode, data);
-    } else if (mode === 'FCF_PER_SHARE') {
-      // Use new FCF per share calculation with diagnostics
-      const fcfResult = await calculateFcfPerShare(ticker, data.profile);
-      startValue = fcfResult.fcfPerShareTtm;
-      fcfDiagnostics = fcfResult.diagnostics;
-      
-      // If negative TTM but we have positive 3Y median from annuals, use that
-      if (startValue <= 0) {
-        const annualFcfData = data.cashFlow.slice(0, 3);
-        const fcfPsAnnual = annualFcfData.map((cf: any) => {
-          const cfo = cf.operatingCashFlow || 0;
-          let capex = cf.capitalExpenditure || 0;
-          if (capex > 0) capex = -capex;
-          capex = Math.abs(capex);
-          const shares = cf.weightedAverageShsOutDil || 1;
-          return (cfo - capex) / shares;
-        }).filter((v: number) => v > 0);
-        
-        if (fcfPsAnnual.length >= 2) {
-          startValue = median(fcfPsAnnual);
-          console.log(`Using 3Y median FCF/Share instead of negative TTM: ${startValue.toFixed(2)}`);
-        }
-      }
-      
-      console.log(`FCF per Share (TTM): ${startValue.toFixed(2)}`);
-      
-      // Calculate growth rate using FCF per share annuals
-      growthRate = await calculateFcfPerShareGrowthRate(ticker, data.profile);
-    } else {
-      growthRate = calculateGrowthRate(mode, data);
     }
     
     console.log(`Start value for mode ${mode}: ${startValue.toFixed(2)}`);
-    console.log(`Calculated growth rate: ${growthRate.toFixed(2)}%`);
     
     // Warnings array for data quality issues
     const warnings: string[] = [];
@@ -706,17 +482,16 @@ serve(async (req) => {
       // Don't throw error, continue with warning
     }
     
-    // Check for suspicious units warning
-    if (fcfDiagnostics?.suspicious_units) {
-      warnings.push('Einheiten prüfen (vermutlich Mio ↔ $ vertauscht).');
-    }
-    
-    if (fcfDiagnostics?.shares_mismatch) {
-      warnings.push('Abweichung zwischen quartalsweisen und jährlichen Aktienzahlen.');
-    }
-    
     // Use a minimum start value if needed
     const effectiveStartValue = Math.max(startValue, 0.01);
+    
+    // Calculate growth rate
+    const growthRate = calculateGrowthRate(mode, data);
+    console.log(`Calculated growth rate: ${growthRate.toFixed(2)}%`);
+    
+    if (growthRate < 1) {
+      warnings.push('Historisches Wachstum sehr niedrig. Ergebnis ist sehr konservativ.');
+    }
     
     // Settings with conservative defaults
     const terminalRate = clamp(4.0, 0, 6); // Terminal rate capped at 6%
@@ -771,11 +546,6 @@ serve(async (req) => {
     // Add warnings to response if any
     if (warnings.length > 0) {
       (response as any).warnings = warnings;
-    }
-    
-    // Add diagnostics for FCF mode
-    if (fcfDiagnostics) {
-      response.diagnostics = fcfDiagnostics;
     }
     
     console.log(`Valuation result:`, response);
