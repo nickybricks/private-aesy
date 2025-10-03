@@ -207,7 +207,31 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
               <p className="text-2xl font-bold text-primary">${data.fairValue.toFixed(2)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Sicherheitsmarge</p>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-xs text-muted-foreground">Sicherheitsmarge</p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="font-semibold mb-1">Margin of Safety (MoS)</p>
+                      <p className="text-xs mb-2">
+                        Die Sicherheitsmarge zeigt, wie viel Prozent der aktuelle Marktpreis unter dem Fair Value liegt.
+                      </p>
+                      <p className="text-xs mb-1">
+                        <strong>Berechnung:</strong> MoS = (Fair Value - Aktueller Preis) / Fair Value × 100%
+                      </p>
+                      <p className="text-xs">
+                        <strong>Interpretation:</strong><br/>
+                        • Positiv (grün): Aktie ist unterbewertet<br/>
+                        • Negativ (rot): Aktie ist überbewertet<br/>
+                        • ±5%: Faire Bewertung (grau)
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="flex items-center gap-2">
                 <p className={`text-2xl font-bold ${
                   marginOfSafety >= 5 ? 'text-green-600 dark:text-green-400' : 
