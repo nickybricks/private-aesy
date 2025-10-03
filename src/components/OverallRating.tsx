@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, BarChart3 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import RatingExplanation from './RatingExplanation';
 import { QualityMetricsCard } from './QualityMetricsCard';
@@ -8,6 +8,8 @@ import { MarginOfSafetyCard } from './MarginOfSafetyCard';
 import { BestBuyPriceCard } from './BestBuyPriceCard';
 import { BuffettTwoPillarsSection } from './BuffettTwoPillarsSection';
 import { DetailedAnalysisSection } from './DetailedAnalysisSection';
+import { StartDeepResearchButton } from './StartDeepResearchButton';
+import { useStock } from '@/context/StockContext';
 import { 
   BuffettCriteriaProps,
   getUnifiedCriterionScore,
@@ -217,9 +219,6 @@ const determineBuffettConformity = (
   };
 };
 
-import { StartDeepResearchButton } from './StartDeepResearchButton';
-import { useStock } from '@/context/StockContext';
-
 const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'gpt' }) => {
   const { deepResearchPerformed } = useStock();
   
@@ -366,11 +365,29 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
       )}
       
       {/* Detailed Analysis */}
-      <DetailedAnalysisSection 
-        strengths={strengths}
-        weaknesses={weaknesses}
-        reasoning={buffettAnalysis.reasoning}
-      />
+      <div className="relative">
+        <DetailedAnalysisSection 
+          strengths={deepResearchPerformed ? strengths : ['Stabile Marktposition', 'Konsistente Cashflows', 'Starke Bilanz']}
+          weaknesses={deepResearchPerformed ? weaknesses : ['Moderate Wachstumsrate', 'Zyklische Abhängigkeiten', 'Hohe Bewertung']}
+          reasoning={deepResearchPerformed ? buffettAnalysis.reasoning : 'Solides Geschäftsmodell mit stabilen Erträgen'}
+        />
+        {!deepResearchPerformed && (
+          <div className="absolute inset-0 backdrop-blur-md bg-white/40 rounded-lg flex items-center justify-center">
+            <div className="text-center px-6 py-8 bg-white/80 rounded-xl shadow-lg max-w-md">
+              <BarChart3 className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                KI-Analyse erforderlich
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Die detaillierte Stärken-Schwächen-Analyse basiert auf der KI-Bewertung aller 11 Buffett-Kriterien.
+              </p>
+              <p className="text-sm text-gray-500">
+                Starten Sie die KI-Analyse, um eine präzise Einschätzung zu erhalten.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
       
       {/* Main Two-Pillars Section - Only show with deep research */}
       {deepResearchPerformed && (
