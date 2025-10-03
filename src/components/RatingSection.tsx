@@ -5,7 +5,7 @@ import { useStock } from '@/context/StockContext';
 import OverallRating from '@/components/OverallRating';
 
 const RatingSection: React.FC = () => {
-  const { overallRating, isLoading, hasCriticalDataMissing, valuationData, stockInfo, buffettCriteria, gptAvailable } = useStock();
+  const { overallRating, isLoading, hasCriticalDataMissing, valuationData, stockInfo, buffettCriteria, deepResearchPerformed } = useStock();
   
   useEffect(() => {
     console.log('RatingSection mounted or valuationData changed');
@@ -52,8 +52,8 @@ const RatingSection: React.FC = () => {
       : overallRating.bestBuyPrice
   } : null;
   
-  // Determine analysis mode based on GPT availability
-  const analysisMode = gptAvailable ? 'gpt' : 'standard';
+  // Determine analysis mode based on whether deep research was performed
+  const analysisMode = deepResearchPerformed ? 'gpt' : 'standard';
   
   return (
     <div className="mb-8">

@@ -124,10 +124,12 @@ export interface StockContextType {
   predictabilityStars: PredictabilityResult | null;
   newsItems: NewsItem[];
   pressReleases: NewsItem[];
+  deepResearchPerformed: boolean;
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string, enableDeepResearch?: boolean) => Promise<void>;
   loadSavedAnalysis: (analysisData: any) => void;
+  triggerDeepResearch: (ticker: string) => Promise<void>;
 }
 
 export interface StockProviderProps {

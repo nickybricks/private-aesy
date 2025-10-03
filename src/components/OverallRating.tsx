@@ -217,7 +217,12 @@ const determineBuffettConformity = (
   };
 };
 
+import { StartDeepResearchButton } from './StartDeepResearchButton';
+import { useStock } from '@/context/StockContext';
+
 const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'gpt' }) => {
+  const { deepResearchPerformed } = useStock();
+  
   if (!rating) return null;
   
   let { 
@@ -317,10 +322,12 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
       
       {/* Three Metrics Section */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <QualityMetricsCard 
-          buffettScore={realBuffettScore}
-          criteria={criteria}
-        />
+        {deepResearchPerformed && (
+          <QualityMetricsCard 
+            buffettScore={realBuffettScore}
+            criteria={criteria}
+          />
+        )}
         
         <MarginOfSafetyCard 
           marginOfSafetyValue={calculatedMarginOfSafety?.value || 0}
@@ -339,6 +346,13 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
         />
       </div>
       
+      {/* Show Deep Research Button if not performed */}
+      {!deepResearchPerformed && analysisMode === 'standard' && (
+        <div className="mb-8">
+          <StartDeepResearchButton />
+        </div>
+      )}
+      
       {/* Detailed Analysis */}
       <DetailedAnalysisSection 
         strengths={strengths}
@@ -346,12 +360,14 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
         reasoning={buffettAnalysis.reasoning}
       />
       
-      {/* Main Two-Pillars Section */}
-      <BuffettTwoPillarsSection 
-        buffettAnalysis={buffettAnalysis}
-        marginOfSafetyValue={calculatedMarginOfSafety?.value || 0}
-        dynamicSummary={dynamicSummary}
-      />
+      {/* Main Two-Pillars Section - Only show with deep research */}
+      {deepResearchPerformed && (
+        <BuffettTwoPillarsSection 
+          buffettAnalysis={buffettAnalysis}
+          marginOfSafetyValue={calculatedMarginOfSafety?.value || 0}
+          dynamicSummary={dynamicSummary}
+        />
+      )}
     </div>
   );
 };

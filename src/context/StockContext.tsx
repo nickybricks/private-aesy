@@ -44,6 +44,7 @@ export function StockProvider({ children }: StockProviderProps) {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [pressReleases, setPressReleases] = useState<NewsItem[]>([]);
   const [valuationData, setValuationData] = useState<ValuationData | undefined>(undefined);
+  const [deepResearchPerformed, setDeepResearchPerformed] = useState(false);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
@@ -73,6 +74,7 @@ export function StockProvider({ children }: StockProviderProps) {
       setNewsItems([]);
       setPressReleases([]);
       setValuationData(undefined);
+      setDeepResearchPerformed(enableDeepResearch);
       
       // Fetch news in parallel with stock search
       const newsPromise = fetchStockNews(ticker).catch(err => {
@@ -184,12 +186,18 @@ export function StockProvider({ children }: StockProviderProps) {
       setPredictabilityStars(analysisData.predictabilityStars);
       setStockCurrency(analysisData.stockInfo?.currency || 'EUR');
       setValuationData(analysisData.valuationData);
+      setDeepResearchPerformed(analysisData.deepResearchPerformed || false);
       setError(null);
       setIsLoading(false);
     } catch (error) {
       console.error('Error loading saved analysis:', error);
       setError('Fehler beim Laden der gespeicherten Analyse');
     }
+  };
+
+  const triggerDeepResearch = async (ticker: string) => {
+    console.log('🔬 triggerDeepResearch called for:', ticker);
+    await handleSearch(ticker, true);
   };
 
   return (
@@ -211,10 +219,12 @@ export function StockProvider({ children }: StockProviderProps) {
       predictabilityStars,
       newsItems,
       pressReleases,
+      deepResearchPerformed,
       setActiveTab,
       setLoadingProgress,
       handleSearch,
-      loadSavedAnalysis
+      loadSavedAnalysis,
+      triggerDeepResearch
     }}>
       {children}
     </StockContext.Provider>

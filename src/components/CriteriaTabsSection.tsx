@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import BuffettCriteria from '@/components/BuffettCriteria';
 import BuffettCriteriaGPT from '@/components/BuffettCriteriaGPT';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -12,7 +13,7 @@ const CriteriaTabsSection: React.FC = () => {
     buffettCriteria, 
     activeTab, 
     setActiveTab, 
-    gptAvailable,
+    deepResearchPerformed,
     hasCriticalDataMissing
   } = useStock();
   
@@ -20,8 +21,8 @@ const CriteriaTabsSection: React.FC = () => {
     return null;
   }
 
-  // Set default tab based on GPT availability
-  const defaultTab = gptAvailable ? 'gpt' : 'standard';
+  // Set default tab based on deep research status
+  const defaultTab = deepResearchPerformed ? 'gpt' : 'standard';
   const currentTab = activeTab || defaultTab;
 
   return (
@@ -29,22 +30,35 @@ const CriteriaTabsSection: React.FC = () => {
       <Tabs value={currentTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="standard">Standard-Analyse (3 Kriterien)</TabsTrigger>
-          <TabsTrigger value="gpt" disabled={!gptAvailable}>
-            {gptAvailable ? 'KI-Analyse (11 Kriterien)' : 'KI-Analyse (Nicht verfügbar)'}
-          </TabsTrigger>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <TabsTrigger value="gpt" disabled={!deepResearchPerformed}>
+                    {deepResearchPerformed ? 'KI-Analyse (11 Kriterien)' : 'KI-Analyse (Nicht verfügbar)'}
+                  </TabsTrigger>
+                </div>
+              </TooltipTrigger>
+              {!deepResearchPerformed && (
+                <TooltipContent>
+                  <p>Starten Sie die KI-Analyse, um alle 11 Buffett-Kriterien zu sehen</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </TabsList>
         <TabsContent value="standard">
           <BuffettCriteria criteria={buffettCriteria} analysisMode="standard" />
         </TabsContent>
         <TabsContent value="gpt">
-          {gptAvailable ? (
+          {deepResearchPerformed ? (
             <BuffettCriteriaGPT criteria={buffettCriteria} />
           ) : (
             <Alert>
               <InfoIcon className="h-4 w-4" />
-              <AlertTitle>KI-Analyse nicht verfügbar</AlertTitle>
+              <AlertTitle>KI-Analyse nicht durchgeführt</AlertTitle>
               <AlertDescription>
-                Bitte konfigurieren Sie Ihren API-Key, um Zugang zur erweiterten KI-Analyse zu erhalten.
+                Starten Sie die KI-Analyse im oberen Bereich, um alle 11 Buffett-Kriterien zu sehen.
               </AlertDescription>
             </Alert>
           )}
