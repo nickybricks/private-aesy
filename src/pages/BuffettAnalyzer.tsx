@@ -135,6 +135,12 @@ const IndexContent: React.FC = () => {
                       Finanzkennzahlen
                     </TabsTrigger>
                     <TabsTrigger 
+                      value="metrics" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                    >
+                      Innerer Wert
+                    </TabsTrigger>
+                    <TabsTrigger 
                       value="peter-lynch" 
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
                     >
@@ -145,12 +151,6 @@ const IndexContent: React.FC = () => {
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
                     >
                       Deep-Research Analyse
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="metrics" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
-                    >
-                      Innerer Wert
                     </TabsTrigger>
                     <TabsTrigger 
                       value="dividends" 
@@ -189,6 +189,13 @@ const IndexContent: React.FC = () => {
                     <MetricsSection />
                   </TabsContent>
                   
+                  <TabsContent value="metrics" className="mt-6">
+                    <ValuationTab 
+                      ticker={stockInfo.ticker}
+                      currentPrice={stockInfo.price}
+                    />
+                  </TabsContent>
+                  
                   <TabsContent value="peter-lynch" className="mt-6">
                     <PeterLynchSection />
                   </TabsContent>
@@ -196,13 +203,6 @@ const IndexContent: React.FC = () => {
                   <TabsContent value="statistics" className="mt-6">
                     <RatingSection />
                     <CriteriaTabsSection />
-                  </TabsContent>
-                  
-                  <TabsContent value="metrics" className="mt-6">
-                    <ValuationTab 
-                      ticker={stockInfo.ticker}
-                      currentPrice={stockInfo.price}
-                    />
                   </TabsContent>
                   
                   <TabsContent value="dividends" className="mt-6">
