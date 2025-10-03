@@ -217,7 +217,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
                     <TooltipContent className="max-w-xs">
                       <p className="font-semibold mb-1">Margin of Safety (MoS)</p>
                       <p className="text-xs mb-2">
-                        Die Sicherheitsmarge zeigt, wie viel Prozent der aktuelle Marktpreis unter dem Fair Value liegt.
+                        Die Sicherheitsmarge zeigt die prozentuale Abweichung des aktuellen Preises vom Fair Value.
                       </p>
                       <p className="text-xs mb-1">
                         <strong>Berechnung:</strong> MoS = (Fair Value - Aktueller Preis) / Fair Value × 100%
@@ -232,7 +232,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-2">
                 <p className={`text-2xl font-bold ${
                   marginOfSafety >= 5 ? 'text-green-600 dark:text-green-400' : 
                   marginOfSafety <= -5 ? 'text-red-600 dark:text-red-400' : 
@@ -242,22 +242,12 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
                 </p>
                 <Badge variant={mosStatus.variant}>{mosStatus.label}</Badge>
               </div>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Über/Unterbewertung</p>
-              <p className={`text-xl font-semibold ${
-                currentPrice < data.fairValue ? 'text-green-600 dark:text-green-400' : 
-                currentPrice > data.fairValue * 1.05 ? 'text-red-600 dark:text-red-400' : 
-                'text-muted-foreground'
-              }`}>
-                {currentPrice < data.fairValue ? '−' : '+'}{Math.abs(currentPrice - data.fairValue).toFixed(2)} $
-              </p>
               <p className={`text-sm ${
                 currentPrice < data.fairValue ? 'text-green-600 dark:text-green-400' : 
                 currentPrice > data.fairValue * 1.05 ? 'text-red-600 dark:text-red-400' : 
                 'text-muted-foreground'
               }`}>
-                ({currentPrice < data.fairValue ? '−' : '+'}{Math.abs(((currentPrice - data.fairValue) / data.fairValue) * 100).toFixed(1)}%)
+                {currentPrice < data.fairValue ? '−' : '+'}{Math.abs(currentPrice - data.fairValue).toFixed(2)} $ ({currentPrice < data.fairValue ? '−' : '+'}{Math.abs(((currentPrice - data.fairValue) / data.fairValue) * 100).toFixed(1)}%)
               </p>
             </div>
           </div>
