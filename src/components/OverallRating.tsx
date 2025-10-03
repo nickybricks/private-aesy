@@ -321,13 +321,15 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
       
       {/* Three Metrics Section */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="relative">
+        {deepResearchPerformed ? (
           <QualityMetricsCard 
-            buffettScore={deepResearchPerformed ? realBuffettScore : 87.5}
-            criteria={deepResearchPerformed ? criteria : undefined}
+            buffettScore={realBuffettScore}
+            criteria={criteria}
           />
-          {!deepResearchPerformed && (
-            <div className="absolute inset-0 backdrop-blur-md bg-white/30 rounded-lg flex items-center justify-center cursor-not-allowed">
+        ) : (
+          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm flex flex-col h-48 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 opacity-40" />
+            <div className="absolute inset-0 backdrop-blur-md bg-white/50 flex items-center justify-center">
               <div className="text-center px-4">
                 <div className="text-sm font-semibold text-gray-700 mb-1">
                   KI-Analyse erforderlich
@@ -337,8 +339,8 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
         
         <MarginOfSafetyCard 
           marginOfSafetyValue={calculatedMarginOfSafety?.value || 0}
@@ -365,15 +367,17 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
       )}
       
       {/* Detailed Analysis */}
-      <div className="relative">
+      {deepResearchPerformed ? (
         <DetailedAnalysisSection 
-          strengths={deepResearchPerformed ? strengths : ['Stabile Marktposition', 'Konsistente Cashflows', 'Starke Bilanz']}
-          weaknesses={deepResearchPerformed ? weaknesses : ['Moderate Wachstumsrate', 'Zyklische Abhängigkeiten', 'Hohe Bewertung']}
-          reasoning={deepResearchPerformed ? buffettAnalysis.reasoning : 'Solides Geschäftsmodell mit stabilen Erträgen'}
+          strengths={strengths}
+          weaknesses={weaknesses}
+          reasoning={buffettAnalysis.reasoning}
         />
-        {!deepResearchPerformed && (
-          <div className="absolute inset-0 backdrop-blur-md bg-white/40 rounded-lg flex items-center justify-center">
-            <div className="text-center px-6 py-8 bg-white/80 rounded-xl shadow-lg max-w-md">
+      ) : (
+        <div className="mb-8 bg-white rounded-lg p-6 border border-gray-200 shadow-sm relative overflow-hidden min-h-[300px]">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 opacity-40" />
+          <div className="absolute inset-0 backdrop-blur-md bg-white/50 flex items-center justify-center">
+            <div className="text-center px-6 py-8 bg-white/90 rounded-xl shadow-lg max-w-md">
               <BarChart3 className="h-12 w-12 text-blue-600 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">
                 KI-Analyse erforderlich
@@ -386,8 +390,8 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
               </p>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       
       {/* Main Two-Pillars Section - Only show with deep research */}
       {deepResearchPerformed && (
