@@ -637,38 +637,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
         />
       )}
       
-      {/* Sort & Filter Bar */}
-      <div className="flex items-center justify-between mb-6 p-3 bg-gray-50 rounded-lg">
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-gray-700">Sortieren:</span>
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
-            <SelectTrigger className="w-[160px] h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="impact">Nach Wichtigkeit</SelectItem>
-              <SelectItem value="alphabetical">Alphabetisch</SelectItem>
-              <SelectItem value="status">Nach Status</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-gray-700">Status:</span>
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle</SelectItem>
-              <SelectItem value="pass">✓ Erfüllt</SelectItem>
-              <SelectItem value="warning">! Bedingt</SelectItem>
-              <SelectItem value="fail">✕ Nicht erfüllt</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
       {/* Categorized Metrics */}
       {Object.entries(categories).map(([key, category]) => {
         const filteredMetrics = filterByStatus(sortMetrics(category.metrics));
