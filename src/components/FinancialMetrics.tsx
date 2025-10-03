@@ -211,7 +211,7 @@ const MetricCard: React.FC<{
     } else if (metric.isMultiplier) {
       numericValue = typeof displayValue === 'number' ? displayValue : null;
       cleanedDisplayValue = typeof displayValue === 'number'
-        ? `${Math.round(displayValue)}×`
+        ? `${displayValue.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}×`
         : displayValue;
       unit = '×';
     } else if (originalCurrency && originalValue && shouldConvertCurrency(currency, originalCurrency)) {
