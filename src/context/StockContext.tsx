@@ -49,10 +49,6 @@ export function StockProvider({ children }: StockProviderProps) {
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
     setGptAvailable(hasGpt);
-    
-    if (hasGpt) {
-      setActiveTab('gpt');
-    }
   }, []);
 
   const handleSearch = async (ticker: string, enableDeepResearch = false) => {
@@ -130,9 +126,8 @@ export function StockProvider({ children }: StockProviderProps) {
       setHasCriticalDataMissing(criticalDataMissing);
       
       if (!criticalDataMissing) {
-        if (gptAvailable) {
-          setActiveTab('gpt');
-        }
+        // Set active tab based on whether deep research was performed
+        setActiveTab(enableDeepResearch ? 'gpt' : 'standard');
         
         setBuffettCriteria(criteria);
         setFinancialMetrics(metricsData);
@@ -187,6 +182,8 @@ export function StockProvider({ children }: StockProviderProps) {
       setStockCurrency(analysisData.stockInfo?.currency || 'EUR');
       setValuationData(analysisData.valuationData);
       setDeepResearchPerformed(analysisData.deepResearchPerformed || false);
+      // Set active tab based on whether deep research was performed
+      setActiveTab(analysisData.deepResearchPerformed ? 'gpt' : 'standard');
       setError(null);
       setIsLoading(false);
     } catch (error) {
