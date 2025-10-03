@@ -265,7 +265,8 @@ const OverallRating: React.FC<OverallRatingProps> = ({ rating, analysisMode = 'g
       intrinsicValue !== null && intrinsicValue !== undefined && 
       currentPrice !== null && currentPrice !== undefined &&
       !isNaN(Number(intrinsicValue)) && !isNaN(Number(currentPrice))) {
-    const mosValue = ((intrinsicValue - currentPrice) / currentPrice) * 100;
+    // Use correct MoS formula: (Fair Value - Price) / Fair Value * 100
+    const mosValue = ((intrinsicValue - currentPrice) / intrinsicValue) * 100;
     calculatedMarginOfSafety = {
       value: mosValue,
       status: interpretMarginOfSafety(mosValue)

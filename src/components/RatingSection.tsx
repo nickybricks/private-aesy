@@ -1,42 +1,26 @@
 
 import React, { useEffect } from 'react';
 import { useStock } from '@/context/StockContext';
+
 import OverallRating from '@/components/OverallRating';
-import { debugDCFData } from '@/utils/currencyConverter';
 
 const RatingSection: React.FC = () => {
-  const { overallRating, isLoading, hasCriticalDataMissing, dcfData, stockInfo, buffettCriteria, gptAvailable } = useStock();
+  const { overallRating, isLoading, hasCriticalDataMissing, valuationData, stockInfo, buffettCriteria, gptAvailable } = useStock();
   
   useEffect(() => {
-    console.log('RatingSection mounted or dcfData changed');
+    console.log('RatingSection mounted or valuationData changed');
     
-    if (dcfData) {
-      console.log('DCF Data in RatingSection:');
-      debugDCFData(dcfData);
+    if (valuationData) {
+      console.log('Valuation Data in RatingSection:');
+      console.log('Fair Value:', valuationData.fairValuePerShare);
+      console.log('Margin of Safety:', valuationData.marginOfSafetyPct);
+      console.log('Currency:', stockInfo?.currency);
       
       if (overallRating) {
-        console.log('Overall Rating has intrinsicValue:', overallRating.intrinsicValue);
-        console.log('Overall Rating has bestBuyPrice:', overallRating.bestBuyPrice);
-        console.log('Overall Rating has currency:', overallRating.currency);
-        console.log('DCF has intrinsicValue:', dcfData.intrinsicValue);
-        console.log('DCF has currency:', dcfData.currency);
-      }
-      
-      // Debug missing important data
-      const missingParts = [];
-      if (!dcfData.ufcf || dcfData.ufcf.length === 0) missingParts.push('ufcf');
-      if (!dcfData.wacc) missingParts.push('wacc');
-      if (!dcfData.presentTerminalValue) missingParts.push('terminalValue');
-      if (!dcfData.dilutedSharesOutstanding) missingParts.push('sharesOutstanding');
-      if (!dcfData.intrinsicValue) missingParts.push('intrinsicValue');
-      
-      if (missingParts.length > 0) {
-        console.warn(`DCF WARNING: Important data missing: ${missingParts.join(', ')}`);
-      } else {
-        console.log('All critical DCF data is available');
+        console.log('Overall Rating will use valuation data fairValuePerShare:', valuationData.fairValuePerShare);
       }
     } else {
-      console.warn('RatingSection: No DCF data available. Make sure the custom DCF endpoint is being called.');
+      console.warn('RatingSection: No valuation data available yet.');
       
       // Debug context
       if (stockInfo) {
@@ -46,14 +30,26 @@ const RatingSection: React.FC = () => {
         console.log('No stock info available yet.');
       }
     }
-  }, [dcfData, overallRating, stockInfo]);
+  }, [valuationData, overallRating, stockInfo]);
   
   if (isLoading || hasCriticalDataMissing || !overallRating) return null;
   
-  // Create enhanced rating object with criteria data
+  // Create enhanced rating object with criteria data and valuation data
   const enhancedRating = overallRating ? {
     ...overallRating,
-    criteria: buffettCriteria
+    criteria: buffettCriteria,
+    // Use fairValuePerShare from valuationData instead of old dcfData intrinsicValue
+    intrinsicValue: valuationData?.fairValuePerShare ?? overallRating.intrinsicValue,
+    marginOfSafety: valuationData ? {
+      value: valuationData.marginOfSafetyPct,
+      status: valuationData.marginOfSafetyPct >= 20 ? 'pass' as const : 
+              valuationData.marginOfSafetyPct >= 0 ? 'warning' as const : 
+              'fail' as const
+    } : overallRating.marginOfSafety,
+    // Calculate bestBuyPrice from fairValuePerShare
+    bestBuyPrice: valuationData?.fairValuePerShare 
+      ? valuationData.fairValuePerShare * 0.8 // 20% safety margin
+      : overallRating.bestBuyPrice
   } : null;
   
   // Determine analysis mode based on GPT availability
