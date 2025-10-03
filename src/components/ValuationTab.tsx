@@ -78,6 +78,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   
   const marginOfSafety = valuationData.marginOfSafetyPct;
   const warnings = valuationData.warnings || [];
+  const diagnostics = valuationData.diagnostics || null;
 
   const getMoSStatus = (mos: number): { label: string; variant: 'default' | 'secondary' | 'destructive' } => {
     if (mos >= 30) return { label: 'Unterbewertet', variant: 'default' };
@@ -155,6 +156,17 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
                 <span className="text-muted-foreground text-sm">Startwert (per Share)</span>
                 <span className="font-semibold">${data.startValue.toFixed(2)}</span>
               </div>
+              
+              {diagnostics?.suspicious_units && (
+                <Alert variant="default" className="border-yellow-400 bg-yellow-50 dark:bg-yellow-950 py-2 px-3 mb-2">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-xs text-yellow-700 dark:text-yellow-300">
+                      <strong>Einheiten prüfen:</strong> Vermutlich Millionen ↔ $ vertauscht. Der Startwert könnte ungenau sein.
+                    </div>
+                  </div>
+                </Alert>
+              )}
               
               <div className="bg-muted/50 p-3 rounded-lg space-y-2">
                 <div className="flex justify-between items-center">
