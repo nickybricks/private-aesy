@@ -47,17 +47,19 @@ const AppHeader: React.FC = () => {
       </div>
       
       {/* Mobile Layout */}
-      <div className="md:hidden h-full flex flex-col justify-center py-3 px-3">
-        <div className="flex items-center gap-2">
+      <div className="md:hidden h-full flex items-center py-3 px-3">
+        <div className="flex items-center gap-2 w-full">
           {/* Burger Menu - Links */}
-          <Button
-            variant="ghost" 
-            size="icon"
-            onClick={toggleMobileMenu}
-            className="shrink-0 h-9 w-9"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+          <div className="shrink-0">
+            <Button
+              variant="ghost" 
+              size="icon"
+              onClick={toggleMobileMenu}
+              className="h-9 w-9 p-0"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
           
           {/* Search Field - Zentriert */}
           <div className="flex-1 min-w-0">
