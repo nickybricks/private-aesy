@@ -133,31 +133,31 @@ const IndexContent: React.FC = () => {
                   >
                     <TabsTrigger 
                       value="news" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm w-auto"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
                       News
                     </TabsTrigger>
                     <TabsTrigger 
                       value="financials" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm w-auto"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
                       Finanzkennzahlen
                     </TabsTrigger>
                     <TabsTrigger 
                       value="statistics" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm w-auto"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
                       Deep-Research
                     </TabsTrigger>
                     <TabsTrigger 
                       value="metrics" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm w-auto"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
                       Innerer Wert
                     </TabsTrigger>
                     <TabsTrigger 
                       value="peter-lynch" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm w-auto"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
                       Peter Lynch
                     </TabsTrigger>
