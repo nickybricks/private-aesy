@@ -210,4 +210,14 @@
   .quick-access-buttons {
     @apply flex flex-wrap gap-2;
   }
+  
+  /* Hide scrollbar for horizontal tabs */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

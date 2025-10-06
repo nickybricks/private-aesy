@@ -86,7 +86,7 @@ const IndexContent: React.FC = () => {
   return (
     <main className="flex-1 overflow-auto bg-background">
         <div className="h-full">
-          <div className="p-6 w-full">
+          <div className="p-3 sm:p-4 md:p-6 w-full">
             
             <KiAvailabilityAlert gptAvailable={gptAvailable} />
             
@@ -102,12 +102,12 @@ const IndexContent: React.FC = () => {
             
             {/* Stock Quote Header and Chart Grid */}
             {stockInfo && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-6 mb-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
                 {/* Stock Quote Section */}
                 <StockQuoteHeader />
                 
                 {/* Stock Chart Section */}
-                <Card className="p-4 md:p-5">
+                <Card className="p-3 sm:p-4 md:p-5">
                   <StockChart 
                     symbol={stockInfo.ticker}
                     currency={stockInfo.currency}
@@ -119,105 +119,111 @@ const IndexContent: React.FC = () => {
             
             {/* Tab Navigation */}
             {stockInfo && (
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <Tabs defaultValue="news" className="w-full">
-                  <TabsList className="w-full justify-start h-12 bg-transparent border-b border-border rounded-none p-0">
+                  <TabsList className="w-full justify-start h-11 sm:h-12 bg-transparent border-b border-border rounded-none p-0 overflow-x-auto overflow-y-hidden flex-nowrap scrollbar-hide"
+                    style={{ 
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none',
+                      WebkitOverflowScrolling: 'touch'
+                    }}
+                  >
                     <TabsTrigger 
                       value="news" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       News
                     </TabsTrigger>
                     <TabsTrigger 
                       value="financials" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       Finanzkennzahlen
                     </TabsTrigger>
                     <TabsTrigger 
                       value="statistics" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
-                      Deep-Research Analyse
+                      Deep-Research
                     </TabsTrigger>
                     <TabsTrigger 
                       value="metrics" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       Innerer Wert
                     </TabsTrigger>
                     <TabsTrigger 
                       value="peter-lynch" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
-                      Peter Lynch Chart
+                      Peter Lynch
                     </TabsTrigger>
                     <TabsTrigger 
                       value="dividends" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       Dividends
                     </TabsTrigger>
                     <TabsTrigger 
                       value="history" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       History
                     </TabsTrigger>
                     <TabsTrigger 
                       value="profile" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       Profile
                     </TabsTrigger>
                     <TabsTrigger 
                       value="chart" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       Chart
                     </TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="news" className="mt-6">
+                  <TabsContent value="news" className="mt-4 sm:mt-6">
                     <NewsSection 
                       newsItems={newsItems} 
                       pressReleases={pressReleases}
                     />
                   </TabsContent>
                   
-                  <TabsContent value="financials" className="mt-6">
+                  <TabsContent value="financials" className="mt-4 sm:mt-6">
                     <MetricsSection />
                   </TabsContent>
                   
-                  <TabsContent value="statistics" className="mt-6">
+                  <TabsContent value="statistics" className="mt-4 sm:mt-6">
                     <RatingSection />
                     <CriteriaTabsSection />
                   </TabsContent>
                   
-                  <TabsContent value="metrics" className="mt-6">
+                  <TabsContent value="metrics" className="mt-4 sm:mt-6">
                     <ValuationTab 
                       ticker={stockInfo.ticker}
                       currentPrice={stockInfo.price}
                     />
                   </TabsContent>
                   
-                  <TabsContent value="peter-lynch" className="mt-6">
+                  <TabsContent value="peter-lynch" className="mt-4 sm:mt-6">
                     <PeterLynchSection />
                   </TabsContent>
                   
-                  <TabsContent value="dividends" className="mt-6">
+                  <TabsContent value="dividends" className="mt-4 sm:mt-6">
                     <div className="text-muted-foreground">Dividends content coming soon...</div>
                   </TabsContent>
                   
-                  <TabsContent value="history" className="mt-6">
+                  <TabsContent value="history" className="mt-4 sm:mt-6">
                     <div className="text-muted-foreground">History content coming soon...</div>
                   </TabsContent>
                   
-                  <TabsContent value="profile" className="mt-6">
+                  <TabsContent value="profile" className="mt-4 sm:mt-6">
                     <div className="text-muted-foreground">Profile content coming soon...</div>
                   </TabsContent>
                   
-                  <TabsContent value="chart" className="mt-6">
+                  <TabsContent value="chart" className="mt-4 sm:mt-6">
                     <div className="text-muted-foreground">Chart content coming soon...</div>
                   </TabsContent>
                 </Tabs>

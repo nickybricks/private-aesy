@@ -120,7 +120,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
       )}
 
       {/* Mode Selection */}
-      <Card className="p-4">
+      <Card className="p-3 sm:p-4">
         <div className="flex gap-2 flex-wrap">
           {(Object.keys(modeConfig) as BasisMode[]).map((mode) => (
             <TooltipProvider key={mode}>
@@ -145,10 +145,10 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
       </Card>
 
       {/* Three Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Column 1: Berechnung */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Berechnung</h3>
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Berechnung</h3>
           <div className="space-y-4">
             <div className="grid gap-2">
               <div className="flex justify-between items-center py-2 border-b">
@@ -185,8 +185,8 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
         </Card>
 
         {/* Column 2: Summary */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Innerer Wert</h3>
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Innerer Wert</h3>
           <div className="space-y-6">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Aktueller Preis</p>
@@ -237,8 +237,8 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
         </Card>
 
         {/* Column 3: Annahmen */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Annahmen (Read-only)</h3>
+        <Card className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Annahmen (Read-only)</h3>
           <div className="space-y-4">
             <AssumptionItem 
               label="WACC (Diskontierungssatz)" 

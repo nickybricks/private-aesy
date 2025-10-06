@@ -10,7 +10,7 @@ const PeterLynchSection: React.FC = () => {
   }
 
   return (
-    <div className="mb-6">
+    <div className="mb-4 sm:mb-6">
       <PeterLynchChart
         ticker={stockInfo.ticker}
         currency={stockInfo.currency}

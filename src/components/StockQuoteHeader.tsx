@@ -160,8 +160,8 @@ const StockQuoteHeader: React.FC = () => {
 
         {/* Price Section */}
         <div className="mb-2">
-          <div className="flex items-baseline gap-2 mb-0.5">
-            <span className="text-2xl md:text-3xl font-bold">
+          <div className="flex flex-wrap items-baseline gap-2 mb-0.5">
+            <span className="text-xl sm:text-2xl md:text-3xl font-bold">
               ${price?.toFixed(2) ?? 'N/A'}
             </span>
             {change !== null && changePercent !== null && (
@@ -186,7 +186,7 @@ const StockQuoteHeader: React.FC = () => {
         )}
 
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-1.5 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs">
           <div>
             <div className="text-muted-foreground">P/E:</div>
             <div className="font-semibold">{peRatio?.toFixed(2) ?? 'N/A'}</div>
