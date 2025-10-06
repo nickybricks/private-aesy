@@ -58,18 +58,36 @@ const normalizeNewsItems = (items: any[]): NewsItem[] => {
   }).filter(n => n.title && n.url);
 };
 
-// Funktion, um Stock News zu holen (stable mit Fallback v3 + NewsAPI)
+// Funktion, um Stock News zu holen (NewsAPI first, FMP as fallback)
 export const fetchStockNews = async (ticker: string, companyName?: string): Promise<NewsItem[]> => {
   console.log(`Fetching stock news for ${ticker}`);
   const standardizedTicker = ticker.trim().toUpperCase();
   
+  // Try NewsAPI first if company name is available
+  if (companyName) {
+    try {
+      const { fetchNewsFromNewsAPI } = await import('@/api/newsApi');
+      const { newsItems } = await fetchNewsFromNewsAPI(standardizedTicker, companyName);
+      
+      if (newsItems.length > 0) {
+        console.log(`✅ NewsAPI returned ${newsItems.length} articles - using as primary source`);
+        return newsItems;
+      }
+      
+      console.log('⚠️ NewsAPI returned 0 articles, falling back to FMP');
+    } catch (newsApiError) {
+      console.error('⚠️ NewsAPI failed, falling back to FMP:', newsApiError);
+    }
+  }
+  
+  // Fallback to FMP
   try {
     // Fetch from FMP (stable endpoint first)
     const stableResp = await axios.get('https://financialmodelingprep.com/stable/news/stock', {
       params: { symbols: standardizedTicker, apikey: DEFAULT_FMP_API_KEY }
     });
     let fmpData = normalizeNewsItems(stableResp.data);
-    console.log('Stable stock news:', fmpData.length);
+    console.log('📰 FMP stable stock news:', fmpData.length);
     
     if (fmpData.length === 0) {
       // Fallback to v3 endpoint
@@ -77,42 +95,46 @@ export const fetchStockNews = async (ticker: string, companyName?: string): Prom
         params: { tickers: standardizedTicker, limit: 50, apikey: DEFAULT_FMP_API_KEY }
       });
       fmpData = normalizeNewsItems(v3.data);
-      console.log('Fallback v3 stock news:', fmpData.length);
-    }
-
-    // Fetch from NewsAPI if company name is available
-    if (companyName) {
-      try {
-        const { fetchNewsFromNewsAPI, mergeNewsSources } = await import('@/api/newsApi');
-        const { newsItems } = await fetchNewsFromNewsAPI(standardizedTicker, companyName);
-        const combined = mergeNewsSources(fmpData, newsItems);
-        console.log(`✅ Combined news: ${fmpData.length} FMP + ${newsItems.length} NewsAPI = ${combined.length} total`);
-        return combined;
-      } catch (newsApiError) {
-        console.error('NewsAPI failed, using FMP only:', newsApiError);
-        return fmpData;
-      }
+      console.log('📰 FMP v3 fallback stock news:', fmpData.length);
     }
     
     return fmpData;
   } catch (error) {
-    console.error('Error fetching stock news:', error);
+    console.error('❌ Error fetching stock news from FMP:', error);
     return [];
   }
 };
 
-// Funktion, um Press Releases zu holen (stable mit Fallback v3 + NewsAPI)
+// Funktion, um Press Releases zu holen (NewsAPI first, FMP as fallback)
 export const fetchPressReleases = async (ticker: string, companyName?: string): Promise<NewsItem[]> => {
   console.log(`Fetching press releases for ${ticker}`);
   const standardizedTicker = ticker.trim().toUpperCase();
   
+  // Try NewsAPI first if company name is available
+  if (companyName) {
+    try {
+      const { fetchNewsFromNewsAPI } = await import('@/api/newsApi');
+      const { pressReleases } = await fetchNewsFromNewsAPI(standardizedTicker, companyName);
+      
+      if (pressReleases.length > 0) {
+        console.log(`✅ NewsAPI returned ${pressReleases.length} press releases - using as primary source`);
+        return pressReleases;
+      }
+      
+      console.log('⚠️ NewsAPI returned 0 press releases, falling back to FMP');
+    } catch (newsApiError) {
+      console.error('⚠️ NewsAPI failed, falling back to FMP:', newsApiError);
+    }
+  }
+  
+  // Fallback to FMP
   try {
     // Fetch from FMP (stable endpoint first)
     const stableResp = await axios.get('https://financialmodelingprep.com/stable/news/press-releases', {
       params: { symbols: standardizedTicker, apikey: DEFAULT_FMP_API_KEY }
     });
     let fmpData = normalizeNewsItems(stableResp.data);
-    console.log('Stable press releases:', fmpData.length);
+    console.log('📰 FMP stable press releases:', fmpData.length);
     
     if (fmpData.length === 0) {
       // Fallback to v3 endpoint
@@ -120,21 +142,7 @@ export const fetchPressReleases = async (ticker: string, companyName?: string): 
         params: { limit: 50, apikey: DEFAULT_FMP_API_KEY }
       });
       fmpData = normalizeNewsItems(v3.data);
-      console.log('Fallback v3 press releases:', fmpData.length);
-    }
-
-    // Fetch from NewsAPI if company name is available
-    if (companyName) {
-      try {
-        const { fetchNewsFromNewsAPI, mergeNewsSources } = await import('@/api/newsApi');
-        const { pressReleases } = await fetchNewsFromNewsAPI(standardizedTicker, companyName);
-        const combined = mergeNewsSources(fmpData, pressReleases);
-        console.log(`✅ Combined press releases: ${fmpData.length} FMP + ${pressReleases.length} NewsAPI = ${combined.length} total`);
-        return combined;
-      } catch (newsApiError) {
-        console.error('NewsAPI failed, using FMP only:', newsApiError);
-        return fmpData;
-      }
+      console.log('📰 FMP v3 fallback press releases:', fmpData.length);
     }
     
     return fmpData;
