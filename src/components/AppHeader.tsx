@@ -67,8 +67,8 @@ const AppHeader: React.FC = () => {
             </Button>
           </div>
           
-          {/* Search Field - Schmaler mit max-width */}
-          <div className="flex-1 min-w-0 max-w-[280px]">
+          {/* Search Field - Schmaler für mehr Platz beim KI-Toggle */}
+          <div className="flex-1 min-w-0 max-w-[200px]">
             <StockSearch 
               onSearch={handleStockSearch} 
               isLoading={isLoading} 
