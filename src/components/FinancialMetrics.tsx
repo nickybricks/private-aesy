@@ -228,7 +228,12 @@ const MetricCard: React.FC<{
       );
     } else {
       numericValue = typeof displayValue === 'number' ? displayValue : null;
-      if (typeof displayValue === 'number' && displayValue > 1000000000) {
+      // Wenn es bereits ein Prozentsatz ist, keine Währung anhängen
+      if (metric.isAlreadyPercent) {
+        cleanedDisplayValue = typeof displayValue === 'number' 
+          ? `${displayValue.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+          : displayValue;
+      } else if (typeof displayValue === 'number' && displayValue > 1000000000) {
         // Abbreviate large numbers
         cleanedDisplayValue = `${(displayValue / 1000000000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} Mrd. ${currency}`;
       } else if (typeof displayValue === 'number' && displayValue > 1000000) {

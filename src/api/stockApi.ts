@@ -1299,11 +1299,9 @@ export const getFinancialMetrics = async (ticker: string) => {
       if (epsGrowth >= 10) {
         epsStatus = 'pass'; // Buffett bevorzugt >10%
       } else if (epsGrowth >= 5) {
-        epsStatus = 'warning'; // Akzeptabel
-      } else if (epsGrowth >= 0) {
-        epsStatus = 'warning'; // Schwaches Wachstum
+        epsStatus = 'warning'; // Akzeptabel, aber nicht ideal
       }
-      // else: negatives Wachstum = 'fail'
+      // else: < 5% Wachstum = 'fail'
       
       // Determine the currency to display
       const displayCurrency = reportedCurrency || 'USD';
@@ -1315,7 +1313,7 @@ export const getFinancialMetrics = async (ticker: string) => {
         explanation: `EPS-Wachstum (3 Jahre CAGR): ${epsGrowth.toFixed(1)}%. Aktueller EPS: ${eps.toFixed(2)} ${displayCurrency} (${epsGrowthDetails.pastYear}: ${epsGrowthDetails.pastEPS.toFixed(2)} → ${epsGrowthDetails.currentYear}: ${epsGrowthDetails.currentEPS.toFixed(2)} ${displayCurrency})`,
         threshold: 'Kontinuierliches Wachstum >10%',
         status: epsStatus,
-        isPercentage: false,
+        isPercentage: true,
         isMultiplier: false,
         isAlreadyPercent: true // Flag, dass der Wert bereits in Prozent ist
       });
