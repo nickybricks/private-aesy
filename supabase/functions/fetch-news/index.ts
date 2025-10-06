@@ -18,6 +18,23 @@ interface NewsAPIArticle {
   content: string | null;
 }
 
+// Relevant financial news sources
+const FINANCIAL_DOMAINS = [
+  'bloomberg.com',
+  'reuters.com',
+  'ft.com',
+  'wsj.com',
+  'cnbc.com',
+  'marketwatch.com',
+  'barrons.com',
+  'seekingalpha.com',
+  'fool.com',
+  'investopedia.com',
+  'finance.yahoo.com',
+  'businessinsider.com',
+  'forbes.com'
+].join(',');
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -31,19 +48,15 @@ serve(async (req) => {
       throw new Error('NEWS_API_KEY not configured')
     }
 
-    // Get user's locale from Accept-Language header
-    const acceptLanguage = req.headers.get('accept-language') || 'en'
-    const primaryLang = acceptLanguage.split(',')[0].split('-')[0].toLowerCase()
-    
-    console.log(`Fetching news for ${ticker} (${companyName}) with language: en (US only mode)`)
+    console.log(`Fetching news for ${ticker} (${companyName}) from financial sources`)
 
     // Search query combining company name and ticker
     const query = `"${companyName}" OR ${ticker}`
     // Force US-only for now due to non-US limitations
     const language = 'en'
     
-    // Fetch from NewsAPI
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=${language}&sortBy=publishedAt&pageSize=50&apiKey=${newsApiKey}`
+    // Fetch from NewsAPI with domain filtering
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=${language}&domains=${FINANCIAL_DOMAINS}&sortBy=publishedAt&pageSize=50&apiKey=${newsApiKey}`
     
     console.log(`NewsAPI URL: ${url.replace(newsApiKey, 'REDACTED')}`)
     
