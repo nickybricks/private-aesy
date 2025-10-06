@@ -233,38 +233,36 @@ const StockQuoteHeader: React.FC = () => {
               {name.charAt(0)}
             </div>
             
-            <div className="flex items-center gap-2">
-              <div>
-                <h1 className="text-base sm:text-lg md:text-xl font-bold mb-0.5">{name}</h1>
-                <div className="text-[10px] sm:text-xs text-muted-foreground">
-                  {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
-                </div>
+            <div>
+              <h1 className="text-base sm:text-lg md:text-xl font-bold mb-0.5">{name}</h1>
+              <div className="text-[10px] sm:text-xs text-muted-foreground">
+                {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
               </div>
-              
-              {/* Compact Add to Watchlist Button */}
-              {buffettCriteria && financialMetrics && overallRating && (
-                <Button
-                  onClick={() => {
-                    if (!user) {
-                      toast({
-                        variant: "destructive",
-                        title: "Login erforderlich",
-                        description: "Bitte melden Sie sich an, um Aktien zu Watchlists hinzuzufügen."
-                      });
-                      return;
-                    }
-                    setWatchlistDialogOpen(true);
-                  }}
-                  variant="default"
-                  size="sm"
-                  className="h-8 w-8 min-w-8 p-0 !rounded-full"
-                  title="Zu Watchlist hinzufügen"
-                >
-                  <Plus size={18} />
-                </Button>
-              )}
             </div>
           </div>
+          
+          {/* Compact Add to Watchlist Button - Right Aligned */}
+          {buffettCriteria && financialMetrics && overallRating && (
+            <Button
+              onClick={() => {
+                if (!user) {
+                  toast({
+                    variant: "destructive",
+                    title: "Login erforderlich",
+                    description: "Bitte melden Sie sich an, um Aktien zu Watchlists hinzuzufügen."
+                  });
+                  return;
+                }
+                setWatchlistDialogOpen(true);
+              }}
+              variant="default"
+              size="sm"
+              className="h-10 w-10 min-w-10 p-0 !rounded-full"
+              title="Zu Watchlist hinzufügen"
+            >
+              <Plus size={20} />
+            </Button>
+          )}
         </div>
 
         {/* Price Section */}
