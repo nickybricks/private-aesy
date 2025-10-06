@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
-import { Menu, Brain, Info } from 'lucide-react';
+import { Menu, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Label } from '@/components/ui/label';
 import StockSearch from './StockSearch';
 import { useMobileMenu } from '@/context/MobileMenuContext';
 import { useStock } from '@/context/StockContext';
@@ -74,8 +69,23 @@ const AppHeader: React.FC = () => {
               isLoading={isLoading} 
               compact 
               mobileMode
-              enableDeepResearch={enableDeepResearch}
-              onDeepResearchChange={setEnableDeepResearch}
+            />
+          </div>
+          
+          {/* AI Toggle - wie Desktop Version */}
+          <div className="shrink-0 flex items-center gap-2 ml-2">
+            <div className="flex items-center gap-1.5">
+              <Brain className="h-3.5 w-3.5 text-primary" />
+              <Label htmlFor="deep-research-mobile" className="text-2xs font-medium cursor-pointer whitespace-nowrap">
+                AI Analyse
+              </Label>
+            </div>
+            <Switch
+              id="deep-research-mobile"
+              checked={enableDeepResearch}
+              onCheckedChange={setEnableDeepResearch}
+              disabled={isLoading}
+              className="scale-75"
             />
           </div>
         </div>
