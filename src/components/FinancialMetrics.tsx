@@ -101,6 +101,13 @@ const getMetricDetailedExplanation = (metricName: string) => {
       buffettGuideline: "Buffett sucht stabiles oder steigendes EPS über viele Jahre",
       goodValue: "Die absolute Höhe ist weniger wichtig als das kontinuierliche Wachstum"
     },
+    "EPS-Wachstum (3 Jahre CAGR)": {
+      whatItIs: "Das durchschnittliche jährliche Wachstum des Gewinns pro Aktie über einen Zeitraum von 3 Jahren (Compound Annual Growth Rate)",
+      howCalculated: "CAGR = ((EPS aktuell ÷ EPS vor 3 Jahren)^(1/3) - 1) × 100",
+      whyImportant: "Zeigt, ob das Unternehmen kontinuierlich profitabler wird und ist ein Indikator für Wachstumsstärke",
+      buffettGuideline: "Buffett bevorzugt Unternehmen mit stabilem EPS-Wachstum von über 10% pro Jahr",
+      goodValue: "Über 10% ist hervorragend, 5-10% gut, unter 5% unterdurchschnittlich"
+    },
     "Schulden zu EBITDA": {
       whatItIs: "Verhältnis der Gesamtverschuldung zum operativen Ergebnis vor Zinsen, Steuern und Abschreibungen",
       howCalculated: "Gesamtverschuldung ÷ EBITDA",
