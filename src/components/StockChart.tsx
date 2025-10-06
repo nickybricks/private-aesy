@@ -423,16 +423,16 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
 
   return (
     <div className="w-full space-y-2 sm:space-y-3">
-      {/* Horizontal scrollable buttons on mobile */}
-      <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
-        <div className="flex gap-1.5 sm:gap-2 min-w-min">
+      {/* Zeitraum-Buttons - kompakt für alle Bildschirmgrößen */}
+      <div className="w-full">
+        <div className="flex justify-between gap-1 sm:gap-1.5">
           {TIME_RANGES.map((range) => (
             <Button
               key={range.value}
               variant={selectedRange === range.value ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedRange(range.value)}
-              className="text-xs h-7 sm:h-8 px-2.5 sm:px-3 flex-shrink-0"
+              className="text-xs h-7 px-1.5 sm:px-2.5 md:px-3 flex-1 min-w-0"
             >
               {range.label}
             </Button>
