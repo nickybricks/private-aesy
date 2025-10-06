@@ -200,13 +200,15 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   // Standardisieren des Tickers für die API
   const standardizedTicker = ticker.trim().toUpperCase();
   
-  // Verschiedene Finanzdaten abrufen
-  const [ratios, keyMetrics, profile, incomeStatements, balanceSheets] = await Promise.all([
-    fetchFromFMP(`/ratios/${standardizedTicker}`),
-    fetchFromFMP(`/key-metrics/${standardizedTicker}`),
+  // Verschiedene Finanzdaten abrufen (erweitert für zentrale Berechnungen)
+  const [ratios, keyMetrics, profile, incomeStatements, balanceSheets, cashFlows, quote] = await Promise.all([
+    fetchFromFMP(`/ratios/${standardizedTicker}?limit=10`),
+    fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=10`),
     fetchFromFMP(`/profile/${standardizedTicker}`),
-    fetchFromFMP(`/income-statement/${standardizedTicker}?period=annual&limit=5`),
-    fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}`)
+    fetchFromFMP(`/income-statement/${standardizedTicker}?period=annual&limit=10`),
+    fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?limit=10`),
+    fetchFromFMP(`/cash-flow-statement/${standardizedTicker}?limit=10`),
+    fetchFromFMP(`/quote/${standardizedTicker}`)
   ]);
   
   // Überprüfen, ob Daten zurückgegeben wurden
@@ -220,6 +222,7 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   const companyProfile = profile[0];
   const latestIncomeStatement = incomeStatements && incomeStatements.length > 0 ? incomeStatements[0] : null;
   const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
+  const quoteData = quote && quote.length > 0 ? quote[0] : null;
   
   // Sicherstellen, dass alle erforderlichen Werte existieren
   // Falls nicht, Standardwerte oder 0 verwenden
@@ -324,102 +327,62 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
     }
   }
   
-  // Verbesserte ROE Berechnung
-  let roe = safeValue(latestRatios.returnOnEquity) * 100;
-  if (roe === 0 && latestIncomeStatement && latestBalanceSheet) {
-    const netIncome = safeValue(latestIncomeStatement.netIncome);
-    const equity = safeValue(latestBalanceSheet.totalStockholdersEquity);
-    if (equity > 0) {
-      roe = (netIncome / equity) * 100;
-    }
-  }
+  // ============ PHASE 3: ZENTRALE BERECHNUNGEN FÜR KRITERIUM 3 ============
+  console.log('🔄 Nutze zentrale Berechnungen für Kriterium 3 (Finanzkennzahlen)');
   
-  // Verbesserte Nettomarge Berechnung
-  let netMargin = safeValue(latestRatios.netProfitMargin) * 100;
-  if (netMargin === 0 && latestIncomeStatement) {
-    const netIncome = safeValue(latestIncomeStatement.netIncome);
-    const revenue = safeValue(latestIncomeStatement.revenue);
-    if (revenue > 0) {
-      netMargin = (netIncome / revenue) * 100;
-    }
-  }
+  // Importiere zentrale Berechnungsfunktionen
+  const MetricsCalculator = await import('@/services/FinancialMetricsCalculator');
   
-  // Financial Metrics scoring - FIXED: Normalize to exactly 10 points
-  let financialMetricsScore = 0;
-  const financialMetricsMaxScore = 10; // FIXED: Changed from 9 to 10
-  const financialWeight = 10 / 3; // 3.33 points per metric
+  // Prepare data object for central calculations
+  const financialData = {
+    ratios,
+    keyMetrics,
+    incomeStatements,
+    balanceSheets,
+    cashFlows,
+    quote: quoteData,
+    profile: companyProfile
+  };
   
-  // ROE scoring (0-3.33 points)
-  if (roe > 15) financialMetricsScore += financialWeight;
-  else if (roe > 10) financialMetricsScore += (financialWeight * 2/3);
-  else if (roe > 7) financialMetricsScore += (financialWeight * 1/3);
+  // Berechne ROE_10Y_avg mit zentraler Logik
+  const roeResult = MetricsCalculator.calculateROE_10Y_avg(financialData);
+  const roe = roeResult.value || 0;
+  const roeTimePeriod = roeResult.timePeriodBadge;
+  console.log(`ROE (${roeTimePeriod}):`, roe, '%');
   
-  // Net Margin scoring (0-3.33 points)
-  if (netMargin > 10) financialMetricsScore += financialWeight;
-  else if (netMargin > 5) financialMetricsScore += (financialWeight * 2/3);
-  else if (netMargin > 3) financialMetricsScore += (financialWeight * 1/3);
+  // Berechne NetMargin_10Y_avg mit zentraler Logik
+  const netMarginResult = MetricsCalculator.calculateNetMargin_10Y_avg(financialData);
+  const netMargin = netMarginResult.value || 0;
+  const netMarginTimePeriod = netMarginResult.timePeriodBadge;
+  console.log(`Net Margin (${netMarginTimePeriod}):`, netMargin, '%');
   
-  // EPS Growth (3-year CAGR calculation)
-  let epsGrowth = 0;
-  let epsGrowthDetails = {
-    currentYear: '',
-    pastYear: '',
-    currentEPS: 0,
+  // Berechne EPS_TTM_woNRI mit zentraler Logik
+  const epsResult = MetricsCalculator.calculateEPS_TTM_woNRI(financialData);
+  const currentEPS = epsResult.value || 0;
+  console.log('EPS (TTM):', currentEPS);
+  
+  // Berechne EPS_CAGR mit zentraler Logik (10J/5J/3J Rolling-Fallback)
+  const epsGrowthResult = MetricsCalculator.calculateEPS_CAGR(financialData);
+  const epsGrowth = epsGrowthResult.value || 0;
+  const epsGrowthTimePeriod = epsGrowthResult.timePeriodBadge;
+  console.log(`EPS Growth CAGR (${epsGrowthTimePeriod}):`, epsGrowth, '%');
+  
+  // EPS Growth Details für Tooltips (Fallback aus rawData)
+  const epsGrowthDetails = epsGrowthResult.rawData || {
+    currentYear: 'Aktuell',
+    pastYear: 'Historisch',
+    currentEPS: currentEPS,
     pastEPS: 0
   };
   
-  if (incomeStatements && incomeStatements.length >= 4) {
-    const currentStatement = incomeStatements[0];
-    const pastStatement = incomeStatements[3];
-    
-    const currentEPS = safeValue(currentStatement.eps) || safeValue(currentStatement.epsdiluted) || 0;
-    const pastEPS = safeValue(pastStatement.eps) || safeValue(pastStatement.epsdiluted) || 0;
-    
-    // Store details for tooltip
-    epsGrowthDetails = {
-      currentYear: currentStatement.calendarYear || currentStatement.date?.substring(0, 4) || 'Aktuell',
-      pastYear: pastStatement.calendarYear || pastStatement.date?.substring(0, 4) || 'Vor 3 Jahren',
-      currentEPS: currentEPS,
-      pastEPS: pastEPS
-    };
-    
-    console.log(`[EPS Growth Debug] ${ticker}:`, {
-      currentYear: epsGrowthDetails.currentYear,
-      currentEPS: currentEPS,
-      pastYear: epsGrowthDetails.pastYear,
-      pastEPS: pastEPS,
-      statements: incomeStatements.map((s: any) => ({
-        date: s.date,
-        year: s.calendarYear,
-        eps: s.eps,
-        epsdiluted: s.epsdiluted
-      }))
-    });
-    
-    if (pastEPS > 0 && currentEPS > 0) {
-      // Calculate 3-year CAGR: ((currentEPS / pastEPS) ^ (1/3) - 1) * 100
-      const years = 3;
-      epsGrowth = (Math.pow(currentEPS / pastEPS, 1 / years) - 1) * 100;
-      console.log(`[EPS Growth] ${ticker}: ${epsGrowth.toFixed(2)}% CAGR over ${years} years`);
-    } else if (pastEPS !== 0) {
-      // Fallback to simple growth if one value is negative
-      epsGrowth = ((currentEPS - pastEPS) / Math.abs(pastEPS)) * 100;
-      console.log(`[EPS Growth] ${ticker}: ${epsGrowth.toFixed(2)}% (simple growth, negative EPS detected)`);
-    } else {
-      console.log(`[EPS Growth] ${ticker}: Cannot calculate (past EPS is zero)`);
-    }
-  } else {
-    console.log(`[EPS Growth] ${ticker}: Insufficient data (${incomeStatements?.length || 0} statements available, need 4)`);
-  }
-  
-  // EPS Growth scoring (0-3.34 points to reach exactly 10)
-  const epsGrowthWeight = 10 - (financialWeight * 2); // 3.34 points
-  if (epsGrowth > 15) financialMetricsScore += epsGrowthWeight;
-  else if (epsGrowth > 10) financialMetricsScore += (epsGrowthWeight * 2/3);
-  else if (epsGrowth > 5) financialMetricsScore += (epsGrowthWeight * 1/3);
-  
-  // Round to 2 decimal places to avoid floating point errors
-  financialMetricsScore = Math.round(financialMetricsScore * 100) / 100;
+  // Berechne Financial Score mit zentraler Scoring-Logik
+  const { calculateFinancialMetricScore } = await import('@/utils/buffettUtils');
+  const financialMetricsScore = calculateFinancialMetricScore(3, {
+    roe,
+    netProfitMargin: netMargin,
+    epsGrowth,
+    eps: currentEPS
+  });
   
   // Financial Metrics status based on score
   let financialMetricsStatus: 'pass' | 'warning' | 'fail' = 'fail';
@@ -429,71 +392,46 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
     financialMetricsStatus = 'warning';
   }
   
-  // Verbesserte Verschuldungsquote Berechnung
-  let debtToAssets = safeValue(latestRatios.debtToAssets) * 100;
-  if (debtToAssets === 0 && latestBalanceSheet) {
-    const totalDebt = safeValue(latestBalanceSheet.totalDebt) || 
-                     (safeValue(latestBalanceSheet.shortTermDebt) + safeValue(latestBalanceSheet.longTermDebt));
-    const totalAssets = safeValue(latestBalanceSheet.totalAssets);
-    if (totalAssets > 0) {
-      debtToAssets = (totalDebt / totalAssets) * 100;
-    }
-  }
+  const financialMetricsMaxScore = 10;
   
-  // Verbesserte Zinsdeckungsgrad Berechnung
-  let interestCoverage = safeValue(latestRatios.interestCoverage);
-  if (interestCoverage === 0 && latestIncomeStatement) {
-    const ebit = safeValue(latestIncomeStatement.ebitda) - safeValue(latestIncomeStatement.depreciationAndAmortization);
-    const interestExpense = safeValue(latestIncomeStatement.interestExpense);
-    if (interestExpense !== 0) {
-      interestCoverage = ebit / Math.abs(interestExpense);
-    }
-  }
+  // ============ PHASE 3: ZENTRALE BERECHNUNGEN FÜR KRITERIUM 4 ============
+  console.log('🔄 Nutze zentrale Berechnungen für Kriterium 4 (Finanzielle Stabilität)');
   
-  // Verbesserte Current Ratio Berechnung
-  let currentRatio = safeValue(latestRatios.currentRatio);
-  if (currentRatio === 0 && latestBalanceSheet) {
-    const currentAssets = safeValue(latestBalanceSheet.totalCurrentAssets);
-    const currentLiabilities = safeValue(latestBalanceSheet.totalCurrentLiabilities);
-    if (currentLiabilities > 0) {
-      currentRatio = currentAssets / currentLiabilities;
-    }
-  }
+  // Berechne Net Debt to EBITDA mit zentraler Logik
+  const netDebtToEbitdaResult = MetricsCalculator.calculateNetDebtToEBITDA_TTM(financialData);
+  const netDebtToEBITDA = netDebtToEbitdaResult.value;
+  const debtToEBITDA = netDebtToEBITDA; // Alias für Kompatibilität
+  console.log('Net Debt to EBITDA:', netDebtToEBITDA);
   
-  // Verbesserte Debt to EBITDA Berechnung
-  let debtToEBITDA = safeValue(latestRatios.debtToEBITDA);
-  if (debtToEBITDA === 0 && latestIncomeStatement && latestBalanceSheet) {
-    const totalDebt = safeValue(latestBalanceSheet.totalDebt) || 
-                     (safeValue(latestBalanceSheet.shortTermDebt) + safeValue(latestBalanceSheet.longTermDebt));
-    const ebitda = safeValue(latestIncomeStatement.ebitda);
-    if (ebitda > 0) {
-      debtToEBITDA = totalDebt / ebitda;
-    }
-  }
+  // Berechne Current Ratio mit zentraler Logik
+  const currentRatioResult = MetricsCalculator.calculateCurrentRatio_TTM(financialData);
+  const currentRatio = currentRatioResult.value || 0;
+  console.log('Current Ratio:', currentRatio);
   
-  // Financial Stability scoring - FIXED: Normalize to exactly 10 points
-  let financialStabilityScore = 0;
-  const financialStabilityMaxScore = 10; // FIXED: Changed from 9 to 10
-  const stabilityWeight = 10 / 3; // 3.33 points per metric
+  // Berechne Quick Ratio mit zentraler Logik
+  const quickRatioResult = MetricsCalculator.calculateQuickRatio_TTM(financialData);
+  const quickRatio = quickRatioResult.value || 0;
+  console.log('Quick Ratio:', quickRatio);
   
-  // Debt to Assets scoring (0-3.33 points)
-  if (debtToAssets < 30) financialStabilityScore += stabilityWeight;
-  else if (debtToAssets < 50) financialStabilityScore += (stabilityWeight * 2/3);
-  else if (debtToAssets < 70) financialStabilityScore += (stabilityWeight * 1/3);
+  // Berechne Interest Coverage mit zentraler Logik
+  const interestCoverageResult = MetricsCalculator.calculateInterestCoverage_TTM(financialData);
+  const interestCoverage = interestCoverageResult.value || 0;
+  console.log('Interest Coverage:', interestCoverage);
   
-  // Interest Coverage scoring (0-3.33 points)
-  if (interestCoverage > 7) financialStabilityScore += stabilityWeight;
-  else if (interestCoverage > 5) financialStabilityScore += (stabilityWeight * 2/3);
-  else if (interestCoverage > 3) financialStabilityScore += (stabilityWeight * 1/3);
+  // Berechne Debt to Equity mit zentraler Logik
+  const debtToEquityResult = MetricsCalculator.calculateDtoE(financialData);
+  const debtToEquity = debtToEquityResult.value || 0;
+  const debtToAssets = debtToEquity * 100; // Umrechnung für Kompatibilität mit alten Details
+  console.log('Debt to Equity:', debtToEquity);
   
-  // Current Ratio scoring (0-3.34 points to reach exactly 10)
-  const currentRatioWeight = 10 - (stabilityWeight * 2); // 3.34 points
-  if (currentRatio > 2) financialStabilityScore += currentRatioWeight;
-  else if (currentRatio > 1.5) financialStabilityScore += (currentRatioWeight * 2/3);
-  else if (currentRatio > 1) financialStabilityScore += (currentRatioWeight * 1/3);
-  
-  // Round to 2 decimal places to avoid floating point errors
-  financialStabilityScore = Math.round(financialStabilityScore * 100) / 100;
+  // Berechne Financial Stability Score mit zentraler Scoring-Logik
+  const financialStabilityScore = calculateFinancialMetricScore(4, {
+    netDebtToEbitda: netDebtToEBITDA,
+    currentRatio: currentRatio,
+    quickRatio: quickRatio,
+    interestCoverage: interestCoverage,
+    debtToEquity: debtToEquity
+  });
   
   // Financial Stability status based on score
   let financialStabilityStatus: 'pass' | 'warning' | 'fail' = 'fail';
@@ -502,6 +440,8 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   } else if (financialStabilityScore >= 4) {
     financialStabilityStatus = 'warning';
   }
+  
+  const financialStabilityMaxScore = 10;
   
   // Management Qualität - FIXED LOGIC
   let managementStatus: 'pass' | 'warning' | 'fail' = 'warning'; // Default is warning until proven otherwise
@@ -542,27 +482,28 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
     }
   }
   
-  // Verbesserte KGV Berechnung
-  let pe = safeValue(latestRatios.priceEarningsRatio);
+  // ============ PHASE 3: ZENTRALE BERECHNUNGEN FÜR KRITERIUM 6 ============
+  console.log('🔄 Nutze zentrale Berechnungen für Kriterium 6 (Bewertung)');
   
-  // Verbesserte Dividendenrendite Berechnung
-  let dividendYield = safeValue(latestRatios.dividendYield) * 100;
+  // Berechne P/E Ratio mit zentraler Logik
+  const peResult = MetricsCalculator.calculatePE_TTM(financialData);
+  const pe = peResult.value || 0;
+  console.log('P/E Ratio (TTM):', pe);
   
-  // Falls aktuelle Dividendenrendite 0 ist, versuche Vorjahresdaten
-  if (dividendYield === 0 && ratios.length > 1) {
-    const previousYearRatios = ratios[1];
-    const previousDividendYield = safeValue(previousYearRatios.dividendYield) * 100;
-    if (previousDividendYield > 0) {
-      dividendYield = previousDividendYield;
-      console.log('Dividendenrendite aus Vorjahr verwendet:', dividendYield);
-    }
-  }
+  // Berechne P/B Ratio mit zentraler Logik
+  const pbResult = MetricsCalculator.calculatePB_TTM(financialData);
+  const priceToBook = pbResult.value || 0;
+  console.log('P/B Ratio (TTM):', priceToBook);
   
-  // Kurs zu Buchwert Berechnung
-  let priceToBook = safeValue(latestRatios.priceToBookRatio);
+  // Berechne P/CF Ratio mit zentraler Logik
+  const pcfResult = MetricsCalculator.calculatePCF_TTM(financialData);
+  const priceToCashFlow = pcfResult.value || 0;
+  console.log('P/CF Ratio (TTM):', priceToCashFlow);
   
-  // Kurs zu Cashflow Berechnung
-  let priceToCashFlow = safeValue(latestRatios.priceCashFlowRatio);
+  // Berechne Dividend Yield mit zentraler Logik
+  const dividendYieldResult = MetricsCalculator.calculateDividendYield_TTM(financialData);
+  const dividendYield = dividendYieldResult.value || 0;
+  console.log('Dividend Yield (TTM):', dividendYield, '%');
   
   // Valuation scoring - FIXED: Normalize to exactly 10 points
   let valuationScore = 0;

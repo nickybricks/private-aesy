@@ -138,12 +138,44 @@ export const BuffettCriterionCard: React.FC<BuffettCriterionCardProps> = ({ crit
     <Card key={index} className={`border-l-4 ${getStatusColor(displayStatus)}`}>
       <CardHeader className="pb-2 pt-3 px-4">
         <div className="flex justify-between items-start">
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             <CardTitle className="text-base">{criterion.title}</CardTitle>
+            
+            {/* Zeitfenster-Badge anzeigen falls verfügbar */}
+            {(criterion as any).timePeriodBadge && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        (criterion as any).timePeriodBadge === '10J' ? 'bg-green-50 text-green-700 border-green-300' :
+                        (criterion as any).timePeriodBadge === '5J' ? 'bg-blue-50 text-blue-700 border-blue-300' :
+                        (criterion as any).timePeriodBadge === '3J' ? 'bg-yellow-50 text-yellow-700 border-yellow-300' :
+                        (criterion as any).timePeriodBadge === 'TTM' ? 'bg-purple-50 text-purple-700 border-purple-300' :
+                        'bg-red-50 text-red-700 border-red-300'
+                      }`}
+                    >
+                      {(criterion as any).timePeriodBadge}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">
+                      {(criterion as any).timePeriodBadge === '10J' ? 'Berechnet mit 10 Jahren historischer Daten' :
+                       (criterion as any).timePeriodBadge === '5J' ? 'Berechnet mit 5 Jahren historischer Daten' :
+                       (criterion as any).timePeriodBadge === '3J' ? 'Berechnet mit 3 Jahren historischer Daten' :
+                       (criterion as any).timePeriodBadge === 'TTM' ? 'Trailing Twelve Months (letzte 12 Monate)' :
+                       'Datenlücken vorhanden - eingeschränkte Aussagekraft'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            
             <BuffettScoreDisplay criterion={{
               ...criterion,
               status: displayStatus,
-              score: unifiedScore // Use the unified score
+              score: unifiedScore
             }} />
             
             {criterion.title === '6. Akzeptable Bewertung' && criterion.dcfData && (
