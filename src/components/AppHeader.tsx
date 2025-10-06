@@ -25,7 +25,7 @@ const AppHeader: React.FC = () => {
   };
   
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-18 glass-header">
+    <header className="fixed top-0 left-0 right-0 z-50 h-18 bg-background border-b border-border">
       {/* Desktop Layout */}
       <div className="hidden md:flex h-full items-center">
         {/* Left section: Logo area (280px on desktop to match navigation) */}

@@ -41,10 +41,10 @@ const App = () => {
               <LeftNavigation onMobileClose={closeMobileMenu} />
             </div>
             
-            {/* Mobile overlay */}
+            {/* Mobile overlay - nur auf dem Content, nicht über das Menü */}
             {isMobile && isMobileMenuOpen && (
               <div 
-                className="fixed inset-0 bg-black bg-opacity-50 z-35"
+                className="fixed inset-0 bg-black/20 z-35"
                 onClick={closeMobileMenu}
               />
             )}
