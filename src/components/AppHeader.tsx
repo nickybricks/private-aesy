@@ -108,11 +108,14 @@ const AppHeader: React.FC = () => {
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <Switch
-                checked={enableDeepResearch}
-                onCheckedChange={setEnableDeepResearch}
-                disabled={isLoading}
-              />
+              <div className="flex justify-center">
+                <Switch
+                  checked={enableDeepResearch}
+                  onCheckedChange={setEnableDeepResearch}
+                  disabled={isLoading}
+                  className="scale-90"
+                />
+              </div>
             </div>
           </TooltipProvider>
         </div>
