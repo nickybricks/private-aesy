@@ -40,12 +40,10 @@ const TIME_RANGES = [
   { label: '1T', value: '1D' },
   { label: '5T', value: '5D' },
   { label: '1M', value: '1M' },
-  { label: '3M', value: '3M' },
+  { label: '6M', value: '6M' },
   { label: 'YTD', value: 'YTD' },
   { label: '1J', value: '1Y' },
-  { label: '3J', value: '3Y' },
   { label: '5J', value: '5Y' },
-  { label: '10J', value: '10Y' },
   { label: 'All', value: 'MAX' }
 ] as const;
 
@@ -325,8 +323,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       case '1M':
         cutoffDate.setMonth(now.getMonth() - 1);
         break;
-      case '3M':
-        cutoffDate.setMonth(now.getMonth() - 3);
+      case '6M':
+        cutoffDate.setMonth(now.getMonth() - 6);
         break;
       case 'YTD':
         cutoffDate = new Date(now.getFullYear(), 0, 1);
@@ -334,14 +332,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
       case '1Y':
         cutoffDate.setFullYear(now.getFullYear() - 1);
         break;
-      case '3Y':
-        cutoffDate.setFullYear(now.getFullYear() - 3);
-        break;
       case '5Y':
         cutoffDate.setFullYear(now.getFullYear() - 5);
-        break;
-      case '10Y':
-        cutoffDate.setFullYear(now.getFullYear() - 10);
         break;
       case 'MAX':
         return historicalData;
@@ -417,13 +409,11 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         return format(date, 'HH:mm', { locale: de });
       case '1M':
         return format(date, 'dd.MM', { locale: de });
-      case '3M':
+      case '6M':
       case 'YTD':
       case '1Y':
         return format(date, 'MMM yy', { locale: de });
-      case '3Y':
       case '5Y':
-      case '10Y':
       case 'MAX':
         return format(date, 'yyyy', { locale: de });
       default:
