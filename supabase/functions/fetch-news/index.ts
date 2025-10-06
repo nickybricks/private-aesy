@@ -44,8 +44,13 @@ serve(async (req) => {
     // Fetch from NewsAPI
     const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=${languages}&sortBy=publishedAt&pageSize=50&apiKey=${newsApiKey}`
     
+    console.log(`NewsAPI URL: ${url.replace(newsApiKey, 'REDACTED')}`)
+    
     const response = await fetch(url)
     const data = await response.json()
+
+    console.log('NewsAPI Response Status:', response.status)
+    console.log('NewsAPI Response Data:', JSON.stringify(data).substring(0, 500))
 
     if (!response.ok) {
       console.error('NewsAPI error:', data)
@@ -53,6 +58,7 @@ serve(async (req) => {
     }
 
     console.log(`NewsAPI returned ${data.articles?.length || 0} articles`)
+    console.log('Total results available:', data.totalResults)
 
     const articles = (data.articles || []) as NewsAPIArticle[]
 
