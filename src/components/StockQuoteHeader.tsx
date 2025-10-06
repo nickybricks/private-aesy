@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
 import { useStock } from '@/context/StockContext';
-import { Star, TrendingUp, TrendingDown, Info } from 'lucide-react';
-import { AddToWatchlistButton } from './AddToWatchlistButton';
+import { Star, TrendingUp, TrendingDown, Info, Plus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useWatchlists } from '@/hooks/useWatchlists';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const StockQuoteHeader: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [watchlistDialogOpen, setWatchlistDialogOpen] = useState(false);
+  const [selectedWatchlistId, setSelectedWatchlistId] = useState<string>('');
+  const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
+  
   const { 
     stockInfo, 
     predictabilityStars,
@@ -17,6 +25,10 @@ const StockQuoteHeader: React.FC = () => {
     isLoading,
     hasCriticalDataMissing 
   } = useStock();
+  
+  const { watchlists, createWatchlist } = useWatchlists();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   if (isLoading || hasCriticalDataMissing || !stockInfo) {
     return null;
@@ -129,6 +141,88 @@ const StockQuoteHeader: React.FC = () => {
     return 'Nicht vorhersehbar';
   };
 
+  const handleAddToWatchlist = async () => {
+    if (!user || !selectedWatchlistId || !stockInfo?.price) {
+      return;
+    }
+
+    setIsAddingToWatchlist(true);
+    try {
+      const { data: existingStock } = await supabase
+        .from('user_stocks')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('watchlist_id', selectedWatchlistId)
+        .eq('symbol', stockInfo.ticker)
+        .maybeSingle();
+
+      if (existingStock) {
+        toast({
+          variant: "destructive",
+          title: "Aktie bereits vorhanden",
+          description: "Diese Aktie ist bereits in der ausgewählten Watchlist."
+        });
+        setIsAddingToWatchlist(false);
+        return;
+      }
+
+      const analysisSnapshot = {
+        price: stockInfo.price,
+        currency: stockInfo.currency,
+        marketCap: stockInfo.marketCap,
+        intrinsicValue: stockInfo.intrinsicValue,
+        changePercent: 0,
+        sinceAddedPercent: 0,
+        buffettCriteria: buffettCriteria ? JSON.parse(JSON.stringify(buffettCriteria)) : null,
+        financialMetrics: financialMetrics ? JSON.parse(JSON.stringify(financialMetrics)) : null,
+        overallRating: overallRating ? JSON.parse(JSON.stringify(overallRating)) : null,
+        analysisDate: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('user_stocks')
+        .insert({
+          user_id: user.id,
+          watchlist_id: selectedWatchlistId,
+          symbol: stockInfo.ticker,
+          company_name: stockInfo.name,
+          analysis_data: analysisSnapshot as any,
+          buffett_score: overallRating?.buffettScore || null,
+          last_analysis_date: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Aktie hinzugefügt",
+        description: `${stockInfo.name} wurde erfolgreich zur Watchlist hinzugefügt.`
+      });
+
+      setWatchlistDialogOpen(false);
+      setSelectedWatchlistId('');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Fehler beim Hinzufügen",
+        description: error.message
+      });
+    } finally {
+      setIsAddingToWatchlist(false);
+    }
+  };
+
+  const handleCreateAndSelect = async () => {
+    if (!stockInfo) return;
+    try {
+      const newWatchlist = await createWatchlist(`${stockInfo.name} Watchlist`);
+      if (newWatchlist) {
+        setSelectedWatchlistId(newWatchlist.id);
+      }
+    } catch (error) {
+      // Error is handled in createWatchlist
+    }
+  };
+
   return (
     <>
       <Card className="p-2.5 sm:p-3 md:p-4">
@@ -139,23 +233,28 @@ const StockQuoteHeader: React.FC = () => {
               {name.charAt(0)}
             </div>
             
-            <div>
-              <h1 className="text-base sm:text-lg md:text-xl font-bold mb-0.5">{name}</h1>
-              <div className="text-[10px] sm:text-xs text-muted-foreground">
-                {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
+            <div className="flex items-center gap-2">
+              <div>
+                <h1 className="text-base sm:text-lg md:text-xl font-bold mb-0.5">{name}</h1>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">
+                  {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
+                </div>
               </div>
+              
+              {/* Compact Add to Watchlist Button */}
+              {buffettCriteria && financialMetrics && overallRating && (
+                <Button
+                  onClick={() => setDialogOpen(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 rounded-full"
+                  title="Zu Watchlist hinzufügen"
+                >
+                  <Plus size={18} />
+                </Button>
+              )}
             </div>
           </div>
-
-          {/* Add to Watchlist Button */}
-          {buffettCriteria && financialMetrics && overallRating && (
-            <AddToWatchlistButton
-              stockInfo={stockInfo}
-              buffettCriteria={buffettCriteria}
-              financialMetrics={financialMetrics}
-              overallRating={overallRating}
-            />
-          )}
         </div>
 
         {/* Price Section */}
@@ -311,6 +410,67 @@ const StockQuoteHeader: React.FC = () => {
                 className="w-full"
               >
                 Schließen
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Watchlist Dialog */}
+      {stockInfo && user && (
+        <Dialog open={watchlistDialogOpen} onOpenChange={setWatchlistDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Aktie zu Watchlist hinzufügen</DialogTitle>
+              <DialogDescription>
+                Fügen Sie {stockInfo.name} ({stockInfo.ticker}) zu einer Watchlist hinzu.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Watchlist auswählen</label>
+                <Select value={selectedWatchlistId} onValueChange={setSelectedWatchlistId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Watchlist auswählen..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {watchlists.map((watchlist) => (
+                      <SelectItem key={watchlist.id} value={watchlist.id}>
+                        {watchlist.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {watchlists.length === 0 && (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Sie haben noch keine Watchlists erstellt.
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={handleCreateAndSelect}
+                    className="flex items-center gap-2"
+                    size="sm"
+                  >
+                    <Plus size={16} />
+                    Neue Watchlist erstellen
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setWatchlistDialogOpen(false)}>
+                Abbrechen
+              </Button>
+              <Button
+                onClick={handleAddToWatchlist}
+                disabled={!selectedWatchlistId || isAddingToWatchlist}
+              >
+                {isAddingToWatchlist ? "Wird hinzugefügt..." : "Hinzufügen"}
               </Button>
             </div>
           </DialogContent>
