@@ -435,7 +435,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
     if (metricName.includes('ROE') || metricName.includes('ROIC')) return 'returns';
     if (metricName.includes('KGV') || metricName.includes('P/B') || metricName.includes('KBV') || metricName.includes('EV/')) return 'valuation';
     if (metricName.includes('Schulden') || metricName.includes('Zinsdeckung') || metricName.includes('Deckungsgrad')) return 'balance';
-    if (metricName.includes('Volumen') || metricName.includes('Cashflow') || metricName.includes('Liquidität')) return 'liquidity';
+    if (metricName.includes('Volumen') || metricName.includes('Cashflow') || metricName.includes('Cash Conversion') || metricName.includes('Capex')) return 'liquidity';
     return 'other';
   };
   

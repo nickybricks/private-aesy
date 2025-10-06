@@ -985,6 +985,7 @@ export const getFinancialMetrics = async (ticker: string) => {
     const latestMetrics = keyMetrics[0];
     const latestIncomeStatement = incomeStatements && incomeStatements.length > 0 ? incomeStatements[0] : null;
     const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
+    const latestCashFlow = cashFlows && cashFlows.length > 0 ? cashFlows[0] : null;
     const quoteData = quote && quote.length > 0 ? quote[0] : null;
     
     console.log('Neueste Income Statement Daten:', JSON.stringify(latestIncomeStatement, null, 2));
@@ -1446,6 +1447,71 @@ export const getFinancialMetrics = async (ticker: string) => {
         status: volume > 1000000 ? 'pass' : volume > 100000 ? 'warning' : 'fail' as const,
         isPercentage: false,
         isMultiplier: false
+      });
+    }
+
+    // Operating Cash Flow Metrik
+    const operatingCashFlow = safeValue(latestCashFlow?.operatingCashFlow);
+    if (operatingCashFlow !== null && latestIncomeStatement?.revenue) {
+      const ocfMargin = (operatingCashFlow / latestIncomeStatement.revenue) * 100;
+      metrics.push({
+        name: 'Operativer Cashflow',
+        value: operatingCashFlow,
+        formula: 'Cash aus operativem Geschäft',
+        explanation: `Geld aus dem Kerngeschäft. OCF-Marge: ${ocfMargin.toFixed(1)}%`,
+        threshold: 'Positiv und wachsend erwünscht',
+        status: operatingCashFlow > 0 ? 'pass' : 'fail',
+        isPercentage: false,
+        isMultiplier: false
+      });
+    }
+
+    // Free Cash Flow Metrik
+    const freeCashFlow = safeValue(latestCashFlow?.freeCashFlow);
+    if (freeCashFlow !== null && latestIncomeStatement?.revenue) {
+      const fcfMargin = (freeCashFlow / latestIncomeStatement.revenue) * 100;
+      metrics.push({
+        name: 'Freier Cashflow (FCF)',
+        value: freeCashFlow,
+        formula: 'Operativer CF - Capex',
+        explanation: `Verfügbares Geld nach Investitionen. FCF-Marge: ${fcfMargin.toFixed(1)}%`,
+        threshold: 'Buffett bevorzugt hohen, stabilen FCF',
+        status: freeCashFlow > 0 && fcfMargin > 5 ? 'pass' : freeCashFlow > 0 ? 'warning' : 'fail',
+        isPercentage: false,
+        isMultiplier: false
+      });
+    }
+
+    // Cash Conversion Rate (FCF/Net Income)
+    if (freeCashFlow !== null && latestIncomeStatement?.netIncome && latestIncomeStatement.netIncome > 0) {
+      const cashConversion = (freeCashFlow / latestIncomeStatement.netIncome) * 100;
+      metrics.push({
+        name: 'Cash Conversion Rate',
+        value: cashConversion,
+        formula: 'Freier CF ÷ Nettogewinn × 100',
+        explanation: 'Zeigt, wie viel vom Gewinn tatsächlich als Geld verfügbar ist',
+        threshold: 'Buffett bevorzugt > 80%',
+        status: cashConversion > 80 ? 'pass' : cashConversion > 50 ? 'warning' : 'fail',
+        isPercentage: true,
+        isMultiplier: false,
+        isAlreadyPercent: true
+      });
+    }
+
+    // Capex Ratio
+    const capex = safeValue(latestCashFlow?.capitalExpenditure);
+    if (capex !== null && latestIncomeStatement?.revenue) {
+      const capexRatio = Math.abs(capex / latestIncomeStatement.revenue) * 100;
+      metrics.push({
+        name: 'Capex-Quote',
+        value: capexRatio,
+        formula: 'Investitionsausgaben ÷ Umsatz × 100',
+        explanation: `Investitionsbedarf relativ zum Umsatz. Absoluter Capex: ${Math.abs(capex / 1_000_000_000).toFixed(2)}B ${reportedCurrency}`,
+        threshold: 'Niedriger ist besser (< 5%)',
+        status: capexRatio < 5 ? 'pass' : capexRatio < 10 ? 'warning' : 'fail',
+        isPercentage: true,
+        isMultiplier: false,
+        isAlreadyPercent: true
       });
     }
 
