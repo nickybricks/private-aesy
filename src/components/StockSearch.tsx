@@ -143,6 +143,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
   const [internalEnableDeepResearch, setInternalEnableDeepResearch] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<StockSuggestion[]>([]);
   
   // Use external state if provided, otherwise use internal state
   const enableDeepResearch = externalEnableDeepResearch ?? internalEnableDeepResearch;
@@ -154,6 +155,32 @@ const StockSearch: React.FC<StockSearchProps> = ({
   const [isinResults, setIsinResults] = useState<StockSuggestion | null>(null);
   const [forceKeepOpen, setForceKeepOpen] = useState(false);
   const { toast } = useToast();
+
+  // Load recent searches from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('recentStockSearches');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setRecentSearches(parsed);
+      }
+    } catch (error) {
+      console.error('Error loading recent searches:', error);
+    }
+  }, []);
+
+  // Save a stock to recent searches
+  const saveToRecentSearches = (stock: StockSuggestion) => {
+    try {
+      // Remove duplicates and add to front
+      const filtered = recentSearches.filter(s => s.symbol !== stock.symbol);
+      const updated = [stock, ...filtered].slice(0, 5); // Keep only 5 most recent
+      setRecentSearches(updated);
+      localStorage.setItem('recentStockSearches', JSON.stringify(updated));
+    } catch (error) {
+      console.error('Error saving recent search:', error);
+    }
+  };
 
   const checkAndHandleIsin = useCallback((value: string) => {
     if (isinPattern.test(value)) {
@@ -526,6 +553,10 @@ const StockSearch: React.FC<StockSearchProps> = ({
   const selectStock = (stock: StockSuggestion) => {
     console.log("Stock selected:", stock);
     setTicker(stock.symbol);
+    
+    // Save to recent searches
+    saveToRecentSearches(stock);
+    
     onSearch(stock.symbol, enableDeepResearch);
     setOpen(false);
     setForceKeepOpen(false);
@@ -713,26 +744,54 @@ const StockSearch: React.FC<StockSearchProps> = ({
                       )}
                       
                       {(!searchQuery || searchQuery.length < 2) ? (
-                        <CommandGroup heading="Beliebte Aktien">
-                          {fallbackStocks.slice(0, 6).map((stock) => {
-                            const display = formatStockDisplay(stock);
-                            return (
-                              <CommandItem 
-                                key={stock.symbol} 
-                                value={`${stock.name} ${stock.symbol}`}
-                                onSelect={() => selectStock(stock)}
-                                className="flex justify-between"
-                              >
-                                <div className="flex-1 truncate">
-                                  <span className="font-medium">{display.name}</span>
-                                  <span className="ml-2 text-sm text-muted-foreground">
-                                    ({display.symbol})
-                                  </span>
-                                </div>
-                              </CommandItem>
-                            );
-                          })}
-                        </CommandGroup>
+                        <>
+                          {recentSearches.length > 0 && (
+                            <CommandGroup heading="Zuletzt gesucht">
+                              {recentSearches.map((stock) => {
+                                const display = formatStockDisplay(stock);
+                                return (
+                                  <CommandItem 
+                                    key={stock.symbol} 
+                                    value={`${stock.name} ${stock.symbol}`}
+                                    onSelect={() => selectStock(stock)}
+                                    className="flex justify-between"
+                                  >
+                                    <div className="flex-1 truncate">
+                                      <span className="font-medium">{display.name}</span>
+                                      <span className="ml-2 text-sm text-muted-foreground">
+                                        ({display.symbol})
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
+                                      {display.exchange && <span>{display.exchange}</span>}
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          )}
+                          
+                          <CommandGroup heading="Beliebte Aktien">
+                            {fallbackStocks.slice(0, 6).map((stock) => {
+                              const display = formatStockDisplay(stock);
+                              return (
+                                <CommandItem 
+                                  key={stock.symbol} 
+                                  value={`${stock.name} ${stock.symbol}`}
+                                  onSelect={() => selectStock(stock)}
+                                  className="flex justify-between"
+                                >
+                                  <div className="flex-1 truncate">
+                                    <span className="font-medium">{display.name}</span>
+                                    <span className="ml-2 text-sm text-muted-foreground">
+                                      ({display.symbol})
+                                    </span>
+                                  </div>
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </>
                       ) : (
                         <CommandGroup heading="Vorschläge">
                           {suggestions.map((stock) => {
