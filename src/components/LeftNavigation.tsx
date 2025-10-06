@@ -110,18 +110,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
   };
 
   return (
-    <nav className="w-[280px] h-[calc(100vh-4.5rem)] fixed left-0 top-18 glass-sidebar flex flex-col z-30">
-      {/* Mobile Close Button */}
-      <div className="p-4 flex justify-end md:hidden">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onMobileClose}
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-      
+    <nav className="w-[280px] h-[calc(100vh-4.5rem)] fixed left-0 top-18 bg-background border-r border-border flex flex-col z-30">
       {/* Navigation Content */}
       <div className="flex-1 px-4 pt-6 overflow-y-auto">
         <div className="space-y-8">
