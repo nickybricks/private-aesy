@@ -432,36 +432,39 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
   };
 
   return (
-    <div className="w-full space-y-3">
-      <div className="flex flex-wrap gap-1.5">
-        {TIME_RANGES.map((range) => (
-          <Button
-            key={range.value}
-            variant={selectedRange === range.value ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedRange(range.value)}
-            className="text-xs h-8 px-3"
-          >
-            {range.label}
-          </Button>
-        ))}
+    <div className="w-full space-y-2 sm:space-y-3">
+      {/* Horizontal scrollable buttons on mobile */}
+      <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
+        <div className="flex gap-1.5 sm:gap-2 min-w-min">
+          {TIME_RANGES.map((range) => (
+            <Button
+              key={range.value}
+              variant={selectedRange === range.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedRange(range.value)}
+              className="text-xs h-7 sm:h-8 px-2.5 sm:px-3 flex-shrink-0"
+            >
+              {range.label}
+            </Button>
+          ))}
+        </div>
       </div>
       
-      {/* Performance Stats */}
+      {/* Performance Stats - Kompakter auf Mobile */}
       {performanceStats && (
-        <div className="flex flex-wrap gap-3 text-xs">
+        <div className="flex flex-wrap gap-2 sm:gap-3 text-xs">
           <div>
-            <span className="font-medium">{getRangeLabel()}: </span>
+            <span className="font-medium text-muted-foreground">{getRangeLabel()}: </span>
             <span className={performanceStats.performance >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
               {performanceStats.performance >= 0 ? '+' : ''}{performanceStats.performance.toFixed(2)}%
             </span>
           </div>
-          <div>
-            <span className="font-medium">Above Low: </span>
+          <div className="hidden sm:block">
+            <span className="font-medium text-muted-foreground">Above Low: </span>
             <span className="text-green-600 font-semibold">+{performanceStats.aboveLow.toFixed(2)}%</span>
           </div>
-          <div>
-            <span className="font-medium">Below High: </span>
+          <div className="hidden sm:block">
+            <span className="font-medium text-muted-foreground">Below High: </span>
             <span className={performanceStats.belowHigh >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
               {performanceStats.belowHigh.toFixed(2)}%
             </span>

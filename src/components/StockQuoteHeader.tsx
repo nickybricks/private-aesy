@@ -131,17 +131,17 @@ const StockQuoteHeader: React.FC = () => {
 
   return (
     <>
-      <Card className="p-3 md:p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-3">
+      <Card className="p-2.5 sm:p-3 md:p-4">
+        <div className="flex items-start justify-between mb-1.5 sm:mb-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Company Logo Placeholder - can be added later */}
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-muted flex items-center justify-center text-lg md:text-xl font-bold text-muted-foreground">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl bg-muted flex items-center justify-center text-base sm:text-lg md:text-xl font-bold text-muted-foreground">
               {name.charAt(0)}
             </div>
             
             <div>
-              <h1 className="text-lg md:text-xl font-bold mb-0.5">{name}</h1>
-              <div className="text-xs text-muted-foreground">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold mb-0.5">{name}</h1>
+              <div className="text-[10px] sm:text-xs text-muted-foreground">
                 {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
               </div>
             </div>
@@ -159,62 +159,62 @@ const StockQuoteHeader: React.FC = () => {
         </div>
 
         {/* Price Section */}
-        <div className="mb-2">
-          <div className="flex flex-wrap items-baseline gap-2 mb-0.5">
+        <div className="mb-1.5 sm:mb-2">
+          <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2 mb-0.5">
             <span className="text-xl sm:text-2xl md:text-3xl font-bold">
               ${price?.toFixed(2) ?? 'N/A'}
             </span>
             {change !== null && changePercent !== null && (
-              <div className={`flex items-center gap-1 text-base font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                {isPositive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+              <div className={`flex items-center gap-1 text-sm sm:text-base font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                {isPositive ? <TrendingUp size={14} className="sm:w-4 sm:h-4" /> : <TrendingDown size={14} className="sm:w-4 sm:h-4" />}
                 <span>
                   {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
                 </span>
               </div>
             )}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-[10px] sm:text-xs text-muted-foreground">
             {currentTime} EST
           </div>
         </div>
 
         {/* Buffett Predictability Stars */}
         {predictabilityStars && (
-          <div className="mb-3">
+          <div className="mb-2 sm:mb-3">
             {renderStars(predictabilityStars.stars, true)}
           </div>
         )}
 
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs">
+        {/* Key Metrics Grid - Kompakter auf Mobile */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 sm:gap-x-4 gap-y-1.5 text-xs">
           <div>
-            <div className="text-muted-foreground">P/E:</div>
-            <div className="font-semibold">{peRatio?.toFixed(2) ?? 'N/A'}</div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">P/E:</div>
+            <div className="font-semibold text-xs sm:text-sm">{peRatio?.toFixed(2) ?? 'N/A'}</div>
           </div>
           
           <div>
-            <div className="text-muted-foreground">P/B:</div>
-            <div className="font-semibold">{pbRatio?.toFixed(2) ?? 'N/A'}</div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">P/B:</div>
+            <div className="font-semibold text-xs sm:text-sm">{pbRatio?.toFixed(2) ?? 'N/A'}</div>
           </div>
           
           <div>
-            <div className="text-muted-foreground">Market Cap:</div>
-            <div className="font-semibold">{formatNumber(marketCap)}</div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Market Cap:</div>
+            <div className="font-semibold text-xs sm:text-sm">{formatNumber(marketCap)}</div>
           </div>
           
           <div>
-            <div className="text-muted-foreground">Enterprise V:</div>
-            <div className="font-semibold">{formatNumber(enterpriseValue)}</div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Enterprise V:</div>
+            <div className="font-semibold text-xs sm:text-sm">{formatNumber(enterpriseValue)}</div>
           </div>
           
           <div>
-            <div className="text-muted-foreground">Volume:</div>
-            <div className="font-semibold">{formatVolume(volume)}</div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Volume:</div>
+            <div className="font-semibold text-xs sm:text-sm">{formatVolume(volume)}</div>
           </div>
           
           <div>
-            <div className="text-muted-foreground">Avg Vol (2M):</div>
-            <div className="font-semibold">{formatVolume(avgVolume)}</div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Avg Vol (2M):</div>
+            <div className="font-semibold text-xs sm:text-sm">{formatVolume(avgVolume)}</div>
           </div>
         </div>
       </Card>
