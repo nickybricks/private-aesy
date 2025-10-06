@@ -1241,18 +1241,79 @@ export const getFinancialMetrics = async (ticker: string) => {
         }));
     }
 
+    // EPS Growth (3-year CAGR calculation) - muss VOR Metriken-Erstellung erfolgen
+    let epsGrowth = 0;
+    let epsGrowthDetails = {
+      currentYear: '',
+      pastYear: '',
+      currentEPS: 0,
+      pastEPS: 0
+    };
+    
+    if (incomeStatements && incomeStatements.length >= 4) {
+      const currentStatement = incomeStatements[0];
+      const pastStatement = incomeStatements[3];
+      
+      const currentEPS = safeValue(currentStatement.eps) || safeValue(currentStatement.epsdiluted) || 0;
+      const pastEPS = safeValue(pastStatement.eps) || safeValue(pastStatement.epsdiluted) || 0;
+      
+      // Store details for display
+      epsGrowthDetails = {
+        currentYear: currentStatement.calendarYear || currentStatement.date?.substring(0, 4) || 'Aktuell',
+        pastYear: pastStatement.calendarYear || pastStatement.date?.substring(0, 4) || 'Vor 3 Jahren',
+        currentEPS: currentEPS,
+        pastEPS: pastEPS
+      };
+      
+      console.log(`[getFinancialMetrics - EPS Growth Debug]:`, {
+        currentYear: epsGrowthDetails.currentYear,
+        currentEPS: currentEPS,
+        pastYear: epsGrowthDetails.pastYear,
+        pastEPS: pastEPS
+      });
+      
+      if (pastEPS > 0 && currentEPS > 0) {
+        // Calculate 3-year CAGR
+        const years = 3;
+        epsGrowth = (Math.pow(currentEPS / pastEPS, 1 / years) - 1) * 100;
+        console.log(`[getFinancialMetrics - EPS Growth]: ${epsGrowth.toFixed(2)}% CAGR over ${years} years`);
+      } else if (pastEPS !== 0) {
+        // Fallback to simple growth if one value is negative
+        epsGrowth = ((currentEPS - pastEPS) / Math.abs(pastEPS)) * 100;
+        console.log(`[getFinancialMetrics - EPS Growth]: ${epsGrowth.toFixed(2)}% (simple growth, negative EPS detected)`);
+      } else {
+        console.log(`[getFinancialMetrics - EPS Growth]: Cannot calculate (past EPS is zero)`);
+      }
+    } else {
+      console.log(`[getFinancialMetrics - EPS Growth]: Insufficient data (${incomeStatements?.length || 0} statements available, need 4)`);
+    }
+
     // Erstelle strukturierte Metriken für das Frontend
     const metrics = [];
 
-    // EPS Metrik
+    // EPS Metrik - Status basierend auf EPS-Wachstum
     if (eps !== null) {
+      // Berechne EPS-Status basierend auf dem tatsächlichen Wachstum
+      let epsStatus: 'pass' | 'warning' | 'fail' = 'fail';
+      if (epsGrowth >= 10) {
+        epsStatus = 'pass'; // Buffett bevorzugt >10%
+      } else if (epsGrowth >= 5) {
+        epsStatus = 'warning'; // Akzeptabel
+      } else if (epsGrowth >= 0) {
+        epsStatus = 'warning'; // Schwaches Wachstum
+      }
+      // else: negatives Wachstum = 'fail'
+      
+      // Determine the currency to display
+      const displayCurrency = reportedCurrency || 'USD';
+      
       metrics.push({
         name: 'Gewinn pro Aktie',
         value: eps,
         formula: 'Jahresüberschuss ÷ Anzahl ausstehender Aktien',
-        explanation: 'Der auf eine einzelne Aktie entfallende Unternehmensgewinn',
-        threshold: 'Kontinuierliches Wachstum erwünscht',
-        status: 'pass' as const,
+        explanation: `Der auf eine einzelne Aktie entfallende Unternehmensgewinn. EPS-Wachstum (3 Jahre CAGR): ${epsGrowth.toFixed(1)}% (${epsGrowthDetails.pastYear}: ${epsGrowthDetails.pastEPS.toFixed(2)} → ${epsGrowthDetails.currentYear}: ${epsGrowthDetails.currentEPS.toFixed(2)} ${displayCurrency})`,
+        threshold: 'Kontinuierliches Wachstum erwünscht (>10%)',
+        status: epsStatus,
         isPercentage: false,
         isMultiplier: false
       });
