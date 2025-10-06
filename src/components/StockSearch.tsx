@@ -623,24 +623,17 @@ const StockSearch: React.FC<StockSearchProps> = ({
                   }}
                   onFocus={handleInputFocus}
                   onClick={handleInputFocus}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && ticker.trim()) {
+                      e.preventDefault();
+                      handleSubmit(e as any);
+                    }
+                  }}
                   placeholder={compact ? "Aktie suchen..." : "Aktienname, Symbol oder ISIN eingeben..."}
-                  className={compact ? "h-9 pl-9 pr-9 text-sm" : "apple-input pl-10 pr-10"}
+                  className={compact ? "h-9 pl-9 text-sm" : "apple-input pl-10"}
                   disabled={disabled || isLoading}
                 />
                 <Search className={compact ? "absolute left-2.5 top-2.5 text-gray-400" : "absolute left-3 top-3 text-gray-400"} size={compact ? 16 : 20} />
-                
-                {/* Lupe als Submit Button (nur im Mobile Mode) */}
-                {mobileMode && (
-                  <Button
-                    type="submit"
-                    size="icon"
-                    variant="ghost"
-                    disabled={isLoading || !ticker.trim() || disabled}
-                    className="absolute right-0 top-0 h-9 w-9 hover:bg-transparent"
-                  >
-                    <Search className="h-4 w-4 text-primary" />
-                  </Button>
-                )}
               </div>
             </PopoverTrigger>
             <PopoverContent 

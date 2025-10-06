@@ -61,8 +61,8 @@ const AppHeader: React.FC = () => {
             </Button>
           </div>
           
-          {/* Search Field - Zentriert */}
-          <div className="flex-1 min-w-0">
+          {/* Search Field - Schmaler mit max-width */}
+          <div className="flex-1 min-w-0 max-w-[280px]">
             <StockSearch 
               onSearch={handleStockSearch} 
               isLoading={isLoading} 
@@ -71,15 +71,20 @@ const AppHeader: React.FC = () => {
             />
           </div>
           
-          {/* AI Toggle - Rechts */}
-          <div className="shrink-0 flex items-center gap-1.5">
-            <Brain className="h-4 w-4 text-primary" />
-            <Switch
-              checked={enableDeepResearch}
-              onCheckedChange={setEnableDeepResearch}
-              disabled={isLoading}
-              className="scale-75"
-            />
+          {/* AI Toggle - Rechts mit KI Label */}
+          <div className="shrink-0 flex flex-col items-center gap-0.5">
+            <div className="flex items-center gap-1">
+              <Brain className="h-4 w-4 text-primary" />
+              <Switch
+                checked={enableDeepResearch}
+                onCheckedChange={setEnableDeepResearch}
+                disabled={isLoading}
+                className="scale-75"
+              />
+            </div>
+            <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
+              KI
+            </span>
           </div>
         </div>
       </div>
