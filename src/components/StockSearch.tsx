@@ -23,6 +23,9 @@ interface StockSearchProps {
   isLoading: boolean;
   disabled?: boolean;
   compact?: boolean;
+  mobileMode?: boolean;
+  enableDeepResearch?: boolean;
+  onDeepResearchChange?: (value: boolean) => void;
 }
 
 interface StockSuggestion {
@@ -127,11 +130,23 @@ const isCryptoAsset = (stock: StockSuggestion): boolean => {
   return false;
 };
 
-const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled = false, compact = false }) => {
+const StockSearch: React.FC<StockSearchProps> = ({ 
+  onSearch, 
+  isLoading, 
+  disabled = false, 
+  compact = false, 
+  mobileMode = false,
+  enableDeepResearch: externalEnableDeepResearch,
+  onDeepResearchChange
+}) => {
   const [ticker, setTicker] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
-  const [enableDeepResearch, setEnableDeepResearch] = useState(false);
+  const [internalEnableDeepResearch, setInternalEnableDeepResearch] = useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const enableDeepResearch = externalEnableDeepResearch ?? internalEnableDeepResearch;
+  const setEnableDeepResearch = onDeepResearchChange ?? setInternalEnableDeepResearch;
   
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<StockSuggestion[]>([]);
@@ -582,7 +597,7 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
       )}
       
       
-      <form onSubmit={handleSubmit} className={compact ? "flex flex-col sm:flex-row gap-2" : "flex flex-col xs:flex-row gap-2"}>
+      <form onSubmit={handleSubmit} className={mobileMode ? "w-full" : (compact ? "flex flex-col sm:flex-row gap-2" : "flex flex-col xs:flex-row gap-2")}>
         <div className="relative flex-1 min-w-0">
           <Popover open={open} onOpenChange={(newState) => {
             if (!forceKeepOpen || newState) {
@@ -609,10 +624,23 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
                   onFocus={handleInputFocus}
                   onClick={handleInputFocus}
                   placeholder={compact ? "Aktie suchen..." : "Aktienname, Symbol oder ISIN eingeben..."}
-                  className={compact ? "h-9 pl-9 text-sm" : "apple-input pl-10"}
+                  className={compact ? "h-9 pl-9 pr-9 text-sm" : "apple-input pl-10 pr-10"}
                   disabled={disabled || isLoading}
                 />
                 <Search className={compact ? "absolute left-2.5 top-2.5 text-gray-400" : "absolute left-3 top-3 text-gray-400"} size={compact ? 16 : 20} />
+                
+                {/* Lupe als Submit Button (nur im Mobile Mode) */}
+                {mobileMode && (
+                  <Button
+                    type="submit"
+                    size="icon"
+                    variant="ghost"
+                    disabled={isLoading || !ticker.trim() || disabled}
+                    className="absolute right-0 top-0 h-9 w-9 hover:bg-transparent"
+                  >
+                    <Search className="h-4 w-4 text-primary" />
+                  </Button>
+                )}
               </div>
             </PopoverTrigger>
             <PopoverContent 
@@ -744,32 +772,37 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading, disabled
             </PopoverContent>
           </Popover>
         </div>
-        {/* Deep Research AI Analyse Toggle - Compact version */}
-        {compact && (
-          <div className="flex items-center gap-2 shrink-0 justify-between sm:justify-start">
-            <div className="flex items-center gap-1.5">
-              <Brain className="h-3.5 w-3.5 text-primary" />
-              <Label htmlFor="deep-research-compact" className="text-2xs sm:text-xs font-medium cursor-pointer whitespace-nowrap">
-                AI Analyse
-              </Label>
-            </div>
-            <Switch
-              id="deep-research-compact"
-              checked={enableDeepResearch}
-              onCheckedChange={setEnableDeepResearch}
-              disabled={isLoading}
-              className="scale-75"
-            />
-          </div>
-        )}
         
-        <Button 
-          type="submit" 
-          className={compact ? "h-9 text-2xs sm:text-sm px-3 sm:px-4 shrink-0 w-full sm:w-auto" : "apple-button w-full xs:w-auto"}
-          disabled={isLoading || !ticker.trim() || disabled}
-        >
-          {isLoading ? 'Analysiere...' : 'Analysieren'}
-        </Button>
+        {/* Desktop: Deep Research AI Analyse Toggle + Button */}
+        {!mobileMode && (
+          <>
+            {compact && (
+              <div className="flex items-center gap-2 shrink-0 justify-between sm:justify-start">
+                <div className="flex items-center gap-1.5">
+                  <Brain className="h-3.5 w-3.5 text-primary" />
+                  <Label htmlFor="deep-research-compact" className="text-2xs sm:text-xs font-medium cursor-pointer whitespace-nowrap">
+                    AI Analyse
+                  </Label>
+                </div>
+                <Switch
+                  id="deep-research-compact"
+                  checked={enableDeepResearch}
+                  onCheckedChange={setEnableDeepResearch}
+                  disabled={isLoading}
+                  className="scale-75"
+                />
+              </div>
+            )}
+            
+            <Button 
+              type="submit" 
+              className={compact ? "h-9 text-2xs sm:text-sm px-3 sm:px-4 shrink-0 w-full sm:w-auto" : "apple-button w-full xs:w-auto"}
+              disabled={isLoading || !ticker.trim() || disabled}
+            >
+              {isLoading ? 'Analysiere...' : 'Analysieren'}
+            </Button>
+          </>
+        )}
       </form>
 
       {/* Deep Research AI Analyse Toggle - Full version */}
