@@ -204,7 +204,7 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
     fetchFromFMP(`/ratios/${standardizedTicker}`),
     fetchFromFMP(`/key-metrics/${standardizedTicker}`),
     fetchFromFMP(`/profile/${standardizedTicker}`),
-    fetchFromFMP(`/income-statement/${standardizedTicker}`),
+    fetchFromFMP(`/income-statement/${standardizedTicker}?period=annual&limit=5`),
     fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}`)
   ]);
   
@@ -358,15 +358,57 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   else if (netMargin > 5) financialMetricsScore += (financialWeight * 2/3);
   else if (netMargin > 3) financialMetricsScore += (financialWeight * 1/3);
   
-  // EPS Growth (simplified calculation)
+  // EPS Growth (3-year CAGR calculation)
   let epsGrowth = 0;
-  if (incomeStatements && incomeStatements.length > 3) {
-    const current = safeValue(incomeStatements[0].eps) || 0;
-    const past = safeValue(incomeStatements[3].eps) || 0;
+  let epsGrowthDetails = {
+    currentYear: '',
+    pastYear: '',
+    currentEPS: 0,
+    pastEPS: 0
+  };
+  
+  if (incomeStatements && incomeStatements.length >= 4) {
+    const currentStatement = incomeStatements[0];
+    const pastStatement = incomeStatements[3];
     
-    if (past > 0) {
-      epsGrowth = ((current - past) / past) * 100;
+    const currentEPS = safeValue(currentStatement.eps) || safeValue(currentStatement.epsdiluted) || 0;
+    const pastEPS = safeValue(pastStatement.eps) || safeValue(pastStatement.epsdiluted) || 0;
+    
+    // Store details for tooltip
+    epsGrowthDetails = {
+      currentYear: currentStatement.calendarYear || currentStatement.date?.substring(0, 4) || 'Aktuell',
+      pastYear: pastStatement.calendarYear || pastStatement.date?.substring(0, 4) || 'Vor 3 Jahren',
+      currentEPS: currentEPS,
+      pastEPS: pastEPS
+    };
+    
+    console.log(`[EPS Growth Debug] ${ticker}:`, {
+      currentYear: epsGrowthDetails.currentYear,
+      currentEPS: currentEPS,
+      pastYear: epsGrowthDetails.pastYear,
+      pastEPS: pastEPS,
+      statements: incomeStatements.map((s: any) => ({
+        date: s.date,
+        year: s.calendarYear,
+        eps: s.eps,
+        epsdiluted: s.epsdiluted
+      }))
+    });
+    
+    if (pastEPS > 0 && currentEPS > 0) {
+      // Calculate 3-year CAGR: ((currentEPS / pastEPS) ^ (1/3) - 1) * 100
+      const years = 3;
+      epsGrowth = (Math.pow(currentEPS / pastEPS, 1 / years) - 1) * 100;
+      console.log(`[EPS Growth] ${ticker}: ${epsGrowth.toFixed(2)}% CAGR over ${years} years`);
+    } else if (pastEPS !== 0) {
+      // Fallback to simple growth if one value is negative
+      epsGrowth = ((currentEPS - pastEPS) / Math.abs(pastEPS)) * 100;
+      console.log(`[EPS Growth] ${ticker}: ${epsGrowth.toFixed(2)}% (simple growth, negative EPS detected)`);
+    } else {
+      console.log(`[EPS Growth] ${ticker}: Cannot calculate (past EPS is zero)`);
     }
+  } else {
+    console.log(`[EPS Growth] ${ticker}: Insufficient data (${incomeStatements?.length || 0} statements available, need 4)`);
   }
   
   // EPS Growth scoring (0-3.34 points to reach exactly 10)
@@ -796,8 +838,8 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
       details: [
         `Eigenkapitalrendite (ROE): ${roe.toFixed(2)}% (Buffett bevorzugt >15%)`,
         `Nettomarge: ${netMargin.toFixed(2)}% (Buffett bevorzugt >15%)`,
-        `EPS-Wachstum (3 Jahre): ${epsGrowth.toFixed(2)}% (Buffett bevorzugt >10%)`,
-        `Gewinn pro Aktie: ${latestIncomeStatement && latestIncomeStatement.eps ? Number(latestIncomeStatement.eps).toFixed(2) + ' ' + companyProfile.currency : 'N/A'} ${companyProfile.currency || 'USD'}`
+        `EPS-Wachstum (3 Jahre CAGR): ${epsGrowth.toFixed(2)}% (${epsGrowthDetails.pastYear}: ${epsGrowthDetails.pastEPS.toFixed(2)} → ${epsGrowthDetails.currentYear}: ${epsGrowthDetails.currentEPS.toFixed(2)} ${companyProfile.currency}) (Buffett bevorzugt >10%)`,
+        `Gewinn pro Aktie (${epsGrowthDetails.currentYear}): ${latestIncomeStatement && latestIncomeStatement.eps ? Number(latestIncomeStatement.eps).toFixed(2) : 'N/A'} ${companyProfile.currency || 'USD'}`
       ],
       financialScore: financialMetricsScore, // FIXED: Use financialScore instead of score
       maxScore: financialMetricsMaxScore
