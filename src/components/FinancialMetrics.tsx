@@ -46,7 +46,6 @@ interface FinancialMetric {
   isPercentage?: boolean;
   isMultiplier?: boolean;
   isAlreadyPercent?: boolean; // Flag to indicate if value is already in percentage format
-  timePeriodBadge?: '10J' | '5J' | '3J' | 'TTM' | 'Datenlücke'; // NEW: Zeitfenster-Badge
 }
 
 interface HistoricalDataItem {
@@ -342,19 +341,10 @@ const MetricCard: React.FC<{
   
   return (
     <Card className={`metric-card p-4 hover:shadow-lg transition-all ${isHighlighted ? 'ring-2 ring-blue-400 shadow-lg' : ''}`}>
-      {/* Top Badge: Zeitfenster (10J, 5J, 3J, TTM) */}
+      {/* Top Badge: TTM / FY2024 */}
       <div className="absolute top-2 right-2">
-        <Badge 
-          variant={metric.timePeriodBadge === 'Datenlücke' ? 'destructive' : 'secondary'} 
-          className={`text-xs ${
-            metric.timePeriodBadge === '10J' ? 'bg-green-100 text-green-700' :
-            metric.timePeriodBadge === '5J' ? 'bg-blue-100 text-blue-700' :
-            metric.timePeriodBadge === '3J' ? 'bg-orange-100 text-orange-700' :
-            metric.timePeriodBadge === 'Datenlücke' ? 'bg-red-100 text-red-700' :
-            'bg-gray-100 text-gray-600'
-          }`}
-        >
-          {metric.timePeriodBadge || 'TTM'}
+        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
+          TTM
         </Badge>
       </div>
       
