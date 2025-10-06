@@ -423,8 +423,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
 
   return (
     <div className="w-full space-y-2 sm:space-y-3">
-      {/* Zeitraum-Buttons - kompakt für alle Bildschirmgrößen */}
-      <div className="w-full">
+      {/* Zeitraum-Buttons - Nur Desktop (über dem Chart) */}
+      <div className="w-full hidden md:block">
         <div className="flex justify-between gap-1 sm:gap-1.5">
           {TIME_RANGES.map((range) => (
             <Button
@@ -527,6 +527,23 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
             />
           </ComposedChart>
         </ChartContainer>
+      </div>
+      
+      {/* Zeitraum-Buttons - Nur Mobile (unter dem Chart) */}
+      <div className="w-full md:hidden">
+        <div className="flex justify-between gap-1">
+          {TIME_RANGES.map((range) => (
+            <Button
+              key={range.value}
+              variant={selectedRange === range.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedRange(range.value)}
+              className="text-xs h-7 px-1.5 flex-1 min-w-0"
+            >
+              {range.label}
+            </Button>
+          ))}
+        </div>
       </div>
     </div>
   );
