@@ -1209,7 +1209,9 @@ export const getFinancialMetrics = async (ticker: string) => {
     const historicalData = {
       revenue: [],
       earnings: [],
-      eps: []
+      eps: [],
+      operatingCashFlow: [],
+      freeCashFlow: []
     };
     
     // Add historical data if income statements are available
@@ -1238,6 +1240,27 @@ export const getFinancialMetrics = async (ticker: string) => {
         .map(statement => ({
           year: new Date(statement.date).getFullYear(),
           value: statement.eps || 0,
+          originalCurrency: statement.reportedCurrency || reportedCurrency
+        }));
+    }
+
+    // Add historical cash flow data if available
+    if (cashFlows && cashFlows.length > 1) {
+      // Last 5 years of OCF data
+      historicalData.operatingCashFlow = cashFlows
+        .slice(0, Math.min(5, cashFlows.length))
+        .map(statement => ({
+          year: new Date(statement.date).getFullYear(),
+          value: statement.operatingCashFlow || 0,
+          originalCurrency: statement.reportedCurrency || reportedCurrency
+        }));
+      
+      // Last 5 years of FCF data
+      historicalData.freeCashFlow = cashFlows
+        .slice(0, Math.min(5, cashFlows.length))
+        .map(statement => ({
+          year: new Date(statement.date).getFullYear(),
+          value: statement.freeCashFlow || 0,
           originalCurrency: statement.reportedCurrency || reportedCurrency
         }));
     }
@@ -1448,39 +1471,120 @@ export const getFinancialMetrics = async (ticker: string) => {
       });
     }
 
-    // Operating Cash Flow Metrik
-    const operatingCashFlow = safeValue(latestCashFlow?.operatingCashFlow);
-    if (operatingCashFlow !== null && latestIncomeStatement?.revenue) {
-      const ocfMargin = (operatingCashFlow / latestIncomeStatement.revenue) * 100;
-      metrics.push({
-        name: 'Operativer Cashflow',
-        value: operatingCashFlow,
-        formula: 'Cash aus operativem Geschäft',
-        explanation: `Geld aus dem Kerngeschäft. OCF-Marge: ${ocfMargin.toFixed(1)}%`,
-        threshold: 'Positiv und wachsend erwünscht',
-        status: operatingCashFlow > 0 ? 'pass' : 'fail',
-        isPercentage: false,
-        isMultiplier: false
-      });
+    // Helper functions for statistical calculations
+    const calculateAverage = (values: number[]) => {
+      if (values.length === 0) return 0;
+      return values.reduce((sum, val) => sum + val, 0) / values.length;
+    };
+    
+    const calculateStdDev = (values: number[]) => {
+      if (values.length === 0) return 0;
+      const avg = calculateAverage(values);
+      const squaredDiffs = values.map(val => Math.pow(val - avg, 2));
+      const variance = calculateAverage(squaredDiffs);
+      return Math.sqrt(variance);
+    };
+
+    // OCF-Qualität Metrik
+    if (cashFlows && cashFlows.length >= 3 && incomeStatements && incomeStatements.length >= 3) {
+      const ocfToNIRatios: number[] = [];
+      
+      // Calculate OCF/Net Income ratios for up to 5 years
+      for (let i = 0; i < Math.min(5, cashFlows.length, incomeStatements.length); i++) {
+        const ocf = safeValue(cashFlows[i]?.operatingCashFlow);
+        const netIncome = safeValue(incomeStatements[i]?.netIncome);
+        
+        if (ocf !== null && netIncome !== null && netIncome > 0) {
+          ocfToNIRatios.push(ocf / netIncome);
+        }
+      }
+      
+      if (ocfToNIRatios.length >= 3) {
+        const avgOcfToNI = calculateAverage(ocfToNIRatios);
+        
+        // Calculate standard deviations for robustness check
+        const ocfValues = cashFlows.slice(0, Math.min(5, cashFlows.length))
+          .map(cf => safeValue(cf?.operatingCashFlow))
+          .filter((v): v is number => v !== null);
+        
+        const revenueValues = incomeStatements.slice(0, Math.min(5, incomeStatements.length))
+          .map(is => safeValue(is?.revenue))
+          .filter((v): v is number => v !== null);
+        
+        const ocfStdDev = calculateStdDev(ocfValues);
+        const revenueStdDev = calculateStdDev(revenueValues);
+        
+        const isRobust = ocfStdDev < revenueStdDev;
+        const meetsThreshold = avgOcfToNI >= 1.0;
+        
+        let status: 'pass' | 'warning' | 'fail' = 'fail';
+        if (meetsThreshold && isRobust) {
+          status = 'pass';
+        } else if (meetsThreshold || isRobust) {
+          status = 'warning';
+        }
+        
+        metrics.push({
+          name: 'OCF-Qualität',
+          value: avgOcfToNI * 100,
+          formula: 'OCF ÷ Nettogewinn (5-Jahres-Ø)',
+          explanation: `OCF/Nettogewinn: ${avgOcfToNI.toFixed(2)}. ${isRobust ? 'OCF robuster als Umsatz' : 'OCF volatiler als Umsatz'}.`,
+          threshold: 'OCF/Nettogewinn ≥ 1,0 und Standardabw. OCF < Standardabw. Umsatz',
+          status: status,
+          isPercentage: true,
+          isMultiplier: false,
+          isAlreadyPercent: true
+        });
+      }
     }
 
-    // Free Cash Flow Metrik
-    const freeCashFlow = safeValue(latestCashFlow?.freeCashFlow);
-    if (freeCashFlow !== null && latestIncomeStatement?.revenue) {
-      const fcfMargin = (freeCashFlow / latestIncomeStatement.revenue) * 100;
-      metrics.push({
-        name: 'Freier Cashflow (FCF)',
-        value: freeCashFlow,
-        formula: 'Operativer CF - Capex',
-        explanation: `Verfügbares Geld nach Investitionen. FCF-Marge: ${fcfMargin.toFixed(1)}%`,
-        threshold: 'Buffett bevorzugt hohen, stabilen FCF',
-        status: freeCashFlow > 0 && fcfMargin > 5 ? 'pass' : freeCashFlow > 0 ? 'warning' : 'fail',
-        isPercentage: false,
-        isMultiplier: false
-      });
+    // FCF-Robustheit Metrik
+    if (cashFlows && cashFlows.length >= 3 && incomeStatements && incomeStatements.length >= 3) {
+      const fcfMargins: number[] = [];
+      let hasNegativeFcfInRecession = false;
+      
+      // Calculate FCF margins for up to 5 years
+      for (let i = 0; i < Math.min(5, cashFlows.length, incomeStatements.length); i++) {
+        const fcf = safeValue(cashFlows[i]?.freeCashFlow);
+        const revenue = safeValue(incomeStatements[i]?.revenue);
+        
+        if (fcf !== null && revenue !== null && revenue > 0) {
+          const margin = (fcf / revenue) * 100;
+          fcfMargins.push(margin);
+          
+          // Check for negative FCF (simplified recession check - look at any year)
+          if (fcf < 0) {
+            hasNegativeFcfInRecession = true;
+          }
+        }
+      }
+      
+      if (fcfMargins.length >= 3) {
+        const avgFcfMargin = calculateAverage(fcfMargins);
+        
+        let status: 'pass' | 'warning' | 'fail' = 'fail';
+        if (avgFcfMargin >= 7 && !hasNegativeFcfInRecession) {
+          status = 'pass';
+        } else if (avgFcfMargin >= 5 && !hasNegativeFcfInRecession) {
+          status = 'warning';
+        }
+        
+        metrics.push({
+          name: 'FCF-Robustheit',
+          value: avgFcfMargin,
+          formula: 'Freier CF ÷ Umsatz × 100 (5-Jahres-Ø)',
+          explanation: `FCF-Marge (5J-Ø): ${avgFcfMargin.toFixed(1)}%. ${hasNegativeFcfInRecession ? 'Negativer FCF in schwierigen Jahren' : 'Kein negativer FCF'}`,
+          threshold: 'FCF-Marge ≥ 7% und in keinem Jahr <0',
+          status: status,
+          isPercentage: true,
+          isMultiplier: false,
+          isAlreadyPercent: true
+        });
+      }
     }
 
     // Cash Conversion Rate (FCF/Net Income)
+    const freeCashFlow = safeValue(latestCashFlow?.freeCashFlow);
     if (freeCashFlow !== null && latestIncomeStatement?.netIncome && latestIncomeStatement.netIncome > 0) {
       const cashConversion = (freeCashFlow / latestIncomeStatement.netIncome) * 100;
       metrics.push({
@@ -1504,7 +1608,7 @@ export const getFinancialMetrics = async (ticker: string) => {
         name: 'Capex-Quote',
         value: capexRatio,
         formula: 'Investitionsausgaben ÷ Umsatz × 100',
-        explanation: `Investitionsbedarf relativ zum Umsatz. Absoluter Capex: ${Math.abs(capex / 1_000_000_000).toFixed(2)}B ${reportedCurrency}`,
+        explanation: 'Investitionsbedarf relativ zum Umsatz',
         threshold: 'Niedriger ist besser (< 5%)',
         status: capexRatio < 5 ? 'pass' : capexRatio < 10 ? 'warning' : 'fail',
         isPercentage: true,

@@ -142,6 +142,20 @@ const getMetricDetailedExplanation = (metricName: string) => {
       whyImportant: "Zeigt die tatsächliche Fähigkeit, Bargeld zu generieren, das für Dividenden, Aktienrückkäufe oder Schuldenabbau verwendet werden kann",
       buffettGuideline: "Buffett bevorzugt Unternehmen mit stabilem oder wachsendem freiem Cashflow",
       goodValue: "Positiv und idealerweise steigend über die Jahre"
+    },
+    "OCF-Qualität": {
+      whatItIs: "Qualität des operativen Cashflows im Verhältnis zum Gewinn und dessen Stabilität",
+      howCalculated: "OCF ÷ Nettogewinn (5-Jahres-Durchschnitt) und Vergleich der Standardabweichungen",
+      whyImportant: "Zeigt, ob der Gewinn tatsächlich in Cash umgewandelt wird und wie stabil der Cashflow ist",
+      buffettGuideline: "Buffett bevorzugt OCF/Nettogewinn > 1,0 und stabileren OCF als Umsatz",
+      goodValue: "OCF/Nettogewinn ≥ 1,0 und Standardabw. OCF < Standardabw. Umsatz"
+    },
+    "FCF-Robustheit": {
+      whatItIs: "Die Robustheit des freien Cashflows über einen längeren Zeitraum",
+      howCalculated: "FCF ÷ Umsatz × 100 (5-Jahres-Durchschnitt) und Prüfung auf negative Werte",
+      whyImportant: "Zeigt, ob das Unternehmen auch in schwierigen Zeiten positiven freien Cashflow generiert",
+      buffettGuideline: "Buffett bevorzugt FCF-Marge ≥ 7% und keinen negativen FCF in Rezessionsjahren",
+      goodValue: "FCF-Marge ≥ 7% und in keinem Jahr <0"
     }
   };
   
