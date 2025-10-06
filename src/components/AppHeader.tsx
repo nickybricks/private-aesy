@@ -77,11 +77,11 @@ const AppHeader: React.FC = () => {
             />
           </div>
           
-          {/* AI Toggle - Kompaktes Layout */}
+          {/* AI Toggle - Vertikales Layout */}
           <TooltipProvider>
-            <div className="shrink-0 flex items-center gap-1.5 pl-1 pr-1">
+            <div className="shrink-0 flex flex-col items-center gap-0.5 pl-1">
               <div className="flex items-center gap-0.5">
-                <span className="text-[9px] font-semibold text-foreground uppercase tracking-wide whitespace-nowrap">
+                <span className="text-[8px] font-semibold text-foreground uppercase tracking-wide whitespace-nowrap">
                   AI Analyse
                 </span>
                 <Tooltip>
@@ -112,7 +112,7 @@ const AppHeader: React.FC = () => {
                 checked={enableDeepResearch}
                 onCheckedChange={setEnableDeepResearch}
                 disabled={isLoading}
-                className="scale-90"
+                className="scale-75"
               />
             </div>
           </TooltipProvider>
