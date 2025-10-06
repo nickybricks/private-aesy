@@ -1291,8 +1291,8 @@ export const getFinancialMetrics = async (ticker: string) => {
     // Erstelle strukturierte Metriken für das Frontend
     const metrics = [];
 
-    // EPS Metrik - Status basierend auf EPS-Wachstum
-    if (eps !== null) {
+    // EPS-Wachstum Metrik - zeige prozentuales Wachstum als Hauptwert
+    if (eps !== null && incomeStatements && incomeStatements.length >= 4) {
       // Berechne EPS-Status basierend auf dem tatsächlichen Wachstum
       let epsStatus: 'pass' | 'warning' | 'fail' = 'fail';
       if (epsGrowth >= 10) {
@@ -1309,13 +1309,14 @@ export const getFinancialMetrics = async (ticker: string) => {
       
       metrics.push({
         name: 'Gewinn pro Aktie',
-        value: eps,
+        value: epsGrowth, // Zeige das Wachstum in Prozent als Hauptwert
         formula: 'Jahresüberschuss ÷ Anzahl ausstehender Aktien',
-        explanation: `Der auf eine einzelne Aktie entfallende Unternehmensgewinn. EPS-Wachstum (3 Jahre CAGR): ${epsGrowth.toFixed(1)}% (${epsGrowthDetails.pastYear}: ${epsGrowthDetails.pastEPS.toFixed(2)} → ${epsGrowthDetails.currentYear}: ${epsGrowthDetails.currentEPS.toFixed(2)} ${displayCurrency})`,
-        threshold: 'Kontinuierliches Wachstum erwünscht (>10%)',
+        explanation: `EPS-Wachstum (3 Jahre CAGR): ${epsGrowth.toFixed(1)}%. Aktueller EPS: ${eps.toFixed(2)} ${displayCurrency} (${epsGrowthDetails.pastYear}: ${epsGrowthDetails.pastEPS.toFixed(2)} → ${epsGrowthDetails.currentYear}: ${epsGrowthDetails.currentEPS.toFixed(2)} ${displayCurrency})`,
+        threshold: 'Kontinuierliches Wachstum >10%',
         status: epsStatus,
         isPercentage: false,
-        isMultiplier: false
+        isMultiplier: false,
+        isAlreadyPercent: true // Flag, dass der Wert bereits in Prozent ist
       });
     }
 
