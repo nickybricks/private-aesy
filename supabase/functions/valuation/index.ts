@@ -486,15 +486,27 @@ serve(async (req) => {
     const effectiveStartValue = Math.max(startValue, 0.01);
     
     // Calculate growth rate
-    const growthRate = calculateGrowthRate(mode, data);
-    console.log(`Calculated growth rate: ${growthRate.toFixed(2)}%`);
+    let growthRate = calculateGrowthRate(mode, data);
+    console.log(`Calculated historical growth rate: ${growthRate.toFixed(2)}%`);
+    
+    // For EPS w/o NRI: Clamp g1 between 5% and 20%
+    if (mode === 'EPS_WO_NRI') {
+      if (growthRate > 20) {
+        console.log(`Growth rate ${growthRate.toFixed(2)}% exceeds 20%, clamping to 20%`);
+        growthRate = 20;
+      } else if (growthRate < 5) {
+        console.log(`Growth rate ${growthRate.toFixed(2)}% below 5%, clamping to 5%`);
+        growthRate = 5;
+      }
+    }
     
     if (growthRate < 1) {
       warnings.push('Historisches Wachstum sehr niedrig. Ergebnis ist sehr konservativ.');
     }
     
     // Settings with conservative defaults
-    const terminalRate = clamp(4.0, 0, 6); // Terminal rate capped at 6%
+    // g2 (terminal rate): Default to 4% (inflation rate), must be smaller than discount rate
+    const terminalRate = 4.0; // Fixed at 4% for terminal stage
     const growthYears = 10;
     const terminalYears = 10;
     const tangibleBook = data.metrics?.tangibleBookValuePerShareTTM || 0;
