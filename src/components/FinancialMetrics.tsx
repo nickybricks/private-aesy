@@ -535,17 +535,33 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
     });
   }
   
-  // EPS-Wachstum (from historical data)
-  if (historicalData?.eps && historicalData.eps.length >= 2) {
-    const recentEps = historicalData.eps[historicalData.eps.length - 1].value;
-    const oldEps = historicalData.eps[0].value;
-    const growth = ((recentEps - oldEps) / Math.abs(oldEps)) * 100;
+  // EPS-Wachstum (3-year CAGR from historical data)
+  if (historicalData?.eps && historicalData.eps.length >= 4) {
+    // Get most recent and 3 years ago data
+    const sortedEps = [...historicalData.eps].sort((a, b) => Number(b.year) - Number(a.year));
+    const currentEps = sortedEps[0]; // Most recent
+    const pastEps = sortedEps[3]; // 3 years ago
+    
+    let growth = 0;
+    let growthExplanation = '';
+    
+    if (pastEps.value > 0 && currentEps.value > 0) {
+      // Calculate 3-year CAGR
+      const years = 3;
+      growth = (Math.pow(currentEps.value / pastEps.value, 1 / years) - 1) * 100;
+      growthExplanation = `${years} Jahre CAGR: ${pastEps.year} (${pastEps.value.toFixed(2)}) → ${currentEps.year} (${currentEps.value.toFixed(2)})`;
+    } else if (pastEps.value !== 0) {
+      // Fallback to simple growth if one value is negative
+      growth = ((currentEps.value - pastEps.value) / Math.abs(pastEps.value)) * 100;
+      growthExplanation = `${pastEps.year} (${pastEps.value.toFixed(2)}) → ${currentEps.year} (${currentEps.value.toFixed(2)}) [Negatives EPS]`;
+    }
+    
     buffettCriteria.push({
       name: 'EPS-Wachstum',
-      status: growth > 5 ? 'pass' : growth > 0 ? 'warning' : 'fail',
+      status: growth >= 10 ? 'pass' : growth >= 5 ? 'warning' : 'fail',
       value: `${growth.toFixed(1)}%`,
-      threshold: 'positiv',
-      explanation: 'Buffett sucht stabiles oder steigendes EPS über viele Jahre'
+      threshold: '>10%',
+      explanation: `Buffett sucht stabiles oder steigendes EPS über viele Jahre. ${growthExplanation}`
     });
   }
   
