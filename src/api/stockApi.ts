@@ -1307,10 +1307,10 @@ export const getFinancialMetrics = async (ticker: string) => {
       const displayCurrency = reportedCurrency || 'USD';
       
       metrics.push({
-        name: 'Gewinn pro Aktie',
+        name: 'EPS-Wachstum (3 Jahre CAGR)',
         value: epsGrowth, // Zeige das Wachstum in Prozent als Hauptwert
         formula: 'Jahresüberschuss ÷ Anzahl ausstehender Aktien',
-        explanation: `EPS-Wachstum (3 Jahre CAGR): ${epsGrowth.toFixed(1)}%. Aktueller EPS: ${eps.toFixed(2)} ${displayCurrency} (${epsGrowthDetails.pastYear}: ${epsGrowthDetails.pastEPS.toFixed(2)} → ${epsGrowthDetails.currentYear}: ${epsGrowthDetails.currentEPS.toFixed(2)} ${displayCurrency})`,
+        explanation: `Durchschnittliches jährliches Wachstum des Gewinns pro Aktie über 3 Jahre. Aktueller EPS: ${eps.toFixed(2)} ${displayCurrency} (${epsGrowthDetails.pastYear}: ${epsGrowthDetails.pastEPS.toFixed(2)} → ${epsGrowthDetails.currentYear}: ${epsGrowthDetails.currentEPS.toFixed(2)} ${displayCurrency})`,
         threshold: 'Kontinuierliches Wachstum >10%',
         status: epsStatus,
         isPercentage: true,

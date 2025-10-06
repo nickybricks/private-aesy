@@ -436,7 +436,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
   
   // Categorize metrics
   const categorizeMetric = (metricName: string): string => {
-    if (metricName.includes('Gewinn pro Aktie') || metricName.includes('Nettomarge')) return 'profitability';
+    if (metricName.includes('EPS-Wachstum') || metricName.includes('Gewinn pro Aktie') || metricName.includes('Nettomarge')) return 'profitability';
     if (metricName.includes('ROE') || metricName.includes('ROIC')) return 'returns';
     if (metricName.includes('KGV') || metricName.includes('P/B') || metricName.includes('KBV') || metricName.includes('EV/')) return 'valuation';
     if (metricName.includes('Schulden') || metricName.includes('Zinsdeckung') || metricName.includes('Deckungsgrad')) return 'balance';
