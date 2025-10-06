@@ -242,9 +242,19 @@ const StockQuoteHeader: React.FC = () => {
               </div>
               
               {/* Compact Add to Watchlist Button */}
-              {buffettCriteria && financialMetrics && overallRating && user && (
+              {buffettCriteria && financialMetrics && overallRating && (
                 <Button
-                  onClick={() => setWatchlistDialogOpen(true)}
+                  onClick={() => {
+                    if (!user) {
+                      toast({
+                        variant: "destructive",
+                        title: "Login erforderlich",
+                        description: "Bitte melden Sie sich an, um Aktien zu Watchlists hinzuzufügen."
+                      });
+                      return;
+                    }
+                    setWatchlistDialogOpen(true);
+                  }}
                   variant="default"
                   size="sm"
                   className="h-8 w-8 p-0 rounded-full"
