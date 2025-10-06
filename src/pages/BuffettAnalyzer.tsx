@@ -158,30 +158,6 @@ const IndexContent: React.FC = () => {
                     >
                       Peter Lynch
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="dividends" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
-                    >
-                      Dividends
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="history" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
-                    >
-                      History
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="profile" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
-                    >
-                      Profile
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="chart" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
-                    >
-                      Chart
-                    </TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="news" className="mt-4 sm:mt-6">
@@ -209,22 +185,6 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="peter-lynch" className="mt-4 sm:mt-6">
                     <PeterLynchSection />
-                  </TabsContent>
-                  
-                  <TabsContent value="dividends" className="mt-4 sm:mt-6">
-                    <div className="text-muted-foreground">Dividends content coming soon...</div>
-                  </TabsContent>
-                  
-                  <TabsContent value="history" className="mt-4 sm:mt-6">
-                    <div className="text-muted-foreground">History content coming soon...</div>
-                  </TabsContent>
-                  
-                  <TabsContent value="profile" className="mt-4 sm:mt-6">
-                    <div className="text-muted-foreground">Profile content coming soon...</div>
-                  </TabsContent>
-                  
-                  <TabsContent value="chart" className="mt-4 sm:mt-6">
-                    <div className="text-muted-foreground">Chart content coming soon...</div>
                   </TabsContent>
                 </Tabs>
               </div>
