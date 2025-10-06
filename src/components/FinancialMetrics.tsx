@@ -448,7 +448,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
     if (metricName.includes('KGV') || metricName.includes('P/B') || metricName.includes('KBV') || metricName.includes('EV/')) return 'valuation';
     if (metricName.includes('Schulden') || metricName.includes('Zinsdeckung') || metricName.includes('Deckungsgrad')) return 'balance';
     if (metricName.includes('Volumen') || metricName.includes('Cashflow') || metricName.includes('Cash Conversion') || metricName.includes('Capex')) return 'liquidity';
-    return 'other';
+    return 'valuation'; // Fallback zu Bewertung statt "other"
   };
   
   const categories = {
@@ -456,8 +456,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ metrics, historical
     returns: { title: 'Renditen', metrics: [] as FinancialMetric[] },
     valuation: { title: 'Bewertung', metrics: [] as FinancialMetric[] },
     balance: { title: 'Bilanz & Verschuldung', metrics: [] as FinancialMetric[] },
-    liquidity: { title: 'Liquidität & Cashflow', metrics: [] as FinancialMetric[] },
-    other: { title: 'Weitere Kennzahlen', metrics: [] as FinancialMetric[] }
+    liquidity: { title: 'Liquidität & Cashflow', metrics: [] as FinancialMetric[] }
   };
   
   metricsArray.forEach(metric => {

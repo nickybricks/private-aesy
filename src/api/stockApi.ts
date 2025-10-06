@@ -1513,20 +1513,6 @@ export const getFinancialMetrics = async (ticker: string) => {
       });
     }
 
-    // Average Volume Metrik
-    const avgVolume = safeValue(quoteData?.avgVolume);
-    if (avgVolume !== null) {
-      metrics.push({
-        name: 'Durchschnittliches Volumen',
-        value: avgVolume,
-        formula: 'Durchschnittliches Handelsvolumen',
-        explanation: 'Durchschnittliche Anzahl der täglich gehandelten Aktien',
-        threshold: 'Höheres Volumen zeigt bessere Liquidität',
-        status: avgVolume > 1000000 ? 'pass' : avgVolume > 100000 ? 'warning' : 'fail' as const,
-        isPercentage: false,
-        isMultiplier: false
-      });
-    }
 
     // Enterprise Value Metrik
     const enterpriseValue = safeValue(latestMetrics?.enterpriseValue);
