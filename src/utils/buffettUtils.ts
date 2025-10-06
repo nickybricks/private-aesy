@@ -1,3 +1,5 @@
+import { BUFFETT_THRESHOLDS } from '@/constants/BuffettThresholds';
+
 export const getStatusColor = (status: string) => {
   switch (status) {
     case 'pass':
@@ -229,22 +231,22 @@ export const calculateFinancialMetricScore = (
       
       console.log('WICHTIG: Kriterium 3 hat IMMER maxScore = 10');
       
-      // ROE Bewertung (3.33 Punkte möglich)
+      // ROE Bewertung (3.33 Punkte möglich) - using centralized thresholds
       console.log('--- ROE BEWERTUNG ---');
       if (metrics.roe !== undefined && metrics.roe !== null) {
         console.log(`ROE Wert: ${metrics.roe}%`);
         let roeScore = 0;
-        if (metrics.roe >= 15) {
-          roeScore = 3.33; // Buffett bevorzugt >15%
-          console.log(`ROE ${metrics.roe}% >= 15%: EXZELLENT → +${roeScore} Punkte`);
-        } else if (metrics.roe >= 10) {
-          roeScore = 2; // Akzeptabel
-          console.log(`ROE ${metrics.roe}% >= 10%: AKZEPTABEL → +${roeScore} Punkte`);
-        } else if (metrics.roe >= 5) {
-          roeScore = 1; // Schwach
-          console.log(`ROE ${metrics.roe}% >= 5%: SCHWACH → +${roeScore} Punkte`);
+        if (metrics.roe >= BUFFETT_THRESHOLDS.ROE.excellent) {
+          roeScore = 3.33;
+          console.log(`ROE ${metrics.roe}% >= ${BUFFETT_THRESHOLDS.ROE.excellent}%: EXZELLENT → +${roeScore} Punkte`);
+        } else if (metrics.roe >= BUFFETT_THRESHOLDS.ROE.good) {
+          roeScore = 2;
+          console.log(`ROE ${metrics.roe}% >= ${BUFFETT_THRESHOLDS.ROE.good}%: AKZEPTABEL → +${roeScore} Punkte`);
+        } else if (metrics.roe >= BUFFETT_THRESHOLDS.ROE.weak) {
+          roeScore = 1;
+          console.log(`ROE ${metrics.roe}% >= ${BUFFETT_THRESHOLDS.ROE.weak}%: SCHWACH → +${roeScore} Punkte`);
         } else {
-          console.log(`ROE ${metrics.roe}% < 5%: SEHR SCHWACH → +0 Punkte`);
+          console.log(`ROE ${metrics.roe}% < ${BUFFETT_THRESHOLDS.ROE.weak}%: SEHR SCHWACH → +0 Punkte`);
         }
         totalScore += roeScore;
         console.log(`ROE-Score addiert: ${roeScore}. Gesamtscore jetzt: ${totalScore}`);
@@ -252,22 +254,22 @@ export const calculateFinancialMetricScore = (
         console.log('ROE nicht verfügbar - übersprungen');
       }
       
-      // Nettomarge Bewertung (3.33 Punkte möglich)
+      // Nettomarge Bewertung (3.33 Punkte möglich) - using centralized thresholds
       console.log('--- NETTOMARGE BEWERTUNG ---');
       if (metrics.netProfitMargin !== undefined && metrics.netProfitMargin !== null) {
         console.log(`Nettomarge Wert: ${metrics.netProfitMargin}%`);
         let netMarginScore = 0;
-        if (metrics.netProfitMargin >= 15) {
-          netMarginScore = 3.33; // Buffett bevorzugt >15%
-          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 15%: EXZELLENT → +${netMarginScore} Punkte`);
-        } else if (metrics.netProfitMargin >= 10) {
-          netMarginScore = 2; // Akzeptabel
-          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 10%: AKZEPTABEL → +${netMarginScore} Punkte`);
-        } else if (metrics.netProfitMargin >= 5) {
-          netMarginScore = 1; // Schwach
-          console.log(`Nettomarge ${metrics.netProfitMargin}% >= 5%: SCHWACH → +${netMarginScore} Punkte`);
+        if (metrics.netProfitMargin >= BUFFETT_THRESHOLDS.NET_MARGIN.excellent) {
+          netMarginScore = 3.33;
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= ${BUFFETT_THRESHOLDS.NET_MARGIN.excellent}%: EXZELLENT → +${netMarginScore} Punkte`);
+        } else if (metrics.netProfitMargin >= BUFFETT_THRESHOLDS.NET_MARGIN.good) {
+          netMarginScore = 2;
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= ${BUFFETT_THRESHOLDS.NET_MARGIN.good}%: AKZEPTABEL → +${netMarginScore} Punkte`);
+        } else if (metrics.netProfitMargin >= BUFFETT_THRESHOLDS.NET_MARGIN.weak) {
+          netMarginScore = 1;
+          console.log(`Nettomarge ${metrics.netProfitMargin}% >= ${BUFFETT_THRESHOLDS.NET_MARGIN.weak}%: SCHWACH → +${netMarginScore} Punkte`);
         } else {
-          console.log(`Nettomarge ${metrics.netProfitMargin}% < 5%: SEHR SCHWACH → +0 Punkte`);
+          console.log(`Nettomarge ${metrics.netProfitMargin}% < ${BUFFETT_THRESHOLDS.NET_MARGIN.weak}%: SEHR SCHWACH → +0 Punkte`);
         }
         totalScore += netMarginScore;
         console.log(`Nettomarge-Score addiert: ${netMarginScore}. Gesamtscore jetzt: ${totalScore}`);
@@ -275,22 +277,22 @@ export const calculateFinancialMetricScore = (
         console.log('Nettomarge nicht verfügbar - übersprungen');
       }
       
-      // EPS-Wachstum Bewertung (3.34 Punkte möglich)
+      // EPS-Wachstum Bewertung (3.34 Punkte möglich) - using centralized thresholds
       console.log('--- EPS-WACHSTUM BEWERTUNG ---');
       if (metrics.epsGrowth !== undefined && metrics.epsGrowth !== null) {
         console.log(`EPS-Wachstum Wert: ${metrics.epsGrowth}%`);
         let epsGrowthScore = 0;
-        if (metrics.epsGrowth >= 10) {
-          epsGrowthScore = 3.34; // Buffett bevorzugt >10%
-          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 10%: EXZELLENT → +${epsGrowthScore} Punkte`);
-        } else if (metrics.epsGrowth >= 5) {
-          epsGrowthScore = 2; // Akzeptabel
-          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 5%: AKZEPTABEL → +${epsGrowthScore} Punkte`);
-        } else if (metrics.epsGrowth >= 0) {
-          epsGrowthScore = 1; // Schwaches Wachstum
-          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= 0%: SCHWACHES WACHSTUM → +${epsGrowthScore} Punkte`);
+        if (metrics.epsGrowth >= BUFFETT_THRESHOLDS.EPS_GROWTH.excellent) {
+          epsGrowthScore = 3.34;
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= ${BUFFETT_THRESHOLDS.EPS_GROWTH.excellent}%: EXZELLENT → +${epsGrowthScore} Punkte`);
+        } else if (metrics.epsGrowth >= BUFFETT_THRESHOLDS.EPS_GROWTH.good) {
+          epsGrowthScore = 2;
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= ${BUFFETT_THRESHOLDS.EPS_GROWTH.good}%: AKZEPTABEL → +${epsGrowthScore} Punkte`);
+        } else if (metrics.epsGrowth >= BUFFETT_THRESHOLDS.EPS_GROWTH.weak) {
+          epsGrowthScore = 1;
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% >= ${BUFFETT_THRESHOLDS.EPS_GROWTH.weak}%: SCHWACHES WACHSTUM → +${epsGrowthScore} Punkte`);
         } else {
-          console.log(`EPS-Wachstum ${metrics.epsGrowth}% < 0%: NEGATIV → +0 Punkte`);
+          console.log(`EPS-Wachstum ${metrics.epsGrowth}% < ${BUFFETT_THRESHOLDS.EPS_GROWTH.weak}%: NEGATIV → +0 Punkte`);
         }
         totalScore += epsGrowthScore;
         console.log(`EPS-Wachstum-Score addiert: ${epsGrowthScore}. Gesamtscore jetzt: ${totalScore}`);
@@ -319,12 +321,7 @@ export const calculateFinancialMetricScore = (
       
       return finalScore;
 
-    case 4: // Finanzielle Stabilität
-      // Buffett Richtwerte für Kriterium 4:
-      // - Schulden zu EBITDA: < 2 = sehr gut, 2-3 = ok, > 3 = schlecht
-      // - Current Ratio: > 1.5 = gut, 1-1.5 = ok, < 1 = schlecht
-      // - Quick Ratio: > 1 = gut, 0.8-1 = ok, < 0.8 = schlecht
-      
+    case 4: // Finanzielle Stabilität - using centralized thresholds
       if (!metrics) return 0;
       
       let stabilityScore = 0;
@@ -333,25 +330,31 @@ export const calculateFinancialMetricScore = (
       // Debt to EBITDA Check
       if (metrics.debtToEbitda !== undefined) {
         stabilityCriteriaCount++;
-        if (metrics.debtToEbitda < 2) stabilityScore += 3.33;
-        else if (metrics.debtToEbitda <= 3) stabilityScore += 1.67;
-        else stabilityScore += 0;
+        if (metrics.debtToEbitda < BUFFETT_THRESHOLDS.DEBT_TO_EBITDA.excellent) {
+          stabilityScore += 3.33;
+        } else if (metrics.debtToEbitda <= BUFFETT_THRESHOLDS.DEBT_TO_EBITDA.good) {
+          stabilityScore += 1.67;
+        }
       }
       
       // Current Ratio Check
       if (metrics.currentRatio !== undefined) {
         stabilityCriteriaCount++;
-        if (metrics.currentRatio > 1.5) stabilityScore += 3.33;
-        else if (metrics.currentRatio >= 1) stabilityScore += 1.67;
-        else stabilityScore += 0;
+        if (metrics.currentRatio > BUFFETT_THRESHOLDS.CURRENT_RATIO.excellent) {
+          stabilityScore += 3.33;
+        } else if (metrics.currentRatio >= BUFFETT_THRESHOLDS.CURRENT_RATIO.good) {
+          stabilityScore += 1.67;
+        }
       }
       
       // Quick Ratio Check
       if (metrics.quickRatio !== undefined) {
         stabilityCriteriaCount++;
-        if (metrics.quickRatio > 1) stabilityScore += 3.33;
-        else if (metrics.quickRatio >= 0.8) stabilityScore += 1.67;
-        else stabilityScore += 0;
+        if (metrics.quickRatio > BUFFETT_THRESHOLDS.QUICK_RATIO.excellent) {
+          stabilityScore += 3.33;
+        } else if (metrics.quickRatio >= BUFFETT_THRESHOLDS.QUICK_RATIO.acceptable) {
+          stabilityScore += 1.67;
+        }
       }
       
       return stabilityCriteriaCount > 0 ? Math.round(stabilityScore / stabilityCriteriaCount * 10) / 10 : 0;

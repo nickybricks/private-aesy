@@ -13,6 +13,7 @@ import {
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { convertCurrency, shouldConvertCurrency } from '@/utils/currencyConverter';
 import { NewsItem } from '@/context/StockContextTypes';
+import * as MetricsCalculator from '@/services/FinancialMetricsCalculator';
 
 // Base URL for the Financial Modeling Prep API
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
@@ -965,13 +966,13 @@ export const getFinancialMetrics = async (ticker: string) => {
   const standardizedTicker = ticker.trim().toUpperCase();
   
   try {
-    // Finanzkennzahlen abrufen - erweiterte Datenquellen für präzisere EPS und andere Werte
+    // Finanzkennzahlen abrufen - erweiterte Datenquellen für präzisere EPS und andere Werte (10 Jahre für Rolling-Fallback)
     const [ratios, keyMetrics, incomeStatements, balanceSheets, cashFlows, quote] = await Promise.all([
-      fetchFromFMP(`/ratios/${standardizedTicker}?limit=5`),
-      fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=5`),
+      fetchFromFMP(`/ratios/${standardizedTicker}?limit=10`),
+      fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=10`),
       fetchFromFMP(`/income-statement/${standardizedTicker}?limit=10`),
-      fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?limit=5`),
-      fetchFromFMP(`/cash-flow-statement/${standardizedTicker}?limit=5`),
+      fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?limit=10`),
+      fetchFromFMP(`/cash-flow-statement/${standardizedTicker}?limit=10`),
       fetchFromFMP(`/quote/${standardizedTicker}`)
     ]);
     
@@ -1312,296 +1313,256 @@ export const getFinancialMetrics = async (ticker: string) => {
       console.log(`[getFinancialMetrics - EPS Growth]: Insufficient data (${incomeStatements?.length || 0} statements available, need 4)`);
     }
 
-    // Erstelle strukturierte Metriken für das Frontend
+    // Erstelle strukturierte Metriken für das Frontend - USING CENTRALIZED CALCULATIONS
     const metrics = [];
 
-    // EPS-Wachstum Metrik - zeige prozentuales Wachstum als Hauptwert
-    if (eps !== null && incomeStatements && incomeStatements.length >= 4) {
-      // Berechne EPS-Status basierend auf dem tatsächlichen Wachstum
-      let epsStatus: 'pass' | 'warning' | 'fail' = 'fail';
-      if (epsGrowth >= 10) {
-        epsStatus = 'pass'; // Buffett bevorzugt >10%
-      } else if (epsGrowth >= 5) {
-        epsStatus = 'warning'; // Akzeptabel, aber nicht ideal
-      }
-      // else: < 5% Wachstum = 'fail'
-      
-      // Determine the currency to display
-      const displayCurrency = reportedCurrency || 'USD';
-      
-      metrics.push({
-        name: 'EPS-Wachstum (3 Jahre CAGR)',
-        value: epsGrowth, // Zeige das Wachstum in Prozent als Hauptwert
-        formula: 'Jahresüberschuss ÷ Anzahl ausstehender Aktien',
-        explanation: `Durchschnittliches jährliches Wachstum des Gewinns pro Aktie über 3 Jahre. Aktueller EPS: ${eps.toFixed(2)} ${displayCurrency} (${epsGrowthDetails.pastYear}: ${epsGrowthDetails.pastEPS.toFixed(2)} → ${epsGrowthDetails.currentYear}: ${epsGrowthDetails.currentEPS.toFixed(2)} ${displayCurrency})`,
-        threshold: 'Kontinuierliches Wachstum >10%',
-        status: epsStatus,
-        isPercentage: true,
-        isMultiplier: false,
-        isAlreadyPercent: true // Flag, dass der Wert bereits in Prozent ist
-      });
-    }
+    // Determine the currency to display
+    const displayCurrency = reportedCurrency || 'USD';
 
-    // ROE Metrik  
-    if (roe !== null) {
-      console.log(`DEBUG: Raw ROE from API: ${roe}`);
+    // ===================
+    // PROFITABILITY & GROWTH METRICS
+    // ===================
+    
+    // ROE - 10-year average
+    const roeResult = MetricsCalculator.calculateROE(incomeStatements, balanceSheets, ratios);
+    if (roeResult.value !== null) {
       metrics.push({
         name: 'ROE (Eigenkapitalrendite)',
-        value: roe,
+        value: roeResult.value,
         formula: 'Jahresüberschuss ÷ Eigenkapital × 100',
-        explanation: 'Rendite auf das eingesetzte Eigenkapital',
-        threshold: 'Buffett bevorzugt > 15%',
-        status: roe > 15 ? 'pass' : roe > 10 ? 'warning' : 'fail' as const,
+        explanation: roeResult.explanation,
+        threshold: `≥ 15% exzellent, ≥ 10% gut`,
+        status: roeResult.status,
+        timePeriodBadge: roeResult.timePeriod,
         isPercentage: true,
-        isMultiplier: false,
-        isAlreadyPercent: true // ROE comes already as percentage from API
+        isAlreadyPercent: true
       });
     }
 
-    // Nettomarge Metrik
-    if (netMargin !== null) {
-      const netMarginPercent = netMargin * 100; // Convert decimal to percentage
-      console.log(`DEBUG: Raw netMargin from API: ${netMargin}, as percentage: ${netMarginPercent}%`);
-      metrics.push({
-        name: 'Nettomarge',
-        value: netMargin,
-        formula: 'Jahresüberschuss ÷ Umsatz × 100',
-        explanation: 'Anteil des Umsatzes, der als Gewinn übrig bleibt',
-        threshold: 'Buffett bevorzugt > 10%',
-        status: netMarginPercent > 10 ? 'pass' : netMarginPercent > 5 ? 'warning' : 'fail' as const,
-        isPercentage: true,
-        isMultiplier: false,
-        isAlreadyPercent: false // Net margin comes as decimal from API
-      });
-    }
-
-    // ROIC Metrik
-    if (roic !== null) {
-      console.log(`DEBUG: Raw ROIC from API: ${roic}`);
+    // ROIC - 10-year average
+    const roicResult = MetricsCalculator.calculateROIC(incomeStatements, balanceSheets, keyMetrics);
+    if (roicResult.value !== null) {
       metrics.push({
         name: 'ROIC (Kapitalrendite)',
-        value: roic,
+        value: roicResult.value,
         formula: 'NOPAT ÷ (Eigenkapital + Finanzverbindlichkeiten)',
-        explanation: 'Rendite auf das gesamte investierte Kapital',
-        threshold: 'Buffett bevorzugt > 12%',
-        status: roic > 12 ? 'pass' : roic > 8 ? 'warning' : 'fail' as const,
+        explanation: roicResult.explanation,
+        threshold: `≥ 12% exzellent, ≥ 8% gut`,
+        status: roicResult.status,
+        timePeriodBadge: roicResult.timePeriod,
         isPercentage: true,
-        isMultiplier: false,
-        isAlreadyPercent: true // ROIC comes already as percentage from API
+        isAlreadyPercent: true
       });
     }
 
-    // Schuldenquote Metrik
-    if (debtToAssets !== null) {
-      console.log(`DEBUG: Raw debtToAssets from API: ${debtToAssets}`);
+    // Net Margin - 10-year average
+    const netMarginResult = MetricsCalculator.calculateNetMargin(incomeStatements, ratios);
+    if (netMarginResult.value !== null) {
       metrics.push({
-        name: 'Schulden zu Vermögen',
-        value: debtToAssets,
-        formula: 'Gesamtschulden ÷ Gesamtvermögen × 100',
-        explanation: 'Anteil der Schulden am Gesamtvermögen',
-        threshold: 'Buffett bevorzugt < 50%',
-        status: debtToAssets < 50 ? 'pass' : debtToAssets < 70 ? 'warning' : 'fail' as const,
+        name: 'Nettomarge',
+        value: netMarginResult.value,
+        formula: 'Jahresüberschuss ÷ Umsatz × 100',
+        explanation: netMarginResult.explanation,
+        threshold: `≥ 15% exzellent, ≥ 10% gut`,
+        status: netMarginResult.status,
+        timePeriodBadge: netMarginResult.timePeriod,
         isPercentage: true,
-        isMultiplier: false,
-        isAlreadyPercent: false // Debt to assets comes as decimal from API
+        isAlreadyPercent: true
       });
     }
 
-    // Zinsdeckungsgrad Metrik
-    if (interestCoverage !== null) {
-      let coverageDisplay = interestCoverage.toFixed(2);
-      if (interestCoverageDate) {
-        coverageDisplay += ` (aus ${interestCoverageDate})`;
-      }
-      
+    // EPS - Latest available
+    const epsResult = MetricsCalculator.calculateEPS(incomeStatements, keyMetrics, quoteData);
+    if (epsResult.value !== null) {
+      metrics.push({
+        name: 'Gewinn pro Aktie',
+        value: epsResult.value,
+        formula: 'Jahresüberschuss ÷ Anzahl ausstehender Aktien',
+        explanation: `${epsResult.explanation}: ${epsResult.value.toFixed(2)} ${displayCurrency}`,
+        threshold: `Positiver EPS`,
+        status: epsResult.status,
+        timePeriodBadge: epsResult.timePeriod,
+        isPercentage: false,
+        originalCurrency: reportedCurrency
+      });
+    }
+
+    // EPS Growth - 3-year CAGR
+    const epsGrowthResult = MetricsCalculator.calculateEPSGrowth(incomeStatements, keyMetrics);
+    if (epsGrowthResult.value !== null) {
+      metrics.push({
+        name: 'EPS-Wachstum (3 Jahre CAGR)',
+        value: epsGrowthResult.value,
+        formula: 'CAGR des Gewinns pro Aktie',
+        explanation: epsGrowthResult.explanation,
+        threshold: `≥ 10% exzellent, ≥ 5% gut`,
+        status: epsGrowthResult.status,
+        timePeriodBadge: epsGrowthResult.timePeriod,
+        isPercentage: true,
+        isAlreadyPercent: true
+      });
+    }
+
+    // ===================
+    // VALUATION METRICS
+    // ===================
+
+    // P/E Ratio
+    const peResult = MetricsCalculator.calculatePERatio(quoteData, keyMetrics);
+    if (peResult.value !== null) {
+      metrics.push({
+        name: 'KGV (Kurs-Gewinn-Verhältnis)',
+        value: peResult.value,
+        formula: 'Aktienkurs ÷ Gewinn pro Aktie',
+        explanation: peResult.explanation,
+        threshold: `< 12 günstig, < 20 fair`,
+        status: peResult.status,
+        timePeriodBadge: peResult.timePeriod,
+        isMultiplier: true
+      });
+    }
+
+    // P/B Ratio
+    const pbResult = MetricsCalculator.calculatePBRatio(quoteData, keyMetrics);
+    if (pbResult.value !== null) {
+      metrics.push({
+        name: 'P/B (Kurs-Buchwert-Verhältnis)',
+        value: pbResult.value,
+        formula: 'Aktienkurs ÷ Buchwert pro Aktie',
+        explanation: pbResult.explanation,
+        threshold: `< 1.0 günstig, < 3.0 fair`,
+        status: pbResult.status,
+        timePeriodBadge: pbResult.timePeriod,
+        isMultiplier: true
+      });
+    }
+
+    // P/CF Ratio
+    const pcfResult = MetricsCalculator.calculatePCFRatio(quoteData, cashFlows);
+    if (pcfResult.value !== null) {
+      metrics.push({
+        name: 'P/CF-Verhältnis',
+        value: pcfResult.value,
+        formula: 'Marktwert ÷ Operativer Cashflow',
+        explanation: pcfResult.explanation,
+        threshold: `< 10 günstig, < 15 fair`,
+        status: pcfResult.status,
+        timePeriodBadge: pcfResult.timePeriod,
+        isMultiplier: true
+      });
+    }
+
+    // Dividend Yield
+    const divYieldResult = MetricsCalculator.calculateDividendYield(quoteData, keyMetrics);
+    metrics.push({
+      name: 'Dividendenrendite',
+      value: divYieldResult.value || 0,
+      formula: 'Dividende pro Aktie ÷ Aktienkurs × 100',
+      explanation: divYieldResult.explanation,
+      threshold: `≥ 2% gut, ≥ 4% exzellent`,
+      status: divYieldResult.status,
+      timePeriodBadge: divYieldResult.timePeriod,
+      isPercentage: true,
+      isAlreadyPercent: true
+    });
+
+    // ===================
+    // DEBT & STABILITY METRICS
+    // ===================
+
+    // Debt to EBITDA
+    const debtToEBITDAResult = MetricsCalculator.calculateDebtToEBITDA(balanceSheets, incomeStatements);
+    if (debtToEBITDAResult.value !== null) {
+      metrics.push({
+        name: 'Schulden zu EBITDA',
+        value: debtToEBITDAResult.value,
+        formula: 'Gesamtverschuldung ÷ EBITDA',
+        explanation: debtToEBITDAResult.explanation,
+        threshold: `< 1.0 exzellent, < 2.0 gut`,
+        status: debtToEBITDAResult.status,
+        timePeriodBadge: debtToEBITDAResult.timePeriod,
+        isMultiplier: true
+      });
+    }
+
+    // Interest Coverage
+    const interestCoverageResult = MetricsCalculator.calculateInterestCoverage(incomeStatements);
+    if (interestCoverageResult.value !== null) {
       metrics.push({
         name: 'Zinsdeckungsgrad',
-        value: coverageDisplay,
+        value: interestCoverageResult.value,
         formula: 'EBIT ÷ Zinsaufwand',
-        explanation: 'Fähigkeit des Unternehmens, Zinsen aus dem operativen Ergebnis zu bedienen',
-        threshold: 'Buffett bevorzugt > 5',
-        status: interestCoverage > 5 ? 'pass' : interestCoverage > 3 ? 'warning' : 'fail' as const,
-        isPercentage: false,
+        explanation: interestCoverageResult.explanation,
+        threshold: `≥ 7 exzellent, ≥ 5 gut`,
+        status: interestCoverageResult.status,
+        timePeriodBadge: interestCoverageResult.timePeriod,
         isMultiplier: true
       });
     }
 
-    // P/E Ratio (KGV) Metrik
-    const pe = safeValue(latestRatios?.priceEarningsRatio);
-    if (pe !== null && pe > 0) {
-      metrics.push({
-        name: 'P/E-Verhältnis (KGV)',
-        value: pe,
-        formula: 'Aktienkurs ÷ Gewinn pro Aktie',
-        explanation: 'Verhältnis zwischen Aktienkurs und Gewinn pro Aktie',
-        threshold: 'Buffett bevorzugt < 25',
-        status: pe < 15 ? 'pass' : pe < 25 ? 'warning' : 'fail' as const,
-        isPercentage: false,
-        isMultiplier: true
-      });
-    }
+    // ===================
+    // LIQUIDITY & CASHFLOW METRICS
+    // ===================
 
-    // P/B Ratio (KBV) Metrik
-    const pb = safeValue(latestRatios?.priceToBookRatio);
-    if (pb !== null && pb > 0) {
-      metrics.push({
-        name: 'P/B-Verhältnis (KBV)',
-        value: pb,
-        formula: 'Aktienkurs ÷ Buchwert pro Aktie',
-        explanation: 'Verhältnis zwischen Marktpreis und Buchwert der Aktie',
-        threshold: 'Buffett bevorzugt < 3',
-        status: pb < 1.5 ? 'pass' : pb < 3 ? 'warning' : 'fail' as const,
-        isPercentage: false,
-        isMultiplier: true
-      });
-    }
-
-    // Current Ratio Metrik
-    const currentRatio = safeValue(latestRatios?.currentRatio);
-    if (currentRatio !== null) {
+    // Current Ratio
+    const currentRatioResult = MetricsCalculator.calculateCurrentRatio(balanceSheets);
+    if (currentRatioResult.value !== null) {
       metrics.push({
         name: 'Current Ratio',
-        value: currentRatio,
+        value: currentRatioResult.value,
         formula: 'Umlaufvermögen ÷ kurzfristige Verbindlichkeiten',
-        explanation: 'Zeigt die kurzfristige Zahlungsfähigkeit des Unternehmens',
-        threshold: 'Buffett bevorzugt > 1.5',
-        status: currentRatio > 2 ? 'pass' : currentRatio > 1.5 ? 'warning' : 'fail' as const,
-        isPercentage: false,
+        explanation: currentRatioResult.explanation,
+        threshold: `≥ 2.0 exzellent, ≥ 1.5 gut`,
+        status: currentRatioResult.status,
+        timePeriodBadge: currentRatioResult.timePeriod,
         isMultiplier: true
       });
     }
 
-    // Schulden zu EBITDA Metrik
-    if (latestIncomeStatement && latestBalanceSheet) {
-      const totalDebt = safeValue(latestBalanceSheet.totalDebt) || 
-                       (safeValue(latestBalanceSheet.shortTermDebt) + safeValue(latestBalanceSheet.longTermDebt));
-      const ebitda = safeValue(latestIncomeStatement.ebitda);
-      
-      if (totalDebt !== null && ebitda !== null && ebitda > 0) {
-        const debtToEBITDA = totalDebt / ebitda;
-        metrics.push({
-          name: 'Schulden zu EBITDA',
-          value: debtToEBITDA,
-          formula: 'Gesamtverschuldung ÷ EBITDA',
-          explanation: 'Zeigt, wie viele Jahre das Unternehmen brauchen würde, um Schulden aus operativem Ergebnis zurückzuzahlen',
-          threshold: 'Unter 1,0 ist hervorragend, 1,0-2,0 gut, 2,0-3,0 akzeptabel',
-          status: debtToEBITDA < 1.5 ? 'pass' : debtToEBITDA < 3 ? 'warning' : 'fail' as const,
-          isPercentage: false,
-          isMultiplier: true
-        });
-      }
+    // Free Cash Flow
+    const fcfResult = MetricsCalculator.calculateFreeCashFlow(cashFlows);
+    if (fcfResult.value !== null) {
+      metrics.push({
+        name: 'Freier Cashflow',
+        value: fcfResult.value,
+        formula: 'Operativer CF − Investitionsausgaben',
+        explanation: fcfResult.explanation,
+        threshold: `Positiv und steigend`,
+        status: fcfResult.status,
+        timePeriodBadge: fcfResult.timePeriod,
+        originalCurrency: reportedCurrency
+      });
     }
 
-    // Helper functions for statistical calculations
-    const calculateAverage = (values: number[]) => {
-      if (values.length === 0) return 0;
-      return values.reduce((sum, val) => sum + val, 0) / values.length;
-    };
-    
-    const calculateStdDev = (values: number[]) => {
-      if (values.length === 0) return 0;
-      const avg = calculateAverage(values);
-      const squaredDiffs = values.map(val => Math.pow(val - avg, 2));
-      const variance = calculateAverage(squaredDiffs);
-      return Math.sqrt(variance);
-    };
-
-    // OCF-Qualität Metrik
-    if (cashFlows && cashFlows.length >= 3 && incomeStatements && incomeStatements.length >= 3) {
-      const ocfToNIRatios: number[] = [];
-      
-      // Calculate OCF/Net Income ratios for up to 5 years
-      for (let i = 0; i < Math.min(5, cashFlows.length, incomeStatements.length); i++) {
-        const ocf = safeValue(cashFlows[i]?.operatingCashFlow);
-        const netIncome = safeValue(incomeStatements[i]?.netIncome);
-        
-        if (ocf !== null && netIncome !== null && netIncome > 0) {
-          ocfToNIRatios.push(ocf / netIncome);
-        }
-      }
-      
-      if (ocfToNIRatios.length >= 3) {
-        const avgOcfToNI = calculateAverage(ocfToNIRatios);
-        
-        // Calculate standard deviations for robustness check
-        const ocfValues = cashFlows.slice(0, Math.min(5, cashFlows.length))
-          .map(cf => safeValue(cf?.operatingCashFlow))
-          .filter((v): v is number => v !== null);
-        
-        const revenueValues = incomeStatements.slice(0, Math.min(5, incomeStatements.length))
-          .map(is => safeValue(is?.revenue))
-          .filter((v): v is number => v !== null);
-        
-        const ocfStdDev = calculateStdDev(ocfValues);
-        const revenueStdDev = calculateStdDev(revenueValues);
-        
-        const isRobust = ocfStdDev < revenueStdDev;
-        const meetsThreshold = avgOcfToNI >= 1.0;
-        
-        let status: 'pass' | 'warning' | 'fail' = 'fail';
-        if (meetsThreshold && isRobust) {
-          status = 'pass';
-        } else if (meetsThreshold || isRobust) {
-          status = 'warning';
-        }
-        
-        metrics.push({
-          name: 'OCF-Qualität',
-          value: avgOcfToNI * 100,
-          formula: 'OCF ÷ Nettogewinn (5-Jahres-Ø)',
-          explanation: `OCF/Nettogewinn: ${avgOcfToNI.toFixed(2)}. ${isRobust ? 'OCF robuster als Umsatz' : 'OCF volatiler als Umsatz'}.`,
-          threshold: 'OCF/Nettogewinn ≥ 1,0 und Standardabw. OCF < Standardabw. Umsatz',
-          status: status,
-          isPercentage: true,
-          isMultiplier: false,
-          isAlreadyPercent: true
-        });
-      }
+    // OCF Quality
+    const ocfQualityResult = MetricsCalculator.calculateOCFQuality(cashFlows, incomeStatements);
+    if (ocfQualityResult.value !== null) {
+      metrics.push({
+        name: 'OCF-Qualität',
+        value: ocfQualityResult.value,
+        formula: 'OCF ÷ Nettogewinn',
+        explanation: ocfQualityResult.explanation,
+        threshold: `≥ 1.0 exzellent, ≥ 0.8 gut`,
+        status: ocfQualityResult.status,
+        timePeriodBadge: ocfQualityResult.timePeriod,
+        isMultiplier: true
+      });
     }
 
-    // FCF-Robustheit Metrik
-    if (cashFlows && cashFlows.length >= 3 && incomeStatements && incomeStatements.length >= 3) {
-      const fcfMargins: number[] = [];
-      let hasNegativeFcfInRecession = false;
-      
-      // Calculate FCF margins for up to 5 years
-      for (let i = 0; i < Math.min(5, cashFlows.length, incomeStatements.length); i++) {
-        const fcf = safeValue(cashFlows[i]?.freeCashFlow);
-        const revenue = safeValue(incomeStatements[i]?.revenue);
-        
-        if (fcf !== null && revenue !== null && revenue > 0) {
-          const margin = (fcf / revenue) * 100;
-          fcfMargins.push(margin);
-          
-          // Check for negative FCF (simplified recession check - look at any year)
-          if (fcf < 0) {
-            hasNegativeFcfInRecession = true;
-          }
-        }
-      }
-      
-      if (fcfMargins.length >= 3) {
-        const avgFcfMargin = calculateAverage(fcfMargins);
-        
-        let status: 'pass' | 'warning' | 'fail' = 'fail';
-        if (avgFcfMargin >= 7 && !hasNegativeFcfInRecession) {
-          status = 'pass';
-        } else if (avgFcfMargin >= 5 && !hasNegativeFcfInRecession) {
-          status = 'warning';
-        }
-        
-        metrics.push({
-          name: 'FCF-Robustheit',
-          value: avgFcfMargin,
-          formula: 'Freier CF ÷ Umsatz × 100 (5-Jahres-Ø)',
-          explanation: `FCF-Marge (5J-Ø): ${avgFcfMargin.toFixed(1)}%. ${hasNegativeFcfInRecession ? 'Negativer FCF in schwierigen Jahren' : 'Kein negativer FCF'}`,
-          threshold: 'FCF-Marge ≥ 7% und in keinem Jahr <0',
-          status: status,
-          isPercentage: true,
-          isMultiplier: false,
-          isAlreadyPercent: true
-        });
-      }
+    // FCF Robustness
+    const fcfRobustnessResult = MetricsCalculator.calculateFCFRobustness(cashFlows, incomeStatements);
+    if (fcfRobustnessResult.value !== null) {
+      metrics.push({
+        name: 'FCF-Robustheit',
+        value: fcfRobustnessResult.value,
+        formula: 'FCF ÷ Umsatz × 100',
+        explanation: fcfRobustnessResult.explanation,
+        threshold: `≥ 7% exzellent, kein neg. FCF`,
+        status: fcfRobustnessResult.status,
+        timePeriodBadge: fcfRobustnessResult.timePeriod,
+        isPercentage: true,
+        isAlreadyPercent: true
+      });
     }
 
     // Cash Conversion Rate (FCF/Net Income)
