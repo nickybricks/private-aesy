@@ -74,50 +74,10 @@ const AppHeader: React.FC = () => {
               isLoading={isLoading} 
               compact 
               mobileMode
+              enableDeepResearch={enableDeepResearch}
+              onDeepResearchChange={setEnableDeepResearch}
             />
           </div>
-          
-          {/* AI Toggle - Vertikales Layout */}
-          <TooltipProvider>
-            <div className="shrink-0 flex flex-col items-center gap-0.5 pl-1">
-              <div className="flex items-center gap-0.5">
-                <span className="text-[8px] font-semibold text-foreground uppercase tracking-wide whitespace-nowrap">
-                  AI Analyse
-                </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button 
-                      type="button" 
-                      className="focus:outline-none p-0.5 rounded-full hover:bg-accent/50 transition-colors"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Info className="h-3 w-3 text-muted-foreground" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[280px] p-3">
-                    <div className="space-y-2">
-                      <p className="font-semibold text-xs">Deep Research KI-Analyse</p>
-                      <p className="text-xs text-muted-foreground">
-                        Erweiterte Analyse mit aktuellen Marktdaten, qualitativen Faktoren und KI-gestützter Bewertung.
-                      </p>
-                      <div className="pt-2 border-t">
-                        <p className="text-xs font-medium">Credits pro Analyse:</p>
-                        <p className="text-xs text-muted-foreground">~5-10 Credits (abhängig von der Datenmenge)</p>
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="flex justify-center">
-                <Switch
-                  checked={enableDeepResearch}
-                  onCheckedChange={setEnableDeepResearch}
-                  disabled={isLoading}
-                  className="scale-90"
-                />
-              </div>
-            </div>
-          </TooltipProvider>
         </div>
       </div>
     </header>
