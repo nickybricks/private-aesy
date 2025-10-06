@@ -56,6 +56,9 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
     window.open(url, '_blank', 'noopener,noreferrer');
   };
   
+  const hasPressReleases = pressReleases.length > 0;
+  const hasNewsItems = newsItems.length > 0;
+
   if (allNews.length === 0) {
     return (
       <Card>
@@ -79,7 +82,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
           }}
           className="text-sm h-9 px-4"
         >
-          Alle
+          Alle ({allNews.length})
         </Button>
         <Button
           variant={activeFilter === 'news' ? 'default' : 'ghost'}
@@ -90,7 +93,7 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
           }}
           className="text-sm h-9 px-4"
         >
-          Nachrichten
+          Nachrichten ({newsItems.length})
         </Button>
         <Button
           variant={activeFilter === 'press' ? 'default' : 'ghost'}
@@ -100,10 +103,22 @@ const NewsSection: React.FC<NewsSectionProps> = ({ newsItems, pressReleases }) =
             setDisplayCount(10);
           }}
           className="text-sm h-9 px-4"
+          disabled={!hasPressReleases}
+          title={!hasPressReleases ? 'Keine Pressemitteilungen verfügbar' : ''}
         >
-          Pressemitteilungen
+          Pressemitteilungen ({pressReleases.length})
         </Button>
       </div>
+
+      {activeFilter === 'press' && !hasPressReleases && hasNewsItems && (
+        <Card className="bg-muted/50">
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">
+              Für dieses Unternehmen sind derzeit keine Pressemitteilungen verfügbar.
+            </p>
+          </CardContent>
+        </Card>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {displayedNews.map((item, index) => (
