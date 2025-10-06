@@ -52,6 +52,6 @@ export function mergeNewsSources(
   fmpNews: NewsItem[],
   newsApiNews: NewsItem[]
 ): NewsItem[] {
-  const combined = [...fmpNews, ...newsApiNews];
-  return deduplicateNews(combined);
+  const combined = deduplicateNews([...fmpNews, ...newsApiNews]);
+  return combined.sort((a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime());
 }

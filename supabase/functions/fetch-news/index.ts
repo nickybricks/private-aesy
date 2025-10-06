@@ -35,14 +35,15 @@ serve(async (req) => {
     const acceptLanguage = req.headers.get('accept-language') || 'en'
     const primaryLang = acceptLanguage.split(',')[0].split('-')[0].toLowerCase()
     
-    console.log(`Fetching news for ${ticker} (${companyName}) in languages: ${primaryLang}, en`)
+    console.log(`Fetching news for ${ticker} (${companyName}) with language: en (US only mode)`)
 
     // Search query combining company name and ticker
     const query = `"${companyName}" OR ${ticker}`
-    const languages = primaryLang === 'en' ? 'en' : `${primaryLang},en`
+    // Force US-only for now due to non-US limitations
+    const language = 'en'
     
     // Fetch from NewsAPI
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=${languages}&sortBy=publishedAt&pageSize=50&apiKey=${newsApiKey}`
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=${language}&sortBy=publishedAt&pageSize=50&apiKey=${newsApiKey}`
     
     console.log(`NewsAPI URL: ${url.replace(newsApiKey, 'REDACTED')}`)
     
