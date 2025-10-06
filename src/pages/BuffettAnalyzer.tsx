@@ -119,9 +119,12 @@ const IndexContent: React.FC = () => {
             
             {/* Tab Navigation */}
             {stockInfo && (
-              <div className="mb-6 sm:mb-8">
+              <div className="mb-6 sm:mb-8 -mx-3 sm:mx-0">
                 <Tabs defaultValue="news" className="w-full">
-                  <TabsList className="w-full justify-start h-11 sm:h-12 bg-transparent border-b border-border rounded-none p-0 overflow-x-auto overflow-y-hidden flex-nowrap scrollbar-hide"
+                  <div className="relative">
+                    {/* Fade indicator am rechten Rand auf Mobil */}
+                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none z-10 sm:hidden" />
+                    <TabsList className="w-full justify-start h-11 sm:h-12 bg-transparent border-b border-border rounded-none p-0 pl-3 sm:pl-0 overflow-x-auto overflow-y-hidden flex-nowrap scrollbar-hide"
                     style={{ 
                       scrollbarWidth: 'none',
                       msOverflowStyle: 'none',
@@ -130,35 +133,36 @@ const IndexContent: React.FC = () => {
                   >
                     <TabsTrigger 
                       value="news" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm min-w-[100px] sm:min-w-0"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       News
                     </TabsTrigger>
                     <TabsTrigger 
                       value="financials" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm min-w-[140px] sm:min-w-0"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       Finanzkennzahlen
                     </TabsTrigger>
                     <TabsTrigger 
                       value="statistics" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm min-w-[130px] sm:min-w-0"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       Deep-Research
                     </TabsTrigger>
                     <TabsTrigger 
                       value="metrics" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm min-w-[120px] sm:min-w-0"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       Innerer Wert
                     </TabsTrigger>
                     <TabsTrigger 
                       value="peter-lynch" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 sm:px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm min-w-[110px] sm:min-w-0"
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 md:px-6 whitespace-nowrap flex-shrink-0 text-sm"
                     >
                       Peter Lynch
                     </TabsTrigger>
-                  </TabsList>
+                    </TabsList>
+                  </div>
                   
                   <TabsContent value="news" className="mt-4 sm:mt-6">
                     <NewsSection 
