@@ -28,7 +28,6 @@ const FINANCIAL_DOMAINS = [
   'marketwatch.com',
   'barrons.com',
   'seekingalpha.com',
-  'fool.com',
   'investopedia.com',
   'finance.yahoo.com',
   'businessinsider.com',
