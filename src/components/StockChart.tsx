@@ -17,13 +17,6 @@ import { ChartContainer } from '@/components/ui/chart';
 import { Button } from '@/components/ui/button';
 import { convertCurrency, needsCurrencyConversion, normalizeCurrencyCode } from '@/utils/currencyConverter';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
-import { Plus } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useWatchlists } from '@/hooks/useWatchlists';
-import { useAuth } from '@/context/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface StockChartProps {
   symbol: string;
@@ -59,13 +52,6 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
   const [selectedRange, setSelectedRange] = useState<typeof TIME_RANGES[number]['value']>('1Y');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedWatchlistId, setSelectedWatchlistId] = useState<string>('');
-  const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
-  
-  const { watchlists, createWatchlist } = useWatchlists();
-  const { user } = useAuth();
-  const { toast } = useToast();
 
   useEffect(() => {
     const fetchHistoricalData = async () => {
@@ -435,87 +421,11 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
     }
   };
 
-  const handleAddToWatchlist = async () => {
-    if (!selectedWatchlistId || !user) return;
-    
-    setIsAddingToWatchlist(true);
-    try {
-      // Check if stock already exists
-      const { data: existingStock } = await supabase
-        .from('user_stocks')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('watchlist_id', selectedWatchlistId)
-        .eq('symbol', symbol)
-        .single();
-
-      if (existingStock) {
-        toast({
-          variant: "destructive",
-          title: "Aktie bereits vorhanden",
-          description: "Diese Aktie ist bereits in der Watchlist."
-        });
-        return;
-      }
-
-      // Get current stock price
-      const currentPrice = filteredData.length > 0 
-        ? filteredData[filteredData.length - 1].price 
-        : 0;
-
-      // Add stock to watchlist
-      const { error } = await supabase
-        .from('user_stocks')
-        .insert([{
-          user_id: user.id,
-          watchlist_id: selectedWatchlistId,
-          symbol: symbol,
-          company_name: symbol,
-          analysis_data: {
-            price: currentPrice,
-            currency: currency,
-            changePercent: 0,
-            sinceAddedPercent: 0,
-          },
-          last_analysis_date: new Date().toISOString(),
-        }]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Zur Watchlist hinzugefügt",
-        description: `${symbol} wurde erfolgreich zur Watchlist hinzugefügt.`
-      });
-      
-      setIsDialogOpen(false);
-      setSelectedWatchlistId('');
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Fehler",
-        description: error.message
-      });
-    } finally {
-      setIsAddingToWatchlist(false);
-    }
-  };
-
-  const handleCreateAndSelect = async () => {
-    try {
-      const newWatchlist = await createWatchlist(`${symbol} Watchlist`);
-      if (newWatchlist) {
-        setSelectedWatchlistId(newWatchlist.id);
-      }
-    } catch (error) {
-      // Error already handled in createWatchlist
-    }
-  };
-
   return (
     <div className="w-full space-y-2 sm:space-y-3">
-      {/* Header with Zeitraum-Buttons and Add to Watchlist Button */}
-      <div className="w-full hidden md:flex items-center gap-2">
-        <div className="flex justify-between gap-1 sm:gap-1.5 flex-1">
+      {/* Zeitraum-Buttons - Nur Desktop (über dem Chart) */}
+      <div className="w-full hidden md:block">
+        <div className="flex justify-between gap-1 sm:gap-1.5">
           {TIME_RANGES.map((range) => (
             <Button
               key={range.value}
@@ -528,73 +438,6 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
             </Button>
           ))}
         </div>
-        
-        {user && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-2 flex items-center gap-1 shrink-0"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden lg:inline">Watchlist</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Zu Watchlist hinzufügen</DialogTitle>
-                <DialogDescription>
-                  Wähle eine Watchlist aus, um {symbol} hinzuzufügen.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4">
-                {watchlists.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Du hast noch keine Watchlists.
-                    </p>
-                    <Button onClick={handleCreateAndSelect}>
-                      Neue Watchlist erstellen
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <Select value={selectedWatchlistId} onValueChange={setSelectedWatchlistId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Watchlist auswählen..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {watchlists.map((watchlist) => (
-                          <SelectItem key={watchlist.id} value={watchlist.id}>
-                            {watchlist.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={handleAddToWatchlist}
-                        disabled={!selectedWatchlistId || isAddingToWatchlist}
-                        className="flex-1"
-                      >
-                        {isAddingToWatchlist ? 'Wird hinzugefügt...' : 'Hinzufügen'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleCreateAndSelect}
-                      >
-                        Neue erstellen
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
       </div>
       
       {/* Performance Stats - Kompakter auf Mobile */}
@@ -686,8 +529,8 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
         </ChartContainer>
       </div>
       
-      {/* Zeitraum-Buttons und Watchlist Button - Mobile (unter dem Chart) */}
-      <div className="w-full md:hidden space-y-2">
+      {/* Zeitraum-Buttons - Nur Mobile (unter dem Chart) */}
+      <div className="w-full md:hidden">
         <div className="flex justify-between gap-1">
           {TIME_RANGES.map((range) => (
             <Button
@@ -701,73 +544,6 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
             </Button>
           ))}
         </div>
-        
-        {user && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full h-8 flex items-center justify-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Zu Watchlist hinzufügen</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Zu Watchlist hinzufügen</DialogTitle>
-                <DialogDescription>
-                  Wähle eine Watchlist aus, um {symbol} hinzuzufügen.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4">
-                {watchlists.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Du hast noch keine Watchlists.
-                    </p>
-                    <Button onClick={handleCreateAndSelect}>
-                      Neue Watchlist erstellen
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <Select value={selectedWatchlistId} onValueChange={setSelectedWatchlistId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Watchlist auswählen..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {watchlists.map((watchlist) => (
-                          <SelectItem key={watchlist.id} value={watchlist.id}>
-                            {watchlist.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={handleAddToWatchlist}
-                        disabled={!selectedWatchlistId || isAddingToWatchlist}
-                        className="flex-1"
-                      >
-                        {isAddingToWatchlist ? 'Wird hinzugefügt...' : 'Hinzufügen'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleCreateAndSelect}
-                      >
-                        Neue erstellen
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
       </div>
     </div>
   );
