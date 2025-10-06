@@ -330,6 +330,18 @@ const MetricCard: React.FC<{
                   <p className="text-xs"><span className="font-medium">Warum wichtig:</span> {detailedExplanation.whyImportant}</p>
                   <p className="text-xs"><span className="font-medium">Buffett-Maßstab:</span> {detailedExplanation.buffettGuideline}</p>
                   <p className="text-xs"><span className="font-medium">Gute Werte:</span> {detailedExplanation.goodValue}</p>
+                  
+                  {/* Show dynamic explanation if available */}
+                  {explanation && explanation !== detailedExplanation.whatItIs && (
+                    <div className="pt-2 border-t">
+                      <p className="text-xs"><span className="font-medium">Aktuelle Analyse:</span> {explanation}</p>
+                    </div>
+                  )}
+                  
+                  {/* Show threshold */}
+                  <div className="pt-2 border-t">
+                    <p className="text-xs"><span className="font-medium">Schwelle:</span> {threshold}</p>
+                  </div>
                 </div>
               </div>
             </PopoverContent>
