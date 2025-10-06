@@ -449,11 +449,11 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
               {performanceStats.performance >= 0 ? '+' : ''}{performanceStats.performance.toFixed(2)}%
             </span>
           </div>
-          <div className="hidden sm:block">
+          <div>
             <span className="font-medium text-muted-foreground">Above Low: </span>
             <span className="text-green-600 font-semibold">+{performanceStats.aboveLow.toFixed(2)}%</span>
           </div>
-          <div className="hidden sm:block">
+          <div>
             <span className="font-medium text-muted-foreground">Below High: </span>
             <span className={performanceStats.belowHigh >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
               {performanceStats.belowHigh.toFixed(2)}%
