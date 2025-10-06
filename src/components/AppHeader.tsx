@@ -72,11 +72,11 @@ const AppHeader: React.FC = () => {
             />
           </div>
           
-          {/* AI Toggle - vertikal wie gewünscht */}
-          <div className="shrink-0 flex flex-col items-center gap-1 ml-2">
-            <div className="flex items-center gap-1">
-              <Brain className="h-3 w-3 text-primary" />
-              <Label htmlFor="deep-research-mobile" className="text-[10px] font-medium cursor-pointer whitespace-nowrap">
+          {/* AI Toggle - wie Desktop Version */}
+          <div className="shrink-0 flex items-center gap-2 ml-2">
+            <div className="flex items-center gap-1.5">
+              <Brain className="h-3.5 w-3.5 text-primary" />
+              <Label htmlFor="deep-research-mobile" className="text-2xs font-medium cursor-pointer whitespace-nowrap">
                 AI Analyse
               </Label>
             </div>
