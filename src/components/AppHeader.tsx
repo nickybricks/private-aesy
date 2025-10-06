@@ -67,8 +67,8 @@ const AppHeader: React.FC = () => {
             </Button>
           </div>
           
-          {/* Search Field - Schmaler für mehr Platz beim KI-Toggle */}
-          <div className="flex-1 min-w-0 max-w-[200px]">
+          {/* Search Field */}
+          <div className="flex-1 min-w-0">
             <StockSearch 
               onSearch={handleStockSearch} 
               isLoading={isLoading} 
@@ -77,17 +77,21 @@ const AppHeader: React.FC = () => {
             />
           </div>
           
-          {/* AI Toggle - Rechts mit KI Label und Info Tooltip */}
+          {/* AI Toggle - Kompaktes Layout */}
           <TooltipProvider>
-            <div className="shrink-0 flex flex-col items-center gap-0.5">
-              <div className="flex items-center gap-0.5">
-                <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
+            <div className="shrink-0 flex items-center gap-2 pl-2">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-semibold text-foreground uppercase tracking-wide">
                   KI
                 </span>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button type="button" className="focus:outline-none">
-                      <Info className="h-3 w-3 text-muted-foreground" />
+                    <button 
+                      type="button" 
+                      className="focus:outline-none p-0.5 rounded-full hover:bg-accent/50 transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-[280px] p-3">
@@ -108,7 +112,7 @@ const AppHeader: React.FC = () => {
                 checked={enableDeepResearch}
                 onCheckedChange={setEnableDeepResearch}
                 disabled={isLoading}
-                className="scale-75"
+                className="scale-90"
               />
             </div>
           </TooltipProvider>
