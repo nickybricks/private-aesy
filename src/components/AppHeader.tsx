@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import { Menu, Brain } from 'lucide-react';
+import { Menu, Brain, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import StockSearch from './StockSearch';
 import { useMobileMenu } from '@/context/MobileMenuContext';
 import { useStock } from '@/context/StockContext';
@@ -71,10 +77,33 @@ const AppHeader: React.FC = () => {
             />
           </div>
           
-          {/* AI Toggle - Rechts mit KI Label */}
-          <div className="shrink-0 flex flex-col items-center gap-0.5">
-            <div className="flex items-center gap-1">
-              <Brain className="h-4 w-4 text-primary" />
+          {/* AI Toggle - Rechts mit KI Label und Info Tooltip */}
+          <TooltipProvider>
+            <div className="shrink-0 flex flex-col items-center gap-0.5">
+              <div className="flex items-center gap-0.5">
+                <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
+                  KI
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="focus:outline-none">
+                      <Info className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[280px] p-3">
+                    <div className="space-y-2">
+                      <p className="font-semibold text-xs">Deep Research KI-Analyse</p>
+                      <p className="text-xs text-muted-foreground">
+                        Erweiterte Analyse mit aktuellen Marktdaten, qualitativen Faktoren und KI-gestützter Bewertung.
+                      </p>
+                      <div className="pt-2 border-t">
+                        <p className="text-xs font-medium">Credits pro Analyse:</p>
+                        <p className="text-xs text-muted-foreground">~5-10 Credits (abhängig von der Datenmenge)</p>
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <Switch
                 checked={enableDeepResearch}
                 onCheckedChange={setEnableDeepResearch}
@@ -82,10 +111,7 @@ const AppHeader: React.FC = () => {
                 className="scale-75"
               />
             </div>
-            <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
-              KI
-            </span>
-          </div>
+          </TooltipProvider>
         </div>
       </div>
     </header>
