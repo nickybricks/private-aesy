@@ -112,7 +112,6 @@ const AppHeader: React.FC = () => {
                 checked={enableDeepResearch}
                 onCheckedChange={setEnableDeepResearch}
                 disabled={isLoading}
-                className="scale-75"
               />
             </div>
           </TooltipProvider>
