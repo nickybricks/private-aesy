@@ -242,10 +242,10 @@ const StockQuoteHeader: React.FC = () => {
               </div>
               
               {/* Compact Add to Watchlist Button */}
-              {buffettCriteria && financialMetrics && overallRating && (
+              {buffettCriteria && financialMetrics && overallRating && user && (
                 <Button
-                  onClick={() => setDialogOpen(true)}
-                  variant="ghost"
+                  onClick={() => setWatchlistDialogOpen(true)}
+                  variant="default"
                   size="sm"
                   className="h-8 w-8 p-0 rounded-full"
                   title="Zu Watchlist hinzufügen"
