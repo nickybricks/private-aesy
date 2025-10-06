@@ -257,7 +257,7 @@ const StockQuoteHeader: React.FC = () => {
                   }}
                   variant="default"
                   size="sm"
-                  className="h-8 w-8 min-w-8 p-0 !rounded-full"
+                  className="h-10 w-10 sm:h-8 sm:w-8 min-w-[2.5rem] sm:min-w-[2rem] p-0 !rounded-full aspect-square flex items-center justify-center"
                   title="Zu Watchlist hinzufügen"
                 >
                   <Plus size={18} />
