@@ -86,7 +86,7 @@ const IndexContent: React.FC = () => {
   return (
     <main className="flex-1 overflow-auto bg-background">
         <div className="h-full">
-          <div className="p-3 sm:p-4 md:p-6 w-full">
+          <div className="p-2 sm:p-3 md:p-4 w-full">
             
             <KiAvailabilityAlert gptAvailable={gptAvailable} />
             
@@ -102,7 +102,7 @@ const IndexContent: React.FC = () => {
             
             {/* Stock Quote Header and Chart Grid */}
             {stockInfo && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3">
                 {/* Stock Quote Section */}
                 <StockQuoteHeader />
                 
