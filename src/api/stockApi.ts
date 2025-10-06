@@ -58,58 +58,86 @@ const normalizeNewsItems = (items: any[]): NewsItem[] => {
   }).filter(n => n.title && n.url);
 };
 
-// Funktion, um Stock News zu holen (stable mit Fallback v3)
-export const fetchStockNews = async (ticker: string): Promise<NewsItem[]> => {
+// Funktion, um Stock News zu holen (stable mit Fallback v3 + NewsAPI)
+export const fetchStockNews = async (ticker: string, companyName?: string): Promise<NewsItem[]> => {
   console.log(`Fetching stock news for ${ticker}`);
   const standardizedTicker = ticker.trim().toUpperCase();
   
   try {
-    // Try stable endpoint first
+    // Fetch from FMP (stable endpoint first)
     const stableResp = await axios.get('https://financialmodelingprep.com/stable/news/stock', {
       params: { symbols: standardizedTicker, apikey: DEFAULT_FMP_API_KEY }
     });
-    let data = normalizeNewsItems(stableResp.data);
-    console.log('Stable stock news:', data.length);
+    let fmpData = normalizeNewsItems(stableResp.data);
+    console.log('Stable stock news:', fmpData.length);
     
-    if (data.length === 0) {
+    if (fmpData.length === 0) {
       // Fallback to v3 endpoint
       const v3 = await axios.get('https://financialmodelingprep.com/api/v3/stock_news', {
         params: { tickers: standardizedTicker, limit: 50, apikey: DEFAULT_FMP_API_KEY }
       });
-      data = normalizeNewsItems(v3.data);
-      console.log('Fallback v3 stock news:', data.length);
+      fmpData = normalizeNewsItems(v3.data);
+      console.log('Fallback v3 stock news:', fmpData.length);
+    }
+
+    // Fetch from NewsAPI if company name is available
+    if (companyName) {
+      try {
+        const { fetchNewsFromNewsAPI, mergeNewsSources } = await import('@/api/newsApi');
+        const { newsItems } = await fetchNewsFromNewsAPI(standardizedTicker, companyName);
+        const combined = mergeNewsSources(fmpData, newsItems);
+        console.log(`✅ Combined news: ${fmpData.length} FMP + ${newsItems.length} NewsAPI = ${combined.length} total`);
+        return combined;
+      } catch (newsApiError) {
+        console.error('NewsAPI failed, using FMP only:', newsApiError);
+        return fmpData;
+      }
     }
     
-    return data;
+    return fmpData;
   } catch (error) {
     console.error('Error fetching stock news:', error);
     return [];
   }
 };
 
-// Funktion, um Press Releases zu holen (stable mit Fallback v3)
-export const fetchPressReleases = async (ticker: string): Promise<NewsItem[]> => {
+// Funktion, um Press Releases zu holen (stable mit Fallback v3 + NewsAPI)
+export const fetchPressReleases = async (ticker: string, companyName?: string): Promise<NewsItem[]> => {
   console.log(`Fetching press releases for ${ticker}`);
   const standardizedTicker = ticker.trim().toUpperCase();
   
   try {
-    // Try stable endpoint first
+    // Fetch from FMP (stable endpoint first)
     const stableResp = await axios.get('https://financialmodelingprep.com/stable/news/press-releases', {
       params: { symbols: standardizedTicker, apikey: DEFAULT_FMP_API_KEY }
     });
-    let data = normalizeNewsItems(stableResp.data);
-    console.log('Stable press releases:', data.length);
+    let fmpData = normalizeNewsItems(stableResp.data);
+    console.log('Stable press releases:', fmpData.length);
     
-    if (data.length === 0) {
+    if (fmpData.length === 0) {
       // Fallback to v3 endpoint
       const v3 = await axios.get(`https://financialmodelingprep.com/api/v3/press-releases/${standardizedTicker}`, {
         params: { limit: 50, apikey: DEFAULT_FMP_API_KEY }
       });
-      data = normalizeNewsItems(v3.data);
-      console.log('Fallback v3 press releases:', data.length);
+      fmpData = normalizeNewsItems(v3.data);
+      console.log('Fallback v3 press releases:', fmpData.length);
+    }
+
+    // Fetch from NewsAPI if company name is available
+    if (companyName) {
+      try {
+        const { fetchNewsFromNewsAPI, mergeNewsSources } = await import('@/api/newsApi');
+        const { pressReleases } = await fetchNewsFromNewsAPI(standardizedTicker, companyName);
+        const combined = mergeNewsSources(fmpData, pressReleases);
+        console.log(`✅ Combined press releases: ${fmpData.length} FMP + ${pressReleases.length} NewsAPI = ${combined.length} total`);
+        return combined;
+      } catch (newsApiError) {
+        console.error('NewsAPI failed, using FMP only:', newsApiError);
+        return fmpData;
+      }
     }
     
-    return data;
+    return fmpData;
   } catch (error) {
     console.error('Error fetching press releases:', error);
     return [];

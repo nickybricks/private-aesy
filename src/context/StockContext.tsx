@@ -72,16 +72,6 @@ export function StockProvider({ children }: StockProviderProps) {
       setValuationData(undefined);
       setDeepResearchPerformed(enableDeepResearch);
       
-      // Fetch news in parallel with stock search
-      const newsPromise = fetchStockNews(ticker).catch(err => {
-        console.error('Error fetching news:', err);
-        return [];
-      });
-      const pressPromise = fetchPressReleases(ticker).catch(err => {
-        console.error('Error fetching press releases:', err);
-        return [];
-      });
-      
       const {
         info, 
         stockCurrency: currency, 
@@ -99,6 +89,17 @@ export function StockProvider({ children }: StockProviderProps) {
         hasMetrics: !!metricsData,
         hasRating: !!rating,
         enableDeepResearch
+      });
+
+      // Fetch news after we have company info (for NewsAPI integration)
+      const companyName = info?.name || ticker;
+      const newsPromise = fetchStockNews(ticker, companyName).catch(err => {
+        console.error('Error fetching news:', err);
+        return [];
+      });
+      const pressPromise = fetchPressReleases(ticker, companyName).catch(err => {
+        console.error('Error fetching press releases:', err);
+        return [];
       });
       
       // Wenn die dcfData einen intrinsicValue enthält, aktualisiere diesen in den stockInfo-Daten
