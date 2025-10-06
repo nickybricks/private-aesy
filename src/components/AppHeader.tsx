@@ -79,10 +79,10 @@ const AppHeader: React.FC = () => {
           
           {/* AI Toggle - Kompaktes Layout */}
           <TooltipProvider>
-            <div className="shrink-0 flex items-center gap-2 pl-2">
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] font-semibold text-foreground uppercase tracking-wide">
-                  KI
+            <div className="shrink-0 flex items-center gap-1.5 pl-1 pr-1">
+              <div className="flex items-center gap-0.5">
+                <span className="text-[9px] font-semibold text-foreground uppercase tracking-wide whitespace-nowrap">
+                  AI Analyse
                 </span>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -91,7 +91,7 @@ const AppHeader: React.FC = () => {
                       className="focus:outline-none p-0.5 rounded-full hover:bg-accent/50 transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Info className="h-3 w-3 text-muted-foreground" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-[280px] p-3">
