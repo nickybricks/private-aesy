@@ -10,11 +10,11 @@ const LoadingSection: React.FC = () => {
   }
 
   return (
-    <div className="flex items-center justify-center py-12">
+    <div className="md:flex md:items-center md:justify-center md:py-12 fixed md:relative bottom-0 left-0 right-0 md:bottom-auto md:left-auto md:right-auto bg-background md:bg-transparent border-t md:border-t-0 border-border p-4 md:p-0 z-50 md:z-auto">
       <div className="text-center max-w-md w-full">
         {/* Animated Wave Graph */}
-        <div className="mb-6 flex justify-center">
-          <svg width="120" height="60" viewBox="0 0 120 60" className="opacity-80">
+        <div className="mb-3 md:mb-6 flex justify-center">
+          <svg width="80" height="40" viewBox="0 0 120 60" className="opacity-80 md:w-[120px] md:h-[60px]">
             <path
               d="M0,30 Q15,10 30,30 T60,30 T90,30 T120,30"
               stroke="hsl(var(--primary))"
@@ -35,7 +35,7 @@ const LoadingSection: React.FC = () => {
           </svg>
         </div>
         
-        <p className="text-lg font-medium text-foreground">
+        <p className="text-sm md:text-lg font-medium text-foreground">
           Analysiere Aktie nach bewährten Kriterien...
         </p>
       </div>
