@@ -34,6 +34,7 @@ interface TooltipInfo {
   what: string;
   why: string;
   good: string;
+  attention?: string;
 }
 
 interface StockData {
@@ -448,44 +449,50 @@ function hasDataGaps(data: StockData): boolean {
 }
 
 /**
- * Tooltip-Definitionen
+ * Tooltip-Definitionen in Alltagssprache
  */
 const TOOLTIPS = {
   financialStrength: {
     title: "Finanzielle Stärke",
-    what: "Misst die Stabilität der Bilanz: Verschuldung, Liquidität und Zinslast.",
-    why: "Starke Finanzen schützen vor Krisen und ermöglichen Investitionen.",
-    good: "Hoher Score = gesunde Bilanz, niedrige Schulden, hohe Liquidität."
+    what: "Wie gesund sind die Finanzen des Unternehmens? Hier schauen wir auf Schulden, verfügbares Geld und ob die Firma ihre Zinsen locker zahlen kann.",
+    why: "Unternehmen mit starken Finanzen überstehen Krisen besser und können auch in schwierigen Zeiten investieren und wachsen. Weniger Schulden bedeuten weniger Risiko für Aktionäre.",
+    good: "Ein hoher Score bedeutet: Das Unternehmen hat wenig Schulden, viel Geld auf dem Konto und kann seine Zinsen problemlos bezahlen.",
+    attention: "Achtung: Manche Branchen (z.B. Banken, Versorger) arbeiten naturgemäß mit mehr Schulden – das ist dort normal."
   },
   profitability: {
     title: "Profitabilität",
-    what: "Bewertet Gewinnmargen, Eigenkapitalrendite und Cash-Qualität.",
-    why: "Profitable Unternehmen schaffen nachhaltig Wert für Aktionäre.",
-    good: "Hoher Score = starke Margen, hohe Renditen, solider Cash Flow."
+    what: "Wie profitabel arbeitet das Unternehmen? Wir prüfen, wie viel Gewinn aus dem Umsatz übrig bleibt und wie gut das eingesetzte Kapital verzinst wird.",
+    why: "Nur profitable Firmen schaffen dauerhaft Wert. Hohe Margen zeigen, dass das Unternehmen seine Produkte zu guten Preisen verkaufen kann und nicht im Preiskampf feststeckt.",
+    good: "Ein hoher Score heißt: Das Unternehmen verdient gut, der Gewinn ist stabil und der Cash Flow ist stark (nicht nur Buchgewinne).",
+    attention: "Achtung: Einmalige Sondereffekte (Verkäufe, Abschreibungen) können die Zahlen verzerren."
   },
   growth: {
     title: "Wachstum",
-    what: "Analysiert EPS-Wachstum, Umsatzentwicklung und FCF-Trends.",
-    why: "Wachstum treibt langfristige Kurssteigerungen.",
-    good: "Hoher Score = konsistentes, nachhaltiges Wachstum über Jahre."
+    what: "Wächst das Unternehmen? Hier schauen wir, ob Umsatz, Gewinn und freier Cashflow über die Jahre gestiegen sind.",
+    why: "Wachsende Unternehmen können ihre Gewinne steigern – und das treibt langfristig den Aktienkurs. Stillstand oder Schrumpfung sind meist Warnsignale.",
+    good: "Ein hoher Score bedeutet: Das Unternehmen ist in den letzten Jahren konstant und nachhaltig gewachsen – nicht nur durch Zukäufe, sondern aus eigener Kraft.",
+    attention: "Achtung: Künstliches Wachstum durch teure Übernahmen oder aggressive Bilanzierung ist kritisch zu sehen."
   },
   value: {
     title: "Bewertung",
-    what: "Vergleicht Aktienkurs mit Buchwert, Gewinn und Fair Value.",
-    why: "Günstig bewertete Aktien bieten mehr Sicherheitsmarge.",
-    good: "Hoher Score = attraktive Bewertung, gutes Chance-Risiko-Verhältnis."
+    what: "Ist die Aktie günstig oder teuer? Wir vergleichen den aktuellen Kurs mit dem Buchwert, dem Gewinn und dem fairen Wert nach Peter Lynch.",
+    why: "Selbst das beste Unternehmen kann eine schlechte Investition sein, wenn man zu viel bezahlt. Eine günstige Bewertung bietet eine Sicherheitsmarge.",
+    good: "Ein hoher Score heißt: Die Aktie ist attraktiv bewertet – der Preis liegt unter oder nahe am fairen Wert. Gutes Chance-Risiko-Verhältnis.",
+    attention: "Achtung: Manchmal sind Aktien aus gutem Grund billig (schlechte Aussichten). Immer die Gesamtsituation prüfen!"
   },
   momentum: {
     title: "Momentum",
-    what: "Misst Kursentwicklung über 1, 3, 6 und 12 Monate.",
-    why: "Momentum zeigt Marktvertrauen und Trendstärke.",
-    good: "Hoher Score = positive Kursdynamik, starker Aufwärtstrend."
+    what: "Wie hat sich der Aktienkurs in letzter Zeit entwickelt? Wir schauen auf 1, 3, 6 und 12 Monate zurück.",
+    why: "Momentum zeigt, ob die Börse dem Unternehmen gerade vertraut oder nicht. Starkes Momentum kann auf positive Entwicklungen hindeuten.",
+    good: "Ein hoher Score bedeutet: Die Aktie hat in letzter Zeit gut performt – der Trend zeigt nach oben und das Marktvertrauen ist da.",
+    attention: "Achtung: Momentum ist kurzfristig und kann schnell drehen. Nicht das wichtigste Kriterium für langfristige Investoren."
   },
   qualitative: {
     title: "Qualitative Faktoren",
-    what: "KI-Analyse zu Wettbewerbsvorteil, Management, Geschäftsmodell.",
-    why: "Qualität unterscheidet langfristige Gewinner von Verlierern.",
-    good: "Hoher Score = starker Burggraben, exzellentes Management, klares Geschäft."
+    what: "Was macht das Unternehmen besonders? Eine KI analysiert Wettbewerbsvorteile (\"Burggraben\"), Managementqualität und Geschäftsmodell.",
+    why: "Die besten Zahlen nützen nichts, wenn die Firma keinen dauerhaften Vorteil hat. Starke Marken, Patente oder Netzwerkeffekte schützen vor Konkurrenz.",
+    good: "Ein hoher Score heißt: Das Unternehmen hat einen echten Burggraben, ein Top-Management und ein verständliches, zukunftsfähiges Geschäftsmodell.",
+    attention: "Achtung: Diese Säule basiert auf KI-Analyse und ist nur verfügbar, wenn Deep Research durchgeführt wurde."
   }
 } as const;
 

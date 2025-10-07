@@ -211,6 +211,7 @@ interface PillarCardProps {
     what: string;
     why: string;
     good: string;
+    attention?: string;
   };
 }
 
@@ -240,7 +241,7 @@ function PillarCard({ title, score, tooltip }: PillarCardProps) {
           <h4 className="font-semibold text-sm">{title}</h4>
           <ClickableTooltip
             content={
-              <div className="space-y-2 text-sm">
+              <div className="space-y-3 text-sm max-w-sm">
                 <div>
                   <p className="font-semibold text-xs text-muted-foreground mb-1">Was ist das?</p>
                   <p>{tooltip.what}</p>
@@ -250,11 +251,18 @@ function PillarCard({ title, score, tooltip }: PillarCardProps) {
                   <p>{tooltip.why}</p>
                 </div>
                 <div>
-                  <p className="font-semibold text-xs text-muted-foreground mb-1">Guter Score bedeutet:</p>
+                  <p className="font-semibold text-xs text-muted-foreground mb-1">Gut ist...</p>
                   <p>{tooltip.good}</p>
                 </div>
+                {tooltip.attention && (
+                  <div className="border-t pt-2">
+                    <p className="font-semibold text-xs text-warning mb-1">⚠️ Achtung</p>
+                    <p className="text-xs">{tooltip.attention}</p>
+                  </div>
+                )}
               </div>
             }
+            width="96"
           >
             <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground cursor-help" />
           </ClickableTooltip>
