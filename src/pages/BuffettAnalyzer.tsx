@@ -21,6 +21,7 @@ import ErrorAlert from '@/components/ErrorAlert';
 import AppFooter from '@/components/AppFooter';
 import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
 import { useToast } from '@/hooks/use-toast';
+import { AesyScoreSnowflake } from '@/components/AesyScoreSnowflake';
 
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 import { ValuationTab } from '@/components/ValuationTab';
@@ -108,13 +109,9 @@ const IndexContent: React.FC = () => {
                   <StockQuoteHeader />
                 </div>
                 
-                {/* Snowflake Placeholder - Mobile & Desktop: Second/Middle */}
+                {/* Aesy Score Snowflake - Mobile & Desktop: Second/Middle */}
                 <Card className="p-3 sm:p-4 md:p-5 order-2 lg:order-2 flex items-center justify-center min-h-[200px]">
-                  <div className="text-center space-y-2">
-                    <div className="text-4xl">❄️</div>
-                    <div className="text-sm text-muted-foreground">Snowflake (bald)</div>
-                    <div className="font-semibold">Aesy Score: –</div>
-                  </div>
+                  <AesyScoreSnowflake />
                 </Card>
                 
                 {/* Stock Chart Section - Mobile & Desktop: Third/Right */}
