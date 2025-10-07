@@ -21,10 +21,10 @@ import ErrorAlert from '@/components/ErrorAlert';
 import AppFooter from '@/components/AppFooter';
 import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
 import { useToast } from '@/hooks/use-toast';
-import MetricsComparisonTable from '@/components/MetricsComparisonTable';
 
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 import { ValuationTab } from '@/components/ValuationTab';
+import FinancialMetricsTable from '@/components/FinancialMetricsTable';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -145,6 +145,12 @@ const IndexContent: React.FC = () => {
                       Finanzkennzahlen
                     </TabsTrigger>
                     <TabsTrigger 
+                      value="financials2" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
+                    >
+                      Finanzkennzahlen 2
+                    </TabsTrigger>
+                    <TabsTrigger 
                       value="statistics" 
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
@@ -162,12 +168,6 @@ const IndexContent: React.FC = () => {
                     >
                       Peter Lynch
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="comparison" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
-                    >
-                      Vergleichstabelle
-                    </TabsTrigger>
                     </TabsList>
                   </div>
                   
@@ -180,6 +180,10 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="financials" className="mt-4 sm:mt-6">
                     <MetricsSection />
+                  </TabsContent>
+                  
+                  <TabsContent value="financials2" className="mt-4 sm:mt-6">
+                    <FinancialMetricsTable />
                   </TabsContent>
                   
                   <TabsContent value="statistics" className="mt-4 sm:mt-6">
@@ -196,10 +200,6 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="peter-lynch" className="mt-4 sm:mt-6">
                     <PeterLynchSection />
-                  </TabsContent>
-                  
-                  <TabsContent value="comparison" className="mt-4 sm:mt-6">
-                    <MetricsComparisonTable />
                   </TabsContent>
                 </Tabs>
               </div>
