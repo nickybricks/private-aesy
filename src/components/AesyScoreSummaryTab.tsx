@@ -12,26 +12,40 @@ import { ClickableTooltip } from "./ClickableTooltip";
 export function AesyScoreSummaryTab() {
   const { stockInfo, financialMetrics, overallRating, buffettCriteria, triggerDeepResearch } = useStock();
   const [historicalData, setHistoricalData] = useState<any[]>([]);
+  const [companyProfile, setCompanyProfile] = useState<any>(null);
   
-  // Fetch historical data for momentum calculation
+  // Fetch historical data and company profile for momentum and sector calculation
   useEffect(() => {
     if (!stockInfo?.ticker) return;
     
-    const fetchHistoricalData = async () => {
+    const fetchData = async () => {
       try {
-        const endpoint = `https://financialmodelingprep.com/api/v3/historical-price-full/${stockInfo.ticker}?apikey=${DEFAULT_FMP_API_KEY}`;
-        const response = await fetch(endpoint);
-        const data = await response.json();
+        // Fetch historical data for momentum
+        const histEndpoint = `https://financialmodelingprep.com/api/v3/historical-price-full/${stockInfo.ticker}?apikey=${DEFAULT_FMP_API_KEY}`;
+        const histResponse = await fetch(histEndpoint);
+        const histData = await histResponse.json();
         
-        if (data.historical && Array.isArray(data.historical)) {
-          setHistoricalData(data.historical.reverse());
+        if (histData.historical && Array.isArray(histData.historical)) {
+          setHistoricalData(histData.historical.reverse());
+        }
+        
+        // Fetch company profile for sector/industry
+        const profileEndpoint = `https://financialmodelingprep.com/api/v3/profile/${stockInfo.ticker}?apikey=${DEFAULT_FMP_API_KEY}`;
+        const profileResponse = await fetch(profileEndpoint);
+        const profileData = await profileResponse.json();
+        
+        if (profileData && profileData.length > 0) {
+          setCompanyProfile({
+            sector: profileData[0].sector,
+            industry: profileData[0].industry
+          });
         }
       } catch (error) {
-        console.error('Error fetching historical data for momentum:', error);
+        console.error('Error fetching data for AesyScore:', error);
       }
     };
     
-    fetchHistoricalData();
+    fetchData();
   }, [stockInfo?.ticker]);
   
   const stockData = {
@@ -40,6 +54,7 @@ export function AesyScoreSummaryTab() {
     overallRating,
     buffettCriteria,
     historicalData,
+    companyProfile,
   };
   
   const aesyScoreData = calculateAesyScore(stockData);

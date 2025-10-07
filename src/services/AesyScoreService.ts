@@ -44,35 +44,110 @@ interface StockData {
   overallRating?: any;
   buffettCriteria?: any;
   gptAnalysis?: any;
+  companyProfile?: {
+    sector?: string;
+    industry?: string;
+  };
+}
+
+/**
+ * Sektor-Kategorien für spezifische Bewertungslogik
+ */
+enum SectorType {
+  BANK = 'BANK',
+  INSURANCE = 'INSURANCE',
+  REIT = 'REIT',
+  UTILITY = 'UTILITY',
+  STANDARD = 'STANDARD'
+}
+
+/**
+ * Erkennt den Sektor-Typ basierend auf Sektor/Branche
+ */
+function detectSectorType(data: StockData): SectorType {
+  const sector = data.companyProfile?.sector?.toLowerCase() || '';
+  const industry = data.companyProfile?.industry?.toLowerCase() || '';
+  
+  // Banken & Finanzdienstleister
+  if (sector.includes('financial') || industry.includes('bank') || 
+      industry.includes('financial services') || industry.includes('capital markets')) {
+    return SectorType.BANK;
+  }
+  
+  // Versicherungen
+  if (industry.includes('insurance') || industry.includes('versicherung')) {
+    return SectorType.INSURANCE;
+  }
+  
+  // REITs (Real Estate Investment Trusts)
+  if (industry.includes('reit') || industry.includes('real estate investment')) {
+    return SectorType.REIT;
+  }
+  
+  // Versorger (Utilities)
+  if (sector.includes('utilities') || sector.includes('utility') || 
+      industry.includes('electric') || industry.includes('gas') || industry.includes('water')) {
+    return SectorType.UTILITY;
+  }
+  
+  return SectorType.STANDARD;
 }
 
 /**
  * Berechnet Financial Strength (0-100)
  * Basiert auf: Verschuldung, Liquidität, Zinsdeckung
+ * Sektor-spezifische Anpassungen für Banken, Versicherer, REITs
  */
 function calculateFinancialStrength(data: StockData): number {
   const metrics = data.financialMetrics;
   if (!metrics) return 0;
 
+  const sectorType = detectSectorType(data);
   let score = 0;
   let factors = 0;
 
   // Verschuldungsgrad (D/E) - max 40 Punkte
+  // Banken, Versicherungen & REITs arbeiten mit mehr Leverage - angepasste Schwellen
   if (metrics.DtoE !== undefined && metrics.DtoE !== null) {
     factors++;
-    if (metrics.DtoE <= 0.3) score += 40;
-    else if (metrics.DtoE <= 0.5) score += 30;
-    else if (metrics.DtoE <= 1.0) score += 20;
-    else if (metrics.DtoE <= 2.0) score += 10;
+    
+    if (sectorType === SectorType.BANK || sectorType === SectorType.INSURANCE) {
+      // Banken/Versicherungen: Höhere Verschuldung ist normal
+      if (metrics.DtoE <= 5.0) score += 40;
+      else if (metrics.DtoE <= 8.0) score += 30;
+      else if (metrics.DtoE <= 12.0) score += 20;
+      else if (metrics.DtoE <= 15.0) score += 10;
+    } else if (sectorType === SectorType.REIT) {
+      // REITs: Mittlere Verschuldung akzeptabel
+      if (metrics.DtoE <= 0.8) score += 40;
+      else if (metrics.DtoE <= 1.5) score += 30;
+      else if (metrics.DtoE <= 2.5) score += 20;
+      else if (metrics.DtoE <= 3.5) score += 10;
+    } else if (sectorType === SectorType.UTILITY) {
+      // Versorger: Höhere Verschuldung normal (kapitalintensiv)
+      if (metrics.DtoE <= 1.0) score += 40;
+      else if (metrics.DtoE <= 1.5) score += 30;
+      else if (metrics.DtoE <= 2.5) score += 20;
+      else if (metrics.DtoE <= 3.5) score += 10;
+    } else {
+      // Standard-Unternehmen
+      if (metrics.DtoE <= 0.3) score += 40;
+      else if (metrics.DtoE <= 0.5) score += 30;
+      else if (metrics.DtoE <= 1.0) score += 20;
+      else if (metrics.DtoE <= 2.0) score += 10;
+    }
   }
 
   // Current Ratio - max 30 Punkte
+  // Für Banken/Versicherungen weniger relevant
   if (metrics.CurrentRatio !== undefined && metrics.CurrentRatio !== null) {
-    factors++;
-    if (metrics.CurrentRatio >= 2.0) score += 30;
-    else if (metrics.CurrentRatio >= 1.5) score += 25;
-    else if (metrics.CurrentRatio >= 1.0) score += 15;
-    else score += 5;
+    if (sectorType !== SectorType.BANK && sectorType !== SectorType.INSURANCE) {
+      factors++;
+      if (metrics.CurrentRatio >= 2.0) score += 30;
+      else if (metrics.CurrentRatio >= 1.5) score += 25;
+      else if (metrics.CurrentRatio >= 1.0) score += 15;
+      else score += 5;
+    }
   }
 
   // Zinsdeckungsgrad - max 30 Punkte
@@ -90,32 +165,79 @@ function calculateFinancialStrength(data: StockData): number {
 /**
  * Berechnet Profitability (0-100)
  * Basiert auf: ROE, Nettomarge, OCF-Qualität
+ * Sektor-spezifische Erwartungen
  */
 function calculateProfitability(data: StockData): number {
   const metrics = data.financialMetrics;
   if (!metrics) return 0;
 
+  const sectorType = detectSectorType(data);
   let score = 0;
   let factors = 0;
 
   // ROE 10J Durchschnitt - max 40 Punkte
+  // Banken haben typischerweise niedrigere ROE als Tech-Unternehmen
   if (metrics.ROE_10J_avg !== undefined && metrics.ROE_10J_avg !== null) {
     factors++;
     const roe = metrics.ROE_10J_avg * 100; // in Prozent
-    if (roe >= 20) score += 40;
-    else if (roe >= 15) score += 30;
-    else if (roe >= 10) score += 20;
-    else if (roe >= 5) score += 10;
+    
+    if (sectorType === SectorType.BANK || sectorType === SectorType.INSURANCE) {
+      // Finanzsektor: 10-15% ROE ist gut
+      if (roe >= 15) score += 40;
+      else if (roe >= 12) score += 35;
+      else if (roe >= 10) score += 30;
+      else if (roe >= 8) score += 20;
+      else if (roe >= 5) score += 10;
+    } else if (sectorType === SectorType.REIT) {
+      // REITs: ROE weniger aussagekräftig, aber 8-12% ist gut
+      if (roe >= 12) score += 40;
+      else if (roe >= 10) score += 35;
+      else if (roe >= 8) score += 30;
+      else if (roe >= 6) score += 20;
+      else if (roe >= 4) score += 10;
+    } else if (sectorType === SectorType.UTILITY) {
+      // Versorger: 8-12% ROE ist gut (reguliertes Geschäft)
+      if (roe >= 12) score += 40;
+      else if (roe >= 10) score += 35;
+      else if (roe >= 8) score += 30;
+      else if (roe >= 6) score += 20;
+      else if (roe >= 4) score += 10;
+    } else {
+      // Standard: höhere Erwartungen
+      if (roe >= 20) score += 40;
+      else if (roe >= 15) score += 30;
+      else if (roe >= 10) score += 20;
+      else if (roe >= 5) score += 10;
+    }
   }
 
   // Nettomarge 10J Durchschnitt - max 30 Punkte
+  // Sektor-spezifische Margen-Erwartungen
   if (metrics.Nettomarge_10J_avg !== undefined && metrics.Nettomarge_10J_avg !== null) {
     factors++;
     const margin = metrics.Nettomarge_10J_avg * 100;
-    if (margin >= 20) score += 30;
-    else if (margin >= 15) score += 25;
-    else if (margin >= 10) score += 20;
-    else if (margin >= 5) score += 10;
+    
+    if (sectorType === SectorType.BANK || sectorType === SectorType.INSURANCE) {
+      // Finanzsektor: 15-25% Marge ist gut
+      if (margin >= 25) score += 30;
+      else if (margin >= 20) score += 28;
+      else if (margin >= 15) score += 25;
+      else if (margin >= 10) score += 15;
+      else if (margin >= 5) score += 10;
+    } else if (sectorType === SectorType.UTILITY) {
+      // Versorger: 5-15% Marge ist normal
+      if (margin >= 15) score += 30;
+      else if (margin >= 12) score += 28;
+      else if (margin >= 10) score += 25;
+      else if (margin >= 7) score += 20;
+      else if (margin >= 5) score += 15;
+    } else {
+      // Standard & REITs
+      if (margin >= 20) score += 30;
+      else if (margin >= 15) score += 25;
+      else if (margin >= 10) score += 20;
+      else if (margin >= 5) score += 10;
+    }
   }
 
   // OCF Qualität 5J - max 30 Punkte
@@ -133,32 +255,64 @@ function calculateProfitability(data: StockData): number {
 /**
  * Berechnet Growth (0-100)
  * Basiert auf: EPS-Wachstum, Umsatzwachstum, FCF-Entwicklung
+ * Sektor-spezifische Wachstumserwartungen
  */
 function calculateGrowth(data: StockData): number {
   const metrics = data.financialMetrics;
   if (!metrics) return 0;
 
+  const sectorType = detectSectorType(data);
   let score = 0;
   let factors = 0;
 
   // EPS CAGR - max 40 Punkte
+  // Versorger & REITs: niedrigere Wachstumserwartungen
   if (metrics.EPS_CAGR !== undefined && metrics.EPS_CAGR !== null) {
     factors++;
     const cagr = metrics.EPS_CAGR * 100;
-    if (cagr >= 15) score += 40;
-    else if (cagr >= 10) score += 30;
-    else if (cagr >= 5) score += 20;
-    else if (cagr >= 0) score += 10;
+    
+    if (sectorType === SectorType.UTILITY || sectorType === SectorType.REIT) {
+      // Versorger/REITs: 3-7% Wachstum ist gut (stabile, dividendenstarke Geschäfte)
+      if (cagr >= 7) score += 40;
+      else if (cagr >= 5) score += 35;
+      else if (cagr >= 3) score += 30;
+      else if (cagr >= 1) score += 20;
+      else if (cagr >= 0) score += 15;
+    } else if (sectorType === SectorType.BANK || sectorType === SectorType.INSURANCE) {
+      // Finanzsektor: 5-10% Wachstum ist gut
+      if (cagr >= 12) score += 40;
+      else if (cagr >= 10) score += 35;
+      else if (cagr >= 7) score += 30;
+      else if (cagr >= 5) score += 25;
+      else if (cagr >= 3) score += 15;
+      else if (cagr >= 0) score += 10;
+    } else {
+      // Standard: höhere Wachstumserwartungen
+      if (cagr >= 15) score += 40;
+      else if (cagr >= 10) score += 30;
+      else if (cagr >= 5) score += 20;
+      else if (cagr >= 0) score += 10;
+    }
   }
 
   // Umsatzwachstum (falls vorhanden)
   if (metrics.RevenueCAGR !== undefined && metrics.RevenueCAGR !== null) {
     factors++;
     const revGrowth = metrics.RevenueCAGR * 100;
-    if (revGrowth >= 15) score += 30;
-    else if (revGrowth >= 10) score += 25;
-    else if (revGrowth >= 5) score += 20;
-    else if (revGrowth >= 0) score += 10;
+    
+    if (sectorType === SectorType.UTILITY || sectorType === SectorType.REIT) {
+      // Versorger/REITs: 2-5% Umsatzwachstum ist gut
+      if (revGrowth >= 5) score += 30;
+      else if (revGrowth >= 3) score += 25;
+      else if (revGrowth >= 1) score += 20;
+      else if (revGrowth >= 0) score += 15;
+    } else {
+      // Standard & Finanzsektor
+      if (revGrowth >= 15) score += 30;
+      else if (revGrowth >= 10) score += 25;
+      else if (revGrowth >= 5) score += 20;
+      else if (revGrowth >= 0) score += 10;
+    }
   }
 
   // FCF Marge 5J - max 30 Punkte
@@ -177,46 +331,99 @@ function calculateGrowth(data: StockData): number {
 /**
  * Berechnet Value (0-100)
  * Basiert auf: P/E, P/B, Peter Lynch Fair Value
+ * Sektor-spezifische Bewertungs-Maßstäbe
  */
 function calculateValue(data: StockData): number {
   const metrics = data.financialMetrics;
   const stockInfo = data.stockInfo;
   if (!metrics) return 0;
 
+  const sectorType = detectSectorType(data);
   let score = 0;
   let factors = 0;
 
   // P/E Ratio - max 35 Punkte
+  // Sektor-spezifische P/E Erwartungen
   if (metrics.PE !== undefined && metrics.PE !== null && metrics.PE > 0) {
     factors++;
-    if (metrics.PE <= 15) score += 35;
-    else if (metrics.PE <= 20) score += 28;
-    else if (metrics.PE <= 25) score += 20;
-    else if (metrics.PE <= 35) score += 10;
-    else score += 5;
+    
+    if (sectorType === SectorType.BANK || sectorType === SectorType.INSURANCE) {
+      // Finanzsektor: P/E 8-12 ist normal
+      if (metrics.PE <= 10) score += 35;
+      else if (metrics.PE <= 12) score += 30;
+      else if (metrics.PE <= 15) score += 25;
+      else if (metrics.PE <= 20) score += 15;
+      else score += 5;
+    } else if (sectorType === SectorType.REIT) {
+      // REITs: P/E 10-18 ist typisch (aber FFO wichtiger)
+      if (metrics.PE <= 15) score += 35;
+      else if (metrics.PE <= 18) score += 30;
+      else if (metrics.PE <= 22) score += 25;
+      else if (metrics.PE <= 28) score += 15;
+      else score += 5;
+    } else if (sectorType === SectorType.UTILITY) {
+      // Versorger: P/E 12-18 ist normal (stabile Erträge)
+      if (metrics.PE <= 15) score += 35;
+      else if (metrics.PE <= 18) score += 30;
+      else if (metrics.PE <= 22) score += 25;
+      else if (metrics.PE <= 28) score += 15;
+      else score += 5;
+    } else {
+      // Standard: P/E 15-25 je nach Wachstum
+      if (metrics.PE <= 15) score += 35;
+      else if (metrics.PE <= 20) score += 28;
+      else if (metrics.PE <= 25) score += 20;
+      else if (metrics.PE <= 35) score += 10;
+      else score += 5;
+    }
   }
 
   // P/B Ratio - max 25 Punkte
+  // Für Banken/Versicherungen ist P/B sehr wichtig
   if (metrics.PB !== undefined && metrics.PB !== null && metrics.PB > 0) {
     factors++;
-    if (metrics.PB <= 2) score += 25;
-    else if (metrics.PB <= 3) score += 20;
-    else if (metrics.PB <= 5) score += 15;
-    else if (metrics.PB <= 8) score += 8;
-    else score += 3;
+    
+    if (sectorType === SectorType.BANK || sectorType === SectorType.INSURANCE) {
+      // Finanzsektor: P/B ist Schlüsselkennzahl (0.8-1.2 ist gut)
+      if (metrics.PB <= 1.0) score += 25;
+      else if (metrics.PB <= 1.3) score += 22;
+      else if (metrics.PB <= 1.6) score += 18;
+      else if (metrics.PB <= 2.0) score += 12;
+      else score += 5;
+    } else {
+      // Standard, REITs, Versorger
+      if (metrics.PB <= 2) score += 25;
+      else if (metrics.PB <= 3) score += 20;
+      else if (metrics.PB <= 5) score += 15;
+      else if (metrics.PB <= 8) score += 8;
+      else score += 3;
+    }
   }
 
   // Peter Lynch Vergleich - max 40 Punkte
+  // Für Versorger/REITs weniger relevant (Dividendenrendite wichtiger)
   const peterLynchData = calculatePeterLynchMetrics(data);
   if (peterLynchData.priceToLynch !== null) {
     factors++;
     const ratio = peterLynchData.priceToLynch;
-    if (ratio <= 0.7) score += 40; // Deutlich unterbewertet
-    else if (ratio <= 0.9) score += 35; // Unterbewertet
-    else if (ratio <= 1.1) score += 28; // Fair bewertet
-    else if (ratio <= 1.3) score += 20; // Leicht überbewertet
-    else if (ratio <= 1.5) score += 10; // Überbewertet
-    else score += 5; // Deutlich überbewertet
+    
+    if (sectorType === SectorType.UTILITY || sectorType === SectorType.REIT) {
+      // Etwas großzügigere Bewertung für Versorger/REITs
+      if (ratio <= 0.8) score += 40;
+      else if (ratio <= 1.0) score += 35;
+      else if (ratio <= 1.2) score += 30;
+      else if (ratio <= 1.4) score += 20;
+      else if (ratio <= 1.6) score += 10;
+      else score += 5;
+    } else {
+      // Standard & Finanzsektor
+      if (ratio <= 0.7) score += 40;
+      else if (ratio <= 0.9) score += 35;
+      else if (ratio <= 1.1) score += 28;
+      else if (ratio <= 1.3) score += 20;
+      else if (ratio <= 1.5) score += 10;
+      else score += 5;
+    }
   }
 
   return factors > 0 ? Math.round(score / factors * 100 / 100) : 0;
