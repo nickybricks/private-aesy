@@ -161,6 +161,12 @@ const IndexContent: React.FC = () => {
                     >
                       Peter Lynch
                     </TabsTrigger>
+                    <TabsTrigger 
+                      value="summary" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
+                    >
+                      Summary
+                    </TabsTrigger>
                     </TabsList>
                   </div>
                   
@@ -189,6 +195,12 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="peter-lynch" className="mt-4 sm:mt-6">
                     <PeterLynchSection />
+                  </TabsContent>
+                  
+                  <TabsContent value="summary" className="mt-4 sm:mt-6">
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-semibold">Summary</h2>
+                    </div>
                   </TabsContent>
                 </Tabs>
               </div>
