@@ -8,7 +8,8 @@ import {
   History,
   X,
   LogOut,
-  Shield
+  Shield,
+  Palette
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -79,6 +80,12 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
     {
       title: 'Einstellungen',
       items: [
+        {
+          name: 'Design System',
+          path: '/design-system',
+          icon: Palette,
+          description: 'Designmerkmale und Richtlinien'
+        },
         {
           name: 'Profil',
           path: '/profile',

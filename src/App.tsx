@@ -12,6 +12,7 @@ import Watchlists from "./pages/Watchlists";
 import WatchlistDetail from "./pages/WatchlistDetail";
 import SavedAnalyses from "./pages/SavedAnalyses";
 import AdminDashboard from "./pages/AdminDashboard";
+import DesignSystem from "./pages/DesignSystem";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 import AdminRoute from "./components/AdminRoute";
@@ -71,6 +72,7 @@ const App = () => {
             <Route path="/watchlists" element={<Watchlists />} />
             <Route path="/watchlists/:id" element={<WatchlistDetail />} /> 
             <Route path="/saved-analyses" element={<SavedAnalyses />} />
+            <Route path="/design-system" element={<DesignSystem />} />
             <Route path="/admin" element={
               <AdminRoute>
                 <AdminDashboard />
