@@ -116,39 +116,50 @@ export function AesyScoreSummaryTab() {
 
       {/* Säulen-Karten */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Die 6 Säulen</h3>
+        <h3 className="text-lg font-semibold">Die 5 Säulen (+ Qualitativ, optional)</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <PillarCard
             title="Finanzielle Stärke"
             score={aesyScoreData.financialStrength}
+            isAvailable={aesyScoreData.availability.financialStrength}
             tooltip={aesyScoreData.tooltips.financialStrength}
           />
           <PillarCard
             title="Profitabilität"
             score={aesyScoreData.profitability}
+            isAvailable={aesyScoreData.availability.profitability}
             tooltip={aesyScoreData.tooltips.profitability}
           />
           <PillarCard
             title="Wachstum"
             score={aesyScoreData.growth}
+            isAvailable={aesyScoreData.availability.growth}
             tooltip={aesyScoreData.tooltips.growth}
           />
           <PillarCard
             title="Bewertung"
             score={aesyScoreData.value}
+            isAvailable={aesyScoreData.availability.value}
             tooltip={aesyScoreData.tooltips.value}
           />
           <PillarCard
             title="Momentum"
             score={aesyScoreData.momentum}
+            isAvailable={aesyScoreData.availability.momentum}
             tooltip={aesyScoreData.tooltips.momentum}
           />
-          {aesyScoreData.qualitative !== null && (
+          {aesyScoreData.qualitative !== null ? (
             <PillarCard
               title="Qualitative Faktoren"
               score={aesyScoreData.qualitative}
+              isAvailable={aesyScoreData.availability.qualitative}
               tooltip={aesyScoreData.tooltips.qualitative}
+            />
+          ) : (
+            <PlaceholderPillarCard 
+              onClick={() => triggerDeepResearch(stockInfo?.ticker)}
+              disabled={!stockInfo?.ticker}
             />
           )}
         </div>
@@ -220,7 +231,8 @@ export function AesyScoreSummaryTab() {
 
 interface PillarCardProps {
   title: string;
-  score: number;
+  score: number | null;
+  isAvailable: boolean;
   tooltip: {
     title: string;
     what: string;
@@ -230,7 +242,56 @@ interface PillarCardProps {
   };
 }
 
-function PillarCard({ title, score, tooltip }: PillarCardProps) {
+function PillarCard({ title, score, isAvailable, tooltip }: PillarCardProps) {
+  // n/a-Anzeige wenn nicht verfügbar
+  if (!isAvailable || score === null) {
+    return (
+      <Card className="p-4 border-2 bg-muted/30 border-muted transition-all">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold text-sm">{title}</h4>
+            <ClickableTooltip
+              content={
+                <div className="space-y-3 text-sm max-w-sm">
+                  <div>
+                    <p className="font-semibold text-xs text-muted-foreground mb-1">Was ist das?</p>
+                    <p>{tooltip.what}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-xs text-muted-foreground mb-1">Warum wichtig?</p>
+                    <p>{tooltip.why}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-xs text-muted-foreground mb-1">Gut ist...</p>
+                    <p>{tooltip.good}</p>
+                  </div>
+                  {tooltip.attention && (
+                    <div className="border-t pt-2">
+                      <p className="font-semibold text-xs text-warning mb-1">⚠️ Achtung</p>
+                      <p className="text-xs">{tooltip.attention}</p>
+                    </div>
+                  )}
+                </div>
+              }
+              width="96"
+            >
+              <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground cursor-help" />
+            </ClickableTooltip>
+          </div>
+          <AlertCircle className="h-5 w-5 text-muted-foreground" />
+        </div>
+        
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-bold text-muted-foreground">n/a</span>
+        </div>
+        
+        <p className="text-xs text-muted-foreground mt-2">
+          Daten nicht verfügbar oder unzureichend
+        </p>
+      </Card>
+    );
+  }
+  
   const getScoreColor = (score: number) => {
     if (score >= 70) return "text-success";
     if (score >= 40) return "text-warning";
@@ -295,6 +356,40 @@ function PillarCard({ title, score, tooltip }: PillarCardProps) {
       <p className="text-xs text-muted-foreground mt-2">
         {tooltip.good}
       </p>
+    </Card>
+  );
+}
+
+interface PlaceholderPillarCardProps {
+  onClick: () => void;
+  disabled: boolean;
+}
+
+function PlaceholderPillarCard({ onClick, disabled }: PlaceholderPillarCardProps) {
+  return (
+    <Card className="p-4 border-2 border-dashed bg-muted/20 border-muted transition-all hover:bg-muted/30">
+      <div className="flex flex-col items-center justify-center h-full min-h-[160px] text-center space-y-3">
+        <div className="space-y-1">
+          <h4 className="font-semibold text-sm">Qualitative Faktoren</h4>
+          <p className="text-xs text-muted-foreground">
+            KI-Analyse erforderlich
+          </p>
+        </div>
+        
+        <Button 
+          size="sm" 
+          variant="secondary"
+          onClick={onClick}
+          disabled={disabled}
+          className="mt-2"
+        >
+          Jetzt starten
+        </Button>
+        
+        <p className="text-xs text-muted-foreground">
+          Bewertet Burggraben, Management & Geschäftsmodell
+        </p>
+      </div>
     </Card>
   );
 }

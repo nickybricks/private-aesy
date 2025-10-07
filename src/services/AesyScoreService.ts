@@ -4,13 +4,21 @@
  */
 
 interface AesyScoreResult {
-  financialStrength: number;
-  profitability: number;
-  growth: number;
-  value: number;
-  momentum: number;
+  financialStrength: number | null;
+  profitability: number | null;
+  growth: number | null;
+  value: number | null;
+  momentum: number | null;
   qualitative: number | null;
   aesyScore: number;
+  availability: {
+    financialStrength: boolean;
+    profitability: boolean;
+    growth: boolean;
+    value: boolean;
+    momentum: boolean;
+    qualitative: boolean;
+  };
   peterLynch: {
     fairValue: number | null;
     priceToLynch: number | null;
@@ -98,9 +106,9 @@ function detectSectorType(data: StockData): SectorType {
  * Basiert auf: Verschuldung, Liquidität, Zinsdeckung
  * Sektor-spezifische Anpassungen für Banken, Versicherer, REITs
  */
-function calculateFinancialStrength(data: StockData): number {
+function calculateFinancialStrength(data: StockData): { score: number | null; isAvailable: boolean } {
   const metrics = data.financialMetrics;
-  if (!metrics) return 0;
+  if (!metrics) return { score: null, isAvailable: false };
 
   const sectorType = detectSectorType(data);
   let score = 0;
@@ -159,7 +167,8 @@ function calculateFinancialStrength(data: StockData): number {
     else score += 5;
   }
 
-  return factors > 0 ? Math.round(score / factors * 100 / 100) : 0;
+  if (factors === 0) return { score: null, isAvailable: false };
+  return { score: Math.round(score / factors * 100 / 100), isAvailable: true };
 }
 
 /**
@@ -167,9 +176,9 @@ function calculateFinancialStrength(data: StockData): number {
  * Basiert auf: ROE, Nettomarge, OCF-Qualität
  * Sektor-spezifische Erwartungen
  */
-function calculateProfitability(data: StockData): number {
+function calculateProfitability(data: StockData): { score: number | null; isAvailable: boolean } {
   const metrics = data.financialMetrics;
-  if (!metrics) return 0;
+  if (!metrics) return { score: null, isAvailable: false };
 
   const sectorType = detectSectorType(data);
   let score = 0;
@@ -249,7 +258,8 @@ function calculateProfitability(data: StockData): number {
     else score += 5;
   }
 
-  return factors > 0 ? Math.round(score / factors * 100 / 100) : 0;
+  if (factors === 0) return { score: null, isAvailable: false };
+  return { score: Math.round(score / factors * 100 / 100), isAvailable: true };
 }
 
 /**
@@ -257,9 +267,9 @@ function calculateProfitability(data: StockData): number {
  * Basiert auf: EPS-Wachstum, Umsatzwachstum, FCF-Entwicklung
  * Sektor-spezifische Wachstumserwartungen
  */
-function calculateGrowth(data: StockData): number {
+function calculateGrowth(data: StockData): { score: number | null; isAvailable: boolean } {
   const metrics = data.financialMetrics;
-  if (!metrics) return 0;
+  if (!metrics) return { score: null, isAvailable: false };
 
   const sectorType = detectSectorType(data);
   let score = 0;
@@ -325,7 +335,8 @@ function calculateGrowth(data: StockData): number {
     else if (fcfMargin >= 0) score += 10;
   }
 
-  return factors > 0 ? Math.round(score / factors * 100 / 100) : 0;
+  if (factors === 0) return { score: null, isAvailable: false };
+  return { score: Math.round(score / factors * 100 / 100), isAvailable: true };
 }
 
 /**
@@ -333,10 +344,10 @@ function calculateGrowth(data: StockData): number {
  * Basiert auf: P/E, P/B, Peter Lynch Fair Value
  * Sektor-spezifische Bewertungs-Maßstäbe
  */
-function calculateValue(data: StockData): number {
+function calculateValue(data: StockData): { score: number | null; isAvailable: boolean } {
   const metrics = data.financialMetrics;
   const stockInfo = data.stockInfo;
-  if (!metrics) return 0;
+  if (!metrics) return { score: null, isAvailable: false };
 
   const sectorType = detectSectorType(data);
   let score = 0;
@@ -426,26 +437,27 @@ function calculateValue(data: StockData): number {
     }
   }
 
-  return factors > 0 ? Math.round(score / factors * 100 / 100) : 0;
+  if (factors === 0) return { score: null, isAvailable: false };
+  return { score: Math.round(score / factors * 100 / 100), isAvailable: true };
 }
 
 /**
  * Berechnet Momentum (0-100)
  * Basiert auf: Kursentwicklung, relative Performance
  */
-function calculateMomentum(data: StockData): number {
+function calculateMomentum(data: StockData): { score: number | null; isAvailable: boolean } {
   const historicalData = data.historicalData;
   const stockInfo = data.stockInfo;
   
   if (!historicalData || !Array.isArray(historicalData) || historicalData.length < 20) {
-    return 0;
+    return { score: null, isAvailable: false };
   }
 
   let score = 0;
   let factors = 0;
 
   const currentPrice = stockInfo?.price || historicalData[0]?.close;
-  if (!currentPrice) return 0;
+  if (!currentPrice) return { score: null, isAvailable: false };
 
   // 1-Monats-Performance - max 25 Punkte
   if (historicalData.length >= 20) {
@@ -503,7 +515,8 @@ function calculateMomentum(data: StockData): number {
     }
   }
 
-  return factors > 0 ? Math.round(score / factors * 100 / 100) : 0;
+  if (factors === 0) return { score: null, isAvailable: false };
+  return { score: Math.round(score / factors * 100 / 100), isAvailable: true };
 }
 
 /**
@@ -707,43 +720,77 @@ const TOOLTIPS = {
  * Hauptfunktion: Berechnet alle Aesy Score Komponenten
  */
 export function calculateAesyScore(data: StockData): AesyScoreResult {
-  const financialStrength = calculateFinancialStrength(data);
-  const profitability = calculateProfitability(data);
-  const growth = calculateGrowth(data);
-  const value = calculateValue(data);
-  const momentum = calculateMomentum(data);
+  const financialStrengthResult = calculateFinancialStrength(data);
+  const profitabilityResult = calculateProfitability(data);
+  const growthResult = calculateGrowth(data);
+  const valueResult = calculateValue(data);
+  const momentumResult = calculateMomentum(data);
   const qualitative = calculateQualitative(data);
   
   const peterLynchMetrics = calculatePeterLynchMetrics(data);
   
-  // Gesamtscore berechnen
-  // Ohne Qualitative: Durchschnitt der 5 Säulen
-  // Mit Qualitative: Qualitative 10%, andere Säulen je 18%
+  // Gesamtscore berechnen - nur verfügbare Säulen verwenden
+  let totalScore = 0;
+  let totalWeight = 0;
+  
+  // Quantitative Säulen sammeln
+  const quantPillars = [
+    { score: financialStrengthResult.score, isAvailable: financialStrengthResult.isAvailable },
+    { score: profitabilityResult.score, isAvailable: profitabilityResult.isAvailable },
+    { score: growthResult.score, isAvailable: growthResult.isAvailable },
+    { score: valueResult.score, isAvailable: valueResult.isAvailable },
+    { score: momentumResult.score, isAvailable: momentumResult.isAvailable }
+  ];
+  
+  const availableQuantCount = quantPillars.filter(p => p.isAvailable).length;
+  
+  // Gewichtung berechnen
   let aesyScore: number;
   
-  if (qualitative !== null) {
-    aesyScore = Math.round(
-      0.18 * financialStrength + 
-      0.18 * profitability + 
-      0.18 * growth + 
-      0.18 * value + 
-      0.18 * momentum + 
-      0.10 * qualitative
-    );
-  } else {
-    aesyScore = Math.round(
-      (financialStrength + profitability + growth + value + momentum) / 5
-    );
+  if (qualitative !== null && availableQuantCount > 0) {
+    // Mit KI: Qualitative 10%, Rest auf verfügbare Säulen verteilt
+    const quantWeight = 0.90 / availableQuantCount;
+    
+    quantPillars.forEach(pillar => {
+      if (pillar.isAvailable && pillar.score !== null) {
+        totalScore += pillar.score * quantWeight;
+        totalWeight += quantWeight;
+      }
+    });
+    
+    totalScore += qualitative * 0.10;
+    totalWeight += 0.10;
+    
+  } else if (availableQuantCount > 0) {
+    // Ohne KI: Gleichgewichtung der verfügbaren Säulen
+    const weight = 1.0 / availableQuantCount;
+    
+    quantPillars.forEach(pillar => {
+      if (pillar.isAvailable && pillar.score !== null) {
+        totalScore += pillar.score * weight;
+        totalWeight += weight;
+      }
+    });
   }
+  
+  aesyScore = totalWeight > 0 ? Math.round(totalScore) : 0;
 
   return {
-    financialStrength,
-    profitability,
-    growth,
-    value,
-    momentum,
+    financialStrength: financialStrengthResult.score,
+    profitability: profitabilityResult.score,
+    growth: growthResult.score,
+    value: valueResult.score,
+    momentum: momentumResult.score,
     qualitative,
     aesyScore,
+    availability: {
+      financialStrength: financialStrengthResult.isAvailable,
+      profitability: profitabilityResult.isAvailable,
+      growth: growthResult.isAvailable,
+      value: valueResult.isAvailable,
+      momentum: momentumResult.isAvailable,
+      qualitative: qualitative !== null
+    },
     peterLynch: peterLynchMetrics,
     notes: {
       aiIncluded: qualitative !== null,
