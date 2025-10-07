@@ -103,13 +103,17 @@ const IndexContent: React.FC = () => {
             {/* Stock Quote Header, Snowflake, and Chart Grid */}
             {stockInfo && (
               <div className="grid grid-cols-1 lg:grid-cols-3 items-start gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
-                {/* Stock Quote Section - Mobile: First */}
-                <div className="order-1 lg:order-2">
-                  <StockQuoteHeader />
-                </div>
+                {/* Stock Chart Section - Mobile: Third, Desktop: Left */}
+                <Card className="p-3 sm:p-4 md:p-5 order-3 lg:order-1">
+                  <StockChart 
+                    symbol={stockInfo.ticker}
+                    currency={stockInfo.currency}
+                    intrinsicValue={overallRating?.intrinsicValue ?? null}
+                  />
+                </Card>
                 
                 {/* Snowflake Placeholder - Mobile: Second, Desktop: Middle */}
-                <Card className="p-3 sm:p-4 md:p-5 order-2 lg:order-1 flex items-center justify-center min-h-[200px]">
+                <Card className="p-3 sm:p-4 md:p-5 order-2 lg:order-2 flex items-center justify-center min-h-[200px]">
                   <div className="text-center space-y-2">
                     <div className="text-4xl">❄️</div>
                     <div className="text-sm text-muted-foreground">Snowflake (bald)</div>
@@ -117,14 +121,10 @@ const IndexContent: React.FC = () => {
                   </div>
                 </Card>
                 
-                {/* Stock Chart Section - Mobile: Third, Desktop: Right */}
-                <Card className="p-3 sm:p-4 md:p-5 order-3">
-                  <StockChart 
-                    symbol={stockInfo.ticker}
-                    currency={stockInfo.currency}
-                    intrinsicValue={overallRating?.intrinsicValue ?? null}
-                  />
-                </Card>
+                {/* Stock Quote Section - Mobile: First, Desktop: Right */}
+                <div className="order-1 lg:order-3">
+                  <StockQuoteHeader />
+                </div>
               </div>
             )}
             
