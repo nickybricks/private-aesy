@@ -21,11 +21,9 @@ import ErrorAlert from '@/components/ErrorAlert';
 import AppFooter from '@/components/AppFooter';
 import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
 import { useToast } from '@/hooks/use-toast';
-import { AesyScoreSnowflake } from '@/components/AesyScoreSnowflake';
 
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 import { ValuationTab } from '@/components/ValuationTab';
-import { AesyScoreSummaryTab } from '@/components/AesyScoreSummaryTab';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -102,21 +100,14 @@ const IndexContent: React.FC = () => {
             
             <ErrorAlert />
             
-            {/* Stock Quote Header, Snowflake, and Chart Grid */}
+            {/* Stock Quote Header and Chart Grid */}
             {stockInfo && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 items-start gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
-                {/* Stock Quote Section - Mobile & Desktop: First/Left */}
-                <div className="order-1 lg:order-1">
-                  <StockQuoteHeader />
-                </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
+                {/* Stock Quote Section */}
+                <StockQuoteHeader />
                 
-                {/* Aesy Score Snowflake - Mobile & Desktop: Second/Middle */}
-                <Card className="p-3 sm:p-4 md:p-5 order-2 lg:order-2 flex items-center justify-center min-h-[200px]">
-                  <AesyScoreSnowflake />
-                </Card>
-                
-                {/* Stock Chart Section - Mobile & Desktop: Third/Right */}
-                <Card className="p-3 sm:p-4 md:p-5 order-3 lg:order-3">
+                {/* Stock Chart Section */}
+                <Card className="p-3 sm:p-4 md:p-5">
                   <StockChart 
                     symbol={stockInfo.ticker}
                     currency={stockInfo.currency}
@@ -170,12 +161,6 @@ const IndexContent: React.FC = () => {
                     >
                       Peter Lynch
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="summary" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
-                    >
-                      Summary
-                    </TabsTrigger>
                     </TabsList>
                   </div>
                   
@@ -204,10 +189,6 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="peter-lynch" className="mt-4 sm:mt-6">
                     <PeterLynchSection />
-                  </TabsContent>
-                  
-                  <TabsContent value="summary" className="mt-4 sm:mt-6">
-                    <AesyScoreSummaryTab />
                   </TabsContent>
                 </Tabs>
               </div>

@@ -108,13 +108,6 @@ const getMetricDetailedExplanation = (metricName: string) => {
       buffettGuideline: "Buffett bevorzugt Unternehmen mit stabilem EPS-Wachstum von über 10% pro Jahr",
       goodValue: "Über 10% ist hervorragend, 5-10% gut, unter 5% unterdurchschnittlich"
     },
-    "Schulden zu EBITDA": {
-      whatItIs: "Verhältnis der Gesamtverschuldung zum operativen Ergebnis vor Zinsen, Steuern und Abschreibungen",
-      howCalculated: "Gesamtverschuldung ÷ EBITDA",
-      whyImportant: "Zeigt, wie viele Jahre das Unternehmen brauchen würde, um seine Schulden aus dem operativen Ergebnis zurückzuzahlen",
-      buffettGuideline: "Buffett bevorzugt Unternehmen mit niedriger Verschuldung",
-      goodValue: "Unter 1,0 ist hervorragend, 1,0-2,0 gut, 2,0-3,0 akzeptabel, über 3,0 bedenklich"
-    },
     "KGV (Kurs-Gewinn-Verhältnis)": {
       whatItIs: "Das Verhältnis zwischen Aktienkurs und Gewinn pro Aktie",
       howCalculated: "Aktienkurs ÷ Gewinn pro Aktie",
@@ -156,6 +149,27 @@ const getMetricDetailedExplanation = (metricName: string) => {
       whyImportant: "Zeigt, ob das Unternehmen auch in schwierigen Zeiten positiven freien Cashflow generiert",
       buffettGuideline: "Buffett bevorzugt FCF-Marge ≥ 7% und keinen negativen FCF in Rezessionsjahren",
       goodValue: "FCF-Marge ≥ 7% und in keinem Jahr <0"
+    },
+    "Zinsdeckungsgrad": {
+      whatItIs: "Die Fähigkeit des Unternehmens, Zinszahlungen aus dem operativen Ergebnis zu bedienen",
+      howCalculated: "EBIT ÷ Zinsaufwand",
+      whyImportant: "Zeigt die finanzielle Stabilität und das Risiko der Verschuldung",
+      buffettGuideline: "Buffett bevorzugt einen Zinsdeckungsgrad von über 5",
+      goodValue: "Über 7 ist hervorragend, 5-7 gut, 3-5 akzeptabel, unter 3 bedenklich"
+    },
+    "Current Ratio": {
+      whatItIs: "Das Verhältnis zwischen kurzfristigem Vermögen und kurzfristigen Verbindlichkeiten",
+      howCalculated: "Umlaufvermögen ÷ kurzfristige Verbindlichkeiten",
+      whyImportant: "Misst die kurzfristige Zahlungsfähigkeit und Liquidität des Unternehmens",
+      buffettGuideline: "Buffett bevorzugt eine Current Ratio von über 1.5",
+      goodValue: "Über 2 ist hervorragend, 1.5-2 gut, 1-1.5 akzeptabel, unter 1 bedenklich"
+    },
+    "Schulden zu EBITDA": {
+      whatItIs: "Das Verhältnis zwischen Gesamtverschuldung und operativem Ergebnis vor Zinsen, Steuern und Abschreibungen",
+      howCalculated: "Gesamtverschuldung ÷ EBITDA",
+      whyImportant: "Zeigt, wie viele Jahre das Unternehmen brauchen würde, um seine Schulden aus dem operativen Ergebnis zurückzuzahlen",
+      buffettGuideline: "Buffett bevorzugt niedrige Verschuldung",
+      goodValue: "Unter 1,0 ist hervorragend, 1,0-2,0 gut, 2,0-3,0 akzeptabel, über 3,0 bedenklich"
     }
   };
   

@@ -1456,19 +1456,40 @@ export const getFinancialMetrics = async (ticker: string) => {
       });
     }
 
-    // Volume Metrik
-    const volume = safeValue(quoteData?.volume);
-    if (volume !== null) {
+    // Current Ratio Metrik
+    const currentRatio = safeValue(latestRatios?.currentRatio);
+    if (currentRatio !== null) {
       metrics.push({
-        name: 'Handelsvolumen (Ø 3M)',
-        value: volume,
-        formula: 'Durchschnittliches Handelsvolumen der letzten 3 Monate',
-        explanation: 'Anzahl der gehandelten Aktien pro Tag im Durchschnitt',
-        threshold: 'Höheres Volumen zeigt bessere Liquidität',
-        status: volume > 1000000 ? 'pass' : volume > 100000 ? 'warning' : 'fail' as const,
+        name: 'Current Ratio',
+        value: currentRatio,
+        formula: 'Umlaufvermögen ÷ kurzfristige Verbindlichkeiten',
+        explanation: 'Zeigt die kurzfristige Zahlungsfähigkeit des Unternehmens',
+        threshold: 'Buffett bevorzugt > 1.5',
+        status: currentRatio > 2 ? 'pass' : currentRatio > 1.5 ? 'warning' : 'fail' as const,
         isPercentage: false,
-        isMultiplier: false
+        isMultiplier: true
       });
+    }
+
+    // Schulden zu EBITDA Metrik
+    if (latestIncomeStatement && latestBalanceSheet) {
+      const totalDebt = safeValue(latestBalanceSheet.totalDebt) || 
+                       (safeValue(latestBalanceSheet.shortTermDebt) + safeValue(latestBalanceSheet.longTermDebt));
+      const ebitda = safeValue(latestIncomeStatement.ebitda);
+      
+      if (totalDebt !== null && ebitda !== null && ebitda > 0) {
+        const debtToEBITDA = totalDebt / ebitda;
+        metrics.push({
+          name: 'Schulden zu EBITDA',
+          value: debtToEBITDA,
+          formula: 'Gesamtverschuldung ÷ EBITDA',
+          explanation: 'Zeigt, wie viele Jahre das Unternehmen brauchen würde, um Schulden aus operativem Ergebnis zurückzuzahlen',
+          threshold: 'Unter 1,0 ist hervorragend, 1,0-2,0 gut, 2,0-3,0 akzeptabel',
+          status: debtToEBITDA < 1.5 ? 'pass' : debtToEBITDA < 3 ? 'warning' : 'fail' as const,
+          isPercentage: false,
+          isMultiplier: true
+        });
+      }
     }
 
     // Helper functions for statistical calculations
@@ -1614,22 +1635,6 @@ export const getFinancialMetrics = async (ticker: string) => {
         isPercentage: true,
         isMultiplier: false,
         isAlreadyPercent: true
-      });
-    }
-
-
-    // Enterprise Value Metrik
-    const enterpriseValue = safeValue(latestMetrics?.enterpriseValue);
-    if (enterpriseValue !== null) {
-      metrics.push({
-        name: 'Enterprise Value',
-        value: enterpriseValue,
-        formula: 'Marktkapitalisierung + Nettoschulden',
-        explanation: 'Gesamtwert des Unternehmens inklusive Schulden',
-        threshold: 'Vergleichswert für Bewertungsanalysen',
-        status: 'pass' as const,
-        isPercentage: false,
-        isMultiplier: false
       });
     }
 
