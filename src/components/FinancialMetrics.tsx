@@ -46,7 +46,6 @@ interface FinancialMetric {
   isPercentage?: boolean;
   isMultiplier?: boolean;
   isAlreadyPercent?: boolean; // Flag to indicate if value is already in percentage format
-  timePeriodBadge?: '10J' | '5J' | '3J' | 'TTM' | 'Datenlücke'; // NEW: Time period indicator
 }
 
 interface HistoricalDataItem {
@@ -109,6 +108,13 @@ const getMetricDetailedExplanation = (metricName: string) => {
       buffettGuideline: "Buffett bevorzugt Unternehmen mit stabilem EPS-Wachstum von über 10% pro Jahr",
       goodValue: "Über 10% ist hervorragend, 5-10% gut, unter 5% unterdurchschnittlich"
     },
+    "Schulden zu EBITDA": {
+      whatItIs: "Verhältnis der Gesamtverschuldung zum operativen Ergebnis vor Zinsen, Steuern und Abschreibungen",
+      howCalculated: "Gesamtverschuldung ÷ EBITDA",
+      whyImportant: "Zeigt, wie viele Jahre das Unternehmen brauchen würde, um seine Schulden aus dem operativen Ergebnis zurückzuzahlen",
+      buffettGuideline: "Buffett bevorzugt Unternehmen mit niedriger Verschuldung",
+      goodValue: "Unter 1,0 ist hervorragend, 1,0-2,0 gut, 2,0-3,0 akzeptabel, über 3,0 bedenklich"
+    },
     "KGV (Kurs-Gewinn-Verhältnis)": {
       whatItIs: "Das Verhältnis zwischen Aktienkurs und Gewinn pro Aktie",
       howCalculated: "Aktienkurs ÷ Gewinn pro Aktie",
@@ -150,27 +156,6 @@ const getMetricDetailedExplanation = (metricName: string) => {
       whyImportant: "Zeigt, ob das Unternehmen auch in schwierigen Zeiten positiven freien Cashflow generiert",
       buffettGuideline: "Buffett bevorzugt FCF-Marge ≥ 7% und keinen negativen FCF in Rezessionsjahren",
       goodValue: "FCF-Marge ≥ 7% und in keinem Jahr <0"
-    },
-    "Zinsdeckungsgrad": {
-      whatItIs: "Die Fähigkeit des Unternehmens, Zinszahlungen aus dem operativen Ergebnis zu bedienen",
-      howCalculated: "EBIT ÷ Zinsaufwand",
-      whyImportant: "Zeigt die finanzielle Stabilität und das Risiko der Verschuldung",
-      buffettGuideline: "Buffett bevorzugt einen Zinsdeckungsgrad von über 5",
-      goodValue: "Über 7 ist hervorragend, 5-7 gut, 3-5 akzeptabel, unter 3 bedenklich"
-    },
-    "Current Ratio": {
-      whatItIs: "Das Verhältnis zwischen kurzfristigem Vermögen und kurzfristigen Verbindlichkeiten",
-      howCalculated: "Umlaufvermögen ÷ kurzfristige Verbindlichkeiten",
-      whyImportant: "Misst die kurzfristige Zahlungsfähigkeit und Liquidität des Unternehmens",
-      buffettGuideline: "Buffett bevorzugt eine Current Ratio von über 1.5",
-      goodValue: "Über 2 ist hervorragend, 1.5-2 gut, 1-1.5 akzeptabel, unter 1 bedenklich"
-    },
-    "Schulden zu EBITDA": {
-      whatItIs: "Das Verhältnis zwischen Gesamtverschuldung und operativem Ergebnis vor Zinsen, Steuern und Abschreibungen",
-      howCalculated: "Gesamtverschuldung ÷ EBITDA",
-      whyImportant: "Zeigt, wie viele Jahre das Unternehmen brauchen würde, um seine Schulden aus dem operativen Ergebnis zurückzuzahlen",
-      buffettGuideline: "Buffett bevorzugt niedrige Verschuldung",
-      goodValue: "Unter 1,0 ist hervorragend, 1,0-2,0 gut, 2,0-3,0 akzeptabel, über 3,0 bedenklich"
     }
   };
   
@@ -342,20 +327,10 @@ const MetricCard: React.FC<{
   
   return (
     <Card className={`metric-card p-4 hover:shadow-lg transition-all ${isHighlighted ? 'ring-2 ring-blue-400 shadow-lg' : ''}`}>
-      {/* Top Badge: Time Period (10J / 5J / 3J / TTM / Datenlücke) */}
+      {/* Top Badge: TTM / FY2024 */}
       <div className="absolute top-2 right-2">
-        <Badge 
-          variant="secondary" 
-          className={`text-xs ${
-            metric.timePeriodBadge === '10J' ? 'bg-green-100 text-green-700 border-green-300' :
-            metric.timePeriodBadge === '5J' ? 'bg-blue-100 text-blue-700 border-blue-300' :
-            metric.timePeriodBadge === '3J' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
-            metric.timePeriodBadge === 'TTM' ? 'bg-purple-100 text-purple-700 border-purple-300' :
-            metric.timePeriodBadge === 'Datenlücke' ? 'bg-red-100 text-red-700 border-red-300' :
-            'bg-gray-100 text-gray-600'
-          }`}
-        >
-          {metric.timePeriodBadge || 'TTM'}
+        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
+          TTM
         </Badge>
       </div>
       
