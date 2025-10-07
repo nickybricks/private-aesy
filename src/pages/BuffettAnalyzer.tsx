@@ -25,6 +25,7 @@ import { AesyScoreSnowflake } from '@/components/AesyScoreSnowflake';
 
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 import { ValuationTab } from '@/components/ValuationTab';
+import { AesyScoreSummaryTab } from '@/components/AesyScoreSummaryTab';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -206,9 +207,7 @@ const IndexContent: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="summary" className="mt-4 sm:mt-6">
-                    <div className="space-y-6">
-                      <h2 className="text-2xl font-semibold">Summary</h2>
-                    </div>
+                    <AesyScoreSummaryTab />
                   </TabsContent>
                 </Tabs>
               </div>
