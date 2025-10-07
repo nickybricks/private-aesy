@@ -12,7 +12,6 @@ import { Card } from '@/components/ui/card';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
 import RatingSection from '@/components/RatingSection';
-import MetricsSection from '@/components/MetricsSection';
 import PeterLynchSection from '@/components/PeterLynchSection';
 import CriteriaTabsSection from '@/components/CriteriaTabsSection';
 import DataMissingAlert from '@/components/DataMissingAlert';
@@ -138,12 +137,6 @@ const IndexContent: React.FC = () => {
                       News
                     </TabsTrigger>
                     <TabsTrigger 
-                      value="financials" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
-                    >
-                      Finanzkennzahlen
-                    </TabsTrigger>
-                    <TabsTrigger 
                       value="statistics" 
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
@@ -169,10 +162,6 @@ const IndexContent: React.FC = () => {
                       newsItems={newsItems} 
                       pressReleases={pressReleases}
                     />
-                  </TabsContent>
-                  
-                  <TabsContent value="financials" className="mt-4 sm:mt-6">
-                    <MetricsSection />
                   </TabsContent>
                   
                   <TabsContent value="statistics" className="mt-4 sm:mt-6">
