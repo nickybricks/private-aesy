@@ -503,14 +503,24 @@ export function calculateAesyScore(data: StockData): AesyScoreResult {
   const peterLynchMetrics = calculatePeterLynchMetrics(data);
   
   // Gesamtscore berechnen
-  const scores = [financialStrength, profitability, growth, value, momentum];
-  if (qualitative !== null) {
-    scores.push(qualitative);
-  }
+  // Ohne Qualitative: Durchschnitt der 5 Säulen
+  // Mit Qualitative: Qualitative 10%, andere Säulen je 18%
+  let aesyScore: number;
   
-  const aesyScore = scores.length > 0 
-    ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) 
-    : 0;
+  if (qualitative !== null) {
+    aesyScore = Math.round(
+      0.18 * financialStrength + 
+      0.18 * profitability + 
+      0.18 * growth + 
+      0.18 * value + 
+      0.18 * momentum + 
+      0.10 * qualitative
+    );
+  } else {
+    aesyScore = Math.round(
+      (financialStrength + profitability + growth + value + momentum) / 5
+    );
+  }
 
   return {
     financialStrength,
