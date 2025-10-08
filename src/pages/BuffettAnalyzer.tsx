@@ -25,6 +25,7 @@ import { needsCurrencyConversion } from '@/utils/currencyConverter';
 import { ValuationTab } from '@/components/ValuationTab';
 import { ROECard } from '@/components/metrics/ROECard';
 import { ROICCard } from '@/components/metrics/ROICCard';
+import { OperatingMarginCard } from '@/components/metrics/OperatingMarginCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -210,6 +211,10 @@ const IndexContent: React.FC = () => {
                         currentValue={financialMetrics?.roic ?? null}
                         historicalData={financialMetrics?.historicalData?.roic}
                         wacc={financialMetrics?.wacc}
+                      />
+                      <OperatingMarginCard 
+                        currentValue={financialMetrics?.operatingMargin ?? null}
+                        historicalData={financialMetrics?.historicalData?.operatingMargin}
                       />
                     </div>
                   </TabsContent>

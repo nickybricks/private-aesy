@@ -1103,6 +1103,23 @@ export const getFinancialMetrics = async (ticker: string) => {
       console.log('Nettomarge berechnet aus Nettogewinn/Umsatz:', netMargin);
     }
     
+    // Operating Margin (EBIT-Marge) Berechnung
+    let operatingMargin = null;
+    
+    if (latestIncomeStatement && latestIncomeStatement.revenue && latestIncomeStatement.revenue > 0) {
+      // Calculate EBIT = EBITDA - D&A or use operatingIncome directly
+      const ebit = latestIncomeStatement.ebitda !== undefined && latestIncomeStatement.depreciationAndAmortization !== undefined
+        ? safeValue(latestIncomeStatement.ebitda) - Math.abs(safeValue(latestIncomeStatement.depreciationAndAmortization))
+        : safeValue(latestIncomeStatement.operatingIncome);
+      
+      const revenue = safeValue(latestIncomeStatement.revenue);
+      
+      if (ebit !== null && revenue !== null && revenue > 0) {
+        operatingMargin = (ebit / revenue) * 100;
+        console.log('Operating Margin berechnet aus EBIT/Umsatz:', operatingMargin);
+      }
+    }
+    
     // ROIC (Return on Invested Capital) Berechnung - verbessert
     let roic = null;
     
@@ -1245,6 +1262,7 @@ export const getFinancialMetrics = async (ticker: string) => {
       eps: [],
       roe: [],
       roic: [],
+      operatingMargin: [],
       operatingCashFlow: [],
       freeCashFlow: []
     };
@@ -1346,6 +1364,39 @@ export const getFinancialMetrics = async (ticker: string) => {
       
       // Sort chronologically (oldest first for chart)
       historicalData.roic = roicData.reverse();
+    }
+
+    // Add historical Operating Margin data (last 10 years)
+    if (incomeStatements && incomeStatements.length > 1) {
+      const operatingMarginData = [];
+      
+      for (let i = 0; i < Math.min(10, incomeStatements.length); i++) {
+        let marginValue = null;
+        const year = incomeStatements[i].date ? new Date(incomeStatements[i].date).getFullYear() : null;
+        
+        if (!year) continue;
+        
+        // Calculate Operating Margin = EBIT / Revenue * 100
+        const ebit = incomeStatements[i].ebitda !== undefined && incomeStatements[i].depreciationAndAmortization !== undefined
+          ? safeValue(incomeStatements[i].ebitda) - Math.abs(safeValue(incomeStatements[i].depreciationAndAmortization))
+          : safeValue(incomeStatements[i].operatingIncome);
+        const revenue = safeValue(incomeStatements[i].revenue);
+        
+        if (ebit !== null && revenue !== null && revenue > 0) {
+          marginValue = (ebit / revenue) * 100;
+        }
+        
+        if (marginValue !== null) {
+          operatingMarginData.push({
+            year: year,
+            value: Math.round(marginValue * 10) / 10, // Round to 1 decimal
+            originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
+          });
+        }
+      }
+      
+      // Sort chronologically (oldest first for chart)
+      historicalData.operatingMargin = operatingMarginData.reverse();
     }
 
     // Add historical cash flow data if available
@@ -1747,6 +1798,7 @@ export const getFinancialMetrics = async (ticker: string) => {
       eps,
       roe,
       netMargin,
+      operatingMargin,
       roic,
       
       // Schulden-Kennzahlen
