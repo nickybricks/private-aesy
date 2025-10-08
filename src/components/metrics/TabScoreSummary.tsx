@@ -6,6 +6,7 @@ interface MetricScore {
   name: string;
   score: number;
   maxScore: number;
+  weight: number;
 }
 
 interface TabScoreSummaryProps {
@@ -13,17 +14,19 @@ interface TabScoreSummaryProps {
   industry?: string;
   metrics: MetricScore[];
   title: string;
+  preset?: string;
 }
 
 export const TabScoreSummary: React.FC<TabScoreSummaryProps> = ({ 
   sector, 
   industry, 
   metrics,
-  title 
+  title,
+  preset
 }) => {
-  // Calculate total score
-  const totalScore = metrics.reduce((sum, m) => sum + m.score, 0);
-  const maxTotalScore = metrics.reduce((sum, m) => sum + m.maxScore, 0);
+  // Calculate total score (weighted)
+  const totalScore = metrics.reduce((sum, m) => sum + (m.score * m.weight / m.maxScore), 0);
+  const maxTotalScore = metrics.reduce((sum, m) => sum + m.weight, 0);
   const scorePercentage = maxTotalScore > 0 ? (totalScore / maxTotalScore) * 100 : 0;
 
   // Determine color based on percentage
@@ -45,8 +48,8 @@ export const TabScoreSummary: React.FC<TabScoreSummaryProps> = ({
         <div className="flex items-start justify-between">
           <div>
             <CardTitle className="text-xl">{title}</CardTitle>
-            {(sector || industry) && (
-              <div className="flex gap-2 mt-2">
+            {(sector || industry || preset) && (
+              <div className="flex gap-2 mt-2 flex-wrap">
                 {sector && (
                   <Badge variant="secondary" className="text-xs">
                     {sector}
@@ -57,12 +60,17 @@ export const TabScoreSummary: React.FC<TabScoreSummaryProps> = ({
                     {industry}
                   </Badge>
                 )}
+                {preset && (
+                  <Badge variant="default" className="text-xs">
+                    Preset: {preset}
+                  </Badge>
+                )}
               </div>
             )}
           </div>
           <div className="text-right">
             <div className={`text-3xl font-bold ${getScoreColor(scorePercentage)}`}>
-              {totalScore}/{maxTotalScore}
+              {totalScore.toFixed(1)}/{maxTotalScore}
             </div>
             <div className="text-sm text-muted-foreground">
               Punkte ({scorePercentage.toFixed(0)}%)
@@ -79,18 +87,29 @@ export const TabScoreSummary: React.FC<TabScoreSummaryProps> = ({
             {metrics.map((metric, index) => {
               const metricPercentage = metric.maxScore > 0 ? (metric.score / metric.maxScore) * 100 : 0;
               const metricColor = getScoreColor(metricPercentage);
+              const weightedScore = (metric.score * metric.weight / metric.maxScore).toFixed(1);
               
               return (
                 <div 
                   key={index} 
                   className="flex items-center justify-between p-2 rounded-md bg-background/50 border"
                 >
-                  <span className="text-sm text-muted-foreground truncate pr-2">
-                    {metric.name}
-                  </span>
-                  <span className={`text-sm font-semibold ${metricColor} whitespace-nowrap`}>
-                    {metric.score}/{metric.maxScore}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-sm text-muted-foreground truncate pr-2">
+                      {metric.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Gewicht: {metric.weight}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className={`text-sm font-semibold ${metricColor} whitespace-nowrap`}>
+                      {metric.score}/{metric.maxScore}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      = {weightedScore} Pkt
+                    </span>
+                  </div>
                 </div>
               );
             })}

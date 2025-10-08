@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -30,14 +29,6 @@ import { NetMarginCard } from '@/components/metrics/NetMarginCard';
 import { ROACard } from '@/components/metrics/ROACard';
 import { YearsOfProfitabilityCard } from '@/components/metrics/YearsOfProfitabilityCard';
 import { TabScoreSummary } from '@/components/metrics/TabScoreSummary';
-import { 
-  calculateROEScore,
-  calculateROICScore,
-  calculateOperatingMarginScore,
-  calculateNetMarginScore,
-  calculateROAScore,
-  calculateYearsOfProfitabilityScore
-} from '@/utils/metricScoreCalculators';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -215,34 +206,47 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="profitability" className="mt-4 sm:mt-6">
                     <div className="space-y-4">
-                      <TabScoreSummary
+                     <TabScoreSummary
                         sector={stockInfo?.sector}
                         industry={stockInfo?.industry}
                         title="Rentabilität"
+                        preset={financialMetrics?.sectorPreset}
                         metrics={[
                           {
                             name: 'ROE',
-                            ...calculateROEScore(financialMetrics?.roe ?? null)
+                            score: financialMetrics?.profitabilityScores?.roe?.score ?? 0,
+                            maxScore: financialMetrics?.profitabilityScores?.roe?.maxScore ?? 2,
+                            weight: financialMetrics?.sectorWeights?.roe ?? 2
                           },
                           {
                             name: 'ROIC',
-                            ...calculateROICScore(financialMetrics?.roic ?? null)
+                            score: financialMetrics?.profitabilityScores?.roic?.score ?? 0,
+                            maxScore: financialMetrics?.profitabilityScores?.roic?.maxScore ?? 6,
+                            weight: financialMetrics?.sectorWeights?.roic ?? 6
                           },
                           {
                             name: 'Operating Margin',
-                            ...calculateOperatingMarginScore(financialMetrics?.operatingMargin ?? null)
+                            score: financialMetrics?.profitabilityScores?.operatingMargin?.score ?? 0,
+                            maxScore: financialMetrics?.profitabilityScores?.operatingMargin?.maxScore ?? 4,
+                            weight: financialMetrics?.sectorWeights?.operatingMargin ?? 4
                           },
                           {
                             name: 'Net Margin',
-                            ...calculateNetMarginScore(financialMetrics?.netMargin ?? null)
+                            score: financialMetrics?.profitabilityScores?.netMargin?.score ?? 0,
+                            maxScore: financialMetrics?.profitabilityScores?.netMargin?.maxScore ?? 3,
+                            weight: financialMetrics?.sectorWeights?.netMargin ?? 3
                           },
                           {
                             name: 'ROA',
-                            ...calculateROAScore(financialMetrics?.roa ?? null)
+                            score: financialMetrics?.profitabilityScores?.roa?.score ?? 0,
+                            maxScore: financialMetrics?.profitabilityScores?.roa?.maxScore ?? 1,
+                            weight: financialMetrics?.sectorWeights?.roa ?? 1
                           },
                           {
                             name: 'Jahre Profitabilität',
-                            ...calculateYearsOfProfitabilityScore(financialMetrics?.historicalData?.netIncome)
+                            score: financialMetrics?.profitabilityScores?.yearsOfProfitability?.score ?? 0,
+                            maxScore: financialMetrics?.profitabilityScores?.yearsOfProfitability?.maxScore ?? 4,
+                            weight: financialMetrics?.sectorWeights?.yearsOfProfitability ?? 4
                           }
                         ]}
                       />

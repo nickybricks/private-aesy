@@ -19,6 +19,29 @@ export interface HistoricalDataItem {
   isProfitable?: boolean; // For netIncome: indicates if year was profitable
 }
 
+export interface MetricScore {
+  score: number;
+  maxScore: number;
+}
+
+export interface ProfitabilityScores {
+  roic: MetricScore;
+  operatingMargin: MetricScore;
+  netMargin: MetricScore;
+  yearsOfProfitability: MetricScore;
+  roe: MetricScore;
+  roa: MetricScore;
+}
+
+export interface SectorWeights {
+  roic: number;
+  operatingMargin: number;
+  netMargin: number;
+  yearsOfProfitability: number;
+  roe: number;
+  roa: number;
+}
+
 export interface FinancialMetricsData {
   eps?: any;
   roe?: any;
@@ -55,6 +78,9 @@ export interface FinancialMetricsData {
     netIncome: HistoricalDataItem[];
   };
   wacc?: number;
+  profitabilityScores?: ProfitabilityScores;
+  sectorWeights?: SectorWeights;
+  sectorPreset?: string;
 }
 
 export interface OverallRatingData {
