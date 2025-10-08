@@ -3,7 +3,6 @@ import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
 import { HistoricalDataItem } from '@/context/StockContextTypes';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip, Cell } from 'recharts';
 
 interface YearsOfProfitabilityCardProps {
   historicalNetIncome?: HistoricalDataItem[];
@@ -184,67 +183,6 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
             <span>{historicalNetIncome[historicalNetIncome.length - 1]?.year}</span>
           </div>
         </div>
-
-        {/* Net Income Chart */}
-        {historicalNetIncome.length > 0 && (
-          <div className="space-y-3 pt-4 border-t">
-            <p className="text-sm font-medium text-muted-foreground">Net Income Verlauf:</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={historicalNetIncome}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="year" 
-                  tick={{ fontSize: 10 }}
-                  stroke="#9ca3af"
-                />
-                <YAxis 
-                  tick={{ fontSize: 10 }}
-                  stroke="#9ca3af"
-                  tickFormatter={(value) => {
-                    // Format large numbers in billions/millions
-                    if (Math.abs(value) >= 1e9) {
-                      return `${(value / 1e9).toFixed(1)}B`;
-                    } else if (Math.abs(value) >= 1e6) {
-                      return `${(value / 1e6).toFixed(1)}M`;
-                    }
-                    return value.toFixed(0);
-                  }}
-                />
-                <RechartsTooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      const isProfitable = data.isProfitable;
-                      return (
-                        <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
-                          <p className="text-sm font-semibold">{data.year}</p>
-                          <p className={`text-sm ${isProfitable ? 'text-success' : 'text-danger'}`}>
-                            Net Income: <span className="font-bold">
-                              {data.value.toLocaleString()} {data.originalCurrency || 'USD'}
-                            </span>
-                          </p>
-                          <p className="text-xs mt-1">
-                            {isProfitable ? '✓ Profitabel' : '✗ Verlust'}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <ReferenceLine y={0} stroke="#94a3b8" strokeWidth={2} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  {historicalNetIncome.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.isProfitable ? 'hsl(var(--success))' : 'hsl(var(--danger))'}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
 
         {/* Legend */}
         <div className="flex items-center justify-center gap-6 pt-4 border-t">
