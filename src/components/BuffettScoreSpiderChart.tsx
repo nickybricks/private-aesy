@@ -90,6 +90,19 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
       <CardContent className="pt-0">
         <ResponsiveContainer width="100%" height={200}>
           <RadarChart data={data}>
+            <defs>
+              {/* Define hover effect */}
+              <filter id="hover-gray">
+                <feColorMatrix
+                  type="matrix"
+                  values="0.5 0 0 0 0.3
+                          0 0.5 0 0 0.3
+                          0 0 0.5 0 0.3
+                          0 0 0 0.5 0"
+                />
+              </filter>
+            </defs>
+            
             <PolarGrid 
               stroke="hsl(var(--border))" 
               gridType="circle"
@@ -100,10 +113,7 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
                 const { x, y, payload, index } = props;
                 const dataPoint = data[index];
                 return (
-                  <g 
-                    className="cursor-pointer hover:opacity-70 transition-opacity"
-                    onClick={() => handleLabelClick(dataPoint.tabValue)}
-                  >
+                  <g>
                     <text
                       x={x}
                       y={y}
@@ -123,6 +133,46 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
               domain={[0, 100]}
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
             />
+            
+            {/* Render clickable slices behind the radar */}
+            <g>
+              {data.map((item, index) => {
+                const angle = (360 / data.length) * index - 90; // Start from top
+                const nextAngle = (360 / data.length) * (index + 1) - 90;
+                const centerX = 150; // Chart center
+                const centerY = 100;
+                const radius = 85; // Outer radius
+                
+                // Convert angles to radians
+                const startRad = (angle * Math.PI) / 180;
+                const endRad = (nextAngle * Math.PI) / 180;
+                
+                // Calculate arc points
+                const x1 = centerX + radius * Math.cos(startRad);
+                const y1 = centerY + radius * Math.sin(startRad);
+                const x2 = centerX + radius * Math.cos(endRad);
+                const y2 = centerY + radius * Math.sin(endRad);
+                
+                // Create path for slice
+                const pathData = `
+                  M ${centerX},${centerY}
+                  L ${x1},${y1}
+                  A ${radius},${radius} 0 0 1 ${x2},${y2}
+                  Z
+                `;
+                
+                return (
+                  <path
+                    key={`slice-${index}`}
+                    d={pathData}
+                    fill="transparent"
+                    className="cursor-pointer hover:fill-muted/40 transition-colors"
+                    onClick={() => handleLabelClick(item.tabValue)}
+                  />
+                );
+              })}
+            </g>
+            
             <Radar
               name="Score"
               dataKey="score"
@@ -130,35 +180,7 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
               fill={getScoreFillColor(totalScore)}
               fillOpacity={0.3}
               strokeWidth={2}
-              dot={(props: any) => {
-                const { cx, cy, index } = props;
-                const dataPoint = data[index];
-                return (
-                  <g 
-                    className="cursor-pointer"
-                    onClick={() => handleLabelClick(dataPoint.tabValue)}
-                  >
-                    {/* Invisible larger clickable area */}
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={12}
-                      fill="transparent"
-                      className="hover:fill-primary/10 transition-colors"
-                    />
-                    {/* Visible dot */}
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={5}
-                      fill={getScoreFillColor(totalScore)}
-                      stroke="hsl(var(--background))"
-                      strokeWidth={2}
-                      className="transition-all hover:r-6"
-                    />
-                  </g>
-                );
-              }}
+              dot={false}
               isAnimationActive={true}
               animationDuration={800}
               shape={(props: any) => {
@@ -173,6 +195,7 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
                     fillOpacity={0.3}
                     stroke={getScoreFillColor(totalScore)}
                     strokeWidth={2}
+                    style={{ pointerEvents: 'none' }}
                   />
                 );
               }}
