@@ -44,7 +44,10 @@ const BuffettScoreSpiderChart: React.FC = () => {
       <CardContent className="pt-0">
         <ResponsiveContainer width="100%" height={200}>
           <RadarChart data={data}>
-            <PolarGrid stroke="hsl(var(--border))" />
+            <PolarGrid 
+              stroke="hsl(var(--border))" 
+              gridType="circle"
+            />
             <PolarAngleAxis 
               dataKey="criterion" 
               tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }}
@@ -60,6 +63,9 @@ const BuffettScoreSpiderChart: React.FC = () => {
               stroke={getScoreFillColor(totalScore)}
               fill={getScoreFillColor(totalScore)}
               fillOpacity={0.3}
+              strokeWidth={2}
+              strokeLinejoin="round"
+              strokeLinecap="round"
             />
           </RadarChart>
         </ResponsiveContainer>
