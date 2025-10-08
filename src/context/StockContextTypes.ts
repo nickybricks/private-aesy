@@ -55,6 +55,7 @@ export interface FinancialMetricsData {
     netIncome: HistoricalDataItem[];
   };
   wacc?: number;
+  industryPreset?: string;
 }
 
 export interface OverallRatingData {
