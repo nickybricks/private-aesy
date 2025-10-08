@@ -312,7 +312,7 @@ const StockQuoteHeader: React.FC = () => {
           </div>
           
           <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">Market Cap:</div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Marktkap.:</div>
             <div className="font-semibold text-xs sm:text-sm">{formatNumber(marketCap)}</div>
           </div>
         </div>
