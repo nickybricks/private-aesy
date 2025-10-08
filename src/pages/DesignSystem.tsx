@@ -89,6 +89,27 @@ const DesignSystem = () => {
             </div>
 
             <div>
+              <h4 className="text-sm font-semibold mb-3">Aktienkurs-Farben</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <div className="h-20 rounded-2xl bg-[hsl(var(--stock-green))]"></div>
+                  <p className="text-xs font-medium">stock-green</p>
+                  <p className="text-xs text-muted-foreground">Positive Kursentwicklung</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-20 rounded-2xl bg-[hsl(var(--stock-red))]"></div>
+                  <p className="text-xs font-medium">stock-red</p>
+                  <p className="text-xs text-muted-foreground">Negative Kursentwicklung</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-20 rounded-2xl bg-[hsl(var(--stock-yellow))]"></div>
+                  <p className="text-xs font-medium">stock-yellow</p>
+                  <p className="text-xs text-muted-foreground">Neutrale/Stagnierende Entwicklung</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
               <h4 className="text-sm font-semibold mb-3">UI Elements</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-2">

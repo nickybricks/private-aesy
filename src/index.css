@@ -39,6 +39,16 @@
     /* Apple-style radius */
     --radius: 1rem;
 
+    /* Stock Price Colors */
+    --stock-green: 142 76% 48%;
+    --stock-red: 6 100% 60%;
+    --stock-yellow: 48 100% 50%;
+
+    /* Status Colors (same as stock colors for consistency) */
+    --status-green: 142 76% 48%;
+    --status-red: 6 100% 60%;
+    --status-yellow: 48 100% 50%;
+
     /* Glass Effects */
     --glass-background: 0 0% 100% / 0.1;
     --glass-border: 0 0% 0% / 0.1;
@@ -74,6 +84,16 @@
     --border: 220 13% 25%;
     --input: 220 13% 25%;
     --ring: 213 100% 52%;
+
+    /* Stock Price Colors - Dark Mode */
+    --stock-green: 142 76% 48%;
+    --stock-red: 6 100% 60%;
+    --stock-yellow: 48 100% 50%;
+
+    /* Status Colors - Dark Mode */
+    --status-green: 142 76% 48%;
+    --status-red: 6 100% 60%;
+    --status-yellow: 48 100% 50%;
 
     /* Glass Effects - Dark */
     --glass-background: 0 0% 0% / 0.25;
