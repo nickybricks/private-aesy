@@ -130,7 +130,35 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
               fill={getScoreFillColor(totalScore)}
               fillOpacity={0.3}
               strokeWidth={2}
-              dot={false}
+              dot={(props: any) => {
+                const { cx, cy, index } = props;
+                const dataPoint = data[index];
+                return (
+                  <g 
+                    className="cursor-pointer"
+                    onClick={() => handleLabelClick(dataPoint.tabValue)}
+                  >
+                    {/* Invisible larger clickable area */}
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={12}
+                      fill="transparent"
+                      className="hover:fill-primary/10 transition-colors"
+                    />
+                    {/* Visible dot */}
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={5}
+                      fill={getScoreFillColor(totalScore)}
+                      stroke="hsl(var(--background))"
+                      strokeWidth={2}
+                      className="transition-all hover:r-6"
+                    />
+                  </g>
+                );
+              }}
               isAnimationActive={true}
               animationDuration={800}
               shape={(props: any) => {
