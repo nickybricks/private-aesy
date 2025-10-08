@@ -249,6 +249,11 @@ const StockQuoteHeader: React.FC = () => {
             <div className="text-[10px] sm:text-xs text-muted-foreground">
               {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
             </div>
+            {stockInfo.isin && (
+              <div className="text-[10px] sm:text-xs text-muted-foreground">
+                ISIN: {stockInfo.isin}
+              </div>
+            )}
           </div>
         </div>
         
