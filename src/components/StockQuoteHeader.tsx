@@ -310,6 +310,20 @@ const StockQuoteHeader: React.FC = () => {
 
       {/* Key Metrics Grid - Kompakter auf Mobile */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 sm:gap-x-4 gap-y-1.5 text-xs mb-3">
+        {stockInfo.foundedYear && (
+          <div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Gründungsjahr:</div>
+            <div className="font-semibold text-xs sm:text-sm">{stockInfo.foundedYear}</div>
+          </div>
+        )}
+        
+        {stockInfo.ipoDate && (
+          <div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">IPO Datum:</div>
+            <div className="font-semibold text-xs sm:text-sm">{new Date(stockInfo.ipoDate).toLocaleDateString('de-DE')}</div>
+          </div>
+        )}
+        
         <div>
           <div className="text-muted-foreground text-[10px] sm:text-xs">KGV:</div>
           <div className="font-semibold text-xs sm:text-sm">{peRatio?.toFixed(2) ?? 'N/A'}</div>
@@ -334,13 +348,6 @@ const StockQuoteHeader: React.FC = () => {
           <div>
             <div className="text-muted-foreground text-[10px] sm:text-xs">Angestellte:</div>
             <div className="font-medium text-xs sm:text-sm">{stockInfo.employees.toLocaleString('de-DE')}</div>
-          </div>
-        )}
-        
-        {stockInfo.foundedYear && (
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">Gründungsjahr:</div>
-            <div className="font-medium text-xs sm:text-sm">{stockInfo.foundedYear}</div>
           </div>
         )}
         
@@ -378,13 +385,6 @@ const StockQuoteHeader: React.FC = () => {
           <div className="col-span-2 lg:col-span-3">
             <div className="text-muted-foreground text-[10px] sm:text-xs">Adresse:</div>
             <div className="font-medium text-xs sm:text-sm">{stockInfo.address}</div>
-          </div>
-        )}
-        
-        {stockInfo.ipoDate && (
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">IPO Datum:</div>
-            <div className="font-medium text-xs sm:text-sm">{new Date(stockInfo.ipoDate).toLocaleDateString('de-DE')}</div>
           </div>
         )}
       </div>
