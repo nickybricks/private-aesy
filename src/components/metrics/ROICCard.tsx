@@ -11,6 +11,10 @@ interface ROICCardProps {
 }
 
 export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData, wacc }) => {
+  // Debug: Log WACC value
+  console.log('ROICCard - WACC value:', wacc);
+  console.log('ROICCard - historicalData:', historicalData);
+  
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -213,7 +217,16 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
               <YAxis 
                 tick={{ fontSize: 10 }}
                 stroke="#9ca3af"
-                domain={[0, 'auto']}
+                domain={[
+                  (dataMin: number) => {
+                    const minVal = Math.min(dataMin, wacc || 0);
+                    return Math.floor(minVal / 5) * 5; // Round down to nearest 5
+                  },
+                  (dataMax: number) => {
+                    const maxVal = Math.max(dataMax, wacc || 0, 15);
+                    return Math.ceil(maxVal / 5) * 5; // Round up to nearest 5
+                  }
+                ]}
               />
               <RechartsTooltip
                 content={({ active, payload }) => {
