@@ -228,8 +228,24 @@ const StockQuoteHeader: React.FC = () => {
       <Card className="p-2.5 sm:p-3 md:p-4">
         <div className="flex items-start justify-between mb-1.5 sm:mb-2">
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Company Logo Placeholder - can be added later */}
-            <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl bg-muted flex items-center justify-center text-base sm:text-lg md:text-xl font-bold text-muted-foreground">
+            {/* Company Logo */}
+            {stockInfo.image ? (
+              <img 
+                src={stockInfo.image} 
+                alt={`${name} logo`}
+                className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl object-contain bg-muted p-1.5"
+                onError={(e) => {
+                  // Fallback to letter if image fails to load
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.nextElementSibling;
+                  if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div 
+              className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl bg-muted flex items-center justify-center text-base sm:text-lg md:text-xl font-bold text-muted-foreground"
+              style={{ display: stockInfo.image ? 'none' : 'flex' }}
+            >
               {name.charAt(0)}
             </div>
             

@@ -181,6 +181,7 @@ export const fetchStockInfo = async (ticker: string) => {
     changePercent: quote.changesPercentage,
     currency: profile.currency,
     marketCap: profile.mktCap,
+    image: profile.image,
   };
 };
 
