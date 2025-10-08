@@ -221,102 +221,100 @@ const StockQuoteHeader: React.FC = () => {
 
   return (
     <>
-      <Card className="p-2.5 sm:p-3 md:p-4">
-        <div className="flex items-start justify-between mb-1.5 sm:mb-2">
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Company Logo */}
-            {stockInfo.image ? (
-              <img 
-                src={stockInfo.image} 
-                alt={`${name} logo`}
-                className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl object-contain bg-muted p-1.5"
-                onError={(e) => {
-                  // Fallback to letter if image fails to load
-                  e.currentTarget.style.display = 'none';
-                  const fallback = e.currentTarget.nextElementSibling;
-                  if (fallback) (fallback as HTMLElement).style.display = 'flex';
-                }}
-              />
-            ) : null}
-            <div 
-              className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl bg-muted flex items-center justify-center text-base sm:text-lg md:text-xl font-bold text-muted-foreground"
-              style={{ display: stockInfo.image ? 'none' : 'flex' }}
-            >
-              {name.charAt(0)}
-            </div>
-            
-            <div>
-              <h1 className="text-base sm:text-lg md:text-xl font-bold mb-0.5">{name}</h1>
-              <div className="text-[10px] sm:text-xs text-muted-foreground">
-                {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
-              </div>
-            </div>
+      <div className="flex items-start justify-between mb-1.5 sm:mb-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Company Logo */}
+          {stockInfo.image ? (
+            <img 
+              src={stockInfo.image} 
+              alt={`${name} logo`}
+              className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl object-contain bg-muted p-1.5"
+              onError={(e) => {
+                // Fallback to letter if image fails to load
+                e.currentTarget.style.display = 'none';
+                const fallback = e.currentTarget.nextElementSibling;
+                if (fallback) (fallback as HTMLElement).style.display = 'flex';
+              }}
+            />
+          ) : null}
+          <div 
+            className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl bg-muted flex items-center justify-center text-base sm:text-lg md:text-xl font-bold text-muted-foreground"
+            style={{ display: stockInfo.image ? 'none' : 'flex' }}
+          >
+            {name.charAt(0)}
           </div>
           
-          {/* Compact Add to Watchlist Button - Right Aligned */}
-          {buffettCriteria && financialMetrics && overallRating && (
-            <Button
-              onClick={() => {
-                if (!user) {
-                  toast({
-                    variant: "destructive",
-                    title: "Login erforderlich",
-                    description: "Bitte melden Sie sich an, um Aktien zu Watchlists hinzuzufügen."
-                  });
-                  return;
-                }
-                setWatchlistDialogOpen(true);
-              }}
-              variant="default"
-              size="sm"
-              className="h-7 w-7 min-w-7 max-w-7 p-0 !rounded-full flex-shrink-0"
-              title="Zu Watchlist hinzufügen"
-            >
-              <Plus size={16} />
-            </Button>
+          <div>
+            <h1 className="text-base sm:text-lg md:text-xl font-bold mb-0.5">{name}</h1>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">
+              {exchange}:{ticker.replace(/\.(DE|L|PA)$/, '')} (USA) • Ordinary Shares
+            </div>
+          </div>
+        </div>
+        
+        {/* Compact Add to Watchlist Button - Right Aligned */}
+        {buffettCriteria && financialMetrics && overallRating && (
+          <Button
+            onClick={() => {
+              if (!user) {
+                toast({
+                  variant: "destructive",
+                  title: "Login erforderlich",
+                  description: "Bitte melden Sie sich an, um Aktien zu Watchlists hinzuzufügen."
+                });
+                return;
+              }
+              setWatchlistDialogOpen(true);
+            }}
+            variant="default"
+            size="sm"
+            className="h-7 w-7 min-w-7 max-w-7 p-0 !rounded-full flex-shrink-0"
+            title="Zu Watchlist hinzufügen"
+          >
+            <Plus size={16} />
+          </Button>
+        )}
+      </div>
+
+      {/* Price Section */}
+      <div className="mb-1.5 sm:mb-2">
+        <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2 mb-0.5">
+          <span className="text-xl sm:text-2xl md:text-3xl font-bold">
+            ${price?.toFixed(2) ?? 'N/A'}
+          </span>
+          {change !== null && changePercent !== null && (
+            <div className={`flex items-center gap-1 text-sm sm:text-base font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              {isPositive ? <TrendingUp size={14} className="sm:w-4 sm:h-4" /> : <TrendingDown size={14} className="sm:w-4 sm:h-4" />}
+              <span>
+                {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
+              </span>
+            </div>
           )}
         </div>
-
-        {/* Price Section */}
-        <div className="mb-1.5 sm:mb-2">
-          <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2 mb-0.5">
-            <span className="text-xl sm:text-2xl md:text-3xl font-bold">
-              ${price?.toFixed(2) ?? 'N/A'}
-            </span>
-            {change !== null && changePercent !== null && (
-              <div className={`flex items-center gap-1 text-sm sm:text-base font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                {isPositive ? <TrendingUp size={14} className="sm:w-4 sm:h-4" /> : <TrendingDown size={14} className="sm:w-4 sm:h-4" />}
-                <span>
-                  {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="text-[10px] sm:text-xs text-muted-foreground">
-            {currentTime} EST
-          </div>
+        <div className="text-[10px] sm:text-xs text-muted-foreground">
+          {currentTime} EST
         </div>
+      </div>
 
-        {/* Buffett Predictability Stars */}
-        {predictabilityStars && (
-          <div className="mb-2 sm:mb-3">
-            {renderStars(predictabilityStars.stars, true)}
-          </div>
-        )}
-
-        {/* Key Metrics Grid - Kompakter auf Mobile */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 sm:gap-x-4 gap-y-1.5 text-xs">
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">KGV:</div>
-            <div className="font-semibold text-xs sm:text-sm">{peRatio?.toFixed(2) ?? 'N/A'}</div>
-          </div>
-          
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">Marktkap.:</div>
-            <div className="font-semibold text-xs sm:text-sm">{formatNumber(marketCap)}</div>
-          </div>
+      {/* Buffett Predictability Stars */}
+      {predictabilityStars && (
+        <div className="mb-2 sm:mb-3">
+          {renderStars(predictabilityStars.stars, true)}
         </div>
-      </Card>
+      )}
+
+      {/* Key Metrics Grid - Kompakter auf Mobile */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 sm:gap-x-4 gap-y-1.5 text-xs">
+        <div>
+          <div className="text-muted-foreground text-[10px] sm:text-xs">KGV:</div>
+          <div className="font-semibold text-xs sm:text-sm">{peRatio?.toFixed(2) ?? 'N/A'}</div>
+        </div>
+        
+        <div>
+          <div className="text-muted-foreground text-[10px] sm:text-xs">Marktkap.:</div>
+          <div className="font-semibold text-xs sm:text-sm">{formatNumber(marketCap)}</div>
+        </div>
+      </div>
 
       {/* Stars Explanation Dialog */}
       {predictabilityStars && (

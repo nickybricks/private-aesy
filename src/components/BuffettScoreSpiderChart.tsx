@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 interface BuffettScoreSpiderChartProps {
@@ -77,18 +76,8 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-lg">Aesy Score:</CardTitle>
-          <div className="text-lg font-bold">
-            <span className={getScoreColor(totalScore)}>{totalScore.toFixed(0)}</span>
-            <span className="text-foreground"> /100</span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0 relative">
-        <ResponsiveContainer width="100%" height={200}>
+    <div className="relative">
+      <ResponsiveContainer width="100%" height={200}>
           <RadarChart 
             data={data}
             cx={150} 
@@ -223,8 +212,7 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
             />
           </RadarChart>
         </ResponsiveContainer>
-      </CardContent>
-    </Card>
+    </div>
   );
 };
 

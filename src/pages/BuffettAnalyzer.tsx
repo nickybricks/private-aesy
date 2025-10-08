@@ -3,7 +3,7 @@ import React from 'react';
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import StockHeader from '@/components/StockHeader';
-import StockQuoteHeader from '@/components/StockQuoteHeader';
+import StockHeaderWithScore from '@/components/StockHeaderWithScore';
 import StockChart from '@/components/StockChart';
 import { StockProvider, useStock } from '@/context/StockContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -24,7 +24,6 @@ import { useToast } from '@/hooks/use-toast';
 
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 import { ValuationTab } from '@/components/ValuationTab';
-import BuffettScoreSpiderChart from '@/components/BuffettScoreSpiderChart';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -102,16 +101,11 @@ const IndexContent: React.FC = () => {
             
             <ErrorAlert />
             
-            {/* Stock Quote Header, Spider Chart, and Stock Chart Grid */}
+            {/* Stock Header with Score and Stock Chart Grid */}
             {stockInfo && (
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-start gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
-                {/* Stock Quote Section */}
-                <StockQuoteHeader />
-                
-                {/* Spider Chart Section - Narrower */}
-                <div className="lg:w-[280px]">
-                  <BuffettScoreSpiderChart onTabChange={setActiveTab} />
-                </div>
+              <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] items-start gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
+                {/* Stock Header with Score Section */}
+                <StockHeaderWithScore onTabChange={setActiveTab} />
                 
                 {/* Stock Chart Section */}
                 <Card className="p-3 sm:p-4 md:p-5">
