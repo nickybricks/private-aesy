@@ -46,33 +46,52 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
     ? displayValue - wacc 
     : null;
 
-  // Score calculation based on ROIC value and WACC spread
+  // Score calculation based on ROIC value and WACC spread (0-6 points)
   const getScore = (value: number | null, waccValue?: number): number => {
     if (value === null) return 0;
     
-    // If WACC is available, consider the spread
+    // If WACC is available, use the full logic
     if (waccValue !== null && waccValue !== undefined) {
-      if (value >= 15 && value > waccValue) return 2;
-      if (value >= 8 && value > waccValue) return 1;
+      const spread = value - waccValue;
+      
+      // ≥ 15% und ROIC > WACC + 5 pp → 6
+      if (value >= 15 && spread > 5) return 6;
+      
+      // ≥ 12% und ROIC > WACC → 5
+      if (value >= 12 && spread > 0) return 5;
+      
+      // ≥ 10% und ROIC ≥ WACC → 4
+      if (value >= 10 && spread >= 0) return 4;
+      
+      // ≥ 8% → 2
+      if (value >= 8) return 2;
+      
+      // < 8% oder ≤ WACC → 0
+      if (value < 8 || value <= waccValue) return 0;
+      
       return 0;
     }
     
-    // Fallback to absolute values if WACC not available
-    if (value >= 15) return 2;
-    if (value >= 8) return 1;
+    // Fallback if WACC not available - use simplified scoring
+    if (value >= 15) return 6;
+    if (value >= 12) return 5;
+    if (value >= 10) return 4;
+    if (value >= 8) return 2;
     return 0;
   };
 
-  // Get color based on score
+  // Get color based on score (0-6 scale)
   const getColor = (score: number): string => {
-    if (score === 2) return 'text-green-600';
-    if (score === 1) return 'text-yellow-600';
+    if (score >= 5) return 'text-green-600';
+    if (score >= 4) return 'text-green-500';
+    if (score >= 2) return 'text-yellow-600';
     return 'text-red-600';
   };
 
   const getBgColor = (score: number): string => {
-    if (score === 2) return 'bg-green-50 border-green-200';
-    if (score === 1) return 'bg-yellow-50 border-yellow-200';
+    if (score >= 5) return 'bg-green-50 border-green-200';
+    if (score >= 4) return 'bg-green-50/50 border-green-100';
+    if (score >= 2) return 'bg-yellow-50 border-yellow-200';
     return 'bg-red-50 border-red-200';
   };
 
@@ -118,10 +137,12 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
       </div>
 
       <div className="pt-2 border-t space-y-1">
-        <p className="font-medium text-sm">Bewertung:</p>
-        <p className="text-sm"><span className="text-green-600">●</span> Grün (2 Pkt): ≥ 15% und klar &gt; WACC über mehrere Jahre</p>
-        <p className="text-sm"><span className="text-yellow-600">●</span> Gelb (1 Pkt): 8-15% oder nur knapp &gt; WACC</p>
-        <p className="text-sm"><span className="text-red-600">●</span> Rot (0 Pkt): &lt; 8% oder ≤ WACC (kein Wertaufbau)</p>
+        <p className="font-medium text-sm">Bewertung (0-6 Punkte):</p>
+        <p className="text-sm"><span className="text-green-600">●</span> 6 Pkt: ≥ 15% und ROIC &gt; WACC + 5 pp</p>
+        <p className="text-sm"><span className="text-green-600">●</span> 5 Pkt: ≥ 12% und ROIC &gt; WACC</p>
+        <p className="text-sm"><span className="text-green-500">●</span> 4 Pkt: ≥ 10% und ROIC ≥ WACC</p>
+        <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: ≥ 8%</p>
+        <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 8% oder ≤ WACC (kein Wertaufbau)</p>
       </div>
     </div>
   );
@@ -155,7 +176,7 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
         <div className="flex items-center gap-2">
           <div className="text-sm font-medium">Bewertung:</div>
           <div className={`px-2 py-1 rounded text-sm font-semibold ${getColor(score)}`}>
-            {score}/2 Punkte
+            {score}/6 Punkte
           </div>
         </div>
         
