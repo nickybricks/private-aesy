@@ -143,6 +143,36 @@ const IndexContent: React.FC = () => {
                       News
                     </TabsTrigger>
                     <TabsTrigger 
+                      value="profitability" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
+                    >
+                      1. Profitabilität
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="financial-strength" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
+                    >
+                      2. Finanzielle Stärke
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="valuation" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
+                    >
+                      3. Bewertung / Innerer Wert
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="growth-rank" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
+                    >
+                      4. Growth Rank
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="ai-analysis" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
+                    >
+                      5. Qual. KI Analyse
+                    </TabsTrigger>
+                    <TabsTrigger 
                       value="statistics" 
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
@@ -168,6 +198,41 @@ const IndexContent: React.FC = () => {
                       newsItems={newsItems} 
                       pressReleases={pressReleases}
                     />
+                  </TabsContent>
+                  
+                  <TabsContent value="profitability" className="mt-4 sm:mt-6">
+                    <Card className="p-6">
+                      <h2 className="text-2xl font-semibold mb-4">Profitabilität</h2>
+                      <p className="text-muted-foreground">Inhalt folgt...</p>
+                    </Card>
+                  </TabsContent>
+                  
+                  <TabsContent value="financial-strength" className="mt-4 sm:mt-6">
+                    <Card className="p-6">
+                      <h2 className="text-2xl font-semibold mb-4">Finanzielle Stärke</h2>
+                      <p className="text-muted-foreground">Inhalt folgt...</p>
+                    </Card>
+                  </TabsContent>
+                  
+                  <TabsContent value="valuation" className="mt-4 sm:mt-6">
+                    <Card className="p-6">
+                      <h2 className="text-2xl font-semibold mb-4">Bewertung / Innerer Wert</h2>
+                      <p className="text-muted-foreground">Inhalt folgt...</p>
+                    </Card>
+                  </TabsContent>
+                  
+                  <TabsContent value="growth-rank" className="mt-4 sm:mt-6">
+                    <Card className="p-6">
+                      <h2 className="text-2xl font-semibold mb-4">Growth Rank</h2>
+                      <p className="text-muted-foreground">Inhalt folgt...</p>
+                    </Card>
+                  </TabsContent>
+                  
+                  <TabsContent value="ai-analysis" className="mt-4 sm:mt-6">
+                    <Card className="p-6">
+                      <h2 className="text-2xl font-semibold mb-4">Qualitative KI Analyse</h2>
+                      <p className="text-muted-foreground">Inhalt folgt...</p>
+                    </Card>
                   </TabsContent>
                   
                   <TabsContent value="statistics" className="mt-4 sm:mt-6">
