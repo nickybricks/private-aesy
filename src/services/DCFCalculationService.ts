@@ -96,6 +96,17 @@ export class DCFCalculationService {
       // Extract 5 years of data (most recent first)
       const years = Math.min(incomeData.length, cashFlowData.length, balanceData.length, 5);
       
+      // Calculate WACC using actual company data
+      let wacc = 0.10; // Default 10% as fallback
+      try {
+        const { calculateWACC } = await import('@/utils/waccCalculator');
+        const waccPercentage = await calculateWACC(ticker);
+        wacc = waccPercentage / 100; // Convert from percentage to decimal
+        console.log(`Using calculated WACC: ${waccPercentage}% (${wacc} as decimal)`);
+      } catch (error) {
+        console.error('Error calculating WACC in DCF, using default 10%:', error);
+      }
+
       const inputData: DCFInputData = {
         ebit: incomeData.slice(0, years).map((d: any) => d.operatingIncome || 0),
         taxRate: incomeData.slice(0, years).map((d: any) => 
@@ -114,7 +125,7 @@ export class DCFCalculationService {
         cash: balanceData[0]?.cashAndCashEquivalents || 0,
         sharesOutstanding: Math.abs(profileData?.mktCap && profileData?.price ? 
           profileData.mktCap / profileData.price : balanceData[0]?.weightedAverageShsOutDil || 0),
-        wacc: 0.10, // Default 10% WACC - could be enhanced with actual WACC calculation
+        wacc: wacc, // Use calculated WACC from FMP API data
         terminalGrowthRate: this.TERMINAL_GROWTH_RATE
       };
 
