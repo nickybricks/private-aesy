@@ -87,71 +87,17 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 relative">
         <ResponsiveContainer width="100%" height={200}>
           <RadarChart 
             data={data}
-            cx="50%" 
-            cy="50%"
+            cx={150} 
+            cy={100}
           >
-            <defs>
-              <clipPath id="chart-area">
-                <circle cx="50%" cy="50%" r="90" />
-              </clipPath>
-            </defs>
-            
             <PolarGrid 
               stroke="hsl(var(--border))" 
               gridType="circle"
             />
-            
-            {/* Custom layer for clickable slices - render first so it's behind */}
-            <g className="clickable-slices">
-              {data.map((item, index) => {
-                const totalSlices = data.length;
-                const anglePerSlice = 360 / totalSlices;
-                
-                // Recharts starts at 90° (top) and goes counter-clockwise
-                // We need to adjust: subtract 90° and add 180° to match Recharts orientation
-                const startAngle = 90 - (anglePerSlice * index);
-                const endAngle = 90 - (anglePerSlice * (index + 1));
-                
-                // Convert to radians
-                const startRad = (startAngle * Math.PI) / 180;
-                const endRad = (endAngle * Math.PI) / 180;
-                
-                // Use percentage-based positioning to match ResponsiveContainer
-                const centerXPercent = 50;
-                const centerYPercent = 50;
-                const radiusPercent = 45; // Percentage of container
-                
-                // Calculate points (these will be in percentage units)
-                const x1 = centerXPercent + radiusPercent * Math.cos(startRad);
-                const y1 = centerYPercent - radiusPercent * Math.sin(startRad);
-                const x2 = centerXPercent + radiusPercent * Math.cos(endRad);
-                const y2 = centerYPercent - radiusPercent * Math.sin(endRad);
-                
-                const largeArcFlag = anglePerSlice > 180 ? 1 : 0;
-                
-                const pathData = `
-                  M ${centerXPercent}% ${centerYPercent}%
-                  L ${x1}% ${y1}%
-                  A ${radiusPercent}% ${radiusPercent}% 0 ${largeArcFlag} 0 ${x2}% ${y2}%
-                  Z
-                `;
-                
-                return (
-                  <path
-                    key={`slice-${index}`}
-                    d={pathData}
-                    fill="transparent"
-                    className="cursor-pointer hover:fill-muted/40 transition-colors"
-                    onClick={() => handleLabelClick(item.tabValue)}
-                    style={{ transformOrigin: '50% 50%' }}
-                  />
-                );
-              })}
-            </g>
             
             <PolarAngleAxis 
               dataKey="criterion" 
@@ -195,14 +141,46 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
                 
                 const path = createSmoothPath(points);
                 return (
-                  <path
-                    d={path}
-                    fill={getScoreFillColor(totalScore)}
-                    fillOpacity={0.3}
-                    stroke={getScoreFillColor(totalScore)}
-                    strokeWidth={2}
-                    style={{ pointerEvents: 'none' }}
-                  />
+                  <>
+                    {/* Render clickable slices using actual chart coordinates */}
+                    {points.map((point: any, index: number) => {
+                      const nextIndex = (index + 1) % points.length;
+                      const nextPoint = points[nextIndex];
+                      const centerX = 150;
+                      const centerY = 100;
+                      
+                      // Create a slice from center through two consecutive points
+                      const pathData = `
+                        M ${centerX},${centerY}
+                        L ${point.x},${point.y}
+                        A 85 85 0 0 1 ${nextPoint.x},${nextPoint.y}
+                        Z
+                      `;
+                      
+                      return (
+                        <path
+                          key={`slice-${index}`}
+                          d={pathData}
+                          fill="transparent"
+                          className="cursor-pointer hover:fill-muted/40 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLabelClick(data[index].tabValue);
+                          }}
+                        />
+                      );
+                    })}
+                    
+                    {/* The actual radar shape on top */}
+                    <path
+                      d={path}
+                      fill={getScoreFillColor(totalScore)}
+                      fillOpacity={0.3}
+                      stroke={getScoreFillColor(totalScore)}
+                      strokeWidth={2}
+                      style={{ pointerEvents: 'none' }}
+                    />
+                  </>
                 );
               }}
             />
