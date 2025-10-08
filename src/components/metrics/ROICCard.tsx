@@ -233,7 +233,19 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
               <ReferenceLine y={15} stroke="#16a34a" strokeDasharray="3 3" />
               <ReferenceLine y={8} stroke="#ca8a04" strokeDasharray="3 3" />
               {wacc !== null && wacc !== undefined && (
-                <ReferenceLine y={wacc} stroke="#dc2626" strokeDasharray="3 3" label={{ value: 'WACC', fontSize: 10, fill: '#dc2626' }} />
+                <ReferenceLine 
+                  y={wacc} 
+                  stroke="#dc2626" 
+                  strokeDasharray="5 5" 
+                  strokeWidth={2}
+                  label={{ 
+                    value: `WACC (${wacc.toFixed(1)}%)`, 
+                    position: 'insideTopRight',
+                    fontSize: 11, 
+                    fill: '#dc2626',
+                    fontWeight: 'bold'
+                  }} 
+                />
               )}
               <Line 
                 type="monotone" 
