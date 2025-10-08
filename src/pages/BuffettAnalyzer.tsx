@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 import { ValuationTab } from '@/components/ValuationTab';
+import BuffettScoreSpiderChart from '@/components/BuffettScoreSpiderChart';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -99,11 +100,16 @@ const IndexContent: React.FC = () => {
             
             <ErrorAlert />
             
-            {/* Stock Quote Header and Chart Grid */}
+            {/* Stock Quote Header, Spider Chart, and Stock Chart Grid */}
             {stockInfo && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-start gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
                 {/* Stock Quote Section */}
                 <StockQuoteHeader />
+                
+                {/* Spider Chart Section - Narrower */}
+                <div className="lg:w-[280px]">
+                  <BuffettScoreSpiderChart />
+                </div>
                 
                 {/* Stock Chart Section */}
                 <Card className="p-3 sm:p-4 md:p-5">
