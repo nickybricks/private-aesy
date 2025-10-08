@@ -209,19 +209,19 @@ const presetConfigurations: Record<string, ScoringLogic> = {
       return { score: 0, maxScore: 4 };
     },
     calculateNetMarginScore: (margin) => {
-      if (margin === null) return { score: 0, maxScore: 4 };
-      if (margin >= 18) return { score: 4, maxScore: 4 };
-      if (margin >= 14) return { score: 3, maxScore: 4 };
-      if (margin >= 10) return { score: 2, maxScore: 4 };
-      if (margin >= 6) return { score: 1, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (margin === null) return { score: 0, maxScore: 3 };
+      if (margin >= 18) return { score: 3, maxScore: 3 };
+      if (margin >= 14) return { score: 2, maxScore: 3 };
+      if (margin >= 10) return { score: 1, maxScore: 3 };
+      if (margin >= 6) return { score: 0.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateYearsScore: (years) => {
-      if (years === 10) return { score: 4, maxScore: 4 };
-      if (years === 9) return { score: 3, maxScore: 4 };
-      if (years === 8) return { score: 3, maxScore: 4 };
-      if (years === 7) return { score: 2, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (years === 10) return { score: 3, maxScore: 3 };
+      if (years === 9) return { score: 2.5, maxScore: 3 };
+      if (years === 8) return { score: 2, maxScore: 3 };
+      if (years === 7) return { score: 1, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateROEScore: (roe) => {
       if (roe === null) return { score: 0, maxScore: 2 };
@@ -247,33 +247,33 @@ const presetConfigurations: Record<string, ScoringLogic> = {
       return { score: 0, maxScore: 6 };
     },
     calculateOperatingMarginScore: (margin) => {
-      if (margin === null) return { score: 0, maxScore: 4 };
-      if (margin >= 18) return { score: 4, maxScore: 4 };
-      if (margin >= 15) return { score: 3, maxScore: 4 };
-      if (margin >= 12) return { score: 2, maxScore: 4 };
-      if (margin >= 8) return { score: 1, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (margin === null) return { score: 0, maxScore: 3 };
+      if (margin >= 18) return { score: 3, maxScore: 3 };
+      if (margin >= 15) return { score: 2, maxScore: 3 };
+      if (margin >= 12) return { score: 1.5, maxScore: 3 };
+      if (margin >= 8) return { score: 0.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateNetMarginScore: (margin) => {
-      if (margin === null) return { score: 0, maxScore: 4 };
-      if (margin >= 14) return { score: 4, maxScore: 4 };
-      if (margin >= 10) return { score: 3, maxScore: 4 };
-      if (margin >= 8) return { score: 2, maxScore: 4 };
-      if (margin >= 5) return { score: 1, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (margin === null) return { score: 0, maxScore: 3 };
+      if (margin >= 14) return { score: 3, maxScore: 3 };
+      if (margin >= 10) return { score: 2, maxScore: 3 };
+      if (margin >= 8) return { score: 1, maxScore: 3 };
+      if (margin >= 5) return { score: 0.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateYearsScore: (years) => {
       if (years === 10) return { score: 4, maxScore: 4 };
       if (years === 9) return { score: 3, maxScore: 4 };
-      if (years === 8) return { score: 3, maxScore: 4 };
-      if (years === 7) return { score: 2, maxScore: 4 };
+      if (years === 8) return { score: 2.5, maxScore: 4 };
+      if (years === 7) return { score: 1.5, maxScore: 4 };
       return { score: 0, maxScore: 4 };
     },
     calculateROEScore: (roe) => {
-      if (roe === null) return { score: 0, maxScore: 2 };
-      if (roe >= 15) return { score: 2, maxScore: 2 };
-      if (roe >= 10) return { score: 1, maxScore: 2 };
-      return { score: 0, maxScore: 2 };
+      if (roe === null) return { score: 0, maxScore: 3 };
+      if (roe >= 15) return { score: 3, maxScore: 3 };
+      if (roe >= 10) return { score: 1.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateROAScore: (roa) => {
       if (roa === null) return { score: 0, maxScore: 1 };
@@ -284,13 +284,13 @@ const presetConfigurations: Record<string, ScoringLogic> = {
   Industrials: {
     weights: { roic: 5, operatingMargin: 4, netMargin: 2, yearsOfProfitability: 4, roe: 3, roa: 2 },
     calculateROICScore: (roic, wacc) => {
-      if (roic === null) return { score: 0, maxScore: 6 };
+      if (roic === null) return { score: 0, maxScore: 5 };
       const spread = wacc !== null ? roic - wacc : null;
-      if (roic >= 14 && spread !== null && spread >= 5) return { score: 6, maxScore: 6 };
-      if (roic >= 12 && spread !== null && spread >= 3) return { score: 5, maxScore: 6 };
-      if (roic >= 10 && spread !== null && spread > 0) return { score: 4, maxScore: 6 };
-      if (roic >= 8) return { score: 2, maxScore: 6 };
-      return { score: 0, maxScore: 6 };
+      if (roic >= 14 && spread !== null && spread >= 5) return { score: 5, maxScore: 5 };
+      if (roic >= 12 && spread !== null && spread >= 3) return { score: 4, maxScore: 5 };
+      if (roic >= 10 && spread !== null && spread > 0) return { score: 3, maxScore: 5 };
+      if (roic >= 8) return { score: 1, maxScore: 5 };
+      return { score: 0, maxScore: 5 };
     },
     calculateOperatingMarginScore: (margin) => {
       if (margin === null) return { score: 0, maxScore: 4 };
@@ -301,12 +301,12 @@ const presetConfigurations: Record<string, ScoringLogic> = {
       return { score: 0, maxScore: 4 };
     },
     calculateNetMarginScore: (margin) => {
-      if (margin === null) return { score: 0, maxScore: 4 };
-      if (margin >= 10) return { score: 4, maxScore: 4 };
-      if (margin >= 7) return { score: 3, maxScore: 4 };
-      if (margin >= 5) return { score: 2, maxScore: 4 };
-      if (margin >= 3) return { score: 1, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (margin === null) return { score: 0, maxScore: 2 };
+      if (margin >= 10) return { score: 2, maxScore: 2 };
+      if (margin >= 7) return { score: 1.5, maxScore: 2 };
+      if (margin >= 5) return { score: 1, maxScore: 2 };
+      if (margin >= 3) return { score: 0.5, maxScore: 2 };
+      return { score: 0, maxScore: 2 };
     },
     calculateYearsScore: (years) => {
       if (years === 10) return { score: 4, maxScore: 4 };
@@ -316,134 +316,134 @@ const presetConfigurations: Record<string, ScoringLogic> = {
       return { score: 0, maxScore: 4 };
     },
     calculateROEScore: (roe) => {
-      if (roe === null) return { score: 0, maxScore: 2 };
-      if (roe >= 14) return { score: 2, maxScore: 2 };
-      if (roe >= 9) return { score: 1, maxScore: 2 };
-      return { score: 0, maxScore: 2 };
+      if (roe === null) return { score: 0, maxScore: 3 };
+      if (roe >= 14) return { score: 3, maxScore: 3 };
+      if (roe >= 9) return { score: 1.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateROAScore: (roa) => {
-      if (roa === null) return { score: 0, maxScore: 1 };
-      if (roa >= 7) return { score: 1, maxScore: 1 };
-      return { score: 0, maxScore: 1 };
+      if (roa === null) return { score: 0, maxScore: 2 };
+      if (roa >= 7) return { score: 2, maxScore: 2 };
+      return { score: 0, maxScore: 2 };
     }
   },
   RetailLogistics: {
     weights: { roic: 5, operatingMargin: 3, netMargin: 2, yearsOfProfitability: 4, roe: 4, roa: 2 },
     calculateROICScore: (roic, wacc) => {
-      if (roic === null) return { score: 0, maxScore: 6 };
+      if (roic === null) return { score: 0, maxScore: 5 };
       const spread = wacc !== null ? roic - wacc : null;
-      if (roic >= 12 && spread !== null && spread >= 4) return { score: 6, maxScore: 6 };
-      if (roic >= 10 && spread !== null && spread >= 2) return { score: 5, maxScore: 6 };
-      if (roic >= 9 && spread !== null && spread > 0) return { score: 4, maxScore: 6 };
-      if (roic >= 7) return { score: 2, maxScore: 6 };
-      return { score: 0, maxScore: 6 };
+      if (roic >= 12 && spread !== null && spread >= 4) return { score: 5, maxScore: 5 };
+      if (roic >= 10 && spread !== null && spread >= 2) return { score: 4, maxScore: 5 };
+      if (roic >= 9 && spread !== null && spread > 0) return { score: 3, maxScore: 5 };
+      if (roic >= 7) return { score: 1, maxScore: 5 };
+      return { score: 0, maxScore: 5 };
     },
     calculateOperatingMarginScore: (margin) => {
-      if (margin === null) return { score: 0, maxScore: 4 };
-      if (margin >= 10) return { score: 4, maxScore: 4 };
-      if (margin >= 7) return { score: 3, maxScore: 4 };
-      if (margin >= 5) return { score: 2, maxScore: 4 };
-      if (margin >= 3) return { score: 1, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (margin === null) return { score: 0, maxScore: 3 };
+      if (margin >= 10) return { score: 3, maxScore: 3 };
+      if (margin >= 7) return { score: 2, maxScore: 3 };
+      if (margin >= 5) return { score: 1.5, maxScore: 3 };
+      if (margin >= 3) return { score: 0.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateNetMarginScore: (margin) => {
-      if (margin === null) return { score: 0, maxScore: 4 };
-      if (margin >= 6) return { score: 4, maxScore: 4 };
-      if (margin >= 4) return { score: 3, maxScore: 4 };
-      if (margin >= 3) return { score: 2, maxScore: 4 };
-      if (margin >= 2) return { score: 1, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (margin === null) return { score: 0, maxScore: 2 };
+      if (margin >= 6) return { score: 2, maxScore: 2 };
+      if (margin >= 4) return { score: 1.5, maxScore: 2 };
+      if (margin >= 3) return { score: 1, maxScore: 2 };
+      if (margin >= 2) return { score: 0.5, maxScore: 2 };
+      return { score: 0, maxScore: 2 };
     },
     calculateYearsScore: (years) => {
       if (years === 10) return { score: 4, maxScore: 4 };
       if (years === 9) return { score: 3, maxScore: 4 };
-      if (years === 8) return { score: 3, maxScore: 4 };
-      if (years === 7) return { score: 2, maxScore: 4 };
+      if (years === 8) return { score: 2.5, maxScore: 4 };
+      if (years === 7) return { score: 1.5, maxScore: 4 };
       return { score: 0, maxScore: 4 };
     },
     calculateROEScore: (roe) => {
-      if (roe === null) return { score: 0, maxScore: 2 };
-      if (roe >= 15) return { score: 2, maxScore: 2 };
-      if (roe >= 10) return { score: 1, maxScore: 2 };
-      return { score: 0, maxScore: 2 };
+      if (roe === null) return { score: 0, maxScore: 4 };
+      if (roe >= 15) return { score: 4, maxScore: 4 };
+      if (roe >= 10) return { score: 2, maxScore: 4 };
+      return { score: 0, maxScore: 4 };
     },
     calculateROAScore: (roa) => {
-      if (roa === null) return { score: 0, maxScore: 1 };
-      if (roa >= 6) return { score: 1, maxScore: 1 };
-      return { score: 0, maxScore: 1 };
+      if (roa === null) return { score: 0, maxScore: 2 };
+      if (roa >= 6) return { score: 2, maxScore: 2 };
+      return { score: 0, maxScore: 2 };
     }
   },
   UtilitiesTelecom: {
     weights: { roic: 4, operatingMargin: 3, netMargin: 3, yearsOfProfitability: 5, roe: 3, roa: 2 },
     calculateROICScore: (roic, wacc) => {
-      if (roic === null) return { score: 0, maxScore: 6 };
+      if (roic === null) return { score: 0, maxScore: 4 };
       const spread = wacc !== null ? roic - wacc : null;
-      if (roic >= 10 && spread !== null && spread >= 2) return { score: 6, maxScore: 6 };
-      if (roic >= 9 && spread !== null && spread >= 1) return { score: 5, maxScore: 6 };
-      if (roic >= 8 && spread !== null && spread >= 0) return { score: 4, maxScore: 6 };
-      if (roic >= 7) return { score: 2, maxScore: 6 };
-      return { score: 0, maxScore: 6 };
+      if (roic >= 10 && spread !== null && spread >= 2) return { score: 4, maxScore: 4 };
+      if (roic >= 9 && spread !== null && spread >= 1) return { score: 3, maxScore: 4 };
+      if (roic >= 8 && spread !== null && spread >= 0) return { score: 2, maxScore: 4 };
+      if (roic >= 7) return { score: 1, maxScore: 4 };
+      return { score: 0, maxScore: 4 };
     },
     calculateOperatingMarginScore: (margin) => {
-      if (margin === null) return { score: 0, maxScore: 4 };
-      if (margin >= 18) return { score: 4, maxScore: 4 };
-      if (margin >= 15) return { score: 3, maxScore: 4 };
-      if (margin >= 12) return { score: 2, maxScore: 4 };
-      if (margin >= 9) return { score: 1, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (margin === null) return { score: 0, maxScore: 3 };
+      if (margin >= 18) return { score: 3, maxScore: 3 };
+      if (margin >= 15) return { score: 2, maxScore: 3 };
+      if (margin >= 12) return { score: 1.5, maxScore: 3 };
+      if (margin >= 9) return { score: 0.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateNetMarginScore: (margin) => {
-      if (margin === null) return { score: 0, maxScore: 4 };
-      if (margin >= 10) return { score: 4, maxScore: 4 };
-      if (margin >= 8) return { score: 3, maxScore: 4 };
-      if (margin >= 6) return { score: 2, maxScore: 4 };
-      if (margin >= 4) return { score: 1, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (margin === null) return { score: 0, maxScore: 3 };
+      if (margin >= 10) return { score: 3, maxScore: 3 };
+      if (margin >= 8) return { score: 2, maxScore: 3 };
+      if (margin >= 6) return { score: 1.5, maxScore: 3 };
+      if (margin >= 4) return { score: 0.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateYearsScore: (years) => {
-      if (years === 10 || years === 9) return { score: 4, maxScore: 4 };
-      if (years === 8) return { score: 3, maxScore: 4 };
-      if (years === 7) return { score: 2, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (years === 10 || years === 9) return { score: 5, maxScore: 5 };
+      if (years === 8) return { score: 3, maxScore: 5 };
+      if (years === 7) return { score: 2, maxScore: 5 };
+      return { score: 0, maxScore: 5 };
     },
     calculateROEScore: (roe) => {
-      if (roe === null) return { score: 0, maxScore: 2 };
-      if (roe >= 12) return { score: 2, maxScore: 2 };
-      if (roe >= 8) return { score: 1, maxScore: 2 };
-      return { score: 0, maxScore: 2 };
+      if (roe === null) return { score: 0, maxScore: 3 };
+      if (roe >= 12) return { score: 3, maxScore: 3 };
+      if (roe >= 8) return { score: 1.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateROAScore: (roa) => {
-      if (roa === null) return { score: 0, maxScore: 1 };
-      if (roa >= 6) return { score: 1, maxScore: 1 };
-      return { score: 0, maxScore: 1 };
+      if (roa === null) return { score: 0, maxScore: 2 };
+      if (roa >= 6) return { score: 2, maxScore: 2 };
+      return { score: 0, maxScore: 2 };
     }
   },
   EnergyMaterials: {
     weights: { roic: 5, operatingMargin: 3, netMargin: 2, yearsOfProfitability: 4, roe: 4, roa: 2 },
     calculateROICScore: (roic, wacc) => {
-      if (roic === null) return { score: 0, maxScore: 6 };
+      if (roic === null) return { score: 0, maxScore: 5 };
       const spread = wacc !== null ? roic - wacc : null;
-      if (roic >= 14 && spread !== null && spread >= 4) return { score: 6, maxScore: 6 };
-      if (roic >= 12 && spread !== null && spread >= 2) return { score: 5, maxScore: 6 };
-      if (roic >= 10 && spread !== null && spread > 0) return { score: 4, maxScore: 6 };
-      if (roic >= 7) return { score: 2, maxScore: 6 };
-      return { score: 0, maxScore: 6 };
+      if (roic >= 14 && spread !== null && spread >= 4) return { score: 5, maxScore: 5 };
+      if (roic >= 12 && spread !== null && spread >= 2) return { score: 4, maxScore: 5 };
+      if (roic >= 10 && spread !== null && spread > 0) return { score: 3, maxScore: 5 };
+      if (roic >= 7) return { score: 1, maxScore: 5 };
+      return { score: 0, maxScore: 5 };
     },
     calculateOperatingMarginScore: (margin) => {
-      if (margin === null) return { score: 0, maxScore: 4 };
-      if (margin >= 22) return { score: 4, maxScore: 4 };
-      if (margin >= 16) return { score: 3, maxScore: 4 };
-      if (margin >= 12) return { score: 2, maxScore: 4 };
-      if (margin >= 8) return { score: 1, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (margin === null) return { score: 0, maxScore: 3 };
+      if (margin >= 22) return { score: 3, maxScore: 3 };
+      if (margin >= 16) return { score: 2, maxScore: 3 };
+      if (margin >= 12) return { score: 1.5, maxScore: 3 };
+      if (margin >= 8) return { score: 0.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateNetMarginScore: (margin) => {
-      if (margin === null) return { score: 0, maxScore: 4 };
-      if (margin >= 12) return { score: 4, maxScore: 4 };
-      if (margin >= 8) return { score: 3, maxScore: 4 };
-      if (margin >= 5) return { score: 2, maxScore: 4 };
-      if (margin >= 3) return { score: 1, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (margin === null) return { score: 0, maxScore: 2 };
+      if (margin >= 12) return { score: 2, maxScore: 2 };
+      if (margin >= 8) return { score: 1.5, maxScore: 2 };
+      if (margin >= 5) return { score: 1, maxScore: 2 };
+      if (margin >= 3) return { score: 0.5, maxScore: 2 };
+      return { score: 0, maxScore: 2 };
     },
     calculateYearsScore: (years) => {
       if (years === 10) return { score: 4, maxScore: 4 };
@@ -453,15 +453,15 @@ const presetConfigurations: Record<string, ScoringLogic> = {
       return { score: 0, maxScore: 4 };
     },
     calculateROEScore: (roe) => {
-      if (roe === null) return { score: 0, maxScore: 2 };
-      if (roe >= 16) return { score: 2, maxScore: 2 };
-      if (roe >= 10) return { score: 1, maxScore: 2 };
-      return { score: 0, maxScore: 2 };
+      if (roe === null) return { score: 0, maxScore: 4 };
+      if (roe >= 16) return { score: 4, maxScore: 4 };
+      if (roe >= 10) return { score: 2, maxScore: 4 };
+      return { score: 0, maxScore: 4 };
     },
     calculateROAScore: (roa) => {
-      if (roa === null) return { score: 0, maxScore: 1 };
-      if (roa >= 7) return { score: 1, maxScore: 1 };
-      return { score: 0, maxScore: 1 };
+      if (roa === null) return { score: 0, maxScore: 2 };
+      if (roa >= 7) return { score: 2, maxScore: 2 };
+      return { score: 0, maxScore: 2 };
     }
   },
   Healthcare: {
@@ -484,25 +484,25 @@ const presetConfigurations: Record<string, ScoringLogic> = {
       return { score: 0, maxScore: 4 };
     },
     calculateNetMarginScore: (margin) => {
-      if (margin === null) return { score: 0, maxScore: 4 };
-      if (margin >= 16) return { score: 4, maxScore: 4 };
-      if (margin >= 12) return { score: 3, maxScore: 4 };
-      if (margin >= 8) return { score: 2, maxScore: 4 };
-      if (margin >= 5) return { score: 1, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (margin === null) return { score: 0, maxScore: 3 };
+      if (margin >= 16) return { score: 3, maxScore: 3 };
+      if (margin >= 12) return { score: 2, maxScore: 3 };
+      if (margin >= 8) return { score: 1.5, maxScore: 3 };
+      if (margin >= 5) return { score: 0.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateYearsScore: (years) => {
-      if (years === 10) return { score: 4, maxScore: 4 };
-      if (years === 9) return { score: 3, maxScore: 4 };
-      if (years === 8) return { score: 3, maxScore: 4 };
-      if (years === 7) return { score: 2, maxScore: 4 };
-      return { score: 0, maxScore: 4 };
+      if (years === 10) return { score: 3, maxScore: 3 };
+      if (years === 9) return { score: 2.5, maxScore: 3 };
+      if (years === 8) return { score: 2, maxScore: 3 };
+      if (years === 7) return { score: 1, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateROEScore: (roe) => {
-      if (roe === null) return { score: 0, maxScore: 2 };
-      if (roe >= 15) return { score: 2, maxScore: 2 };
-      if (roe >= 10) return { score: 1, maxScore: 2 };
-      return { score: 0, maxScore: 2 };
+      if (roe === null) return { score: 0, maxScore: 3 };
+      if (roe >= 15) return { score: 3, maxScore: 3 };
+      if (roe >= 10) return { score: 1.5, maxScore: 3 };
+      return { score: 0, maxScore: 3 };
     },
     calculateROAScore: (roa) => {
       if (roa === null) return { score: 0, maxScore: 1 };
@@ -527,20 +527,20 @@ const presetConfigurations: Record<string, ScoringLogic> = {
     calculateYearsScore: (years) => {
       if (years === 10) return { score: 4, maxScore: 4 };
       if (years === 9) return { score: 3, maxScore: 4 };
-      if (years === 8) return { score: 3, maxScore: 4 };
-      if (years === 7) return { score: 2, maxScore: 4 };
+      if (years === 8) return { score: 2.5, maxScore: 4 };
+      if (years === 7) return { score: 1.5, maxScore: 4 };
       return { score: 0, maxScore: 4 };
     },
     calculateROEScore: (roe) => {
-      if (roe === null) return { score: 0, maxScore: 2 };
-      if (roe >= 14) return { score: 2, maxScore: 2 };
-      if (roe >= 10) return { score: 1, maxScore: 2 };
-      return { score: 0, maxScore: 2 };
+      if (roe === null) return { score: 0, maxScore: 8 };
+      if (roe >= 14) return { score: 8, maxScore: 8 };
+      if (roe >= 10) return { score: 4, maxScore: 8 };
+      return { score: 0, maxScore: 8 };
     },
     calculateROAScore: (roa) => {
-      if (roa === null) return { score: 0, maxScore: 1 };
-      if (roa >= 1.2) return { score: 1, maxScore: 1 };
-      return { score: 0, maxScore: 1 };
+      if (roa === null) return { score: 0, maxScore: 4 };
+      if (roa >= 1.2) return { score: 4, maxScore: 4 };
+      return { score: 0, maxScore: 4 };
     }
   },
   Insurance: {
@@ -566,20 +566,20 @@ const presetConfigurations: Record<string, ScoringLogic> = {
     calculateYearsScore: (years) => {
       if (years === 10) return { score: 4, maxScore: 4 };
       if (years === 9) return { score: 3, maxScore: 4 };
-      if (years === 8) return { score: 3, maxScore: 4 };
-      if (years === 7) return { score: 2, maxScore: 4 };
+      if (years === 8) return { score: 2.5, maxScore: 4 };
+      if (years === 7) return { score: 1.5, maxScore: 4 };
       return { score: 0, maxScore: 4 };
     },
     calculateROEScore: (roe) => {
-      if (roe === null) return { score: 0, maxScore: 2 };
-      if (roe >= 14) return { score: 2, maxScore: 2 };
-      if (roe >= 10) return { score: 1, maxScore: 2 };
-      return { score: 0, maxScore: 2 };
+      if (roe === null) return { score: 0, maxScore: 7 };
+      if (roe >= 14) return { score: 7, maxScore: 7 };
+      if (roe >= 10) return { score: 3.5, maxScore: 7 };
+      return { score: 0, maxScore: 7 };
     },
     calculateROAScore: (roa) => {
-      if (roa === null) return { score: 0, maxScore: 1 };
-      if (roa >= 1.0) return { score: 1, maxScore: 1 };
-      return { score: 0, maxScore: 1 };
+      if (roa === null) return { score: 0, maxScore: 2 };
+      if (roa >= 1.0) return { score: 2, maxScore: 2 };
+      return { score: 0, maxScore: 2 };
     }
   }
 };

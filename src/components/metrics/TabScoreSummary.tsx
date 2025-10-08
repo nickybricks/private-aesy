@@ -24,9 +24,9 @@ export const TabScoreSummary: React.FC<TabScoreSummaryProps> = ({
   title,
   preset
 }) => {
-  // Calculate total score (weighted)
-  const totalScore = metrics.reduce((sum, m) => sum + (m.score * m.weight / m.maxScore), 0);
-  const maxTotalScore = metrics.reduce((sum, m) => sum + m.weight, 0);
+  // Calculate total score (direct sum, no additional weighting)
+  const totalScore = metrics.reduce((sum, m) => sum + m.score, 0);
+  const maxTotalScore = metrics.reduce((sum, m) => sum + m.maxScore, 0);
   const scorePercentage = maxTotalScore > 0 ? (totalScore / maxTotalScore) * 100 : 0;
 
   // Determine color based on percentage
@@ -87,7 +87,6 @@ export const TabScoreSummary: React.FC<TabScoreSummaryProps> = ({
             {metrics.map((metric, index) => {
               const metricPercentage = metric.maxScore > 0 ? (metric.score / metric.maxScore) * 100 : 0;
               const metricColor = getScoreColor(metricPercentage);
-              const weightedScore = (metric.score * metric.weight / metric.maxScore).toFixed(1);
               
               return (
                 <div 
@@ -99,15 +98,15 @@ export const TabScoreSummary: React.FC<TabScoreSummaryProps> = ({
                       {metric.name}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      Gewicht: {metric.weight}
+                      Max: {metric.maxScore} Pkt
                     </span>
                   </div>
                   <div className="flex flex-col items-end">
                     <span className={`text-sm font-semibold ${metricColor} whitespace-nowrap`}>
-                      {metric.score}/{metric.maxScore}
+                      {metric.score.toFixed(1)}/{metric.maxScore}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      = {weightedScore} Pkt
+                      ({metricPercentage.toFixed(0)}%)
                     </span>
                   </div>
                 </div>
