@@ -162,7 +162,7 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
                           key={`slice-${index}`}
                           d={pathData}
                           fill="transparent"
-                          className="cursor-pointer hover:fill-muted/40 transition-colors"
+                          className="cursor-pointer hover:fill-muted/70 transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleLabelClick(data[index].tabValue);
