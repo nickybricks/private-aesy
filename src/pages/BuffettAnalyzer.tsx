@@ -21,9 +21,9 @@ import ErrorAlert from '@/components/ErrorAlert';
 import AppFooter from '@/components/AppFooter';
 import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
 import { useToast } from '@/hooks/use-toast';
-
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 import { ValuationTab } from '@/components/ValuationTab';
+import { ROECard } from '@/components/metrics/ROECard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -36,7 +36,8 @@ const IndexContent: React.FC = () => {
     stockInfo,
     overallRating,
     newsItems,
-    pressReleases
+    pressReleases,
+    financialMetrics
   } = useStock();
   const { analyses, loading: analysesLoading } = useSavedAnalyses();
   const { toast } = useToast();
@@ -199,10 +200,12 @@ const IndexContent: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="profitability" className="mt-4 sm:mt-6">
-                    <Card className="p-6">
-                      <h2 className="text-2xl font-semibold mb-4">Profitabilität</h2>
-                      <p className="text-muted-foreground">Inhalt folgt...</p>
-                    </Card>
+                    <div className="space-y-4">
+                      <ROECard 
+                        currentValue={financialMetrics?.roe ?? null}
+                        historicalData={undefined}
+                      />
+                    </div>
                   </TabsContent>
                   
                   <TabsContent value="financial-strength" className="mt-4 sm:mt-6">
