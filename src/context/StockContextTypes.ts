@@ -43,7 +43,11 @@ export interface FinancialMetricsData {
     earnings: HistoricalDataItem[];
     eps: HistoricalDataItem[];
     roe: HistoricalDataItem[];
+    roic: HistoricalDataItem[];
+    operatingCashFlow: HistoricalDataItem[];
+    freeCashFlow: HistoricalDataItem[];
   };
+  wacc?: number;
 }
 
 export interface OverallRatingData {

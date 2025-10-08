@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 import { ValuationTab } from '@/components/ValuationTab';
 import { ROECard } from '@/components/metrics/ROECard';
+import { ROICCard } from '@/components/metrics/ROICCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -204,6 +205,11 @@ const IndexContent: React.FC = () => {
                       <ROECard 
                         currentValue={financialMetrics?.roe ?? null}
                         historicalData={financialMetrics?.historicalData?.roe}
+                      />
+                      <ROICCard 
+                        currentValue={financialMetrics?.roic ?? null}
+                        historicalData={financialMetrics?.historicalData?.roic}
+                        wacc={financialMetrics?.wacc}
                       />
                     </div>
                   </TabsContent>
