@@ -33,9 +33,12 @@ const BuffettScoreSpiderChart: React.FC = () => {
   return (
     <Card className="h-full">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Aesy Score</CardTitle>
-        <div className={`text-2xl font-bold ${getScoreColor(totalScore)}`}>
-          {totalScore.toFixed(0)} / 100
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-lg">Aesy Score:</CardTitle>
+          <div className="text-lg font-bold">
+            <span className={getScoreColor(totalScore)}>{totalScore.toFixed(0)}</span>
+            <span className="text-foreground"> /100</span>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
