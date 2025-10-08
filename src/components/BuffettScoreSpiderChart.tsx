@@ -139,21 +139,34 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
                 const { points } = props;
                 if (!points || points.length === 0) return null;
                 
+                const centerX = 150;
+                const centerY = 100;
+                const outerRadius = 85; // Distance to outer grid
+                const numSlices = data.length;
+                const angleStep = (2 * Math.PI) / numSlices;
+                const startAngle = -Math.PI / 2; // Start at top (12 o'clock)
+                
                 const path = createSmoothPath(points);
                 return (
                   <>
-                    {/* Render clickable slices using actual chart coordinates */}
-                    {points.map((point: any, index: number) => {
-                      const nextIndex = (index + 1) % points.length;
-                      const nextPoint = points[nextIndex];
-                      const centerX = 150;
-                      const centerY = 100;
+                    {/* Render clickable pizza slices centered on labels */}
+                    {data.map((item, index) => {
+                      // Calculate angles for this slice (centered on the label)
+                      const baseAngle = startAngle + (index * angleStep);
+                      const sliceStartAngle = baseAngle - (angleStep / 2);
+                      const sliceEndAngle = baseAngle + (angleStep / 2);
                       
-                      // Create a slice from center through two consecutive points
+                      // Calculate outer points
+                      const startX = centerX + outerRadius * Math.cos(sliceStartAngle);
+                      const startY = centerY + outerRadius * Math.sin(sliceStartAngle);
+                      const endX = centerX + outerRadius * Math.cos(sliceEndAngle);
+                      const endY = centerY + outerRadius * Math.sin(sliceEndAngle);
+                      
+                      // Create arc path for pizza slice
                       const pathData = `
                         M ${centerX},${centerY}
-                        L ${point.x},${point.y}
-                        A 85 85 0 0 1 ${nextPoint.x},${nextPoint.y}
+                        L ${startX},${startY}
+                        A ${outerRadius} ${outerRadius} 0 0 1 ${endX},${endY}
                         Z
                       `;
                       
@@ -165,7 +178,7 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
                           className="cursor-pointer hover:fill-muted/70 transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleLabelClick(data[index].tabValue);
+                            handleLabelClick(item.tabValue);
                           }}
                         />
                       );
