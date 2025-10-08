@@ -94,7 +94,7 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
         // Erstelle Promises mit individueller Progress-Updates (inklusive Predictability Stars)
         const promises = [
           analyzeBuffettCriteria(ticker, enableDeepResearch).then(result => { setLoadingProgress?.(32); return result; }),
-          getFinancialMetrics(ticker).then(result => { setLoadingProgress?.(48); return result; }),
+          getFinancialMetrics(ticker, info?.industry).then(result => { setLoadingProgress?.(48); return result; }),
           getOverallRating(ticker).then(result => { setLoadingProgress?.(64); return result; }),
           calculateCustomDCF(ticker).then(result => { setLoadingProgress?.(80); return result; }),
           PredictabilityStarsService.calculatePredictabilityStars(ticker).then(result => { setLoadingProgress?.(90); return result; })
