@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import StockSearch from './StockSearch';
 import { useMobileMenu } from '@/context/MobileMenuContext';
 import { useStock } from '@/context/StockContext';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 const AppHeader: React.FC = () => {
   const { toggleMobileMenu } = useMobileMenu();
@@ -23,8 +24,9 @@ const AppHeader: React.FC = () => {
     <header className="fixed top-0 left-0 right-0 z-50 h-18 bg-background border-b border-border">
       {/* Desktop Layout */}
       <div className="hidden md:flex h-full items-center">
-        {/* Left section: Logo area (280px on desktop to match navigation) */}
+        {/* Left section: Logo area with Sidebar Trigger */}
         <div className="w-[280px] px-6 flex items-center gap-3 shrink-0">
+          <SidebarTrigger className="h-9 w-9" />
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-sm">
               <span className="text-primary-foreground font-semibold text-lg">A</span>
@@ -50,16 +52,9 @@ const AppHeader: React.FC = () => {
       {/* Mobile Layout */}
       <div className="md:hidden h-full flex items-center py-3 px-3">
         <div className="flex items-center gap-2 w-full">
-          {/* Burger Menu - Links */}
+          {/* Sidebar Trigger - Mobile */}
           <div className="shrink-0">
-            <Button
-              variant="ghost" 
-              size="icon"
-              onClick={toggleMobileMenu}
-              className="h-9 w-9 p-0"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
+            <SidebarTrigger className="h-9 w-9" />
           </div>
           
           {/* Search Field */}

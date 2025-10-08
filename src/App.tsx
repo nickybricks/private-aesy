@@ -20,6 +20,7 @@ import ImpersonationBanner from "./components/ImpersonationBanner";
 import { AuthProvider } from "./context/AuthContext";
 import { StockProvider } from "./context/StockContext";
 import { MobileMenuProvider, useMobileMenu } from "./context/MobileMenuContext";
+import { SidebarProvider } from "./components/ui/sidebar";
 
 const queryClient = new QueryClient();
 
@@ -29,60 +30,62 @@ const App = () => {
     const location = useLocation();
     const { isMobileMenuOpen, isMobile, closeMobileMenu } = useMobileMenu();
     
+    const isAuthPage = location.pathname === "/auth";
+    
     return (
-      <div className="min-h-screen bg-background">
-        {/* Check if we're on auth page */}
-        {location.pathname !== "/auth" && (
-          <>
-            {/* App Header - Fixed at top */}
-            <AppHeader />
-            
-            {/* Left Navigation - Fixed at left, below header */}
-            <div className={`${isMobile ? 'fixed inset-0 z-40 transform transition-transform' : ''} ${isMobile && !isMobileMenuOpen ? '-translate-x-full' : ''}`}>
+      <SidebarProvider>
+        <div className="min-h-screen bg-background flex w-full">
+          {/* Check if we're on auth page */}
+          {!isAuthPage && (
+            <>
+              {/* App Header - Fixed at top */}
+              <AppHeader />
+              
+              {/* Left Navigation - Collapsible Sidebar */}
               <LeftNavigation onMobileClose={closeMobileMenu} />
-            </div>
-            
-            {/* Mobile overlay - nur auf dem Content, nicht über das Menü */}
-            {isMobile && isMobileMenuOpen && (
-              <div 
-                className="fixed inset-0 bg-black/20 z-35"
-                onClick={closeMobileMenu}
-              />
-            )}
-          </>
-        )}
-
-        {/* Main content area */}
-        <main className={`
-          ${location.pathname !== "/auth" ? 'pt-18 md:ml-[280px]' : ''}
-          min-h-screen
-        `}>
-          {/* Impersonation Banner */}
-          {location.pathname !== "/auth" && (
-            <div className="px-4 pt-4">
-              <ImpersonationBanner />
-            </div>
+              
+              {/* Mobile overlay */}
+              {isMobile && isMobileMenuOpen && (
+                <div 
+                  className="fixed inset-0 bg-black/20 z-35"
+                  onClick={closeMobileMenu}
+                />
+              )}
+            </>
           )}
-          
-          <Routes>
-            <Route path="/" element={<BuffettAnalyzer />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/analyzer" element={<BuffettAnalyzer />} />
-            <Route path="/quant" element={<BuffettQuantAnalyzer />} />
-            <Route path="/watchlists" element={<Watchlists />} />
-            <Route path="/watchlists/:id" element={<WatchlistDetail />} /> 
-            <Route path="/saved-analyses" element={<SavedAnalyses />} />
-            <Route path="/design-system" element={<DesignSystem />} />
-            <Route path="/admin" element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            } />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
-      </div>
+
+          {/* Main content area */}
+          <main className={`
+            ${!isAuthPage ? 'pt-18' : ''}
+            min-h-screen flex-1 w-full
+          `}>
+            {/* Impersonation Banner */}
+            {!isAuthPage && (
+              <div className="px-4 pt-4">
+                <ImpersonationBanner />
+              </div>
+            )}
+            
+            <Routes>
+              <Route path="/" element={<BuffettAnalyzer />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/analyzer" element={<BuffettAnalyzer />} />
+              <Route path="/quant" element={<BuffettQuantAnalyzer />} />
+              <Route path="/watchlists" element={<Watchlists />} />
+              <Route path="/watchlists/:id" element={<WatchlistDetail />} /> 
+              <Route path="/saved-analyses" element={<SavedAnalyses />} />
+              <Route path="/design-system" element={<DesignSystem />} />
+              <Route path="/admin" element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              } />
+              <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
+        </div>
+      </SidebarProvider>
     );
   };
 
