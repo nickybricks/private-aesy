@@ -17,16 +17,16 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
   const totalYears = historicalNetIncome.length;
   
   // Calculate score based on profitable years
+  // Software/Media preset: max 3 points
   const calculateScore = (years: number): number => {
-    if (years === 10) return 4;
-    if (years === 9) return 3;
-    if (years === 8) return 2;
-    if (years === 7) return 1;
+    if (years === 10) return 3;
+    if (years === 9) return 2;
+    if (years === 8) return 1;
     return 0;
   };
   
   const score = calculateScore(profitableYears);
-  const maxScore = 4;
+  const maxScore = 3;
   
   // Determine color based on score
   const getScoreColor = (score: number): string => {
@@ -96,20 +96,16 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
                     </ul>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-semibold">Was ist „gut"?</p>
+                    <p className="font-semibold">Punktelogik (Software/Media):</p>
                     <ul className="list-disc pl-5 space-y-1">
-                      <li>
-                        <strong className="text-success">Grün (stark):</strong> ≥ 9/10 Jahre Gewinn 
-                        (Top), ideal 10/10.
-                      </li>
-                      <li>
-                        <strong className="text-warning">Gelb (ok):</strong> 8/10 Jahre Gewinn.
-                      </li>
-                      <li>
-                        <strong className="text-danger">Rot (schwach):</strong> ≤ 7/10 Jahre Gewinn 
-                        oder wiederkehrend große Verlustjahre.
-                      </li>
+                      <li>10/10 Jahre → 3 Punkte</li>
+                      <li>9/10 Jahre → 2 Punkte</li>
+                      <li>8/10 Jahre → 1 Punkt</li>
+                      <li>≤7/10 Jahre → 0 Punkte</li>
                     </ul>
+                    <p className="text-xs text-muted-foreground italic mt-2">
+                      Hinweis: Für andere Sektoren gelten angepasste Schwellenwerte.
+                    </p>
                   </div>
                 </div>
               </TooltipContent>
@@ -137,13 +133,12 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
             </TooltipTrigger>
             <TooltipContent side="right">
               <div className="space-y-2">
-                <p className="font-semibold">Punktelogik</p>
+                <p className="font-semibold">Punktelogik (Software/Media)</p>
                 <ul className="space-y-1 text-sm">
-                  <li>• <strong>10/10</strong> → 4 Punkte</li>
-                  <li>• <strong>9/10</strong> → 3 Punkte</li>
-                  <li>• <strong>8/10</strong> → 2 Punkte</li>
-                  <li>• <strong>7/10</strong> → 1 Punkt</li>
-                  <li>• <strong>≤ 6/10</strong> → 0 Punkte</li>
+                  <li>• <strong>10/10</strong> → 3 Punkte</li>
+                  <li>• <strong>9/10</strong> → 2 Punkte</li>
+                  <li>• <strong>8/10</strong> → 1 Punkt</li>
+                  <li>• <strong>≤ 7/10</strong> → 0 Punkte</li>
                 </ul>
               </div>
             </TooltipContent>

@@ -210,6 +210,115 @@ function getPresetForIndustry(industry: string): string {
   return "Industrials";
 }
 
+// Software/Media scoring functions
+function scoreSoftwareROIC(roic: number | null, spread: number | null): number {
+  if (roic === null) return 0;
+  if (roic >= 18 && spread !== null && spread >= 8) return 6;
+  if (roic >= 15 && spread !== null && spread >= 5) return 5;
+  if (roic >= 12 && spread !== null && spread > 0) return 4;
+  if (roic >= 9) return 2;
+  return 0;
+}
+
+function scoreSoftwareOperatingMargin(value: number | null): number {
+  if (value === null) return 0;
+  if (value >= 22) return 4;
+  if (value >= 18) return 3;
+  if (value >= 14) return 2;
+  if (value >= 10) return 1;
+  return 0;
+}
+
+function scoreSoftwareNetMargin(value: number | null): number {
+  if (value === null) return 0;
+  if (value >= 18) return 3;
+  if (value >= 14) return 2;
+  if (value >= 10) return 1;
+  return 0;
+}
+
+function scoreSoftwareYears(years: number): number {
+  if (years === 10) return 3;
+  if (years === 9) return 2;
+  if (years === 8) return 1;
+  return 0;
+}
+
+function scoreSoftwareROE(value: number | null): number {
+  if (value === null) return 0;
+  if (value >= 18) return 2;
+  if (value >= 12) return 1;
+  return 0;
+}
+
+function scoreSoftwareROA(value: number | null): number {
+  if (value === null) return 0;
+  if (value >= 10) return 2;
+  if (value >= 8) return 1;
+  return 0;
+}
+
+// Get scoring logic based on preset
+function getScoringLogic(preset: string) {
+  const baseLogic = {
+    preset,
+    maxTotalScore: 20
+  };
+
+  switch (preset) {
+    case "Software":
+      return {
+        ...baseLogic,
+        weights: {
+          roic: 6,
+          operatingMargin: 4,
+          years: 3,
+          netMargin: 3,
+          roe: 2,
+          roa: 2
+        },
+        thresholds: {
+          roic: [
+            { min: 18, spread: 8, score: 6 },
+            { min: 15, spread: 5, score: 5 },
+            { min: 12, spread: 0, score: 4 },
+            { min: 9, score: 2 }
+          ],
+          operatingMargin: [
+            { min: 22, score: 4 },
+            { min: 18, score: 3 },
+            { min: 14, score: 2 },
+            { min: 10, score: 1 }
+          ],
+          netMargin: [
+            { min: 18, score: 3 },
+            { min: 14, score: 2 },
+            { min: 10, score: 1 }
+          ],
+          years: [
+            { value: 10, score: 3 },
+            { value: 9, score: 2 },
+            { value: 8, score: 1 }
+          ],
+          roe: [
+            { min: 18, score: 2 },
+            { min: 12, score: 1 }
+          ],
+          roa: [
+            { min: 10, score: 2 },
+            { min: 8, score: 1 }
+          ]
+        }
+      };
+    
+    default:
+      return {
+        ...baseLogic,
+        message: "Default scoring logic - to be customized per preset"
+      };
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -230,13 +339,14 @@ serve(async (req) => {
 
     console.log(`✅ Industry "${industry}" mapped to preset "${preset}"`);
 
-    // Return preset information
-    // Scoring logic will be added step by step
+    // Get scoring logic based on preset
+    const scoringLogic = getScoringLogic(preset);
+
     return new Response(
       JSON.stringify({
         industry,
         preset,
-        message: 'Industry preset mapping successful. Scoring logic to be added.'
+        scoringLogic
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

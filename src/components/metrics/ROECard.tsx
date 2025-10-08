@@ -41,10 +41,11 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
   }
 
   // Score calculation based on ROE value
+  // Software/Media preset
   const getScore = (value: number | null): number => {
     if (value === null) return 0;
-    if (value >= 15) return 2;
-    if (value >= 10) return 1;
+    if (value >= 18) return 2;
+    if (value >= 12) return 1;
     return 0;
   };
 
@@ -75,6 +76,14 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
           <li><strong>Qualität:</strong> Zeigt, wie effizient das Unternehmen mit dem Geld der Aktionäre umgeht.</li>
           <li><strong>Moat-Hinweis:</strong> Dauerhaft hoher ROE deutet auf Preissetzungsmacht/Markenstärke hin.</li>
           <li><strong>Kapitalallokation:</strong> Gute Manager erzielen hohe Rendite auf jeden Euro Eigenkapital.</li>
+        </ul>
+      </div>
+      <div className="space-y-1">
+        <p className="font-medium text-sm">Punktelogik (Software/Media):</p>
+        <ul className="text-sm space-y-1 list-disc list-inside">
+          <li>≥18% → 2 Punkte</li>
+          <li>12-&lt;18% → 1 Punkt</li>
+          <li>&lt;12% → 0 Punkte</li>
         </ul>
       </div>
     </div>
@@ -117,10 +126,10 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
             </TooltipTrigger>
             <TooltipContent side="right">
               <div className="space-y-1">
-                <p className="font-medium text-sm">Bewertung:</p>
-                <p className="text-sm"><span className="text-green-600">●</span> Grün (2 Pkt): ≥ 15%</p>
-                <p className="text-sm"><span className="text-yellow-600">●</span> Gelb (1 Pkt): 10-15%</p>
-                <p className="text-sm"><span className="text-red-600">●</span> Rot (0 Pkt): &lt; 10%</p>
+                <p className="font-medium text-sm">Bewertung (Software/Media):</p>
+                <p className="text-sm"><span className="text-green-600">●</span> Grün (2 Pkt): ≥ 18%</p>
+                <p className="text-sm"><span className="text-yellow-600">●</span> Gelb (1 Pkt): 12-&lt;18%</p>
+                <p className="text-sm"><span className="text-red-600">●</span> Rot (0 Pkt): &lt; 12%</p>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -159,8 +168,8 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
                   return null;
                 }}
               />
-              <ReferenceLine y={15} stroke="#16a34a" strokeDasharray="3 3" />
-              <ReferenceLine y={10} stroke="#ca8a04" strokeDasharray="3 3" />
+              <ReferenceLine y={18} stroke="#16a34a" strokeDasharray="3 3" />
+              <ReferenceLine y={12} stroke="#ca8a04" strokeDasharray="3 3" />
               <Line 
                 type="monotone" 
                 dataKey="value" 
@@ -171,8 +180,8 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
             </LineChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
-            <span><span className="text-green-600">---</span> 15% (Exzellent)</span>
-            <span><span className="text-yellow-600">---</span> 10% (Akzeptabel)</span>
+            <span><span className="text-green-600">---</span> 18%</span>
+            <span><span className="text-yellow-600">---</span> 12%</span>
           </div>
         </div>
       )}

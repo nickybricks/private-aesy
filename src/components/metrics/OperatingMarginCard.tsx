@@ -41,13 +41,14 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({ curren
   }
 
   // Score calculation based on Operating Margin value (0-4 points)
+  // Software/Media preset
   const getScore = (value: number | null): number => {
     if (value === null) return 0;
     
-    if (value >= 20) return 4;
-    if (value >= 15) return 3;
-    if (value >= 10) return 2;
-    if (value >= 5) return 1;
+    if (value >= 22) return 4;
+    if (value >= 18) return 3;
+    if (value >= 14) return 2;
+    if (value >= 10) return 1;
     return 0;
   };
 
@@ -91,14 +92,18 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({ curren
       </div>
 
       <div className="space-y-1">
-        <p className="font-medium text-sm">Mehrjahresblick & Stabilität:</p>
-        <p className="text-sm">
-          10/5/3-Jahres-Median und Trend ansehen: stabil/steigend ist besser als zackig/fallend.
-        </p>
+        <p className="font-medium text-sm">Punktelogik (Software/Media):</p>
+        <ul className="text-sm space-y-1 list-disc list-inside">
+          <li>≥22% → 4 Punkte</li>
+          <li>18-&lt;22% → 3 Punkte</li>
+          <li>14-&lt;18% → 2 Punkte</li>
+          <li>10-&lt;14% → 1 Punkt</li>
+          <li>&lt;10% → 0 Punkte</li>
+        </ul>
       </div>
 
       <div className="space-y-1 text-xs text-muted-foreground italic">
-        <p>Hinweis: Für margenschwache Sektoren die Latte branchengerecht anpassen. 
+        <p>Hinweis: Für andere Sektoren gelten angepasste Schwellenwerte. 
         Wichtig: <strong>Stabilität</strong>, <strong>Verbesserungspfad</strong>, <strong>Krisenverhalten</strong>.</p>
       </div>
     </div>
@@ -141,12 +146,12 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({ curren
             </TooltipTrigger>
             <TooltipContent side="right">
               <div className="space-y-1">
-                <p className="font-medium text-sm">Bewertung (0-4 Punkte):</p>
-                <p className="text-sm"><span className="text-green-600">●</span> 4 Pkt: ≥ 20%</p>
-                <p className="text-sm"><span className="text-green-500">●</span> 3 Pkt: 15-20%</p>
-                <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: 10-15%</p>
-                <p className="text-sm"><span className="text-orange-600">●</span> 1 Pkt: 5-10%</p>
-                <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 5%</p>
+                <p className="font-medium text-sm">Bewertung (Software/Media):</p>
+                <p className="text-sm"><span className="text-green-600">●</span> 4 Pkt: ≥ 22%</p>
+                <p className="text-sm"><span className="text-green-500">●</span> 3 Pkt: 18-&lt;22%</p>
+                <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: 14-&lt;18%</p>
+                <p className="text-sm"><span className="text-orange-600">●</span> 1 Pkt: 10-&lt;14%</p>
+                <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 10%</p>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -185,10 +190,10 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({ curren
                   return null;
                 }}
               />
-              <ReferenceLine y={20} stroke="#16a34a" strokeDasharray="3 3" />
-              <ReferenceLine y={15} stroke="#22c55e" strokeDasharray="3 3" />
-              <ReferenceLine y={10} stroke="#ca8a04" strokeDasharray="3 3" />
-              <ReferenceLine y={5} stroke="#f97316" strokeDasharray="3 3" />
+              <ReferenceLine y={22} stroke="#16a34a" strokeDasharray="3 3" />
+              <ReferenceLine y={18} stroke="#22c55e" strokeDasharray="3 3" />
+              <ReferenceLine y={14} stroke="#ca8a04" strokeDasharray="3 3" />
+              <ReferenceLine y={10} stroke="#f97316" strokeDasharray="3 3" />
               <Line 
                 type="monotone" 
                 dataKey="value" 
@@ -199,10 +204,10 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({ curren
             </LineChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
-            <span><span className="text-green-600">---</span> 20%</span>
-            <span><span className="text-green-500">---</span> 15%</span>
-            <span><span className="text-yellow-600">---</span> 10%</span>
-            <span><span className="text-orange-600">---</span> 5%</span>
+            <span><span className="text-green-600">---</span> 22%</span>
+            <span><span className="text-green-500">---</span> 18%</span>
+            <span><span className="text-yellow-600">---</span> 14%</span>
+            <span><span className="text-orange-600">---</span> 10%</span>
           </div>
         </div>
       )}
