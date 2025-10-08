@@ -89,29 +89,74 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
       </CardHeader>
       <CardContent className="pt-0">
         <ResponsiveContainer width="100%" height={200}>
-          <RadarChart data={data}>
+          <RadarChart 
+            data={data}
+            cx="50%" 
+            cy="50%"
+          >
             <defs>
-              {/* Define hover effect */}
-              <filter id="hover-gray">
-                <feColorMatrix
-                  type="matrix"
-                  values="0.5 0 0 0 0.3
-                          0 0.5 0 0 0.3
-                          0 0 0.5 0 0.3
-                          0 0 0 0.5 0"
-                />
-              </filter>
+              <clipPath id="chart-area">
+                <circle cx="50%" cy="50%" r="90" />
+              </clipPath>
             </defs>
             
             <PolarGrid 
               stroke="hsl(var(--border))" 
               gridType="circle"
             />
+            
+            {/* Custom layer for clickable slices - render first so it's behind */}
+            <g className="clickable-slices">
+              {data.map((item, index) => {
+                const totalSlices = data.length;
+                const anglePerSlice = 360 / totalSlices;
+                
+                // Recharts starts at 90° (top) and goes counter-clockwise
+                // We need to adjust: subtract 90° and add 180° to match Recharts orientation
+                const startAngle = 90 - (anglePerSlice * index);
+                const endAngle = 90 - (anglePerSlice * (index + 1));
+                
+                // Convert to radians
+                const startRad = (startAngle * Math.PI) / 180;
+                const endRad = (endAngle * Math.PI) / 180;
+                
+                // Use percentage-based positioning to match ResponsiveContainer
+                const centerXPercent = 50;
+                const centerYPercent = 50;
+                const radiusPercent = 45; // Percentage of container
+                
+                // Calculate points (these will be in percentage units)
+                const x1 = centerXPercent + radiusPercent * Math.cos(startRad);
+                const y1 = centerYPercent - radiusPercent * Math.sin(startRad);
+                const x2 = centerXPercent + radiusPercent * Math.cos(endRad);
+                const y2 = centerYPercent - radiusPercent * Math.sin(endRad);
+                
+                const largeArcFlag = anglePerSlice > 180 ? 1 : 0;
+                
+                const pathData = `
+                  M ${centerXPercent}% ${centerYPercent}%
+                  L ${x1}% ${y1}%
+                  A ${radiusPercent}% ${radiusPercent}% 0 ${largeArcFlag} 0 ${x2}% ${y2}%
+                  Z
+                `;
+                
+                return (
+                  <path
+                    key={`slice-${index}`}
+                    d={pathData}
+                    fill="transparent"
+                    className="cursor-pointer hover:fill-muted/40 transition-colors"
+                    onClick={() => handleLabelClick(item.tabValue)}
+                    style={{ transformOrigin: '50% 50%' }}
+                  />
+                );
+              })}
+            </g>
+            
             <PolarAngleAxis 
               dataKey="criterion" 
               tick={(props: any) => {
-                const { x, y, payload, index } = props;
-                const dataPoint = data[index];
+                const { x, y, payload } = props;
                 return (
                   <g>
                     <text
@@ -133,52 +178,6 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
               domain={[0, 100]}
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
             />
-            
-            {/* Render clickable slices behind the radar */}
-            <g>
-              {data.map((item, index) => {
-                const totalSlices = data.length;
-                const anglePerSlice = 360 / totalSlices;
-                
-                // Start angle for this slice (0° is at top, going clockwise)
-                const startAngle = (anglePerSlice * index) - 90;
-                const endAngle = (anglePerSlice * (index + 1)) - 90;
-                
-                const centerX = 150;
-                const centerY = 100;
-                const radius = 90;
-                
-                // Convert to radians
-                const startRad = (startAngle * Math.PI) / 180;
-                const endRad = (endAngle * Math.PI) / 180;
-                
-                // Calculate points
-                const x1 = centerX + radius * Math.cos(startRad);
-                const y1 = centerY + radius * Math.sin(startRad);
-                const x2 = centerX + radius * Math.cos(endRad);
-                const y2 = centerY + radius * Math.sin(endRad);
-                
-                // Large arc flag (1 if angle > 180°)
-                const largeArcFlag = anglePerSlice > 180 ? 1 : 0;
-                
-                const pathData = `
-                  M ${centerX},${centerY}
-                  L ${x1},${y1}
-                  A ${radius},${radius} 0 ${largeArcFlag} 1 ${x2},${y2}
-                  Z
-                `;
-                
-                return (
-                  <path
-                    key={`slice-${index}`}
-                    d={pathData}
-                    fill="transparent"
-                    className="cursor-pointer hover:fill-muted/40 transition-colors"
-                    onClick={() => handleLabelClick(item.tabValue)}
-                  />
-                );
-              })}
-            </g>
             
             <Radar
               name="Score"
