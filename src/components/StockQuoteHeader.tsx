@@ -322,7 +322,7 @@ const StockQuoteHeader: React.FC = () => {
       </div>
 
       {/* Company Information Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-xs border-t pt-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-xs border-t pt-3">
         {stockInfo.ceo && (
           <div>
             <div className="text-muted-foreground text-[10px] sm:text-xs">CEO:</div>
@@ -375,7 +375,7 @@ const StockQuoteHeader: React.FC = () => {
         )}
         
         {stockInfo.address && (
-          <div className="sm:col-span-2 lg:col-span-3">
+          <div className="col-span-2 lg:col-span-3">
             <div className="text-muted-foreground text-[10px] sm:text-xs">Adresse:</div>
             <div className="font-medium text-xs sm:text-sm">{stockInfo.address}</div>
           </div>
@@ -385,13 +385,6 @@ const StockQuoteHeader: React.FC = () => {
           <div>
             <div className="text-muted-foreground text-[10px] sm:text-xs">IPO Datum:</div>
             <div className="font-medium text-xs sm:text-sm">{new Date(stockInfo.ipoDate).toLocaleDateString('de-DE')}</div>
-          </div>
-        )}
-        
-        {stockInfo.isin && (
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">ISIN:</div>
-            <div className="font-medium text-xs sm:text-sm">{stockInfo.isin}</div>
           </div>
         )}
       </div>
