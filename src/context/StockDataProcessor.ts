@@ -46,6 +46,15 @@ export const processFinancialMetrics = (rawData: any, reportedCurrency: string, 
   console.log('Processed metrics structure:', Array.isArray(processedMetrics) ? 'Array with ' + processedMetrics.length + ' items' : 'Object');
 
   return {
+    // Forward selected raw values for easy access in UI
+    eps: rawData.eps ?? rawData.metrics?.find?.((m: any) => m?.name?.toLowerCase?.().includes('eps'))?.value,
+    roe: rawData.roe ?? null,
+    roic: rawData.roic ?? null,
+    netMargin: rawData.netMargin ?? null,
+    debtToAssets: rawData.debtToAssets ?? null,
+    interestCoverage: rawData.interestCoverage ?? null,
+    wacc: rawData.wacc, // already in % from API layer
+
     metrics: processedMetrics,
     historicalData: rawData.historicalData || [],
     reportedCurrency,
