@@ -1,6 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Dot } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+
+interface BuffettScoreSpiderChartProps {
+  onTabChange?: (tab: string) => void;
+}
 
 // Helper function to create smooth curved path using Catmull-Rom splines
 const createSmoothPath = (points: Array<{x: number, y: number}>) => {
@@ -36,15 +40,21 @@ const createSmoothPath = (points: Array<{x: number, y: number}>) => {
   return path + ' Z';
 };
 
-const BuffettScoreSpiderChart: React.FC = () => {
+const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTabChange }) => {
   // Mock data - replace with actual data from context
   const data = [
-    { criterion: 'Profitabilität', score: 85 },
-    { criterion: 'Fin. Stärke', score: 70 },
-    { criterion: 'Bewertung', score: 60 },
-    { criterion: 'Growth', score: 90 },
-    { criterion: 'KI Analyse', score: 75 },
+    { criterion: 'Profitabilität', score: 85, tabValue: 'profitability' },
+    { criterion: 'Fin. Stärke', score: 70, tabValue: 'financial-strength' },
+    { criterion: 'Bewertung', score: 60, tabValue: 'valuation' },
+    { criterion: 'Growth', score: 90, tabValue: 'growth-rank' },
+    { criterion: 'KI Analyse', score: 75, tabValue: 'ai-analysis' },
   ];
+
+  const handleLabelClick = (tabValue: string) => {
+    if (onTabChange) {
+      onTabChange(tabValue);
+    }
+  };
 
   // Calculate total score (each criterion worth 20 points max)
   const totalScore = data.reduce((sum, item) => sum + item.score, 0) / data.length;
@@ -86,7 +96,27 @@ const BuffettScoreSpiderChart: React.FC = () => {
             />
             <PolarAngleAxis 
               dataKey="criterion" 
-              tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }}
+              tick={(props: any) => {
+                const { x, y, payload, index } = props;
+                const dataPoint = data[index];
+                return (
+                  <g 
+                    className="cursor-pointer hover:opacity-70 transition-opacity"
+                    onClick={() => handleLabelClick(dataPoint.tabValue)}
+                  >
+                    <text
+                      x={x}
+                      y={y}
+                      fill="hsl(var(--foreground))"
+                      fontSize={12}
+                      textAnchor={x > 150 ? 'start' : x < 150 ? 'end' : 'middle'}
+                      dominantBaseline="middle"
+                    >
+                      {payload.value}
+                    </text>
+                  </g>
+                );
+              }}
             />
             <PolarRadiusAxis 
               angle={90} 

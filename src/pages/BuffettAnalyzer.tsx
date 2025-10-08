@@ -7,6 +7,7 @@ import StockQuoteHeader from '@/components/StockQuoteHeader';
 import StockChart from '@/components/StockChart';
 import { StockProvider, useStock } from '@/context/StockContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
 import NewsSection from '@/components/NewsSection';
 import { Card } from '@/components/ui/card';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
@@ -27,7 +28,8 @@ import BuffettScoreSpiderChart from '@/components/BuffettScoreSpiderChart';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const { 
+  const [activeTab, setActiveTab] = useState('news');
+  const {
     isLoading,
     handleSearch,
     loadSavedAnalysis,
@@ -108,7 +110,7 @@ const IndexContent: React.FC = () => {
                 
                 {/* Spider Chart Section - Narrower */}
                 <div className="lg:w-[280px]">
-                  <BuffettScoreSpiderChart />
+                  <BuffettScoreSpiderChart onTabChange={setActiveTab} />
                 </div>
                 
                 {/* Stock Chart Section */}
@@ -125,7 +127,7 @@ const IndexContent: React.FC = () => {
             {/* Tab Navigation */}
             {stockInfo && (
               <div className="mb-6 sm:mb-8 -mx-3 sm:mx-0">
-                <Tabs defaultValue="news" className="w-full">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <div className="relative">
                     {/* Fade indicator am rechten Rand auf Mobil */}
                     <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none z-10 sm:hidden" />
