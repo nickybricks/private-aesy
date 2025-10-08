@@ -2,33 +2,35 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Dot } from 'recharts';
 
-// Helper function to create smooth curved path
+// Helper function to create smooth curved path using Catmull-Rom splines
 const createSmoothPath = (points: Array<{x: number, y: number}>) => {
   if (points.length < 3) return '';
   
-  // Close the path by adding first point at the end
-  const closedPoints = [...points, points[0]];
+  const tension = 0.4; // Controls curve smoothness
   
-  let path = `M ${closedPoints[0].x},${closedPoints[0].y}`;
+  // Helper to get point with wrapping for closed path
+  const getPoint = (index: number) => {
+    const wrappedIndex = ((index % points.length) + points.length) % points.length;
+    return points[wrappedIndex];
+  };
   
-  for (let i = 0; i < closedPoints.length - 1; i++) {
-    const current = closedPoints[i];
-    const next = closedPoints[i + 1];
-    const nextNext = closedPoints[(i + 2) % closedPoints.length];
+  // Start path
+  let path = `M ${points[0].x},${points[0].y}`;
+  
+  // Create smooth curves through all points
+  for (let i = 0; i < points.length; i++) {
+    const p0 = getPoint(i - 1);
+    const p1 = getPoint(i);
+    const p2 = getPoint(i + 1);
+    const p3 = getPoint(i + 2);
     
-    // Calculate control points for smooth curve
-    const tension = 0.3;
-    const deltaX = next.x - current.x;
-    const deltaY = next.y - current.y;
-    const nextDeltaX = nextNext.x - next.x;
-    const nextDeltaY = nextNext.y - next.y;
+    // Calculate control points using Catmull-Rom to Bezier conversion
+    const cp1x = p1.x + (p2.x - p0.x) * tension / 3;
+    const cp1y = p1.y + (p2.y - p0.y) * tension / 3;
+    const cp2x = p2.x - (p3.x - p1.x) * tension / 3;
+    const cp2y = p2.y - (p3.y - p1.y) * tension / 3;
     
-    const cp1x = current.x + deltaX * tension;
-    const cp1y = current.y + deltaY * tension;
-    const cp2x = next.x - nextDeltaX * tension;
-    const cp2y = next.y - nextDeltaY * tension;
-    
-    path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${next.x},${next.y}`;
+    path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
   }
   
   return path + ' Z';
