@@ -24,6 +24,7 @@ export interface FinancialMetricsData {
   roe?: any;
   netMargin?: any;
   operatingMargin?: any;
+  roa?: any;
   roic?: any;
   debtToAssets?: any;
   interestCoverage?: any;
@@ -48,6 +49,7 @@ export interface FinancialMetricsData {
     roic: HistoricalDataItem[];
     operatingMargin: HistoricalDataItem[];
     netMargin: HistoricalDataItem[];
+    roa: HistoricalDataItem[];
     operatingCashFlow: HistoricalDataItem[];
     freeCashFlow: HistoricalDataItem[];
     netIncome: HistoricalDataItem[];

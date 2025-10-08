@@ -27,6 +27,7 @@ import { ROECard } from '@/components/metrics/ROECard';
 import { ROICCard } from '@/components/metrics/ROICCard';
 import { OperatingMarginCard } from '@/components/metrics/OperatingMarginCard';
 import { NetMarginCard } from '@/components/metrics/NetMarginCard';
+import { ROACard } from '@/components/metrics/ROACard';
 import { YearsOfProfitabilityCard } from '@/components/metrics/YearsOfProfitabilityCard';
 
 const IndexContent: React.FC = () => {
@@ -221,6 +222,10 @@ const IndexContent: React.FC = () => {
                       <NetMarginCard 
                         currentValue={financialMetrics?.netMargin ?? null}
                         historicalData={financialMetrics?.historicalData?.netMargin}
+                      />
+                      <ROACard 
+                        currentValue={financialMetrics?.roa ?? null}
+                        historicalData={financialMetrics?.historicalData?.roa}
                       />
                       <YearsOfProfitabilityCard 
                         historicalNetIncome={financialMetrics?.historicalData?.netIncome}

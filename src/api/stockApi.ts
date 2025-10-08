@@ -1120,6 +1120,20 @@ export const getFinancialMetrics = async (ticker: string) => {
       }
     }
     
+    // ROA (Return on Assets) Berechnung
+    let roa = null;
+    
+    if (latestIncomeStatement && latestBalanceSheet) {
+      const netIncome = safeValue(latestIncomeStatement.netIncome);
+      const totalAssets = safeValue(latestBalanceSheet.totalAssets);
+      
+      if (netIncome !== null && totalAssets !== null && totalAssets > 0) {
+        roa = (netIncome / totalAssets) * 100;
+        console.log('ROA berechnet aus Nettogewinn/Gesamtvermögen:', roa);
+      }
+    }
+    
+    
     // ROIC (Return on Invested Capital) Berechnung - verbessert
     let roic = null;
     
@@ -1267,6 +1281,7 @@ export const getFinancialMetrics = async (ticker: string) => {
       roic: [],
       operatingMargin: [],
       netMargin: [],
+      roa: [],
       operatingCashFlow: [],
       freeCashFlow: [],
       netIncome: []
@@ -1433,6 +1448,37 @@ export const getFinancialMetrics = async (ticker: string) => {
       
       // Sort chronologically (oldest first for chart)
       historicalData.netMargin = netMarginData.reverse();
+    }
+
+    // Add historical ROA data (last 10 years)
+    if (incomeStatements && balanceSheets && incomeStatements.length > 1 && balanceSheets.length > 1) {
+      const roaData = [];
+      
+      for (let i = 0; i < Math.min(10, Math.min(incomeStatements.length, balanceSheets.length)); i++) {
+        let roaValue = null;
+        const year = incomeStatements[i].date ? new Date(incomeStatements[i].date).getFullYear() : null;
+        
+        if (!year) continue;
+        
+        // Calculate ROA = Net Income / Total Assets * 100
+        const netIncome = safeValue(incomeStatements[i].netIncome);
+        const totalAssets = safeValue(balanceSheets[i].totalAssets);
+        
+        if (netIncome !== null && totalAssets !== null && totalAssets > 0) {
+          roaValue = (netIncome / totalAssets) * 100;
+        }
+        
+        if (roaValue !== null) {
+          roaData.push({
+            year: year,
+            value: Math.round(roaValue * 10) / 10, // Round to 1 decimal
+            originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
+          });
+        }
+      }
+      
+      // Sort chronologically (oldest first for chart)
+      historicalData.roa = roaData.reverse();
     }
 
     // Add historical Net Income data (last 10 years) for Years of Profitability
@@ -1857,6 +1903,7 @@ export const getFinancialMetrics = async (ticker: string) => {
       roe,
       netMargin,
       operatingMargin,
+      roa,
       roic,
       
       // Schulden-Kennzahlen
