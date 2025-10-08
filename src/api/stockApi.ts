@@ -1841,8 +1841,8 @@ export const getFinancialMetrics = async (ticker: string) => {
       // Historical data
       historicalData,
       
-      // WACC for ROIC analysis
-      wacc: wacc * 100, // Convert to percentage
+      // WACC for ROIC analysis (already in percentage from calculateWACC)
+      wacc: wacc
     };
   } catch (error) {
     console.error('Error fetching financial metrics:', error);
