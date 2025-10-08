@@ -90,9 +90,6 @@ const StockQuoteHeader: React.FC = () => {
   };
 
   const peRatio = getMetricValue('P/E-Verhältnis (KGV)');
-  const enterpriseValue = getMetricValue('Enterprise Value');
-  const volume = getMetricValue('Handelsvolumen (Ø 3M)');
-  const avgVolume = getMetricValue('Durchschnittliches Volumen');
 
   // Render stars
   const renderStars = (stars: number | 'NR', clickable: boolean = false) => {
@@ -317,21 +314,6 @@ const StockQuoteHeader: React.FC = () => {
           <div>
             <div className="text-muted-foreground text-[10px] sm:text-xs">Market Cap:</div>
             <div className="font-semibold text-xs sm:text-sm">{formatNumber(marketCap)}</div>
-          </div>
-          
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">Enterprise V:</div>
-            <div className="font-semibold text-xs sm:text-sm">{formatNumber(enterpriseValue)}</div>
-          </div>
-          
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">Volume:</div>
-            <div className="font-semibold text-xs sm:text-sm">{formatVolume(volume)}</div>
-          </div>
-          
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">Avg Vol (2M):</div>
-            <div className="font-semibold text-xs sm:text-sm">{formatVolume(avgVolume)}</div>
           </div>
         </div>
       </Card>
