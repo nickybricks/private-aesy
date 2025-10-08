@@ -52,7 +52,6 @@ export const processFinancialMetrics = (rawData: any, reportedCurrency: string, 
     roic: rawData.roic ?? null,
     netMargin: rawData.netMargin ?? null,
     operatingMargin: rawData.operatingMargin ?? null,
-    roa: rawData.roa ?? null,
     debtToAssets: rawData.debtToAssets ?? null,
     interestCoverage: rawData.interestCoverage ?? null,
     wacc: rawData.wacc, // already in % from API layer
@@ -60,12 +59,7 @@ export const processFinancialMetrics = (rawData: any, reportedCurrency: string, 
     metrics: processedMetrics,
     historicalData: rawData.historicalData || [],
     reportedCurrency,
-    priceCurrency,
-    
-    // Industry-specific scoring
-    profitabilityScores: rawData.profitabilityScores,
-    sectorWeights: rawData.sectorWeights,
-    sectorPreset: rawData.sectorPreset
+    priceCurrency
   };
 };
 

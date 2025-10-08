@@ -12,8 +12,7 @@ import {
 } from './openaiApi';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { convertCurrency, shouldConvertCurrency } from '@/utils/currencyConverter';
-import { NewsItem, ProfitabilityScores, SectorWeights } from '@/context/StockContextTypes';
-import { supabase } from '@/integrations/supabase/client';
+import { NewsItem } from '@/context/StockContextTypes';
 
 // Base URL for the Financial Modeling Prep API
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
@@ -984,7 +983,7 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
 };
 
 // Funktion, um Finanzkennzahlen zu holen
-export const getFinancialMetrics = async (ticker: string, industry?: string) => {
+export const getFinancialMetrics = async (ticker: string) => {
   console.log(`Getting financial metrics for ${ticker}`);
   
   // Standardisieren des Tickers für die API
@@ -1898,61 +1897,6 @@ export const getFinancialMetrics = async (ticker: string, industry?: string) => 
       });
     }
 
-    // Calculate profitability scores based on industry
-    let profitabilityScores: ProfitabilityScores | undefined;
-    let sectorWeights: SectorWeights | undefined;
-    let sectorPreset: string | undefined;
-
-    try {
-      // Get industry if not provided
-      let industryToUse = industry;
-      if (!industryToUse) {
-        const profileData = await fetchFromFMP(`/profile/${standardizedTicker}`);
-        if (profileData && profileData.length > 0) {
-          industryToUse = profileData[0].industry;
-        }
-      }
-
-      if (industryToUse) {
-        console.log(`Calculating profitability scores for industry: ${industryToUse}`);
-        
-        // Count profitable years
-        const profitableYears = historicalData.netIncome.filter(item => 
-          item.isProfitable !== undefined ? item.isProfitable : item.value > 0
-        ).length;
-
-        // Call edge function to calculate scores
-        const { data: scoringResult, error: scoringError } = await supabase.functions.invoke(
-          'calculate-profitability-scores',
-          {
-            body: {
-              industry: industryToUse,
-              metrics: {
-                roe: roe,
-                roic: roic,
-                operatingMargin: operatingMargin,
-                netMargin: netMargin * 100, // Convert to percentage
-                roa: roa,
-                yearsOfProfitability: profitableYears,
-                wacc: wacc
-              }
-            }
-          }
-        );
-
-        if (scoringError) {
-          console.error('Error calculating profitability scores:', scoringError);
-        } else if (scoringResult) {
-          console.log('Profitability scores calculated:', scoringResult);
-          profitabilityScores = scoringResult.scores;
-          sectorWeights = scoringResult.weights;
-          sectorPreset = scoringResult.preset;
-        }
-      }
-    } catch (error) {
-      console.error('Error in profitability scoring:', error);
-    }
-
     return {
       // Rendite-Kennzahlen
       eps,
@@ -1977,12 +1921,7 @@ export const getFinancialMetrics = async (ticker: string, industry?: string) => 
       historicalData,
       
       // WACC for ROIC analysis (already in percentage from calculateWACC)
-      wacc: wacc,
-
-      // Industry-specific scoring
-      profitabilityScores,
-      sectorWeights,
-      sectorPreset
+      wacc: wacc
     };
   } catch (error) {
     console.error('Error fetching financial metrics:', error);
@@ -2131,8 +2070,7 @@ export const getOverallRating = async (ticker: string) => {
     }
     
     // Get financial metrics to determine the reported currency
-    const stockInfoData = await fetchStockInfo(ticker);
-    const financialMetrics = await getFinancialMetrics(ticker, stockInfoData?.industry);
+    const financialMetrics = await getFinancialMetrics(ticker);
     const reportedCurrency = financialMetrics?.reportedCurrency || 'USD';
     console.log(`Stock price currency: ${currency}, Reported currency: ${reportedCurrency}`);
 

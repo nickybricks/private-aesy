@@ -93,21 +93,10 @@ export const convertHistoricalData = async (historicalData: any, fromCurrency: s
     });
   };
   
-  // ROA, ROE, ROIC, margins are percentages and should not be converted
-  // Only convert absolute currency values (revenue, earnings, EPS, cash flows)
   return {
     revenue: historicalData.revenue ? convertItemValues(historicalData.revenue) : [],
     earnings: historicalData.earnings ? convertItemValues(historicalData.earnings) : [],
-    eps: historicalData.eps ? convertItemValues(historicalData.eps) : [],
-    operatingCashFlow: historicalData.operatingCashFlow ? convertItemValues(historicalData.operatingCashFlow) : [],
-    freeCashFlow: historicalData.freeCashFlow ? convertItemValues(historicalData.freeCashFlow) : [],
-    netIncome: historicalData.netIncome ? convertItemValues(historicalData.netIncome) : [],
-    // Pass through percentage metrics without conversion
-    roe: historicalData.roe || [],
-    roic: historicalData.roic || [],
-    operatingMargin: historicalData.operatingMargin || [],
-    netMargin: historicalData.netMargin || [],
-    roa: historicalData.roa || []
+    eps: historicalData.eps ? convertItemValues(historicalData.eps) : []
   };
 };
 
