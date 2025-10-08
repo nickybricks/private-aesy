@@ -76,7 +76,7 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full h-[220px]">
       <ResponsiveContainer width="100%" height={200}>
           <RadarChart 
             data={data}
