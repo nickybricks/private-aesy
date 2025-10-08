@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
 
 interface ROECardProps {
   currentValue: number | null;
@@ -134,6 +134,21 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
                 tick={{ fontSize: 10 }}
                 stroke="#9ca3af"
                 domain={[0, 'auto']}
+              />
+              <RechartsTooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
+                        <p className="text-sm font-semibold">{payload[0].payload.year}</p>
+                        <p className="text-sm text-primary">
+                          ROE: <span className="font-bold">{payload[0].value}%</span>
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
               />
               <ReferenceLine y={15} stroke="#16a34a" strokeDasharray="3 3" />
               <ReferenceLine y={10} stroke="#ca8a04" strokeDasharray="3 3" />
