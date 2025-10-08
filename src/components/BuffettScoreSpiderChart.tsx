@@ -117,12 +117,15 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
                 const labelX = centerX + labelRadius * Math.cos(angle);
                 const labelY = centerY + labelRadius * Math.sin(angle);
                 
-                // Calculate rotation angle (in degrees) to follow the circle
-                const rotationDeg = (angle * 180 / Math.PI) + 90;
+                // Calculate rotation angle (in degrees) to follow the circle tangentially
+                const rotationDeg = (angle * 180 / Math.PI);
                 
-                // Determine if text should be upside down and flip it
+                // Determine if text should be upside down and flip it for tangential alignment
                 const shouldFlip = rotationDeg > 90 && rotationDeg < 270;
                 const finalRotation = shouldFlip ? rotationDeg + 180 : rotationDeg;
+                
+                // Dynamic text anchor based on position
+                const textAnchor = shouldFlip ? 'end' : 'start';
                 
                 return (
                   <g>
@@ -132,7 +135,7 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
                       fill="hsl(var(--foreground))"
                       fontSize={11}
                       fontWeight="500"
-                      textAnchor="middle"
+                      textAnchor={textAnchor}
                       dominantBaseline="middle"
                       transform={`rotate(${finalRotation}, ${labelX}, ${labelY})`}
                       style={{ letterSpacing: '0.5px' }}
