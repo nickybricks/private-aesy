@@ -173,6 +173,16 @@ export const fetchStockInfo = async (ticker: string) => {
   const profile = profileData[0];
   const quote = quoteData[0];
   
+  // Build full address
+  const addressParts = [
+    profile.address,
+    profile.city,
+    profile.state,
+    profile.zip,
+    profile.country
+  ].filter(Boolean);
+  const fullAddress = addressParts.join(', ');
+  
   return {
     name: profile.companyName,
     ticker: profile.symbol,
@@ -182,6 +192,20 @@ export const fetchStockInfo = async (ticker: string) => {
     currency: profile.currency,
     marketCap: profile.mktCap,
     image: profile.image,
+    // Additional company information
+    ceo: profile.ceo,
+    employees: profile.fullTimeEmployees,
+    foundedYear: profile.ipoDate ? new Date(profile.ipoDate).getFullYear().toString() : undefined,
+    website: profile.website,
+    sector: profile.sector,
+    industry: profile.industry,
+    country: profile.country,
+    address: fullAddress || undefined,
+    city: profile.city,
+    state: profile.state,
+    zip: profile.zip,
+    ipoDate: profile.ipoDate,
+    isin: profile.isin,
   };
 };
 

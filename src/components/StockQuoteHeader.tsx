@@ -304,7 +304,7 @@ const StockQuoteHeader: React.FC = () => {
       )}
 
       {/* Key Metrics Grid - Kompakter auf Mobile */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 sm:gap-x-4 gap-y-1.5 text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 sm:gap-x-4 gap-y-1.5 text-xs mb-3">
         <div>
           <div className="text-muted-foreground text-[10px] sm:text-xs">KGV:</div>
           <div className="font-semibold text-xs sm:text-sm">{peRatio?.toFixed(2) ?? 'N/A'}</div>
@@ -314,6 +314,81 @@ const StockQuoteHeader: React.FC = () => {
           <div className="text-muted-foreground text-[10px] sm:text-xs">Marktkap.:</div>
           <div className="font-semibold text-xs sm:text-sm">{formatNumber(marketCap)}</div>
         </div>
+      </div>
+
+      {/* Company Information Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-xs border-t pt-3">
+        {stockInfo.ceo && (
+          <div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">CEO:</div>
+            <div className="font-medium text-xs sm:text-sm">{stockInfo.ceo}</div>
+          </div>
+        )}
+        
+        {stockInfo.employees && (
+          <div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Angestellte:</div>
+            <div className="font-medium text-xs sm:text-sm">{stockInfo.employees.toLocaleString('de-DE')}</div>
+          </div>
+        )}
+        
+        {stockInfo.foundedYear && (
+          <div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Gründungsjahr:</div>
+            <div className="font-medium text-xs sm:text-sm">{stockInfo.foundedYear}</div>
+          </div>
+        )}
+        
+        {stockInfo.website && (
+          <div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Website:</div>
+            <div className="font-medium text-xs sm:text-sm">
+              <a 
+                href={stockInfo.website.startsWith('http') ? stockInfo.website : `https://${stockInfo.website}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                {stockInfo.website.replace(/^https?:\/\/(www\.)?/, '')}
+              </a>
+            </div>
+          </div>
+        )}
+        
+        {stockInfo.industry && (
+          <div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Sektor:</div>
+            <div className="font-medium text-xs sm:text-sm">{stockInfo.industry}</div>
+          </div>
+        )}
+        
+        {stockInfo.country && (
+          <div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Land:</div>
+            <div className="font-medium text-xs sm:text-sm">{stockInfo.country}</div>
+          </div>
+        )}
+        
+        {stockInfo.address && (
+          <div className="sm:col-span-2 lg:col-span-3">
+            <div className="text-muted-foreground text-[10px] sm:text-xs">Adresse:</div>
+            <div className="font-medium text-xs sm:text-sm">{stockInfo.address}</div>
+          </div>
+        )}
+        
+        {stockInfo.ipoDate && (
+          <div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">IPO Datum:</div>
+            <div className="font-medium text-xs sm:text-sm">{new Date(stockInfo.ipoDate).toLocaleDateString('de-DE')}</div>
+          </div>
+        )}
+        
+        {stockInfo.isin && (
+          <div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">ISIN:</div>
+            <div className="font-medium text-xs sm:text-sm">{stockInfo.isin}</div>
+          </div>
+        )}
       </div>
 
       {/* Stars Explanation Dialog */}

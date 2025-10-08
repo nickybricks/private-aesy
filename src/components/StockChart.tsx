@@ -22,6 +22,8 @@ interface StockChartProps {
   symbol: string;
   currency: string;
   intrinsicValue?: number | null;
+  companyImage?: string;
+  companyName?: string;
 }
 
 interface HistoricalDataPoint {
@@ -47,7 +49,7 @@ const TIME_RANGES = [
   { label: 'All', value: 'MAX' }
 ] as const;
 
-const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValue }) => {
+const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValue, companyImage, companyName }) => {
   const [historicalData, setHistoricalData] = useState<ChartData[]>([]);
   const [selectedRange, setSelectedRange] = useState<typeof TIME_RANGES[number]['value']>('1Y');
   const [isLoading, setIsLoading] = useState(true);
@@ -423,6 +425,21 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
 
   return (
     <div className="w-full space-y-2 sm:space-y-3">
+      {/* Company Logo Header */}
+      {companyImage && (
+        <div className="flex items-center gap-2 mb-2">
+          <img 
+            src={companyImage} 
+            alt={`${companyName || symbol} logo`}
+            className="w-8 h-8 rounded-lg object-contain bg-muted p-1"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+          <span className="text-sm font-medium text-muted-foreground">Kursentwicklung</span>
+        </div>
+      )}
+      
       {/* Zeitraum-Buttons - Nur Desktop (über dem Chart) */}
       <div className="w-full hidden md:block">
         <div className="flex justify-between gap-1 sm:gap-1.5">

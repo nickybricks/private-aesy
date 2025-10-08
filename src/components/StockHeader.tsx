@@ -23,6 +23,7 @@ interface StockHeaderProps {
     changePercent: number | null;
     currency: string;
     marketCap: number | null;
+    image?: string;
     intrinsicValue: number | null;
     sharesOutstanding?: number | null;
     originalIntrinsicValue?: number | null;
@@ -265,6 +266,8 @@ const StockHeader: React.FC<StockHeaderProps> = ({ stockInfo }) => {
           symbol={ticker} 
           currency={currency} 
           intrinsicValue={intrinsicValue}
+          companyImage={stockInfo?.image}
+          companyName={stockInfo?.name}
         />
       </div>
       

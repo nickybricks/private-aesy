@@ -113,6 +113,8 @@ const IndexContent: React.FC = () => {
                     symbol={stockInfo.ticker}
                     currency={stockInfo.currency}
                     intrinsicValue={overallRating?.intrinsicValue ?? null}
+                    companyImage={stockInfo.image}
+                    companyName={stockInfo.name}
                   />
                 </Card>
               </div>
