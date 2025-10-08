@@ -26,6 +26,7 @@ import { ValuationTab } from '@/components/ValuationTab';
 import { ROECard } from '@/components/metrics/ROECard';
 import { ROICCard } from '@/components/metrics/ROICCard';
 import { OperatingMarginCard } from '@/components/metrics/OperatingMarginCard';
+import { NetMarginCard } from '@/components/metrics/NetMarginCard';
 import { YearsOfProfitabilityCard } from '@/components/metrics/YearsOfProfitabilityCard';
 
 const IndexContent: React.FC = () => {
@@ -216,6 +217,10 @@ const IndexContent: React.FC = () => {
                       <OperatingMarginCard 
                         currentValue={financialMetrics?.operatingMargin ?? null}
                         historicalData={financialMetrics?.historicalData?.operatingMargin}
+                      />
+                      <NetMarginCard 
+                        currentValue={financialMetrics?.netMargin ?? null}
+                        historicalData={financialMetrics?.historicalData?.netMargin}
                       />
                       <YearsOfProfitabilityCard 
                         historicalNetIncome={financialMetrics?.historicalData?.netIncome}

@@ -47,6 +47,7 @@ export interface FinancialMetricsData {
     roe: HistoricalDataItem[];
     roic: HistoricalDataItem[];
     operatingMargin: HistoricalDataItem[];
+    netMargin: HistoricalDataItem[];
     operatingCashFlow: HistoricalDataItem[];
     freeCashFlow: HistoricalDataItem[];
     netIncome: HistoricalDataItem[];

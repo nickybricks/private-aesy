@@ -1266,6 +1266,7 @@ export const getFinancialMetrics = async (ticker: string) => {
       roe: [],
       roic: [],
       operatingMargin: [],
+      netMargin: [],
       operatingCashFlow: [],
       freeCashFlow: [],
       netIncome: []
@@ -1401,6 +1402,37 @@ export const getFinancialMetrics = async (ticker: string) => {
       
       // Sort chronologically (oldest first for chart)
       historicalData.operatingMargin = operatingMarginData.reverse();
+    }
+
+    // Add historical Net Margin data (last 10 years)
+    if (incomeStatements && incomeStatements.length > 1) {
+      const netMarginData = [];
+      
+      for (let i = 0; i < Math.min(10, incomeStatements.length); i++) {
+        let marginValue = null;
+        const year = incomeStatements[i].date ? new Date(incomeStatements[i].date).getFullYear() : null;
+        
+        if (!year) continue;
+        
+        // Calculate Net Margin = Net Income / Revenue * 100
+        const netIncome = safeValue(incomeStatements[i].netIncome);
+        const revenue = safeValue(incomeStatements[i].revenue);
+        
+        if (netIncome !== null && revenue !== null && revenue > 0) {
+          marginValue = (netIncome / revenue) * 100;
+        }
+        
+        if (marginValue !== null) {
+          netMarginData.push({
+            year: year,
+            value: Math.round(marginValue * 10) / 10, // Round to 1 decimal
+            originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
+          });
+        }
+      }
+      
+      // Sort chronologically (oldest first for chart)
+      historicalData.netMargin = netMarginData.reverse();
     }
 
     // Add historical Net Income data (last 10 years) for Years of Profitability
