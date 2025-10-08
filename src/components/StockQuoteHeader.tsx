@@ -90,7 +90,6 @@ const StockQuoteHeader: React.FC = () => {
   };
 
   const peRatio = getMetricValue('P/E-Verhältnis (KGV)');
-  const pbRatio = getMetricValue('P/B-Verhältnis (KBV)');
   const enterpriseValue = getMetricValue('Enterprise Value');
   const volume = getMetricValue('Handelsvolumen (Ø 3M)');
   const avgVolume = getMetricValue('Durchschnittliches Volumen');
@@ -311,13 +310,8 @@ const StockQuoteHeader: React.FC = () => {
         {/* Key Metrics Grid - Kompakter auf Mobile */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 sm:gap-x-4 gap-y-1.5 text-xs">
           <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">P/E:</div>
+            <div className="text-muted-foreground text-[10px] sm:text-xs">KGV:</div>
             <div className="font-semibold text-xs sm:text-sm">{peRatio?.toFixed(2) ?? 'N/A'}</div>
-          </div>
-          
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">P/B:</div>
-            <div className="font-semibold text-xs sm:text-sm">{pbRatio?.toFixed(2) ?? 'N/A'}</div>
           </div>
           
           <div>
