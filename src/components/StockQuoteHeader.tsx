@@ -355,7 +355,9 @@ const StockQuoteHeader: React.FC = () => {
         {stockInfo.employees && (
           <div>
             <div className="text-muted-foreground text-[10px] sm:text-xs">Angestellte:</div>
-            <div className="font-medium text-xs sm:text-sm">{stockInfo.employees.toLocaleString('de-DE')}</div>
+            <div className="font-medium text-xs sm:text-sm">
+              {stockInfo.employees.toLocaleString('de-DE', { maximumFractionDigits: 0 })}
+            </div>
           </div>
         )}
         
