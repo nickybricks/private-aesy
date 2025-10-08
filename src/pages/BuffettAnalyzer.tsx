@@ -26,6 +26,7 @@ import { ValuationTab } from '@/components/ValuationTab';
 import { ROECard } from '@/components/metrics/ROECard';
 import { ROICCard } from '@/components/metrics/ROICCard';
 import { OperatingMarginCard } from '@/components/metrics/OperatingMarginCard';
+import { YearsOfProfitabilityCard } from '@/components/metrics/YearsOfProfitabilityCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -215,6 +216,9 @@ const IndexContent: React.FC = () => {
                       <OperatingMarginCard 
                         currentValue={financialMetrics?.operatingMargin ?? null}
                         historicalData={financialMetrics?.historicalData?.operatingMargin}
+                      />
+                      <YearsOfProfitabilityCard 
+                        historicalNetIncome={financialMetrics?.historicalData?.netIncome}
                       />
                     </div>
                   </TabsContent>

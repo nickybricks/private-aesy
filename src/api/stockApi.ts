@@ -1264,7 +1264,8 @@ export const getFinancialMetrics = async (ticker: string) => {
       roic: [],
       operatingMargin: [],
       operatingCashFlow: [],
-      freeCashFlow: []
+      freeCashFlow: [],
+      netIncome: []
     };
     
     // Add historical data if income statements are available
@@ -1397,6 +1398,28 @@ export const getFinancialMetrics = async (ticker: string) => {
       
       // Sort chronologically (oldest first for chart)
       historicalData.operatingMargin = operatingMarginData.reverse();
+    }
+
+    // Add historical Net Income data (last 10 years) for Years of Profitability
+    if (incomeStatements && incomeStatements.length > 1) {
+      const netIncomeData = [];
+      
+      for (let i = 0; i < Math.min(10, incomeStatements.length); i++) {
+        const netIncomeValue = safeValue(incomeStatements[i].netIncome);
+        const year = incomeStatements[i].date ? new Date(incomeStatements[i].date).getFullYear() : null;
+        
+        if (!year) continue;
+        
+        netIncomeData.push({
+          year: year,
+          value: netIncomeValue !== null ? netIncomeValue : 0,
+          isProfitable: netIncomeValue !== null && netIncomeValue > 0,
+          originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
+        });
+      }
+      
+      // Sort chronologically (oldest first for display)
+      historicalData.netIncome = netIncomeData.reverse();
     }
 
     // Add historical cash flow data if available

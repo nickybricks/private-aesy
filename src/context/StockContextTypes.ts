@@ -16,6 +16,7 @@ export interface HistoricalDataItem {
   value: number;
   originalValue?: number;
   originalCurrency?: string;
+  isProfitable?: boolean; // For netIncome: indicates if year was profitable
 }
 
 export interface FinancialMetricsData {
@@ -48,6 +49,7 @@ export interface FinancialMetricsData {
     operatingMargin: HistoricalDataItem[];
     operatingCashFlow: HistoricalDataItem[];
     freeCashFlow: HistoricalDataItem[];
+    netIncome: HistoricalDataItem[];
   };
   wacc?: number;
 }
