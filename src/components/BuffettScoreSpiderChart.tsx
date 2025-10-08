@@ -137,27 +137,34 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
             {/* Render clickable slices behind the radar */}
             <g>
               {data.map((item, index) => {
-                const angle = (360 / data.length) * index - 90; // Start from top
-                const nextAngle = (360 / data.length) * (index + 1) - 90;
-                const centerX = 150; // Chart center
+                const totalSlices = data.length;
+                const anglePerSlice = 360 / totalSlices;
+                
+                // Start angle for this slice (0° is at top, going clockwise)
+                const startAngle = (anglePerSlice * index) - 90;
+                const endAngle = (anglePerSlice * (index + 1)) - 90;
+                
+                const centerX = 150;
                 const centerY = 100;
-                const radius = 85; // Outer radius
+                const radius = 90;
                 
-                // Convert angles to radians
-                const startRad = (angle * Math.PI) / 180;
-                const endRad = (nextAngle * Math.PI) / 180;
+                // Convert to radians
+                const startRad = (startAngle * Math.PI) / 180;
+                const endRad = (endAngle * Math.PI) / 180;
                 
-                // Calculate arc points
+                // Calculate points
                 const x1 = centerX + radius * Math.cos(startRad);
                 const y1 = centerY + radius * Math.sin(startRad);
                 const x2 = centerX + radius * Math.cos(endRad);
                 const y2 = centerY + radius * Math.sin(endRad);
                 
-                // Create path for slice
+                // Large arc flag (1 if angle > 180°)
+                const largeArcFlag = anglePerSlice > 180 ? 1 : 0;
+                
                 const pathData = `
                   M ${centerX},${centerY}
                   L ${x1},${y1}
-                  A ${radius},${radius} 0 0 1 ${x2},${y2}
+                  A ${radius},${radius} 0 ${largeArcFlag} 1 ${x2},${y2}
                   Z
                 `;
                 
