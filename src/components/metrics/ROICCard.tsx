@@ -139,15 +139,6 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
           {' '}&gt; 0 = Wertschaffung; je größer, desto besser (Moat-Hinweis).
         </p>
       </div>
-
-      <div className="pt-2 border-t space-y-1">
-        <p className="font-medium text-sm">Bewertung (0-6 Punkte):</p>
-        <p className="text-sm"><span className="text-green-600">●</span> 6 Pkt: ≥ 15% und ROIC &gt; WACC + 5 pp</p>
-        <p className="text-sm"><span className="text-green-600">●</span> 5 Pkt: ≥ 12% und ROIC &gt; WACC</p>
-        <p className="text-sm"><span className="text-green-500">●</span> 4 Pkt: ≥ 10% und ROIC ≥ WACC</p>
-        <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: ≥ 8%</p>
-        <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 8% oder ≤ WACC (kein Wertaufbau)</p>
-      </div>
     </div>
   );
 
@@ -182,6 +173,23 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
           <div className={`px-2 py-1 rounded text-sm font-semibold ${getColor(score)}`}>
             {score}/6 Punkte
           </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <div className="space-y-1">
+                  <p className="font-medium text-sm">Bewertung (0-6 Punkte):</p>
+                  <p className="text-sm"><span className="text-green-600">●</span> 6 Pkt: ≥ 15% und ROIC &gt; WACC + 5 pp</p>
+                  <p className="text-sm"><span className="text-green-600">●</span> 5 Pkt: ≥ 12% und ROIC &gt; WACC</p>
+                  <p className="text-sm"><span className="text-green-500">●</span> 4 Pkt: ≥ 10% und ROIC ≥ WACC</p>
+                  <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: ≥ 8%</p>
+                  <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 8% oder ≤ WACC (kein Wertaufbau)</p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         
         {spread !== null && wacc !== null && wacc !== undefined && (

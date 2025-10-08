@@ -77,12 +77,6 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
           <li><strong>Kapitalallokation:</strong> Gute Manager erzielen hohe Rendite auf jeden Euro Eigenkapital.</li>
         </ul>
       </div>
-      <div className="pt-2 border-t space-y-1">
-        <p className="font-medium text-sm">Bewertung:</p>
-        <p className="text-sm"><span className="text-green-600">●</span> Grün (2 Pkt): ≥ 15%</p>
-        <p className="text-sm"><span className="text-yellow-600">●</span> Gelb (1 Pkt): 10-15%</p>
-        <p className="text-sm"><span className="text-red-600">●</span> Rot (0 Pkt): &lt; 10%</p>
-      </div>
     </div>
   );
 
@@ -116,6 +110,21 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
         <div className={`px-2 py-1 rounded text-sm font-semibold ${getColor(score)}`}>
           {score}/2 Punkte
         </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <div className="space-y-1">
+                <p className="font-medium text-sm">Bewertung:</p>
+                <p className="text-sm"><span className="text-green-600">●</span> Grün (2 Pkt): ≥ 15%</p>
+                <p className="text-sm"><span className="text-yellow-600">●</span> Gelb (1 Pkt): 10-15%</p>
+                <p className="text-sm"><span className="text-red-600">●</span> Rot (0 Pkt): &lt; 10%</p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Chart if historical data available */}
