@@ -92,6 +92,8 @@ const BuffettScoreSpiderChart: React.FC = () => {
               fill="hsl(var(--primary))"
               fillOpacity={0.5}
               strokeWidth={2}
+              strokeLinejoin="round"
+              strokeLinecap="round"
             />
           </RadarChart>
         </ResponsiveContainer>
