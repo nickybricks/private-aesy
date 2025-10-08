@@ -102,16 +102,40 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
             <PolarAngleAxis 
               dataKey="criterion" 
               tick={(props: any) => {
-                const { x, y, payload } = props;
+                const { x, y, payload, index } = props;
+                const centerX = 150;
+                const centerY = 100;
+                
+                // Calculate angle for this label
+                const numSlices = data.length;
+                const angleStep = (2 * Math.PI) / numSlices;
+                const startAngle = -Math.PI / 2; // Start at top
+                const angle = startAngle + (index * angleStep);
+                
+                // Position label further out (around the polar grid)
+                const labelRadius = 95; // Distance from center
+                const labelX = centerX + labelRadius * Math.cos(angle);
+                const labelY = centerY + labelRadius * Math.sin(angle);
+                
+                // Calculate rotation angle (in degrees) to follow the circle
+                const rotationDeg = (angle * 180 / Math.PI) + 90;
+                
+                // Determine if text should be upside down and flip it
+                const shouldFlip = rotationDeg > 90 && rotationDeg < 270;
+                const finalRotation = shouldFlip ? rotationDeg + 180 : rotationDeg;
+                
                 return (
                   <g>
                     <text
-                      x={x}
-                      y={y}
+                      x={labelX}
+                      y={labelY}
                       fill="hsl(var(--foreground))"
-                      fontSize={12}
-                      textAnchor={x > 150 ? 'start' : x < 150 ? 'end' : 'middle'}
+                      fontSize={11}
+                      fontWeight="500"
+                      textAnchor="middle"
                       dominantBaseline="middle"
+                      transform={`rotate(${finalRotation}, ${labelX}, ${labelY})`}
+                      style={{ letterSpacing: '0.5px' }}
                     >
                       {payload.value}
                     </text>
