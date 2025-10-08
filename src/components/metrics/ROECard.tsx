@@ -40,11 +40,12 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
     chartData = last3Years;
   }
 
-  // Score calculation based on ROE value
+  // Score calculation based on ROE value (0-2 points)
+  // Software/Media: ≥18% → 2 | 12–<18 → 1 | <12 → 0
   const getScore = (value: number | null): number => {
     if (value === null) return 0;
-    if (value >= 15) return 2;
-    if (value >= 10) return 1;
+    if (value >= 18) return 2;
+    if (value >= 12) return 1;
     return 0;
   };
 
@@ -117,10 +118,10 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
             </TooltipTrigger>
             <TooltipContent side="right">
               <div className="space-y-1">
-                <p className="font-medium text-sm">Bewertung:</p>
-                <p className="text-sm"><span className="text-green-600">●</span> Grün (2 Pkt): ≥ 15%</p>
-                <p className="text-sm"><span className="text-yellow-600">●</span> Gelb (1 Pkt): 10-15%</p>
-                <p className="text-sm"><span className="text-red-600">●</span> Rot (0 Pkt): &lt; 10%</p>
+                <p className="font-medium text-sm">Bewertung - Software/Media:</p>
+                <p className="text-sm"><span className="text-green-600">●</span> Grün (2 Pkt): ≥18%</p>
+                <p className="text-sm"><span className="text-yellow-600">●</span> Gelb (1 Pkt): 12–&lt;18%</p>
+                <p className="text-sm"><span className="text-red-600">●</span> Rot (0 Pkt): &lt;12%</p>
               </div>
             </TooltipContent>
           </Tooltip>

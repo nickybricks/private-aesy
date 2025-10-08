@@ -16,17 +16,17 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
   const profitableYears = historicalNetIncome.filter(item => item.isProfitable).length;
   const totalYears = historicalNetIncome.length;
   
-  // Calculate score based on profitable years
+  // Calculate score based on profitable years (0-3 points)
+  // Software/Media: 10 → 3 | 9 → 2 | 8 → 1 | ≤7 → 0
   const calculateScore = (years: number): number => {
-    if (years === 10) return 4;
-    if (years === 9) return 3;
-    if (years === 8) return 2;
-    if (years === 7) return 1;
+    if (years === 10) return 3;
+    if (years === 9) return 2;
+    if (years === 8) return 1;
     return 0;
   };
   
   const score = calculateScore(profitableYears);
-  const maxScore = 4;
+  const maxScore = 3;
   
   // Determine color based on score
   const getScoreColor = (score: number): string => {
@@ -137,13 +137,12 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
             </TooltipTrigger>
             <TooltipContent side="right">
               <div className="space-y-2">
-                <p className="font-semibold">Punktelogik</p>
+                <p className="font-semibold">Punktelogik - Software/Media</p>
                 <ul className="space-y-1 text-sm">
-                  <li>• <strong>10/10</strong> → 4 Punkte</li>
-                  <li>• <strong>9/10</strong> → 3 Punkte</li>
-                  <li>• <strong>8/10</strong> → 2 Punkte</li>
-                  <li>• <strong>7/10</strong> → 1 Punkt</li>
-                  <li>• <strong>≤ 6/10</strong> → 0 Punkte</li>
+                  <li>• <strong>10/10</strong> → 3 Punkte</li>
+                  <li>• <strong>9/10</strong> → 2 Punkte</li>
+                  <li>• <strong>8/10</strong> → 1 Punkt</li>
+                  <li>• <strong>≤7/10</strong> → 0 Punkte</li>
                 </ul>
               </div>
             </TooltipContent>

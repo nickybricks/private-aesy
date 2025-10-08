@@ -51,6 +51,7 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
     : null;
 
   // Score calculation based on ROIC value and WACC spread (0-6 points)
+  // Software/Media: ≥18% & Spread≥8pp → 6 | ≥15% & ≥5pp → 5 | ≥12% & >WACC → 4 | ≥9% → 2 | sonst → 0
   const getScore = (value: number | null, waccValue?: number): number => {
     if (value === null) return 0;
     
@@ -58,29 +59,27 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
     if (waccValue !== null && waccValue !== undefined) {
       const spread = value - waccValue;
       
-      // ≥ 15% und ROIC > WACC + 5 pp → 6
-      if (value >= 15 && spread > 5) return 6;
+      // ≥18% & Spread≥8pp → 6
+      if (value >= 18 && spread >= 8) return 6;
       
-      // ≥ 12% und ROIC > WACC → 5
-      if (value >= 12 && spread > 0) return 5;
+      // ≥15% & ≥5pp → 5
+      if (value >= 15 && spread >= 5) return 5;
       
-      // ≥ 10% und ROIC ≥ WACC → 4
-      if (value >= 10 && spread >= 0) return 4;
+      // ≥12% & >WACC → 4
+      if (value >= 12 && spread > 0) return 4;
       
-      // ≥ 8% → 2
-      if (value >= 8) return 2;
+      // ≥9% → 2
+      if (value >= 9) return 2;
       
-      // < 8% oder ≤ WACC → 0
-      if (value < 8 || value <= waccValue) return 0;
-      
+      // sonst → 0
       return 0;
     }
     
     // Fallback if WACC not available - use simplified scoring
-    if (value >= 15) return 6;
-    if (value >= 12) return 5;
-    if (value >= 10) return 4;
-    if (value >= 8) return 2;
+    if (value >= 18) return 6;
+    if (value >= 15) return 5;
+    if (value >= 12) return 4;
+    if (value >= 9) return 2;
     return 0;
   };
 
@@ -180,12 +179,12 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
               </TooltipTrigger>
               <TooltipContent side="right">
                 <div className="space-y-1">
-                  <p className="font-medium text-sm">Bewertung (0-6 Punkte):</p>
-                  <p className="text-sm"><span className="text-green-600">●</span> 6 Pkt: ≥ 15% und ROIC &gt; WACC + 5 pp</p>
-                  <p className="text-sm"><span className="text-green-600">●</span> 5 Pkt: ≥ 12% und ROIC &gt; WACC</p>
-                  <p className="text-sm"><span className="text-green-500">●</span> 4 Pkt: ≥ 10% und ROIC ≥ WACC</p>
-                  <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: ≥ 8%</p>
-                  <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 8% oder ≤ WACC (kein Wertaufbau)</p>
+                  <p className="font-medium text-sm">Bewertung (0-6 Punkte) - Software/Media:</p>
+                  <p className="text-sm"><span className="text-green-600">●</span> 6 Pkt: ≥18% und Spread ≥8pp über WACC</p>
+                  <p className="text-sm"><span className="text-green-600">●</span> 5 Pkt: ≥15% und Spread ≥5pp über WACC</p>
+                  <p className="text-sm"><span className="text-green-500">●</span> 4 Pkt: ≥12% und ROIC &gt; WACC</p>
+                  <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: ≥9%</p>
+                  <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt;9% (unzureichende Kapitalrendite)</p>
                 </div>
               </TooltipContent>
             </Tooltip>
