@@ -203,7 +203,7 @@ const IndexContent: React.FC = () => {
                     <div className="space-y-4">
                       <ROECard 
                         currentValue={financialMetrics?.roe ?? null}
-                        historicalData={undefined}
+                        historicalData={financialMetrics?.historicalData?.roe}
                       />
                     </div>
                   </TabsContent>

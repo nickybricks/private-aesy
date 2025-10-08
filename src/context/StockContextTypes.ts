@@ -42,6 +42,7 @@ export interface FinancialMetricsData {
     revenue: HistoricalDataItem[];
     earnings: HistoricalDataItem[];
     eps: HistoricalDataItem[];
+    roe: HistoricalDataItem[];
   };
 }
 

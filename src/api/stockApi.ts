@@ -992,10 +992,10 @@ export const getFinancialMetrics = async (ticker: string) => {
   try {
     // Finanzkennzahlen abrufen - erweiterte Datenquellen für präzisere EPS und andere Werte
     const [ratios, keyMetrics, incomeStatements, balanceSheets, cashFlows, quote] = await Promise.all([
-      fetchFromFMP(`/ratios/${standardizedTicker}?limit=5`),
+      fetchFromFMP(`/ratios/${standardizedTicker}?limit=10`),
       fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=5`),
       fetchFromFMP(`/income-statement/${standardizedTicker}?limit=10`),
-      fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?limit=5`),
+      fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?limit=10`),
       fetchFromFMP(`/cash-flow-statement/${standardizedTicker}?limit=5`),
       fetchFromFMP(`/quote/${standardizedTicker}`)
     ]);
@@ -1235,6 +1235,7 @@ export const getFinancialMetrics = async (ticker: string) => {
       revenue: [],
       earnings: [],
       eps: [],
+      roe: [],
       operatingCashFlow: [],
       freeCashFlow: []
     };
@@ -1267,6 +1268,47 @@ export const getFinancialMetrics = async (ticker: string) => {
           value: statement.eps || 0,
           originalCurrency: statement.reportedCurrency || reportedCurrency
         }));
+    }
+
+    // Add historical ROE data (last 10 years)
+    if (ratios && ratios.length > 1 && incomeStatements && balanceSheets) {
+      const roeData = [];
+      
+      for (let i = 0; i < Math.min(10, ratios.length); i++) {
+        let roeValue = null;
+        const year = ratios[i].date ? new Date(ratios[i].date).getFullYear() : null;
+        
+        if (!year) continue;
+        
+        // Option A: Verwende vorberechneten ROE aus ratios
+        if (ratios[i].returnOnEquity !== undefined && ratios[i].returnOnEquity !== null) {
+          roeValue = safeValue(ratios[i].returnOnEquity) * 100; // Konvertiere zu Prozent
+        }
+        
+        // Option B: Berechne ROE manuell aus netIncome und totalStockholdersEquity
+        if ((roeValue === null || roeValue === 0) && 
+            incomeStatements[i] && balanceSheets[i] &&
+            incomeStatements[i].netIncome !== undefined && 
+            balanceSheets[i].totalStockholdersEquity !== undefined && 
+            balanceSheets[i].totalStockholdersEquity > 0) {
+          const netIncome = safeValue(incomeStatements[i].netIncome);
+          const equity = safeValue(balanceSheets[i].totalStockholdersEquity);
+          if (netIncome !== null && equity !== null && equity > 0) {
+            roeValue = (netIncome / equity) * 100;
+          }
+        }
+        
+        if (roeValue !== null) {
+          roeData.push({
+            year: year,
+            value: Math.round(roeValue * 10) / 10, // Runde auf 1 Dezimalstelle
+            originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
+          });
+        }
+      }
+      
+      // Sortiere chronologisch (ältestes zuerst für Chart)
+      historicalData.roe = roeData.reverse();
     }
 
     // Add historical cash flow data if available
