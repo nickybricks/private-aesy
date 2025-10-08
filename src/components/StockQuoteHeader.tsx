@@ -56,18 +56,26 @@ const StockQuoteHeader: React.FC = () => {
     hour12: true
   });
 
+  // Format numbers with German locale (comma as decimal, dot as thousand separator)
+  const formatGermanNumber = (value: number, decimals: number = 2): string => {
+    return value.toLocaleString('de-DE', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
+  };
+
   // Format large numbers
   const formatNumber = (value: number | null | undefined): string => {
     if (value === null || value === undefined || isNaN(value)) return 'N/A';
     
     if (value >= 1_000_000_000_000) {
-      return `$${(value / 1_000_000_000_000).toFixed(2)}T`;
+      return `$${formatGermanNumber(value / 1_000_000_000_000)}T`;
     } else if (value >= 1_000_000_000) {
-      return `$${(value / 1_000_000_000).toFixed(2)}B`;
+      return `$${formatGermanNumber(value / 1_000_000_000)}B`;
     } else if (value >= 1_000_000) {
-      return `$${(value / 1_000_000).toFixed(2)}M`;
+      return `$${formatGermanNumber(value / 1_000_000)}M`;
     }
-    return `$${value.toFixed(2)}`;
+    return `$${formatGermanNumber(value)}`;
   };
 
   // Format volume
@@ -285,13 +293,13 @@ const StockQuoteHeader: React.FC = () => {
       <div className="mb-1.5 sm:mb-2">
         <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2 mb-0.5">
           <span className="text-xl sm:text-2xl md:text-3xl font-bold">
-            ${price?.toFixed(2) ?? 'N/A'}
+            ${price ? formatGermanNumber(price) : 'N/A'}
           </span>
           {change !== null && changePercent !== null && (
             <div className={`flex items-center gap-1 text-sm sm:text-base font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
               {isPositive ? <TrendingUp size={14} className="sm:w-4 sm:h-4" /> : <TrendingDown size={14} className="sm:w-4 sm:h-4" />}
               <span>
-                {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
+                {isPositive ? '+' : ''}{formatGermanNumber(change)} ({isPositive ? '+' : ''}{formatGermanNumber(changePercent)}%)
               </span>
             </div>
           )}
@@ -326,7 +334,7 @@ const StockQuoteHeader: React.FC = () => {
         
         <div>
           <div className="text-muted-foreground text-[10px] sm:text-xs">KGV:</div>
-          <div className="font-semibold text-xs sm:text-sm">{peRatio?.toFixed(2) ?? 'N/A'}</div>
+          <div className="font-semibold text-xs sm:text-sm">{peRatio ? formatGermanNumber(peRatio) : 'N/A'}</div>
         </div>
         
         <div>
