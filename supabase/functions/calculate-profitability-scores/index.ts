@@ -210,7 +210,10 @@ function getPresetForIndustry(industry: string): string {
   return "Industrials";
 }
 
-// Scoring functions for Software/Media preset
+// ============================================================
+// SOFTWARE / MEDIA / IP-LIGHT PRESET
+// ============================================================
+
 function scoreSoftwareROIC(roic: number | null, wacc: number | null): { score: number; maxScore: number } {
   const maxScore = 6;
   if (roic === null) return { score: 0, maxScore };
@@ -295,7 +298,96 @@ function scoreSoftwareROA(roa: number | null): { score: number; maxScore: number
   return { score: 0, maxScore };
 }
 
-// Main scoring function
+// ============================================================
+// HEALTHCARE (PHARMA/BIOTECH/MEDTECH) PRESET
+// ============================================================
+
+function scoreHealthcareROIC(roic: number | null, wacc: number | null): { score: number; maxScore: number } {
+  const maxScore = 6;
+  if (roic === null) return { score: 0, maxScore };
+  
+  const spread = (wacc !== null && wacc !== undefined) ? roic - wacc : null;
+  
+  // ≥16% & Spread≥6pp → 6
+  if (roic >= 16 && spread !== null && spread >= 6) return { score: 6, maxScore };
+  // ≥13% & ≥4pp → 5
+  if (roic >= 13 && spread !== null && spread >= 4) return { score: 5, maxScore };
+  // ≥11% & >WACC → 4
+  if (roic >= 11 && spread !== null && spread > 0) return { score: 4, maxScore };
+  // ≥9% → 2
+  if (roic >= 9) return { score: 2, maxScore };
+  // sonst → 0
+  return { score: 0, maxScore };
+}
+
+function scoreHealthcareOperatingMargin(opMargin: number | null): { score: number; maxScore: number } {
+  const maxScore = 4;
+  if (opMargin === null) return { score: 0, maxScore };
+  
+  // ≥22% → 4
+  if (opMargin >= 22) return { score: 4, maxScore };
+  // 18–<22 → 3
+  if (opMargin >= 18) return { score: 3, maxScore };
+  // 14–<18 → 2
+  if (opMargin >= 14) return { score: 2, maxScore };
+  // 10–<14 → 1
+  if (opMargin >= 10) return { score: 1, maxScore };
+  // <10 → 0
+  return { score: 0, maxScore };
+}
+
+function scoreHealthcareNetMargin(netMargin: number | null): { score: number; maxScore: number } {
+  const maxScore = 4;
+  if (netMargin === null) return { score: 0, maxScore };
+  
+  // ≥16% → 4
+  if (netMargin >= 16) return { score: 4, maxScore };
+  // 12–<16 → 3
+  if (netMargin >= 12) return { score: 3, maxScore };
+  // 8–<12 → 2
+  if (netMargin >= 8) return { score: 2, maxScore };
+  // 5–<8 → 1
+  if (netMargin >= 5) return { score: 1, maxScore };
+  // <5 → 0
+  return { score: 0, maxScore };
+}
+
+function scoreHealthcareYears(profitableYears: number | null): { score: number; maxScore: number } {
+  const maxScore = 3;
+  if (profitableYears === null) return { score: 0, maxScore };
+  
+  // Standard: 10 → 3, 9 → 2, 8 → 1, ≤7 → 0
+  if (profitableYears === 10) return { score: 3, maxScore };
+  if (profitableYears === 9) return { score: 2, maxScore };
+  if (profitableYears === 8) return { score: 1, maxScore };
+  return { score: 0, maxScore };
+}
+
+function scoreHealthcareROE(roe: number | null): { score: number; maxScore: number } {
+  const maxScore = 2;
+  if (roe === null) return { score: 0, maxScore };
+  
+  // ≥15% → 2
+  if (roe >= 15) return { score: 2, maxScore };
+  // 10–<15 → 1
+  if (roe >= 10) return { score: 1, maxScore };
+  // <10 → 0
+  return { score: 0, maxScore };
+}
+
+function scoreHealthcareROA(roa: number | null): { score: number; maxScore: number } {
+  const maxScore = 1;
+  if (roa === null) return { score: 0, maxScore };
+  
+  // ≥8% → 1
+  if (roa >= 8) return { score: 1, maxScore };
+  // <8 → 0
+  return { score: 0, maxScore };
+}
+
+// ============================================================
+// MAIN SCORING FUNCTION
+// ============================================================
 function calculateScores(preset: string, metrics: any) {
   console.log('📊 Calculating scores for preset:', preset);
   console.log('📊 Input metrics:', JSON.stringify(metrics, null, 2));
@@ -311,6 +403,31 @@ function calculateScores(preset: string, metrics: any) {
     const totalScore = roicResult.score + opMarginResult.score + netMarginResult.score + 
                       yearsResult.score + roeResult.score + roaResult.score;
     const maxTotalScore = 20; // Sum of all maxScores
+    
+    return {
+      roic: roicResult,
+      operatingMargin: opMarginResult,
+      netMargin: netMarginResult,
+      years: yearsResult,
+      roe: roeResult,
+      roa: roaResult,
+      totalScore,
+      maxTotalScore,
+      percentage: (totalScore / maxTotalScore) * 100
+    };
+  }
+  
+  if (preset === 'Healthcare') {
+    const roicResult = scoreHealthcareROIC(metrics.roic, metrics.wacc);
+    const opMarginResult = scoreHealthcareOperatingMargin(metrics.operatingMargin);
+    const netMarginResult = scoreHealthcareNetMargin(metrics.netMargin);
+    const yearsResult = scoreHealthcareYears(metrics.profitableYears);
+    const roeResult = scoreHealthcareROE(metrics.roe);
+    const roaResult = scoreHealthcareROA(metrics.roa);
+    
+    const totalScore = roicResult.score + opMarginResult.score + netMarginResult.score + 
+                      yearsResult.score + roeResult.score + roaResult.score;
+    const maxTotalScore = 20; // 6+4+4+3+2+1 = 20
     
     return {
       roic: roicResult,
