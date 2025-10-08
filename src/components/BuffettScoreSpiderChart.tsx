@@ -5,11 +5,11 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 const BuffettScoreSpiderChart: React.FC = () => {
   // Mock data - replace with actual data from context
   const data = [
-    { criterion: 'ROE', score: 85 },
-    { criterion: 'Marge', score: 70 },
-    { criterion: 'Wachstum', score: 60 },
-    { criterion: 'Schulden', score: 90 },
-    { criterion: 'Stabilität', score: 75 },
+    { criterion: 'Profitabilität', score: 85 },
+    { criterion: 'Fin. Stärke', score: 70 },
+    { criterion: 'Bewertung', score: 60 },
+    { criterion: 'Growth', score: 90 },
+    { criterion: 'KI Analyse', score: 75 },
   ];
 
   return (
