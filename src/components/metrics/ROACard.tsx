@@ -11,31 +11,30 @@ interface ROACardProps {
 }
 
 export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData }) => {
-  // Calculate score based on ROA value (0-2 points)
-  // Software/Media: ≥10% → 2 | <10 → 0
+  // Calculate score based on ROA value
   const calculateScore = (value: number | null): number => {
     if (value === null) return 0;
-    if (value >= 10) return 2;
+    if (value >= 8) return 1;
     return 0;
   };
 
-  // Determine color based on thresholds (Software/Media: ≥10% good)
+  // Determine color based on thresholds
   const getScoreColor = (value: number | null): string => {
     if (value === null) return 'text-muted-foreground';
-    if (value >= 10) return 'text-green-600';
-    if (value >= 5) return 'text-yellow-600';
+    if (value >= 8) return 'text-green-600';
+    if (value >= 4) return 'text-yellow-600';
     return 'text-red-600';
   };
 
   const getBgColor = (value: number | null): string => {
     if (value === null) return 'bg-muted/20 border-muted';
-    if (value >= 10) return 'bg-green-50 border-green-200';
-    if (value >= 5) return 'bg-yellow-50 border-yellow-200';
+    if (value >= 8) return 'bg-green-50 border-green-200';
+    if (value >= 4) return 'bg-yellow-50 border-yellow-200';
     return 'bg-red-50 border-red-200';
   };
 
   const score = calculateScore(currentValue);
-  const maxScore = 2;
+  const maxScore = 1;
 
   // Calculate medians if historical data available
   const calculateMedian = (data: HistoricalDataItem[], years: number): number | null => {
@@ -86,22 +85,22 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData }
       </div>
 
       <div>
-        <div className="font-semibold mb-1">Was ist „gut"? (Software/Media)</div>
+        <div className="font-semibold mb-1">Was ist „gut"?</div>
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-          <li><strong className="text-green-600">Grün (stark):</strong> <strong>≥10%</strong> über mehrere Jahre - zeigt exzellente Asset-Effizienz in kapitalarmen Branchen.</li>
-          <li><strong className="text-yellow-600">Gelb (ok):</strong> <strong>5–10%</strong> oder stark schwankend.</li>
-          <li><strong className="text-red-600">Rot (schwach):</strong> <strong>&lt;5%</strong> dauerhaft.</li>
+          <li><strong className="text-green-600">Grün (stark):</strong> <strong>≥ 8 %</strong> über mehrere Jahre (außer sehr kapitalintensiven Sektoren).</li>
+          <li><strong className="text-yellow-600">Gelb (ok):</strong> <strong>4–8 %</strong> oder stark schwankend.</li>
+          <li><strong className="text-red-600">Rot (schwach):</strong> <strong>&lt; 4 %</strong> dauerhaft.</li>
         </ul>
         <p className="text-muted-foreground text-xs mt-2">
-          <em>Für Software/Media/IP-light Branchen gelten strengere Maßstäbe, da diese asset-leicht sind.</em>
+          <em>(Immer mit dem <strong>Sektor-Median</strong> spiegeln: in kapitalarmen Sektoren strenger, in kapitalintensiven etwas milder.)</em>
         </p>
       </div>
 
       <div>
-        <div className="font-semibold mb-1">Punktelogik - Software/Media</div>
+        <div className="font-semibold mb-1">Punktelogik</div>
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-          <li><strong>≥10%</strong> → <strong>2 Punkte</strong></li>
-          <li><strong>&lt;10%</strong> → <strong>0 Punkte</strong></li>
+          <li><strong>≥ 8 %</strong> → <strong>1</strong></li>
+          <li><strong>&lt; 8 %</strong> → <strong>0</strong></li>
         </ul>
       </div>
     </div>
@@ -122,7 +121,7 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData }
               {currentValue !== null ? `${currentValue.toFixed(1)}%` : 'N/A'}
             </div>
             <div className="text-sm text-muted-foreground mt-1">
-              {score}/{maxScore} Punkte
+              {score}/{maxScore} Punkt{maxScore !== 1 ? 'e' : ''}
             </div>
           </div>
         </div>

@@ -41,14 +41,13 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({ curren
   }
 
   // Score calculation based on Operating Margin value (0-4 points)
-  // Software/Media: ≥22% → 4 | 18–<22 → 3 | 14–<18 → 2 | 10–<14 → 1 | <10 → 0
   const getScore = (value: number | null): number => {
     if (value === null) return 0;
     
-    if (value >= 22) return 4;
-    if (value >= 18) return 3;
-    if (value >= 14) return 2;
-    if (value >= 10) return 1;
+    if (value >= 20) return 4;
+    if (value >= 15) return 3;
+    if (value >= 10) return 2;
+    if (value >= 5) return 1;
     return 0;
   };
 
@@ -142,12 +141,12 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({ curren
             </TooltipTrigger>
             <TooltipContent side="right">
               <div className="space-y-1">
-                <p className="font-medium text-sm">Bewertung (0-4 Punkte) - Software/Media:</p>
-                <p className="text-sm"><span className="text-green-600">●</span> 4 Pkt: ≥22%</p>
-                <p className="text-sm"><span className="text-green-500">●</span> 3 Pkt: 18–&lt;22%</p>
-                <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: 14–&lt;18%</p>
-                <p className="text-sm"><span className="text-orange-600">●</span> 1 Pkt: 10–&lt;14%</p>
-                <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt;10%</p>
+                <p className="font-medium text-sm">Bewertung (0-4 Punkte):</p>
+                <p className="text-sm"><span className="text-green-600">●</span> 4 Pkt: ≥ 20%</p>
+                <p className="text-sm"><span className="text-green-500">●</span> 3 Pkt: 15-20%</p>
+                <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: 10-15%</p>
+                <p className="text-sm"><span className="text-orange-600">●</span> 1 Pkt: 5-10%</p>
+                <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 5%</p>
               </div>
             </TooltipContent>
           </Tooltip>

@@ -210,128 +210,6 @@ function getPresetForIndustry(industry: string): string {
   return "Industrials";
 }
 
-// Scoring functions for Software/Media preset
-function scoreSoftwareROIC(roic: number | null, wacc: number | null): { score: number; maxScore: number } {
-  const maxScore = 6;
-  if (roic === null) return { score: 0, maxScore };
-  
-  const spread = (wacc !== null && wacc !== undefined) ? roic - wacc : null;
-  
-  // ≥18% & Spread≥8pp → 6
-  if (roic >= 18 && spread !== null && spread >= 8) return { score: 6, maxScore };
-  // ≥15% & ≥5pp → 5
-  if (roic >= 15 && spread !== null && spread >= 5) return { score: 5, maxScore };
-  // ≥12% & >WACC → 4
-  if (roic >= 12 && spread !== null && spread > 0) return { score: 4, maxScore };
-  // ≥9% → 2
-  if (roic >= 9) return { score: 2, maxScore };
-  // sonst → 0
-  return { score: 0, maxScore };
-}
-
-function scoreSoftwareOperatingMargin(opMargin: number | null): { score: number; maxScore: number } {
-  const maxScore = 4;
-  if (opMargin === null) return { score: 0, maxScore };
-  
-  // ≥22% → 4
-  if (opMargin >= 22) return { score: 4, maxScore };
-  // 18–<22 → 3
-  if (opMargin >= 18) return { score: 3, maxScore };
-  // 14–<18 → 2
-  if (opMargin >= 14) return { score: 2, maxScore };
-  // 10–<14 → 1
-  if (opMargin >= 10) return { score: 1, maxScore };
-  // <10 → 0
-  return { score: 0, maxScore };
-}
-
-function scoreSoftwareNetMargin(netMargin: number | null): { score: number; maxScore: number } {
-  const maxScore = 3;
-  if (netMargin === null) return { score: 0, maxScore };
-  
-  // ≥18% → 3
-  if (netMargin >= 18) return { score: 3, maxScore };
-  // 14–<18 → 2
-  if (netMargin >= 14) return { score: 2, maxScore };
-  // 10–<14 → 1
-  if (netMargin >= 10) return { score: 1, maxScore };
-  // <10 → 0
-  return { score: 0, maxScore };
-}
-
-function scoreSoftwareYears(profitableYears: number | null): { score: number; maxScore: number } {
-  const maxScore = 3;
-  if (profitableYears === null) return { score: 0, maxScore };
-  
-  // 10 → 3
-  if (profitableYears === 10) return { score: 3, maxScore };
-  // 9 → 2
-  if (profitableYears === 9) return { score: 2, maxScore };
-  // 8 → 1
-  if (profitableYears === 8) return { score: 1, maxScore };
-  // ≤7 → 0
-  return { score: 0, maxScore };
-}
-
-function scoreSoftwareROE(roe: number | null): { score: number; maxScore: number } {
-  const maxScore = 2;
-  if (roe === null) return { score: 0, maxScore };
-  
-  // ≥18% → 2
-  if (roe >= 18) return { score: 2, maxScore };
-  // 12–<18 → 1
-  if (roe >= 12) return { score: 1, maxScore };
-  // <12 → 0
-  return { score: 0, maxScore };
-}
-
-function scoreSoftwareROA(roa: number | null): { score: number; maxScore: number } {
-  const maxScore = 2;
-  if (roa === null) return { score: 0, maxScore };
-  
-  // ≥10% → 2
-  if (roa >= 10) return { score: 2, maxScore };
-  // <10 → 0
-  return { score: 0, maxScore };
-}
-
-// Main scoring function
-function calculateScores(preset: string, metrics: any) {
-  console.log('📊 Calculating scores for preset:', preset);
-  console.log('📊 Input metrics:', JSON.stringify(metrics, null, 2));
-  
-  if (preset === 'Software') {
-    const roicResult = scoreSoftwareROIC(metrics.roic, metrics.wacc);
-    const opMarginResult = scoreSoftwareOperatingMargin(metrics.operatingMargin);
-    const netMarginResult = scoreSoftwareNetMargin(metrics.netMargin);
-    const yearsResult = scoreSoftwareYears(metrics.profitableYears);
-    const roeResult = scoreSoftwareROE(metrics.roe);
-    const roaResult = scoreSoftwareROA(metrics.roa);
-    
-    const totalScore = roicResult.score + opMarginResult.score + netMarginResult.score + 
-                      yearsResult.score + roeResult.score + roaResult.score;
-    const maxTotalScore = 20; // Sum of all maxScores
-    
-    return {
-      roic: roicResult,
-      operatingMargin: opMarginResult,
-      netMargin: netMarginResult,
-      years: yearsResult,
-      roe: roeResult,
-      roa: roaResult,
-      totalScore,
-      maxTotalScore,
-      percentage: (totalScore / maxTotalScore) * 100
-    };
-  }
-  
-  // Default/fallback for other presets (to be implemented)
-  return {
-    error: 'Preset not yet implemented',
-    preset
-  };
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -339,31 +217,26 @@ serve(async (req) => {
   }
 
   try {
-    const { industry, metrics } = await req.json();
+    const { industry } = await req.json();
 
-    console.log('📊 Calculate Profitability Scores request:', { industry, metrics });
+    console.log('📊 Calculate Profitability Scores request:', { industry });
 
     if (!industry) {
       throw new Error('Industry is required');
     }
 
-    if (!metrics) {
-      throw new Error('Metrics are required');
-    }
-
     // Get preset for industry
     const preset = getPresetForIndustry(industry);
+
     console.log(`✅ Industry "${industry}" mapped to preset "${preset}"`);
 
-    // Calculate scores
-    const scores = calculateScores(preset, metrics);
-    console.log('✅ Scores calculated:', JSON.stringify(scores, null, 2));
-
+    // Return preset information
+    // Scoring logic will be added step by step
     return new Response(
       JSON.stringify({
         industry,
         preset,
-        scores
+        message: 'Industry preset mapping successful. Scoring logic to be added.'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
