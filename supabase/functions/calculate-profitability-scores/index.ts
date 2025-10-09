@@ -76,6 +76,19 @@ const industryToPreset: Record<string, string> = {
   "Information Technology Services": "Software",
   "Electronic Gaming & Multimedia": "Software",
   "Media & Entertainment": "Software",
+  
+  // Staples (defensiv)
+  "Tobacco": "Staples",
+  "Grocery Stores": "Staples",
+  "Discount Stores": "Staples",
+  "Household & Personal Products": "Staples",
+  "Packaged Foods": "Staples",
+  "Food Distribution": "Staples",
+  "Food Confectioners": "Staples",
+  "Agricultural Farm Products": "Staples",
+  "Beverages - Wineries & Distilleries": "Staples",
+  "Beverages - Non-Alcoholic": "Staples",
+  "Beverages - Alcoholic": "Staples",
 };
 
 interface MetricsInput {
@@ -241,6 +254,71 @@ function scoreSoftwareROA(roa: number | null): ScoreResult {
   return { score: 0, maxScore: 2 };
 }
 
+// Staples Scoring Logic
+function scoreStaplesROIC(roic: number | null, wacc: number | null): ScoreResult {
+  if (roic === null) return { score: 0, maxScore: 6 };
+  
+  const spread = wacc !== null ? roic - wacc : null;
+  
+  if (roic >= 16 && spread !== null && spread >= 6) return { score: 6, maxScore: 6 };
+  if (roic >= 13 && spread !== null && spread >= 4) return { score: 5, maxScore: 6 };
+  if (roic >= 11 && wacc !== null && roic > wacc) return { score: 4, maxScore: 6 };
+  if (roic >= 9) return { score: 2, maxScore: 6 };
+  
+  return { score: 0, maxScore: 6 };
+}
+
+function scoreStaplesOperatingMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 3 };
+  
+  if (margin >= 18) return { score: 3, maxScore: 3 };
+  if (margin >= 15) return { score: 2, maxScore: 3 };
+  if (margin >= 12) return { score: 1, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreStaplesNetMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 3 };
+  
+  // Handle decimal values (0.14 = 14%)
+  const percentValue = margin < 1 ? margin * 100 : margin;
+  
+  if (percentValue >= 14) return { score: 3, maxScore: 3 };
+  if (percentValue >= 10) return { score: 2, maxScore: 3 };
+  if (percentValue >= 5) return { score: 1, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreStaplesYears(profitableYears: number, totalYears: number): ScoreResult {
+  if (totalYears === 0) return { score: 0, maxScore: 4 };
+  
+  if (profitableYears === 10 && totalYears === 10) return { score: 4, maxScore: 4 };
+  if (profitableYears === 9 && totalYears === 10) return { score: 3, maxScore: 4 };
+  if (profitableYears === 8 && totalYears >= 10) return { score: 2, maxScore: 4 };
+  if (profitableYears === 7 && totalYears >= 10) return { score: 1, maxScore: 4 };
+  
+  return { score: 0, maxScore: 4 };
+}
+
+function scoreStaplesROE(roe: number | null): ScoreResult {
+  if (roe === null) return { score: 0, maxScore: 3 };
+  
+  if (roe >= 15) return { score: 3, maxScore: 3 };
+  if (roe >= 10) return { score: 2, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreStaplesROA(roa: number | null): ScoreResult {
+  if (roa === null) return { score: 0, maxScore: 1 };
+  
+  if (roa >= 8) return { score: 1, maxScore: 1 };
+  
+  return { score: 0, maxScore: 1 };
+}
+
 function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse {
   let scores: ScoringResponse['scores'];
   
@@ -261,6 +339,15 @@ function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse
       years: scoreSoftwareYears(metrics.profitableYears || 0, metrics.totalYears || 0),
       roe: scoreSoftwareROE(metrics.roe),
       roa: scoreSoftwareROA(metrics.roa),
+    };
+  } else if (preset === "Staples") {
+    scores = {
+      roic: scoreStaplesROIC(metrics.roic, metrics.wacc),
+      operatingMargin: scoreStaplesOperatingMargin(metrics.operatingMargin),
+      netMargin: scoreStaplesNetMargin(metrics.netMargin),
+      years: scoreStaplesYears(metrics.profitableYears || 0, metrics.totalYears || 0),
+      roe: scoreStaplesROE(metrics.roe),
+      roa: scoreStaplesROA(metrics.roa),
     };
   } else {
     // Default/Fallback scoring
