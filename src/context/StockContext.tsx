@@ -167,12 +167,66 @@ export function StockProvider({ children }: StockProviderProps) {
       // Calculate profitability scores based on industry
       if (info && info.industry && metricsData && !criticalDataMissing) {
         console.log('🎯 Calculating profitability scores for industry:', info.industry);
-        console.log('📊 Metrics being sent:', {
-          roic: metricsData.roic,
-          operatingMargin: metricsData.operatingMargin,
-          netMargin: metricsData.netMargin,
-          roe: metricsData.roe,
-          roa: metricsData.roa,
+        
+        // Helper function to calculate median from historical data
+        const calculateMedianFromHistorical = (
+          currentValue: number | null,
+          historicalData?: Array<{ year: string; value: number }>
+        ): number | null => {
+          if (!historicalData || historicalData.length === 0) {
+            return currentValue;
+          }
+          
+          // Determine which timeframe to use (10Y > 5Y > 3Y > current)
+          let dataToUse = historicalData;
+          if (historicalData.length >= 10) {
+            dataToUse = historicalData.slice(-10);
+          } else if (historicalData.length >= 5) {
+            dataToUse = historicalData.slice(-5);
+          } else if (historicalData.length >= 3) {
+            dataToUse = historicalData.slice(-3);
+          } else {
+            return currentValue;
+          }
+          
+          // Calculate median
+          const values = dataToUse.map(d => d.value).sort((a, b) => a - b);
+          const mid = Math.floor(values.length / 2);
+          const median = values.length % 2 === 0 
+            ? (values[mid - 1] + values[mid]) / 2 
+            : values[mid];
+          
+          return median;
+        };
+        
+        // Calculate median values for scoring
+        const roicMedian = calculateMedianFromHistorical(
+          metricsData.roic,
+          metricsData.historicalData?.roic
+        );
+        const operatingMarginMedian = calculateMedianFromHistorical(
+          metricsData.operatingMargin,
+          metricsData.historicalData?.operatingMargin
+        );
+        const netMarginMedian = calculateMedianFromHistorical(
+          metricsData.netMargin,
+          metricsData.historicalData?.netMargin
+        );
+        const roeMedian = calculateMedianFromHistorical(
+          metricsData.roe,
+          metricsData.historicalData?.roe
+        );
+        const roaMedian = calculateMedianFromHistorical(
+          metricsData.roa,
+          metricsData.historicalData?.roa
+        );
+        
+        console.log('📊 Median values being sent for scoring:', {
+          roic: roicMedian,
+          operatingMargin: operatingMarginMedian,
+          netMargin: netMarginMedian,
+          roe: roeMedian,
+          roa: roaMedian,
           wacc: metricsData.wacc
         });
         
@@ -184,11 +238,11 @@ export function StockProvider({ children }: StockProviderProps) {
         supabase.functions.invoke('calculate-profitability-scores', {
           body: {
             industry: info.industry,
-            roic: metricsData.roic,
-            operatingMargin: metricsData.operatingMargin,
-            netMargin: metricsData.netMargin,
-            roe: metricsData.roe,
-            roa: metricsData.roa,
+            roic: roicMedian,
+            operatingMargin: operatingMarginMedian,
+            netMargin: netMarginMedian,
+            roe: roeMedian,
+            roa: roaMedian,
             wacc: metricsData.wacc,
             profitableYears,
             totalYears,
