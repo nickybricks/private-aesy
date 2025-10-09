@@ -1321,6 +1321,7 @@ export const getFinancialMetrics = async (ticker: string) => {
     if (ratios && ratios.length > 1 && incomeStatements && balanceSheets) {
       const roeData = [];
       
+      // Sammle zuerst alle jährlichen Daten
       for (let i = 0; i < Math.min(10, ratios.length); i++) {
         let roeValue = null;
         const year = ratios[i].date ? new Date(ratios[i].date).getFullYear() : null;
@@ -1348,16 +1349,16 @@ export const getFinancialMetrics = async (ticker: string) => {
         if (roeValue !== null) {
           roeData.push({
             year: year,
-            value: Math.round(roeValue * 10) / 10, // Runde auf 1 Dezimalstelle
+            value: Math.round(roeValue * 10) / 10,
             originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
           });
         }
       }
       
-      // Sortiere chronologisch (ältestes zuerst für Chart)
+      // Sortiere chronologisch (ältestes zuerst)
       historicalData.roe = roeData.reverse();
       
-      // Add TTM 2025 calculation from quarterly data
+      // Berechne TTM aus den letzten 4 Quartalen und füge hinzu
       try {
         const quarterlyIncomeData = await fetchFromFMP(`/income-statement/${standardizedTicker}?period=quarter&limit=20`);
         const quarterlyBalanceData = await fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?period=quarter&limit=20`);
@@ -1365,10 +1366,16 @@ export const getFinancialMetrics = async (ticker: string) => {
         if (quarterlyIncomeData && quarterlyIncomeData.length >= 4 && 
             quarterlyBalanceData && quarterlyBalanceData.length >= 4) {
           
-          // Finde die letzten 4 Quartale für TTM 2025
+          // Berechne TTM aus den letzten 4 Quartalen
           let ttmNetIncome = 0;
           let ttmEquity = null;
           let quarterCount = 0;
+          const latestQuarterDate = quarterlyIncomeData[0].date ? new Date(quarterlyIncomeData[0].date) : new Date();
+          
+          console.log('Calculating TTM from quarters:', quarterlyIncomeData.slice(0, 4).map((q: any) => ({
+            date: q.date,
+            netIncome: q.netIncome
+          })));
           
           for (let i = 0; i < Math.min(4, quarterlyIncomeData.length); i++) {
             const qIncome = safeValue(quarterlyIncomeData[i].netIncome);
@@ -1378,24 +1385,40 @@ export const getFinancialMetrics = async (ticker: string) => {
             }
           }
           
-          // Verwende das aktuellste Eigenkapital für den TTM-Zeitraum
+          // Verwende das aktuellste Eigenkapital
           ttmEquity = safeValue(quarterlyBalanceData[0].totalStockholdersEquity);
           
           if (quarterCount === 4 && ttmEquity !== null && ttmEquity > 0) {
             const ttmRoe = (ttmNetIncome / ttmEquity) * 100;
             
-            // Füge TTM 2025 hinzu
-            historicalData.roe.push({
-              year: 'TTM 2025',
-              value: Math.round(ttmRoe * 10) / 10,
-              originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
-            });
+            // Erstelle dynamisches Label basierend auf dem letzten Quartals-Datum
+            const ttmYear = latestQuarterDate.getFullYear();
+            const ttmLabel = `TTM ${ttmYear}`;
             
-            console.log('TTM 2025 ROE berechnet:', ttmRoe);
+            // Prüfe, ob bereits ein Eintrag für dieses Jahr existiert
+            const existingYearIndex = historicalData.roe.findIndex((entry: any) => entry.year === ttmYear);
+            
+            if (existingYearIndex >= 0) {
+              // Ersetze das Jahresende-Datum durch TTM
+              historicalData.roe[existingYearIndex] = {
+                year: ttmLabel,
+                value: Math.round(ttmRoe * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              };
+              console.log(`Replaced year ${ttmYear} with ${ttmLabel} ROE:`, ttmRoe);
+            } else {
+              // Füge TTM hinzu
+              historicalData.roe.push({
+                year: ttmLabel,
+                value: Math.round(ttmRoe * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              });
+              console.log(`Added ${ttmLabel} ROE:`, ttmRoe);
+            }
           }
         }
       } catch (error) {
-        console.warn('Could not calculate TTM 2025 ROE:', error);
+        console.warn('Could not calculate TTM ROE:', error);
       }
     }
 
