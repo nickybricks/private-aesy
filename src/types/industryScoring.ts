@@ -93,19 +93,19 @@ export const INDUSTRY_PRESETS: Record<IndustryPreset, { name: string; config: In
     name: 'Industrie / Produktion',
     config: {
       netDebtToEbitda: {
-        thresholds: [1.0, 1.5, 2.0, 3.0],
+        thresholds: [1.5, 2.0, 2.5, 3.5],
         scores: [6, 5, 4, 2, 0]
       },
       interestCoverage: {
-        thresholds: [12, 8, 5, 3],
+        thresholds: [10, 6, 4, 2.5],
         scores: [6, 5, 3, 1, 0]
       },
       debtToAssets: {
-        thresholds: [40, 50],
-        scores: [3, 1, 0]
+        thresholds: [40, 50, 60],
+        scores: [4, 3, 1, 0]
       },
       currentRatio: {
-        thresholds: [2.0, 1.5, 1.2],
+        thresholds: [1.5, 1.3, 1.1],
         scores: [4, 3, 1, 0]
       }
     }
