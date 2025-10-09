@@ -1,6 +1,7 @@
 export type IndustryPreset = 
   | 'default'
   | 'software'
+  | 'consumer_staples'
   | 'industrial'
   | 'retail'
   | 'pharma';
@@ -63,6 +64,27 @@ export const INDUSTRY_PRESETS: Record<IndustryPreset, { name: string; config: In
       },
       currentRatio: {
         thresholds: [1.8, 1.4, 1.1],
+        scores: [4, 3, 1, 0]
+      }
+    }
+  },
+  consumer_staples: {
+    name: 'Consumer Staples / Marken (defensiv)',
+    config: {
+      netDebtToEbitda: {
+        thresholds: [1.5, 2.0, 2.5, 3.0],
+        scores: [6, 5, 4, 2, 0]
+      },
+      interestCoverage: {
+        thresholds: [10, 7, 5, 3],
+        scores: [6, 5, 3, 1, 0]
+      },
+      debtToAssets: {
+        thresholds: [35, 45, 55],
+        scores: [4, 3, 1, 0]
+      },
+      currentRatio: {
+        thresholds: [1.5, 1.3, 1.1],
         scores: [4, 3, 1, 0]
       }
     }
