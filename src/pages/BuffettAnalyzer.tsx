@@ -42,7 +42,8 @@ const IndexContent: React.FC = () => {
     overallRating,
     newsItems,
     pressReleases,
-    financialMetrics
+    financialMetrics,
+    profitabilityScores
   } = useStock();
   const { analyses, loading: analysesLoading } = useSavedAnalyses();
   const { toast } = useToast();
@@ -209,26 +210,38 @@ const IndexContent: React.FC = () => {
                       <ROECard 
                         currentValue={financialMetrics?.roe ?? null}
                         historicalData={financialMetrics?.historicalData?.roe}
+                        preset={profitabilityScores?.preset}
+                        scoreFromBackend={profitabilityScores?.scores?.roe}
                       />
                       <ROICCard 
                         currentValue={financialMetrics?.roic ?? null}
                         historicalData={financialMetrics?.historicalData?.roic}
                         wacc={financialMetrics?.wacc}
+                        preset={profitabilityScores?.preset}
+                        scoreFromBackend={profitabilityScores?.scores?.roic}
                       />
                       <OperatingMarginCard 
                         currentValue={financialMetrics?.operatingMargin ?? null}
                         historicalData={financialMetrics?.historicalData?.operatingMargin}
+                        preset={profitabilityScores?.preset}
+                        scoreFromBackend={profitabilityScores?.scores?.operatingMargin}
                       />
                       <NetMarginCard 
                         currentValue={financialMetrics?.netMargin ?? null}
                         historicalData={financialMetrics?.historicalData?.netMargin}
+                        preset={profitabilityScores?.preset}
+                        scoreFromBackend={profitabilityScores?.scores?.netMargin}
                       />
                       <ROACard 
                         currentValue={financialMetrics?.roa ?? null}
                         historicalData={financialMetrics?.historicalData?.roa}
+                        preset={profitabilityScores?.preset}
+                        scoreFromBackend={profitabilityScores?.scores?.roa}
                       />
                       <YearsOfProfitabilityCard 
                         historicalNetIncome={financialMetrics?.historicalData?.netIncome}
+                        preset={profitabilityScores?.preset}
+                        scoreFromBackend={profitabilityScores?.scores?.years}
                       />
                     </div>
                   </TabsContent>
