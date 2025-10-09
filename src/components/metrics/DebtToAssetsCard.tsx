@@ -15,7 +15,13 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
     if (!data || data.length === 0) return null;
     const values = data.map(d => d.value).sort((a, b) => a - b);
     const mid = Math.floor(values.length / 2);
-    return values.length % 2 === 0 ? (values[mid - 1] + values[mid]) / 2 : values[mid];
+    const median = values.length % 2 === 0 ? (values[mid - 1] + values[mid]) / 2 : values[mid];
+    console.log('DebtToAssets - calculateMedian:', { 
+      inputLength: data.length, 
+      values: values.map(v => v.toFixed(2)),
+      median: median.toFixed(2)
+    });
+    return median;
   };
 
   // Determine which timeframe to use (10Y > 5Y > 3Y > current)
@@ -23,53 +29,99 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
   let displayLabel = 'Aktuell';
   let chartData = historicalData || [];
 
+  console.log('DebtToAssets - Initial values:', {
+    currentValue,
+    historicalDataLength: historicalData?.length || 0,
+    historicalData: historicalData?.map(d => ({ year: d.year, value: d.value.toFixed(2) }))
+  });
+
   if (historicalData && historicalData.length >= 10) {
     const last10Years = historicalData.slice(-10);
     displayValue = calculateMedian(last10Years);
     displayLabel = '10-Jahres-Median';
     chartData = last10Years;
+    console.log('DebtToAssets - Using 10-year median:', displayValue?.toFixed(2));
   } else if (historicalData && historicalData.length >= 5) {
     const last5Years = historicalData.slice(-5);
     displayValue = calculateMedian(last5Years);
     displayLabel = '5-Jahres-Median';
     chartData = last5Years;
+    console.log('DebtToAssets - Using 5-year median:', displayValue?.toFixed(2));
   } else if (historicalData && historicalData.length >= 3) {
     const last3Years = historicalData.slice(-3);
     displayValue = calculateMedian(last3Years);
     displayLabel = '3-Jahres-Median';
     chartData = last3Years;
+    console.log('DebtToAssets - Using 3-year median:', displayValue?.toFixed(2));
   }
 
   // Check if trend is improving (declining debt/assets over time)
   const isImprovingTrend = () => {
-    if (!chartData || chartData.length < 3) return false;
+    if (!chartData || chartData.length < 3) {
+      console.log('DebtToAssets - Trend check: insufficient data', { dataLength: chartData?.length || 0 });
+      return false;
+    }
     const firstThird = chartData.slice(0, Math.ceil(chartData.length / 3));
     const lastThird = chartData.slice(-Math.ceil(chartData.length / 3));
     const avgFirst = firstThird.reduce((sum, d) => sum + d.value, 0) / firstThird.length;
     const avgLast = lastThird.reduce((sum, d) => sum + d.value, 0) / lastThird.length;
-    return avgLast < avgFirst; // Lower is better for debt/assets
+    const improving = avgLast < avgFirst; // Lower is better for debt/assets
+    
+    console.log('DebtToAssets - Trend analysis:', {
+      chartDataLength: chartData.length,
+      firstThirdYears: firstThird.map(d => d.year),
+      lastThirdYears: lastThird.map(d => d.year),
+      avgFirst: avgFirst.toFixed(2),
+      avgLast: avgLast.toFixed(2),
+      difference: (avgLast - avgFirst).toFixed(2),
+      improving,
+      interpretation: improving ? 'sinkend (gut)' : 'steigend/stabil (schlecht)'
+    });
+    
+    return improving;
   };
 
   const trendImproving = isImprovingTrend();
 
   // Score calculation based on Debt/Assets value and trend
   const getScore = (value: number | null): { score: number; maxScore: number } => {
-    if (value === null) return { score: 0, maxScore: 3 };
+    console.log('DebtToAssets - Score calculation start:', {
+      value,
+      displayLabel,
+      trendImproving,
+      chartDataLength: chartData.length
+    });
+    
+    if (value === null) {
+      console.log('DebtToAssets - No value, returning 0/3');
+      return { score: 0, maxScore: 3 };
+    }
     
     let baseScore = 0;
-    // Base scoring: <40% = strong, 40-50% = ok, >50% = risk
+    let scoreReason = '';
+    
+    // Base scoring: <40% = 3 points (strong), 40-50% = 2 points (ok), >50% = 1 point (risk)
     if (value < 40) {
-      baseScore = 2;
+      baseScore = 3;
+      scoreReason = '< 40% (stark)';
     } else if (value < 50) {
+      baseScore = 2;
+      scoreReason = '40-50% (ok)';
+    } else if (value < 60) {
       baseScore = 1;
+      scoreReason = '50-60% (risikoreich)';
     } else {
       baseScore = 0;
+      scoreReason = '≥ 60% (sehr risikoreich)';
     }
     
-    // Add bonus point for improving trend
-    if (trendImproving && chartData.length >= 3) {
-      baseScore += 1;
-    }
+    console.log('DebtToAssets - Final score:', {
+      value: value.toFixed(2) + '%',
+      baseScore,
+      scoreReason,
+      maxScore: 3,
+      trendNote: trendImproving ? 'Trend verbessert sich' : 'Trend verschlechtert sich oder stabil'
+    });
     
     return { score: baseScore, maxScore: 3 };
   };
@@ -116,11 +168,12 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
   const scoringTooltip = (
     <div className="space-y-1">
       <p className="font-medium text-sm">Bewertung (0-3 Punkte):</p>
-      <p className="text-sm"><span className="text-green-600">●</span> Grün (stark): &lt; 40%</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> Gelb (ok): 40-50%</p>
-      <p className="text-sm"><span className="text-red-600">●</span> Rot (risikoreich): &gt; 50%</p>
+      <p className="text-sm"><span className="text-green-600">●</span> 3 Punkte: &lt; 40% (stark)</p>
+      <p className="text-sm"><span className="text-yellow-600">●</span> 2 Punkte: 40-50% (ok)</p>
+      <p className="text-sm"><span className="text-orange-600">●</span> 1 Punkt: 50-60% (risikoreich)</p>
+      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: ≥ 60% (sehr risikoreich)</p>
       <p className="text-xs text-muted-foreground mt-2">
-        +1 Bonuspunkt für sinkenden/stabilen Trend über Zeit
+        Sinkender Trend = gut, steigender Trend = Warnsignal
       </p>
     </div>
   );
