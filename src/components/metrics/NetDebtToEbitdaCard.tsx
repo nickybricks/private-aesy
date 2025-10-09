@@ -3,13 +3,15 @@ import { Card } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
+import { IndustryPreset, INDUSTRY_PRESETS, getScoreFromThresholds } from '@/types/industryScoring';
 
 interface NetDebtToEbitdaCardProps {
   currentValue: number | null;
   historicalData?: Array<{ year: string; value: number }>;
+  industry?: IndustryPreset;
 }
 
-export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ currentValue, historicalData }) => {
+export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ currentValue, historicalData, industry = 'default' }) => {
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -89,7 +91,8 @@ export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ curren
       value: value?.toFixed(2),
       displayLabel,
       trendImproving,
-      chartDataLength: chartData.length
+      chartDataLength: chartData.length,
+      industry
     });
     
     if (value === null) {
@@ -97,37 +100,21 @@ export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ curren
       return { score: 0, maxScore: 6 };
     }
     
-    let baseScore = 0;
-    let scoreReason = '';
-    
     // Special case: Net Cash (negative or zero net debt)
     if (value <= 0) {
-      baseScore = 6;
-      scoreReason = 'Net Cash (sehr solide)';
+      console.log('NetDebtToEbitda - Net Cash, returning 6/6');
+      return { score: 6, maxScore: 6 };
     }
-    // Scoring: ≤1.0 = 6 points, >1.0-1.5 = 5 points, >1.5-2.0 = 4 points, >2.0-3.0 = 2 points, >3.0 = 0 points
-    else if (value <= 1.0) {
-      baseScore = 6;
-      scoreReason = '≤ 1.0× (sehr stark)';
-    } else if (value <= 1.5) {
-      baseScore = 5;
-      scoreReason = '> 1.0-1.5× (stark)';
-    } else if (value <= 2.0) {
-      baseScore = 4;
-      scoreReason = '> 1.5-2.0× (ok)';
-    } else if (value <= 3.0) {
-      baseScore = 2;
-      scoreReason = '> 2.0-3.0× (beobachten)';
-    } else {
-      baseScore = 0;
-      scoreReason = '> 3.0× (heikel)';
-    }
+    
+    const config = INDUSTRY_PRESETS[industry].config.netDebtToEbitda;
+    const baseScore = getScoreFromThresholds(value, config.thresholds, config.scores, false);
     
     console.log('NetDebtToEbitda - Final score:', {
       value: value.toFixed(2),
       baseScore,
-      scoreReason,
       maxScore: 6,
+      industry,
+      thresholds: config.thresholds,
       trendNote: trendImproving ? 'Trend verbessert sich' : 'Trend verschlechtert sich oder stabil'
     });
     
@@ -175,19 +162,24 @@ export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ curren
     </div>
   );
 
-  const scoringTooltip = (
-    <div className="space-y-1">
-      <p className="font-medium text-sm">Bewertung (0-6 Punkte):</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 6 Punkte: ≤ 1.0× (sehr stark) oder Net Cash</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 5 Punkte: &gt; 1.0-1.5× (stark)</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 4 Punkte: &gt; 1.5-2.0× (ok)</p>
-      <p className="text-sm"><span className="text-orange-600">●</span> 2 Punkte: &gt; 2.0-3.0× (beobachten)</p>
-      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: &gt; 3.0× (heikel)</p>
-      <p className="text-xs text-muted-foreground mt-2">
-        Sinkender Trend = gut, steigender Trend = Warnsignal
-      </p>
-    </div>
-  );
+  const getScoringTooltip = () => {
+    const config = INDUSTRY_PRESETS[industry].config.netDebtToEbitda;
+    const { thresholds, scores } = config;
+    
+    return (
+      <div className="space-y-1">
+        <p className="font-medium text-sm">Bewertung (0-6 Punkte) - {INDUSTRY_PRESETS[industry].name}:</p>
+        <p className="text-sm"><span className="text-green-600">●</span> {scores[0]} Punkte: ≤ {thresholds[0]}× oder Net Cash</p>
+        <p className="text-sm"><span className="text-green-600">●</span> {scores[1]} Punkte: &gt; {thresholds[0]}-{thresholds[1]}×</p>
+        <p className="text-sm"><span className="text-yellow-600">●</span> {scores[2]} Punkte: &gt; {thresholds[1]}-{thresholds[2]}×</p>
+        <p className="text-sm"><span className="text-orange-600">●</span> {scores[3]} Punkte: &gt; {thresholds[2]}-{thresholds[3]}×</p>
+        <p className="text-sm"><span className="text-red-600">●</span> {scores[4]} Punkte: &gt; {thresholds[3]}×</p>
+        <p className="text-xs text-muted-foreground mt-2">
+          Sinkender Trend = gut, steigender Trend = Warnsignal
+        </p>
+      </div>
+    );
+  };
 
   return (
     <Card className={`p-4 border-2 ${getBgColorByRatio(score, maxScore)}`}>
@@ -232,7 +224,7 @@ export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ curren
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
             <TooltipContent side="right">
-              {scoringTooltip}
+              {getScoringTooltip()}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

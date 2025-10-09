@@ -3,13 +3,15 @@ import { Card } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
+import { IndustryPreset, INDUSTRY_PRESETS, getScoreFromThresholds } from '@/types/industryScoring';
 
 interface CurrentRatioCardProps {
   currentValue: number | null;
   historicalData?: Array<{ year: string; value: number }>;
+  industry?: IndustryPreset;
 }
 
-export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue, historicalData }) => {
+export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue, historicalData, industry = 'default' }) => {
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -89,7 +91,8 @@ export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue
       value: value?.toFixed(2),
       displayLabel,
       trendImproving,
-      chartDataLength: chartData.length
+      chartDataLength: chartData.length,
+      industry
     });
     
     if (value === null) {
@@ -97,29 +100,15 @@ export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue
       return { score: 0, maxScore: 4 };
     }
     
-    let baseScore = 0;
-    let scoreReason = '';
-    
-    // Scoring: ≥2.0 = 4 points, ≥1.5-<2.0 = 3 points, ≥1.2-<1.5 = 1 point, <1.2 = 0 points
-    if (value >= 2.0) {
-      baseScore = 4;
-      scoreReason = '≥ 2.0 (stark)';
-    } else if (value >= 1.5) {
-      baseScore = 3;
-      scoreReason = '≥ 1.5-<2.0 (ok)';
-    } else if (value >= 1.2) {
-      baseScore = 1;
-      scoreReason = '≥ 1.2-<1.5 (beobachten)';
-    } else {
-      baseScore = 0;
-      scoreReason = '< 1.2 (riskant)';
-    }
+    const config = INDUSTRY_PRESETS[industry].config.currentRatio;
+    const baseScore = getScoreFromThresholds(value, config.thresholds, config.scores, true);
     
     console.log('CurrentRatio - Final score:', {
       value: value.toFixed(2),
       baseScore,
-      scoreReason,
       maxScore: 4,
+      industry,
+      thresholds: config.thresholds,
       trendNote: trendImproving ? 'Trend verbessert sich' : 'Trend verschlechtert sich oder stabil'
     });
     
@@ -166,18 +155,23 @@ export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue
     </div>
   );
 
-  const scoringTooltip = (
-    <div className="space-y-1">
-      <p className="font-medium text-sm">Bewertung (0-4 Punkte):</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 4 Punkte: ≥ 2.0 (stark)</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 3 Punkte: ≥ 1.5-&lt;2.0 (ok)</p>
-      <p className="text-sm"><span className="text-orange-600">●</span> 1 Punkt: ≥ 1.2-&lt;1.5 (beobachten)</p>
-      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: &lt; 1.2 (riskant)</p>
-      <p className="text-xs text-muted-foreground mt-2">
-        Steigender Trend = gut, fallender Trend = Warnsignal
-      </p>
-    </div>
-  );
+  const getScoringTooltip = () => {
+    const config = INDUSTRY_PRESETS[industry].config.currentRatio;
+    const { thresholds, scores } = config;
+    
+    return (
+      <div className="space-y-1">
+        <p className="font-medium text-sm">Bewertung (0-4 Punkte) - {INDUSTRY_PRESETS[industry].name}:</p>
+        <p className="text-sm"><span className="text-green-600">●</span> {scores[0]} Punkte: ≥ {thresholds[0]}</p>
+        <p className="text-sm"><span className="text-green-600">●</span> {scores[1]} Punkte: ≥ {thresholds[1]}-&lt;{thresholds[0]}</p>
+        <p className="text-sm"><span className="text-orange-600">●</span> {scores[2]} Punkte: ≥ {thresholds[2]}-&lt;{thresholds[1]}</p>
+        <p className="text-sm"><span className="text-red-600">●</span> {scores[3]} Punkte: &lt; {thresholds[2]}</p>
+        <p className="text-xs text-muted-foreground mt-2">
+          Steigender Trend = gut, fallender Trend = Warnsignal
+        </p>
+      </div>
+    );
+  };
 
   return (
     <Card className={`p-4 border-2 ${getBgColorByRatio(score, maxScore)}`}>
@@ -220,7 +214,7 @@ export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
             <TooltipContent side="right">
-              {scoringTooltip}
+              {getScoringTooltip()}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

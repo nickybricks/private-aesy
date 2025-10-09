@@ -3,13 +3,15 @@ import { Card } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
+import { IndustryPreset, INDUSTRY_PRESETS, getScoreFromThresholds } from '@/types/industryScoring';
 
 interface InterestCoverageCardProps {
   currentValue: number | null;
   historicalData?: Array<{ year: string; value: number }>;
+  industry?: IndustryPreset;
 }
 
-export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ currentValue, historicalData }) => {
+export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ currentValue, historicalData, industry = 'default' }) => {
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -168,19 +170,24 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
     </div>
   );
 
-  const scoringTooltip = (
-    <div className="space-y-1">
-      <p className="font-medium text-sm">Bewertung (0-6 Punkte):</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 6 Punkte: ≥ 12× (exzellent)</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 5 Punkte: ≥ 8-&lt;12× (stark, Buffett-kompatibel)</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 3 Punkte: ≥ 5-&lt;8× (ok, beobachten)</p>
-      <p className="text-sm"><span className="text-orange-600">●</span> 1 Punkt: ≥ 3-&lt;5× (beobachten)</p>
-      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: &lt; 3× (riskant)</p>
-      <p className="text-xs text-muted-foreground mt-2">
-        Steigender Trend = gut, fallender Trend = Warnsignal
-      </p>
-    </div>
-  );
+  const getScoringTooltip = () => {
+    const config = INDUSTRY_PRESETS[industry].config.interestCoverage;
+    const { thresholds, scores } = config;
+    
+    return (
+      <div className="space-y-1">
+        <p className="font-medium text-sm">Bewertung (0-6 Punkte) - {INDUSTRY_PRESETS[industry].name}:</p>
+        <p className="text-sm"><span className="text-green-600">●</span> {scores[0]} Punkte: ≥ {thresholds[0]}×</p>
+        <p className="text-sm"><span className="text-green-600">●</span> {scores[1]} Punkte: ≥ {thresholds[1]}-&lt;{thresholds[0]}×</p>
+        <p className="text-sm"><span className="text-yellow-600">●</span> {scores[2]} Punkte: ≥ {thresholds[2]}-&lt;{thresholds[1]}×</p>
+        <p className="text-sm"><span className="text-orange-600">●</span> {scores[3]} Punkte: ≥ {thresholds[3]}-&lt;{thresholds[2]}×</p>
+        <p className="text-sm"><span className="text-red-600">●</span> {scores[4]} Punkte: &lt; {thresholds[3]}×</p>
+        <p className="text-xs text-muted-foreground mt-2">
+          Steigender Trend = gut, fallender Trend = Warnsignal
+        </p>
+      </div>
+    );
+  };
 
   return (
     <Card className={`p-4 border-2 ${getBgColorByRatio(score, maxScore)}`}>
@@ -223,7 +230,7 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
             <TooltipContent side="right">
-              {scoringTooltip}
+              {getScoringTooltip()}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
