@@ -35,9 +35,6 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
     return 'bg-red-50 border-red-200';
   };
 
-  const score = scoreFromBackend?.score ?? calculateScore(currentValue);
-  const maxScore = scoreFromBackend?.maxScore ?? 1;
-
   // Calculate medians if historical data available
   const calculateMedian = (data: HistoricalDataItem[], years: number): number | null => {
     if (!data || data.length === 0) return null;
@@ -51,6 +48,24 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
   const median10y = historicalData && historicalData.length >= 10 ? calculateMedian(historicalData, 10) : null;
   const median5y = historicalData && historicalData.length >= 5 ? calculateMedian(historicalData, 5) : null;
   const median3y = historicalData && historicalData.length >= 3 ? calculateMedian(historicalData, 3) : null;
+
+  // Determine which value to display (10Y > 5Y > 3Y > current)
+  let displayValue = currentValue;
+  let displayLabel = 'Aktuell';
+
+  if (median10y !== null) {
+    displayValue = median10y;
+    displayLabel = '10-Jahres-Median';
+  } else if (median5y !== null) {
+    displayValue = median5y;
+    displayLabel = '5-Jahres-Median';
+  } else if (median3y !== null) {
+    displayValue = median3y;
+    displayLabel = '3-Jahres-Median';
+  }
+
+  const score = scoreFromBackend?.score ?? calculateScore(displayValue);
+  const maxScore = scoreFromBackend?.maxScore ?? 1;
 
   // Prepare chart data
   const chartData = historicalData?.map(item => ({
@@ -158,45 +173,24 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
             </ClickableTooltip>
           </div>
           <div className="text-right">
-            <div className={`text-2xl font-bold ${getScoreColor(currentValue)}`}>
-              {currentValue !== null ? `${currentValue.toFixed(1)}%` : 'N/A'}
+            <div className={`text-2xl font-bold ${getScoreColor(displayValue)}`}>
+              {displayValue !== null ? `${displayValue.toFixed(1)}%` : 'N/A'}
             </div>
-            <div className="text-sm text-muted-foreground mt-1">
-              {score}/{maxScore} Punkt{maxScore !== 1 ? 'e' : ''}
-            </div>
+            <div className="text-xs text-muted-foreground">{displayLabel}</div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
+        {/* Score indicator */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="text-sm font-medium">Bewertung:</div>
+          <div className={`px-2 py-1 rounded text-sm font-semibold ${getScoreColor(displayValue)}`}>
+            {score}/{maxScore} Punkt{maxScore !== 1 ? 'e' : ''}
+          </div>
+        </div>
+
         {historicalData && historicalData.length > 0 ? (
           <>
-            {/* Medians */}
-            <div className="mb-4 grid grid-cols-3 gap-2 text-sm">
-              {median10y !== null && (
-                <div className="text-center">
-                  <div className="text-muted-foreground text-xs">10J Median</div>
-                  <div className={`font-semibold ${getScoreColor(median10y)}`}>
-                    {median10y.toFixed(1)}%
-                  </div>
-                </div>
-              )}
-              {median5y !== null && (
-                <div className="text-center">
-                  <div className="text-muted-foreground text-xs">5J Median</div>
-                  <div className={`font-semibold ${getScoreColor(median5y)}`}>
-                    {median5y.toFixed(1)}%
-                  </div>
-                </div>
-              )}
-              {median3y !== null && (
-                <div className="text-center">
-                  <div className="text-muted-foreground text-xs">3J Median</div>
-                  <div className={`font-semibold ${getScoreColor(median3y)}`}>
-                    {median3y.toFixed(1)}%
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Chart */}
             <ResponsiveContainer width="100%" height={200}>
