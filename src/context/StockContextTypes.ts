@@ -28,6 +28,8 @@ export interface FinancialMetricsData {
   roic?: any;
   debtToAssets?: any;
   interestCoverage?: any;
+  netDebtToEbitda?: any;
+  currentRatio?: any;
   reportedCurrency?: string;
   metrics?: Array<{
     name: string;

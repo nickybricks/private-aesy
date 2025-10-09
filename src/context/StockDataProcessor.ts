@@ -55,6 +55,8 @@ export const processFinancialMetrics = (rawData: any, reportedCurrency: string, 
     roa: rawData.roa ?? null,
     debtToAssets: rawData.debtToAssets ?? null,
     interestCoverage: rawData.interestCoverage ?? null,
+    netDebtToEbitda: rawData.netDebtToEbitda ?? null,
+    currentRatio: rawData.currentRatio ?? null,
     wacc: rawData.wacc, // already in % from API layer
 
     metrics: processedMetrics,

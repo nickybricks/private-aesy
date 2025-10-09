@@ -266,13 +266,13 @@ const IndexContent: React.FC = () => {
                         scoreFromBackend={financialStrengthScores?.scores?.interestCoverage}
                       />
                       <CurrentRatioCard 
-                        currentValue={financialMetrics?.metrics?.find(m => m.name === 'Current Ratio')?.value ?? null}
+                        currentValue={financialMetrics?.currentRatio ?? financialMetrics?.metrics?.find(m => m.name === 'Current Ratio')?.value ?? null}
                         historicalData={financialMetrics?.historicalData?.currentRatio}
                         preset={financialStrengthScores?.preset}
                         scoreFromBackend={financialStrengthScores?.scores?.currentRatio}
                       />
                       <NetDebtToEbitdaCard 
-                        currentValue={financialMetrics?.metrics?.find(m => m.name === 'Net Debt to EBITDA')?.value ?? null}
+                        currentValue={financialMetrics?.netDebtToEbitda ?? financialMetrics?.metrics?.find(m => m.name === 'Net Debt to EBITDA')?.value ?? null}
                         historicalData={financialMetrics?.historicalData?.netDebtToEbitda}
                         preset={financialStrengthScores?.preset}
                         scoreFromBackend={financialStrengthScores?.scores?.netDebtToEbitda}

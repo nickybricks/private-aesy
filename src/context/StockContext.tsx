@@ -266,16 +266,34 @@ export function StockProvider({ children }: StockProviderProps) {
       if (info && info.industry && metricsData && !criticalDataMissing) {
         console.log('🎯 Calculating financial strength scores for industry:', info.industry);
         
-        // Get metric values - handle both formats
-        const netDebtToEbitda = metricsData.metrics?.find(m => m.name === 'Net Debt to EBITDA')?.value ?? null;
-        const currentRatio = metricsData.metrics?.find(m => m.name === 'Current Ratio')?.value ?? null;
+        // Get metric values - try direct field first, then metrics array
+        const netDebtToEbitda = metricsData.netDebtToEbitda ?? 
+          metricsData.metrics?.find(m => m.name === 'Net Debt to EBITDA')?.value ?? 
+          null;
+        const currentRatio = metricsData.currentRatio ?? 
+          metricsData.metrics?.find(m => m.name === 'Current Ratio')?.value ?? 
+          null;
+        
+        // Convert debtToAssets from decimal to percentage if needed
+        let debtToAssetsValue = metricsData.debtToAssets;
+        if (debtToAssetsValue !== null && debtToAssetsValue < 1) {
+          // If value is less than 1, it's likely a decimal (e.g., 0.0565 = 5.65%)
+          debtToAssetsValue = debtToAssetsValue * 100;
+        }
+        
+        console.log('📊 Sending to financial strength scoring:', {
+          netDebtToEbitda,
+          interestCoverage: metricsData.interestCoverage,
+          debtToAssets: debtToAssetsValue,
+          currentRatio
+        });
         
         supabase.functions.invoke('calculate-financial-strength-scores', {
           body: {
             industry: info.industry,
             netDebtToEbitda,
             interestCoverage: metricsData.interestCoverage,
-            debtToAssets: metricsData.debtToAssets,
+            debtToAssets: debtToAssetsValue,
             currentRatio,
           }
         })
