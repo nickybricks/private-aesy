@@ -258,6 +258,54 @@ function scoreSoftwareROA(value: number | null): number {
   return 0;
 }
 
+// Industrials/Capital Goods scoring functions
+function scoreIndustrialsROIC(roic: number | null, spread: number | null): number {
+  if (roic === null) return 0;
+  if (roic >= 14 && spread !== null && spread >= 5) return 5;
+  if (roic >= 12 && spread !== null && spread >= 3) return 4;
+  if (roic >= 10 && spread !== null && spread > 0) return 3;
+  if (roic >= 8) return 1;
+  return 0;
+}
+
+function scoreIndustrialsOperatingMargin(value: number | null): number {
+  if (value === null) return 0;
+  if (value >= 16) return 4;
+  if (value >= 12) return 3;
+  if (value >= 9) return 2;
+  if (value >= 6) return 1;
+  return 0;
+}
+
+function scoreIndustrialsNetMargin(value: number | null): number {
+  if (value === null) return 0;
+  if (value >= 10) return 2;
+  if (value >= 7) return 1;
+  return 0;
+}
+
+function scoreIndustrialsYears(years: number): number {
+  if (years === 10) return 4;
+  if (years === 9) return 3;
+  if (years === 8) return 2;
+  if (years === 7) return 1;
+  return 0;
+}
+
+function scoreIndustrialsROE(value: number | null): number {
+  if (value === null) return 0;
+  if (value >= 14) return 3;
+  if (value >= 9) return 2;
+  return 0;
+}
+
+function scoreIndustrialsROA(value: number | null): number {
+  if (value === null) return 0;
+  if (value >= 7) return 2;
+  if (value >= 5) return 1;
+  return 0;
+}
+
 // Get scoring logic based on preset
 function getScoringLogic(preset: string) {
   const baseLogic = {
@@ -307,6 +355,51 @@ function getScoringLogic(preset: string) {
           roa: [
             { min: 10, score: 2 },
             { min: 8, score: 1 }
+          ]
+        }
+      };
+    
+    case "Industrials":
+      return {
+        ...baseLogic,
+        weights: {
+          roic: 5,
+          operatingMargin: 4,
+          years: 4,
+          netMargin: 2,
+          roe: 3,
+          roa: 2
+        },
+        thresholds: {
+          roic: [
+            { min: 14, spread: 5, score: 5 },
+            { min: 12, spread: 3, score: 4 },
+            { min: 10, spread: 0, score: 3 },
+            { min: 8, score: 1 }
+          ],
+          operatingMargin: [
+            { min: 16, score: 4 },
+            { min: 12, score: 3 },
+            { min: 9, score: 2 },
+            { min: 6, score: 1 }
+          ],
+          netMargin: [
+            { min: 10, score: 2 },
+            { min: 7, score: 1 }
+          ],
+          years: [
+            { value: 10, score: 4 },
+            { value: 9, score: 3 },
+            { value: 8, score: 2 },
+            { value: 7, score: 1 }
+          ],
+          roe: [
+            { min: 14, score: 3 },
+            { min: 9, score: 2 }
+          ],
+          roa: [
+            { min: 7, score: 2 },
+            { min: 5, score: 1 }
           ]
         }
       };

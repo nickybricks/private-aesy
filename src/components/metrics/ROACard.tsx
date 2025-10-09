@@ -12,9 +12,17 @@ interface ROACardProps {
 
 export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData }) => {
   // Calculate score based on ROA value
-  // Software/Media preset: max 2 points
-  const calculateScore = (value: number | null): number => {
+  const calculateScore = (value: number | null, preset: string = 'Software'): number => {
     if (value === null) return 0;
+    
+    // Industrials preset: max 2 points
+    if (preset === 'Industrials') {
+      if (value >= 7) return 2;
+      if (value >= 5) return 1;
+      return 0;
+    }
+    
+    // Software/Media preset: max 2 points (default)
     if (value >= 10) return 2;
     if (value >= 8) return 1;
     return 0;
@@ -87,11 +95,19 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData }
       </div>
 
       <div>
-        <div className="font-semibold mb-1">Punktelogik (Software/Media):</div>
+        <div className="font-semibold mb-1">Punktelogik Software/Media:</div>
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
           <li><strong>≥ 10 %</strong> → <strong>2 Punkte</strong></li>
           <li><strong>8-&lt;10 %</strong> → <strong>1 Punkt</strong></li>
           <li><strong>&lt; 8 %</strong> → <strong>0 Punkte</strong></li>
+        </ul>
+      </div>
+      <div>
+        <div className="font-semibold mb-1">Punktelogik Industrials:</div>
+        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+          <li><strong>≥ 7 %</strong> → <strong>2 Punkte</strong></li>
+          <li><strong>5-&lt;7 %</strong> → <strong>1 Punkt</strong></li>
+          <li><strong>&lt; 5 %</strong> → <strong>0 Punkte</strong></li>
         </ul>
         <p className="text-muted-foreground text-xs mt-2">
           <em>Hinweis: Für andere Sektoren gelten angepasste Schwellenwerte.</em>

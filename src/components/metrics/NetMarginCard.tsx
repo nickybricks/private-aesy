@@ -41,9 +41,17 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
   }
 
   // Score calculation based on Net Margin value
-  // Software/Media preset
-  const getScore = (value: number | null): number => {
+  const getScore = (value: number | null, preset: string = 'Software'): number => {
     if (value === null) return 0;
+    
+    // Industrials preset
+    if (preset === 'Industrials') {
+      if (value >= 10) return 2;
+      if (value >= 7) return 1;
+      return 0;
+    }
+    
+    // Software/Media preset (default)
     if (value >= 18) return 3;
     if (value >= 14) return 2;
     if (value >= 10) return 1;
@@ -99,12 +107,21 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
         </p>
       </div>
       <div className="space-y-1">
-        <p className="font-medium text-sm">Punktelogik (Software/Media):</p>
+        <p className="font-medium text-sm">Punktelogik Software/Media:</p>
         <ul className="text-sm space-y-1 list-disc list-inside">
           <li>≥18% → 3 Punkte</li>
           <li>14-&lt;18% → 2 Punkte</li>
           <li>10-&lt;14% → 1 Punkt</li>
           <li>&lt;10% → 0 Punkte</li>
+        </ul>
+      </div>
+
+      <div className="space-y-1">
+        <p className="font-medium text-sm">Punktelogik Industrials:</p>
+        <ul className="text-sm space-y-1 list-disc list-inside">
+          <li>≥10% → 2 Punkte</li>
+          <li>7-&lt;10% → 1 Punkt</li>
+          <li>&lt;7% → 0 Punkte</li>
         </ul>
         <p className="text-xs text-muted-foreground italic mt-2">
           Hinweis: Für andere Sektoren gelten angepasste Schwellenwerte.

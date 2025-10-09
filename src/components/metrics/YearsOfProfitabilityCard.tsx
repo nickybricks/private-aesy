@@ -17,16 +17,26 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
   const totalYears = historicalNetIncome.length;
   
   // Calculate score based on profitable years
-  // Software/Media preset: max 3 points
-  const calculateScore = (years: number): number => {
+  const calculateScore = (years: number, preset: string = 'Software'): number => {
+    // Industrials preset: max 4 points
+    if (preset === 'Industrials') {
+      if (years === 10) return 4;
+      if (years === 9) return 3;
+      if (years === 8) return 2;
+      if (years === 7) return 1;
+      return 0;
+    }
+    
+    // Software/Media preset: max 3 points (default)
     if (years === 10) return 3;
     if (years === 9) return 2;
     if (years === 8) return 1;
     return 0;
   };
   
-  const score = calculateScore(profitableYears);
-  const maxScore = 3;
+  const preset: string = 'Software'; // TODO: Get from context
+  const score = calculateScore(profitableYears, preset);
+  const maxScore = preset === 'Industrials' ? 4 : 3;
   
   // Determine color based on score
   const getScoreColor = (score: number): string => {
@@ -96,12 +106,22 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
                     </ul>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-semibold">Punktelogik (Software/Media):</p>
+                    <p className="font-semibold">Punktelogik Software/Media:</p>
                     <ul className="list-disc pl-5 space-y-1">
                       <li>10/10 Jahre → 3 Punkte</li>
                       <li>9/10 Jahre → 2 Punkte</li>
                       <li>8/10 Jahre → 1 Punkt</li>
                       <li>≤7/10 Jahre → 0 Punkte</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-semibold">Punktelogik Industrials:</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>10/10 Jahre → 4 Punkte</li>
+                      <li>9/10 Jahre → 3 Punkte</li>
+                      <li>8/10 Jahre → 2 Punkte</li>
+                      <li>7/10 Jahre → 1 Punkt</li>
+                      <li>≤6/10 Jahre → 0 Punkte</li>
                     </ul>
                     <p className="text-xs text-muted-foreground italic mt-2">
                       Hinweis: Für andere Sektoren gelten angepasste Schwellenwerte.

@@ -40,11 +40,20 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({ curren
     chartData = last3Years;
   }
 
-  // Score calculation based on Operating Margin value (0-4 points)
-  // Software/Media preset
-  const getScore = (value: number | null): number => {
+  // Score calculation based on Operating Margin value
+  const getScore = (value: number | null, preset: string = 'Software'): number => {
     if (value === null) return 0;
     
+    // Industrials preset
+    if (preset === 'Industrials') {
+      if (value >= 16) return 4;
+      if (value >= 12) return 3;
+      if (value >= 9) return 2;
+      if (value >= 6) return 1;
+      return 0;
+    }
+    
+    // Software/Media preset (default)
     if (value >= 22) return 4;
     if (value >= 18) return 3;
     if (value >= 14) return 2;
@@ -92,13 +101,24 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({ curren
       </div>
 
       <div className="space-y-1">
-        <p className="font-medium text-sm">Punktelogik (Software/Media):</p>
+        <p className="font-medium text-sm">Punktelogik Software/Media:</p>
         <ul className="text-sm space-y-1 list-disc list-inside">
           <li>≥22% → 4 Punkte</li>
           <li>18-&lt;22% → 3 Punkte</li>
           <li>14-&lt;18% → 2 Punkte</li>
           <li>10-&lt;14% → 1 Punkt</li>
           <li>&lt;10% → 0 Punkte</li>
+        </ul>
+      </div>
+
+      <div className="space-y-1">
+        <p className="font-medium text-sm">Punktelogik Industrials:</p>
+        <ul className="text-sm space-y-1 list-disc list-inside">
+          <li>≥16% → 4 Punkte</li>
+          <li>12-&lt;16% → 3 Punkte</li>
+          <li>9-&lt;12% → 2 Punkte</li>
+          <li>6-&lt;9% → 1 Punkt</li>
+          <li>&lt;6% → 0 Punkte</li>
         </ul>
       </div>
 

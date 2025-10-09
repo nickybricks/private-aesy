@@ -50,31 +50,31 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
     ? displayValue - wacc 
     : null;
 
-  // Score calculation based on ROIC value and WACC spread (0-6 points)
-  // Software/Media preset
-  const getScore = (value: number | null, waccValue?: number): number => {
+  // Score calculation based on ROIC value and WACC spread
+  const getScore = (value: number | null, waccValue?: number, preset: string = 'Software'): number => {
     if (value === null) return 0;
     
-    // If WACC is available, use the full logic
-    if (waccValue !== null && waccValue !== undefined) {
-      const spread = value - waccValue;
-      
-      // ≥ 18% und Spread ≥ 8 pp → 6
-      if (value >= 18 && spread >= 8) return 6;
-      
-      // ≥ 15% und Spread ≥ 5 pp → 5
-      if (value >= 15 && spread >= 5) return 5;
-      
-      // ≥ 12% und ROIC > WACC → 4
-      if (value >= 12 && spread > 0) return 4;
-      
-      // ≥ 9% → 2
-      if (value >= 9) return 2;
-      
+    const spread = (waccValue !== null && waccValue !== undefined) ? value - waccValue : null;
+    
+    // Industrials preset
+    if (preset === 'Industrials') {
+      if (value >= 14 && spread !== null && spread >= 5) return 5;
+      if (value >= 12 && spread !== null && spread >= 3) return 4;
+      if (value >= 10 && spread !== null && spread > 0) return 3;
+      if (value >= 8) return 1;
       return 0;
     }
     
-    // Fallback if WACC not available - use simplified scoring
+    // Software/Media preset (default)
+    if (waccValue !== null && waccValue !== undefined && spread !== null) {
+      if (value >= 18 && spread >= 8) return 6;
+      if (value >= 15 && spread >= 5) return 5;
+      if (value >= 12 && spread > 0) return 4;
+      if (value >= 9) return 2;
+      return 0;
+    }
+    
+    // Fallback if WACC not available
     if (value >= 18) return 6;
     if (value >= 15) return 5;
     if (value >= 12) return 4;
@@ -126,12 +126,23 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
       </div>
 
       <div className="space-y-1">
-        <p className="font-medium text-sm">Punktelogik (Software/Media):</p>
+        <p className="font-medium text-sm">Punktelogik Software/Media:</p>
         <ul className="text-sm space-y-1 list-disc list-inside">
           <li>≥18% & Spread≥8pp → 6 Punkte</li>
           <li>≥15% & Spread≥5pp → 5 Punkte</li>
           <li>≥12% & &gt;WACC → 4 Punkte</li>
           <li>≥9% → 2 Punkte</li>
+          <li>sonst → 0 Punkte</li>
+        </ul>
+      </div>
+
+      <div className="space-y-1">
+        <p className="font-medium text-sm">Punktelogik Industrials:</p>
+        <ul className="text-sm space-y-1 list-disc list-inside">
+          <li>≥14% & Spread≥5pp → 5 Punkte</li>
+          <li>≥12% & Spread≥3pp → 4 Punkte</li>
+          <li>≥10% & &gt;WACC → 3 Punkte</li>
+          <li>≥8% → 1 Punkt</li>
           <li>sonst → 0 Punkte</li>
         </ul>
         <p className="text-xs text-muted-foreground italic mt-2">
