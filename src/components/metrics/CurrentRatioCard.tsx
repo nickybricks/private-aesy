@@ -4,12 +4,19 @@ import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
 
+interface ScoreResult {
+  score: number;
+  maxScore: number;
+}
+
 interface CurrentRatioCardProps {
   currentValue: number | null;
   historicalData?: Array<{ year: string; value: number }>;
+  preset?: string;
+  scoreFromBackend?: ScoreResult;
 }
 
-export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue, historicalData }) => {
+export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue, historicalData, preset, scoreFromBackend }) => {
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -85,6 +92,13 @@ export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue
 
   // Score calculation based on Current Ratio value
   const getScore = (value: number | null): { score: number; maxScore: number } => {
+    // Use backend score if available
+    if (scoreFromBackend) {
+      console.log('CurrentRatio - Using backend score:', scoreFromBackend);
+      return scoreFromBackend;
+    }
+
+    // Fallback to default scoring
     console.log('CurrentRatio - Score calculation start:', {
       value: value?.toFixed(2),
       displayLabel,
@@ -168,6 +182,11 @@ export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue
 
   const scoringTooltip = (
     <div className="space-y-1">
+      {preset && (
+        <p className="text-xs text-muted-foreground mb-1">
+          Branche: <strong>{preset}</strong>
+        </p>
+      )}
       <p className="font-medium text-sm">Bewertung (0-4 Punkte):</p>
       <p className="text-sm"><span className="text-green-600">●</span> 4 Punkte: ≥ 2.0 (stark)</p>
       <p className="text-sm"><span className="text-yellow-600">●</span> 3 Punkte: ≥ 1.5-&lt;2.0 (ok)</p>

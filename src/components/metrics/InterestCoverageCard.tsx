@@ -4,12 +4,19 @@ import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
 
+interface ScoreResult {
+  score: number;
+  maxScore: number;
+}
+
 interface InterestCoverageCardProps {
   currentValue: number | null;
   historicalData?: Array<{ year: string; value: number }>;
+  preset?: string;
+  scoreFromBackend?: ScoreResult;
 }
 
-export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ currentValue, historicalData }) => {
+export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ currentValue, historicalData, preset, scoreFromBackend }) => {
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -85,6 +92,13 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
 
   // Score calculation based on Interest Coverage value
   const getScore = (value: number | null): { score: number; maxScore: number } => {
+    // Use backend score if available
+    if (scoreFromBackend) {
+      console.log('InterestCoverage - Using backend score:', scoreFromBackend);
+      return scoreFromBackend;
+    }
+
+    // Fallback to default scoring
     console.log('InterestCoverage - Score calculation start:', {
       value: value?.toFixed(2),
       displayLabel,
@@ -170,6 +184,11 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
 
   const scoringTooltip = (
     <div className="space-y-1">
+      {preset && (
+        <p className="text-xs text-muted-foreground mb-1">
+          Branche: <strong>{preset}</strong>
+        </p>
+      )}
       <p className="font-medium text-sm">Bewertung (0-6 Punkte):</p>
       <p className="text-sm"><span className="text-green-600">●</span> 6 Punkte: ≥ 12× (exzellent)</p>
       <p className="text-sm"><span className="text-green-600">●</span> 5 Punkte: ≥ 8-&lt;12× (stark, Buffett-kompatibel)</p>

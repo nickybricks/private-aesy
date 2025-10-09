@@ -141,6 +141,18 @@ export interface ProfitabilityScores {
   maxTotalScore: number;
 }
 
+export interface FinancialStrengthScores {
+  preset: string;
+  scores: {
+    netDebtToEbitda: ScoreResult;
+    interestCoverage: ScoreResult;
+    debtToAssets: ScoreResult;
+    currentRatio: ScoreResult;
+  };
+  totalScore: number;
+  maxTotalScore: number;
+}
+
 export interface StockContextType {
   isLoading: boolean;
   loadingProgress: number;
@@ -161,6 +173,7 @@ export interface StockContextType {
   pressReleases: NewsItem[];
   deepResearchPerformed: boolean;
   profitabilityScores: ProfitabilityScores | null;
+  financialStrengthScores: FinancialStrengthScores | null;
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string, enableDeepResearch?: boolean) => Promise<void>;

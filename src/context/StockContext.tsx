@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem, ValuationData, ProfitabilityScores } from './StockContextTypes';
+import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem, ValuationData, ProfitabilityScores, FinancialStrengthScores } from './StockContextTypes';
 import { PredictabilityResult } from '@/services/PredictabilityStarsService';
 import { useStockSearch } from './StockSearchService';
 import { fetchStockNews, fetchPressReleases } from '@/api/stockApi';
@@ -47,6 +47,7 @@ export function StockProvider({ children }: StockProviderProps) {
   const [valuationData, setValuationData] = useState<ValuationData | undefined>(undefined);
   const [deepResearchPerformed, setDeepResearchPerformed] = useState(false);
   const [profitabilityScores, setProfitabilityScores] = useState<ProfitabilityScores | null>(null);
+  const [financialStrengthScores, setFinancialStrengthScores] = useState<FinancialStrengthScores | null>(null);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
@@ -260,6 +261,36 @@ export function StockProvider({ children }: StockProviderProps) {
             console.error('Error calling profitability scores function:', err);
           });
       }
+
+      // Calculate financial strength scores based on industry
+      if (info && info.industry && metricsData && !criticalDataMissing) {
+        console.log('🎯 Calculating financial strength scores for industry:', info.industry);
+        
+        // Get metric values - handle both formats
+        const netDebtToEbitda = metricsData.metrics?.find(m => m.name === 'Net Debt to EBITDA')?.value ?? null;
+        const currentRatio = metricsData.metrics?.find(m => m.name === 'Current Ratio')?.value ?? null;
+        
+        supabase.functions.invoke('calculate-financial-strength-scores', {
+          body: {
+            industry: info.industry,
+            netDebtToEbitda,
+            interestCoverage: metricsData.interestCoverage,
+            debtToAssets: metricsData.debtToAssets,
+            currentRatio,
+          }
+        })
+          .then(({ data, error }) => {
+            if (error) {
+              console.error('Error calculating financial strength scores:', error);
+              return;
+            }
+            console.log('✅ Financial strength scores calculated:', data);
+            setFinancialStrengthScores(data);
+          })
+          .catch((err) => {
+            console.error('Error calling financial strength scores function:', err);
+          });
+      }
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
@@ -318,6 +349,7 @@ export function StockProvider({ children }: StockProviderProps) {
       pressReleases,
       deepResearchPerformed,
       profitabilityScores,
+      financialStrengthScores,
       setActiveTab,
       setLoadingProgress,
       handleSearch,

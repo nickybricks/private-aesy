@@ -47,7 +47,8 @@ const IndexContent: React.FC = () => {
     newsItems,
     pressReleases,
     financialMetrics,
-    profitabilityScores
+    profitabilityScores,
+    financialStrengthScores
   } = useStock();
   const { analyses, loading: analysesLoading } = useSavedAnalyses();
   const { toast } = useToast();
@@ -255,18 +256,26 @@ const IndexContent: React.FC = () => {
                       <DebtToAssetsCard 
                         currentValue={financialMetrics?.debtToAssets ?? null}
                         historicalData={financialMetrics?.historicalData?.debtToAssets}
+                        preset={financialStrengthScores?.preset}
+                        scoreFromBackend={financialStrengthScores?.scores?.debtToAssets}
                       />
                       <InterestCoverageCard 
                         currentValue={financialMetrics?.interestCoverage ?? null}
                         historicalData={financialMetrics?.historicalData?.interestCoverage}
+                        preset={financialStrengthScores?.preset}
+                        scoreFromBackend={financialStrengthScores?.scores?.interestCoverage}
                       />
                       <CurrentRatioCard 
                         currentValue={financialMetrics?.metrics?.find(m => m.name === 'Current Ratio')?.value ?? null}
                         historicalData={financialMetrics?.historicalData?.currentRatio}
+                        preset={financialStrengthScores?.preset}
+                        scoreFromBackend={financialStrengthScores?.scores?.currentRatio}
                       />
                       <NetDebtToEbitdaCard 
                         currentValue={financialMetrics?.metrics?.find(m => m.name === 'Net Debt to EBITDA')?.value ?? null}
                         historicalData={financialMetrics?.historicalData?.netDebtToEbitda}
+                        preset={financialStrengthScores?.preset}
+                        scoreFromBackend={financialStrengthScores?.scores?.netDebtToEbitda}
                       />
                     </div>
                   </TabsContent>

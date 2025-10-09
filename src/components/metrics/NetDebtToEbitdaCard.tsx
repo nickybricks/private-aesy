@@ -4,12 +4,19 @@ import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
 
+interface ScoreResult {
+  score: number;
+  maxScore: number;
+}
+
 interface NetDebtToEbitdaCardProps {
   currentValue: number | null;
   historicalData?: Array<{ year: string; value: number }>;
+  preset?: string;
+  scoreFromBackend?: ScoreResult;
 }
 
-export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ currentValue, historicalData }) => {
+export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ currentValue, historicalData, preset, scoreFromBackend }) => {
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -85,6 +92,13 @@ export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ curren
 
   // Score calculation based on Net Debt/EBITDA value
   const getScore = (value: number | null): { score: number; maxScore: number } => {
+    // Use backend score if available
+    if (scoreFromBackend) {
+      console.log('NetDebtToEbitda - Using backend score:', scoreFromBackend);
+      return scoreFromBackend;
+    }
+
+    // Fallback to default scoring
     console.log('NetDebtToEbitda - Score calculation start:', {
       value: value?.toFixed(2),
       displayLabel,
@@ -177,6 +191,11 @@ export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ curren
 
   const scoringTooltip = (
     <div className="space-y-1">
+      {preset && (
+        <p className="text-xs text-muted-foreground mb-1">
+          Branche: <strong>{preset}</strong>
+        </p>
+      )}
       <p className="font-medium text-sm">Bewertung (0-6 Punkte):</p>
       <p className="text-sm"><span className="text-green-600">●</span> 6 Punkte: ≤ 1.0× (sehr stark) oder Net Cash</p>
       <p className="text-sm"><span className="text-green-600">●</span> 5 Punkte: &gt; 1.0-1.5× (stark)</p>

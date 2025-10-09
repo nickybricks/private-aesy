@@ -4,12 +4,19 @@ import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
 
+interface ScoreResult {
+  score: number;
+  maxScore: number;
+}
+
 interface DebtToAssetsCardProps {
   currentValue: number | null;
   historicalData?: Array<{ year: string; value: number }>;
+  preset?: string;
+  scoreFromBackend?: ScoreResult;
 }
 
-export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue, historicalData }) => {
+export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue, historicalData, preset, scoreFromBackend }) => {
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -85,6 +92,13 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
 
   // Score calculation based on Debt/Assets value and trend
   const getScore = (value: number | null): { score: number; maxScore: number } => {
+    // Use backend score if available
+    if (scoreFromBackend) {
+      console.log('DebtToAssets - Using backend score:', scoreFromBackend);
+      return scoreFromBackend;
+    }
+
+    // Fallback to default scoring
     console.log('DebtToAssets - Score calculation start:', {
       value,
       displayLabel,
@@ -93,19 +107,19 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
     });
     
     if (value === null) {
-      console.log('DebtToAssets - No value, returning 0/3');
-      return { score: 0, maxScore: 3 };
+      console.log('DebtToAssets - No value, returning 0/4');
+      return { score: 0, maxScore: 4 };
     }
     
     let baseScore = 0;
     let scoreReason = '';
     
-    // Base scoring: <40% = 3 points (strong), 40-50% = 2 points (ok), >50% = 1 point (risk)
+    // Base scoring: <40% = 4 points (strong), 40-50% = 3 points (ok), 50-60% = 1 point (risk), >=60% = 0 points
     if (value < 40) {
-      baseScore = 3;
+      baseScore = 4;
       scoreReason = '< 40% (stark)';
     } else if (value < 50) {
-      baseScore = 2;
+      baseScore = 3;
       scoreReason = '40-50% (ok)';
     } else if (value < 60) {
       baseScore = 1;
@@ -119,11 +133,11 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
       value: value.toFixed(2) + '%',
       baseScore,
       scoreReason,
-      maxScore: 3,
+      maxScore: 4,
       trendNote: trendImproving ? 'Trend verbessert sich' : 'Trend verschlechtert sich oder stabil'
     });
     
-    return { score: baseScore, maxScore: 3 };
+    return { score: baseScore, maxScore: 4 };
   };
 
   const { score, maxScore } = getScore(displayValue);
@@ -167,9 +181,14 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
 
   const scoringTooltip = (
     <div className="space-y-1">
-      <p className="font-medium text-sm">Bewertung (0-3 Punkte):</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 3 Punkte: &lt; 40% (stark)</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 2 Punkte: 40-50% (ok)</p>
+      {preset && (
+        <p className="text-xs text-muted-foreground mb-1">
+          Branche: <strong>{preset}</strong>
+        </p>
+      )}
+      <p className="font-medium text-sm">Bewertung (0-4 Punkte):</p>
+      <p className="text-sm"><span className="text-green-600">●</span> 4 Punkte: &lt; 40% (stark)</p>
+      <p className="text-sm"><span className="text-yellow-600">●</span> 3 Punkte: 40-50% (ok)</p>
       <p className="text-sm"><span className="text-orange-600">●</span> 1 Punkt: 50-60% (risikoreich)</p>
       <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: ≥ 60% (sehr risikoreich)</p>
       <p className="text-xs text-muted-foreground mt-2">
