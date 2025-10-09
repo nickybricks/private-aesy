@@ -162,43 +162,43 @@ export function StockProvider({ children }: StockProviderProps) {
           .catch((err) => {
             console.error('Error fetching valuation (non-critical):', err);
             // Don't set error state, valuation is optional
-          });
-      }
+           });
+       }
 
-      // Calculate profitability scores based on industry
-      if (info && info.industry && metricsData && !criticalDataMissing) {
-        console.log('🎯 Calculating profitability scores for industry:', info.industry);
-        
-        // Helper function to calculate median from historical data
-        const calculateMedianFromHistorical = (
-          currentValue: number | null,
-          historicalData?: Array<{ year: string; value: number }>
-        ): number | null => {
-          if (!historicalData || historicalData.length === 0) {
-            return currentValue;
-          }
-          
-          // Determine which timeframe to use (10Y > 5Y > 3Y > current)
-          let dataToUse = historicalData;
-          if (historicalData.length >= 10) {
-            dataToUse = historicalData.slice(-10);
-          } else if (historicalData.length >= 5) {
-            dataToUse = historicalData.slice(-5);
-          } else if (historicalData.length >= 3) {
-            dataToUse = historicalData.slice(-3);
-          } else {
-            return currentValue;
-          }
-          
-          // Calculate median
-          const values = dataToUse.map(d => d.value).sort((a, b) => a - b);
-          const mid = Math.floor(values.length / 2);
-          const median = values.length % 2 === 0 
-            ? (values[mid - 1] + values[mid]) / 2 
-            : values[mid];
-          
-          return median;
-        };
+       // Helper function to calculate median from historical data
+       const calculateMedianFromHistorical = (
+         currentValue: number | null,
+         historicalData?: Array<{ year: string; value: number }>
+       ): number | null => {
+         if (!historicalData || historicalData.length === 0) {
+           return currentValue;
+         }
+         
+         // Determine which timeframe to use (10Y > 5Y > 3Y > current)
+         let dataToUse = historicalData;
+         if (historicalData.length >= 10) {
+           dataToUse = historicalData.slice(-10);
+         } else if (historicalData.length >= 5) {
+           dataToUse = historicalData.slice(-5);
+         } else if (historicalData.length >= 3) {
+           dataToUse = historicalData.slice(-3);
+         } else {
+           return currentValue;
+         }
+         
+         // Calculate median
+         const values = dataToUse.map(d => d.value).sort((a, b) => a - b);
+         const mid = Math.floor(values.length / 2);
+         const median = values.length % 2 === 0 
+           ? (values[mid - 1] + values[mid]) / 2 
+           : values[mid];
+         
+         return median;
+       };
+
+       // Calculate profitability scores based on industry
+       if (info && info.industry && metricsData && !criticalDataMissing) {
+         console.log('🎯 Calculating profitability scores for industry:', info.industry);
         
         // Calculate median values for scoring
         const roicMedian = calculateMedianFromHistorical(
@@ -266,35 +266,49 @@ export function StockProvider({ children }: StockProviderProps) {
       if (info && info.industry && metricsData && !criticalDataMissing) {
         console.log('🎯 Calculating financial strength scores for industry:', info.industry);
         
-        // Get metric values - try direct field first, then metrics array
-        const netDebtToEbitda = metricsData.netDebtToEbitda ?? 
-          metricsData.metrics?.find(m => m.name === 'Net Debt to EBITDA')?.value ?? 
-          null;
-        const currentRatio = metricsData.currentRatio ?? 
-          metricsData.metrics?.find(m => m.name === 'Current Ratio')?.value ?? 
-          null;
+        // Calculate median values for financial strength metrics
+        const netDebtToEbitdaMedian = calculateMedianFromHistorical(
+          metricsData.netDebtToEbitda,
+          metricsData.historicalData?.netDebtToEbitda
+        );
+        const interestCoverageMedian = calculateMedianFromHistorical(
+          metricsData.interestCoverage,
+          metricsData.historicalData?.interestCoverage
+        );
+        const currentRatioMedian = calculateMedianFromHistorical(
+          metricsData.currentRatio,
+          metricsData.historicalData?.currentRatio
+        );
         
         // Convert debtToAssets from decimal to percentage if needed
         let debtToAssetsValue = metricsData.debtToAssets;
         if (debtToAssetsValue !== null && debtToAssetsValue < 1) {
-          // If value is less than 1, it's likely a decimal (e.g., 0.0565 = 5.65%)
           debtToAssetsValue = debtToAssetsValue * 100;
         }
         
-        console.log('📊 Sending to financial strength scoring:', {
-          netDebtToEbitda,
-          interestCoverage: metricsData.interestCoverage,
-          debtToAssets: debtToAssetsValue,
-          currentRatio
+        // Calculate median for debtToAssets
+        const debtToAssetsMedian = calculateMedianFromHistorical(
+          debtToAssetsValue,
+          metricsData.historicalData?.debtToAssets?.map(item => ({
+            ...item,
+            value: item.value < 1 ? item.value * 100 : item.value
+          }))
+        );
+        
+        console.log('📊 Median values for financial strength scoring:', {
+          netDebtToEbitda: netDebtToEbitdaMedian,
+          interestCoverage: interestCoverageMedian,
+          debtToAssets: debtToAssetsMedian,
+          currentRatio: currentRatioMedian
         });
         
         supabase.functions.invoke('calculate-financial-strength-scores', {
           body: {
             industry: info.industry,
-            netDebtToEbitda,
-            interestCoverage: metricsData.interestCoverage,
-            debtToAssets: debtToAssetsValue,
-            currentRatio,
+            netDebtToEbitda: netDebtToEbitdaMedian,
+            interestCoverage: interestCoverageMedian,
+            debtToAssets: debtToAssetsMedian,
+            currentRatio: currentRatioMedian,
           }
         })
           .then(({ data, error }) => {
