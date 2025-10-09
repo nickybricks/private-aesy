@@ -64,8 +64,48 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
     return 'bg-red-50 border-red-200';
   };
 
+  // Use backend score if available
   const score = scoreFromBackend?.score ?? getScore(displayValue);
   const maxScore = scoreFromBackend?.maxScore ?? 2;
+
+  // Get color based on score ratio
+  const getColorByRatio = (score: number, maxScore: number): string => {
+    const ratio = score / maxScore;
+    if (ratio === 1) return 'text-green-600';
+    if (ratio >= 0.67) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const getBgColorByRatio = (score: number, maxScore: number): string => {
+    const ratio = score / maxScore;
+    if (ratio === 1) return 'bg-green-50 border-green-200';
+    if (ratio >= 0.67) return 'bg-yellow-50 border-yellow-200';
+    return 'bg-red-50 border-red-200';
+  };
+
+  // Preset-specific tooltip content
+  const getScoringTooltip = () => {
+    if (preset === 'Industrials') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Bewertung (0-3 Punkte) - Industrials:</p>
+          <p className="text-sm"><span className="text-green-600">●</span> 3 Pkt: ≥ 14%</p>
+          <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: 9–&lt;14%</p>
+          <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 9%</p>
+        </div>
+      );
+    }
+    
+    // Default scoring
+    return (
+      <div className="space-y-1">
+        <p className="font-medium text-sm">Bewertung:</p>
+        <p className="text-sm"><span className="text-green-600">●</span> Grün (2 Pkt): ≥ 15%</p>
+        <p className="text-sm"><span className="text-yellow-600">●</span> Gelb (1 Pkt): 10-15%</p>
+        <p className="text-sm"><span className="text-red-600">●</span> Rot (0 Pkt): &lt; 10%</p>
+      </div>
+    );
+  };
 
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
@@ -81,11 +121,19 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
           <li><strong>Kapitalallokation:</strong> Gute Manager erzielen hohe Rendite auf jeden Euro Eigenkapital.</li>
         </ul>
       </div>
+
+      {preset !== 'Default' && (
+        <div className="mt-2 pt-2 border-t">
+          <p className="text-xs text-muted-foreground italic">
+            Scoring-Preset: <strong>{preset}</strong>
+          </p>
+        </div>
+      )}
     </div>
   );
 
   return (
-    <Card className={`p-4 border-2 ${getBgColor(score)}`}>
+    <Card className={`p-4 border-2 ${getBgColorByRatio(score, maxScore)}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold text-lg">ROE (Eigenkapitalrendite)</h3>
@@ -101,7 +149,7 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
           </TooltipProvider>
         </div>
         <div className="text-right">
-          <div className={`text-2xl font-bold ${getColor(score)}`}>
+          <div className={`text-2xl font-bold ${getColorByRatio(score, maxScore)}`}>
             {displayValue !== null ? `${displayValue.toFixed(1)}%` : 'N/A'}
           </div>
           <div className="text-xs text-muted-foreground">{displayLabel}</div>
@@ -111,7 +159,7 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
       {/* Score indicator */}
       <div className="flex items-center gap-2 mb-3">
         <div className="text-sm font-medium">Bewertung:</div>
-        <div className={`px-2 py-1 rounded text-sm font-semibold ${getColor(score)}`}>
+        <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByRatio(score, maxScore)}`}>
           {score}/{maxScore} Punkte
         </div>
         <TooltipProvider>
@@ -120,12 +168,7 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
             <TooltipContent side="right">
-              <div className="space-y-1">
-                <p className="font-medium text-sm">Bewertung:</p>
-                <p className="text-sm"><span className="text-green-600">●</span> Grün (2 Pkt): ≥ 15%</p>
-                <p className="text-sm"><span className="text-yellow-600">●</span> Gelb (1 Pkt): 10-15%</p>
-                <p className="text-sm"><span className="text-red-600">●</span> Rot (0 Pkt): &lt; 10%</p>
-              </div>
+              {getScoringTooltip()}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
