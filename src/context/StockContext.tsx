@@ -266,13 +266,10 @@ export function StockProvider({ children }: StockProviderProps) {
       if (info && info.industry && metricsData && !criticalDataMissing) {
         console.log('🎯 Calculating financial strength scores for industry:', info.industry);
         
-        // Get metric values - try direct field first, then metrics array, then fall back to latest TTM from historical data
-        const ttmNetDebtToEbitda = metricsData.historicalData?.netDebtToEbitda && metricsData.historicalData.netDebtToEbitda.length > 0
-          ? metricsData.historicalData.netDebtToEbitda[metricsData.historicalData.netDebtToEbitda.length - 1]?.value ?? null
-          : null;
-        const netDebtToEbitda = metricsData.netDebtToEbitda ??
-          metricsData.metrics?.find(m => m.name === 'Net Debt to EBITDA' || m.name === 'Net Debt/EBITDA' || m.name === 'Net Debt / EBITDA')?.value ??
-          ttmNetDebtToEbitda;
+        // Get metric values - try direct field first, then metrics array
+        const netDebtToEbitda = metricsData.netDebtToEbitda ?? 
+          metricsData.metrics?.find(m => m.name === 'Net Debt to EBITDA')?.value ?? 
+          null;
         const currentRatio = metricsData.currentRatio ?? 
           metricsData.metrics?.find(m => m.name === 'Current Ratio')?.value ?? 
           null;
