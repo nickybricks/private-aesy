@@ -30,7 +30,6 @@ import { NetMarginCard } from '@/components/metrics/NetMarginCard';
 import { ROACard } from '@/components/metrics/ROACard';
 import { YearsOfProfitabilityCard } from '@/components/metrics/YearsOfProfitabilityCard';
 import { DebtToAssetsCard } from '@/components/metrics/DebtToAssetsCard';
-import { InterestCoverageCard } from '@/components/metrics/InterestCoverageCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -253,10 +252,6 @@ const IndexContent: React.FC = () => {
                       <DebtToAssetsCard 
                         currentValue={financialMetrics?.debtToAssets ?? null}
                         historicalData={financialMetrics?.historicalData?.debtToAssets}
-                      />
-                      <InterestCoverageCard 
-                        currentValue={financialMetrics?.interestCoverage ?? null}
-                        historicalData={financialMetrics?.historicalData?.interestCoverage}
                       />
                     </div>
                   </TabsContent>
