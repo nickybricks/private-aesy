@@ -244,18 +244,16 @@ const IndexContent: React.FC = () => {
                         preset={profitabilityScores?.preset}
                         scoreFromBackend={profitabilityScores?.scores?.years}
                       />
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="financial-strength" className="mt-4 sm:mt-6">
+                    <div className="space-y-4">
                       <DebtToAssetsCard 
                         currentValue={financialMetrics?.debtToAssets ?? null}
                         historicalData={financialMetrics?.historicalData?.debtToAssets}
                       />
                     </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="financial-strength" className="mt-4 sm:mt-6">
-                    <Card className="p-6">
-                      <h2 className="text-2xl font-semibold mb-4">Finanzielle Stärke</h2>
-                      <p className="text-muted-foreground">Inhalt folgt...</p>
-                    </Card>
                   </TabsContent>
                   
                   <TabsContent value="valuation" className="mt-4 sm:mt-6">
