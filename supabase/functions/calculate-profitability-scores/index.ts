@@ -7,8 +7,56 @@ const corsHeaders = {
 
 // Industry to Preset Mapping
 const industryToPreset: Record<string, string> = {
+  // Construction & Infrastructure
+  "Residential Construction": "Industrials",
+  "Engineering & Construction": "Industrials",
+  "Construction": "Industrials",
+  
+  // Automotive
+  "Auto - Parts": "Industrials",
+  "Auto - Manufacturers": "Industrials",
+  "Auto - Recreational Vehicles": "Industrials",
+  
+  // Transportation & Logistics
+  "Packaging & Containers": "Industrials",
+  "Trucking": "Industrials",
+  "Railroads": "Industrials",
+  "Marine Shipping": "Industrials",
+  "Integrated Freight & Logistics": "Industrials",
+  "Airlines": "Industrials",
+  "Airports & Air Services": "Industrials",
+  "General Transportation": "Industrials",
+  
+  // Defense & Aerospace
+  "Aerospace & Defense": "Industrials",
+  
+  // Manufacturing
+  "Manufacturing - Tools & Accessories": "Industrials",
+  "Manufacturing - Textiles": "Industrials",
+  "Manufacturing - Miscellaneous": "Industrials",
+  "Manufacturing - Metal Fabrication": "Industrials",
+  
+  // Industrial Equipment & Services
+  "Industrial - Distribution": "Industrials",
+  "Industrial - Specialties": "Industrials",
+  "Industrial - Pollution & Treatment Controls": "Industrials",
+  "Industrial - Machinery": "Industrials",
+  "Industrial - Capital Goods": "Industrials",
+  "Business Equipment & Supplies": "Industrials",
+  "Rental & Leasing Services": "Industrials",
+  "Electrical Equipment & Parts": "Industrials",
+  "Agricultural - Machinery": "Industrials",
+  
+  // Technology Hardware
+  "Hardware, Equipment & Parts": "Industrials",
+  "Computer Hardware": "Industrials",
+  "Semiconductors": "Industrials",
+  "Communication Equipment": "Industrials",
+  "Technology Distributors": "Industrials",
   "Consumer Electronics": "Industrials",
-  // Weitere Mappings werden später hinzugefügt
+  
+  // Conglomerates
+  "Conglomerates": "Industrials",
 };
 
 interface MetricsInput {
