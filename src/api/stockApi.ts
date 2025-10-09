@@ -1285,7 +1285,8 @@ export const getFinancialMetrics = async (ticker: string) => {
       operatingCashFlow: [],
       freeCashFlow: [],
       netIncome: [],
-      debtToAssets: []
+      debtToAssets: [],
+      interestCoverage: []
     };
     
     // Add historical data if income statements are available
@@ -1832,6 +1833,89 @@ export const getFinancialMetrics = async (ticker: string) => {
         }
       } catch (error) {
         console.warn('Could not calculate TTM Debt/Assets:', error);
+      }
+    }
+
+    // Add historical Interest Coverage data (last 10 years)
+    if (incomeStatements && incomeStatements.length > 1) {
+      const interestCoverageData = [];
+      
+      for (let i = 0; i < Math.min(10, incomeStatements.length); i++) {
+        let coverageValue = null;
+        const year = incomeStatements[i].date ? new Date(incomeStatements[i].date).getFullYear() : null;
+        
+        if (!year) continue;
+        
+        // Calculate EBIT = EBITDA - Depreciation & Amortization (or use operatingIncome)
+        const ebit = incomeStatements[i].ebitda !== undefined && incomeStatements[i].depreciationAndAmortization !== undefined
+          ? safeValue(incomeStatements[i].ebitda) - Math.abs(safeValue(incomeStatements[i].depreciationAndAmortization))
+          : safeValue(incomeStatements[i].operatingIncome);
+        const interestExpense = safeValue(incomeStatements[i].interestExpense);
+        
+        // Calculate Interest Coverage = EBIT / |Interest Expense|
+        if (ebit !== null && interestExpense !== null && interestExpense !== 0) {
+          coverageValue = ebit / Math.abs(interestExpense);
+        }
+        
+        if (coverageValue !== null) {
+          interestCoverageData.push({
+            year: year,
+            value: Math.round(coverageValue * 10) / 10,
+            originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
+          });
+        }
+      }
+      
+      // Sort chronologically (oldest first for chart)
+      historicalData.interestCoverage = interestCoverageData.reverse();
+      
+      // Add TTM calculation from quarterly data
+      try {
+        const quarterlyIncomeData = await fetchFromFMP(`/income-statement/${standardizedTicker}?period=quarter&limit=20`);
+        
+        if (quarterlyIncomeData && quarterlyIncomeData.length >= 4) {
+          let ttmEbit = 0;
+          let ttmInterestExpense = 0;
+          let quarterCount = 0;
+          const latestQuarterDate = quarterlyIncomeData[0].date ? new Date(quarterlyIncomeData[0].date) : new Date();
+          
+          for (let i = 0; i < Math.min(4, quarterlyIncomeData.length); i++) {
+            const qEbit = quarterlyIncomeData[i].ebitda !== undefined && quarterlyIncomeData[i].depreciationAndAmortization !== undefined
+              ? safeValue(quarterlyIncomeData[i].ebitda) - Math.abs(safeValue(quarterlyIncomeData[i].depreciationAndAmortization))
+              : safeValue(quarterlyIncomeData[i].operatingIncome);
+            const qInterestExpense = safeValue(quarterlyIncomeData[i].interestExpense);
+            
+            if (qEbit !== null && qInterestExpense !== null) {
+              ttmEbit += qEbit;
+              ttmInterestExpense += qInterestExpense;
+              quarterCount++;
+            }
+          }
+          
+          if (quarterCount === 4 && ttmInterestExpense !== 0) {
+            const ttmCoverage = ttmEbit / Math.abs(ttmInterestExpense);
+            const ttmYear = latestQuarterDate.getFullYear();
+            const ttmLabel = `TTM ${ttmYear}`;
+            
+            const existingYearIndex = historicalData.interestCoverage.findIndex((entry: any) => entry.year === ttmYear);
+            
+            if (existingYearIndex >= 0) {
+              historicalData.interestCoverage[existingYearIndex] = {
+                year: ttmLabel,
+                value: Math.round(ttmCoverage * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              };
+            } else {
+              historicalData.interestCoverage.push({
+                year: ttmLabel,
+                value: Math.round(ttmCoverage * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not calculate TTM Interest Coverage:', error);
       }
     }
 
