@@ -55,6 +55,7 @@ export interface FinancialMetricsData {
     netIncome: HistoricalDataItem[];
     debtToAssets: HistoricalDataItem[];
     interestCoverage: HistoricalDataItem[];
+    currentRatio: HistoricalDataItem[];
   };
   wacc?: number;
 }

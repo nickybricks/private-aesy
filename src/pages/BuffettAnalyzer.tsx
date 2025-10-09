@@ -31,6 +31,7 @@ import { ROACard } from '@/components/metrics/ROACard';
 import { YearsOfProfitabilityCard } from '@/components/metrics/YearsOfProfitabilityCard';
 import { DebtToAssetsCard } from '@/components/metrics/DebtToAssetsCard';
 import { InterestCoverageCard } from '@/components/metrics/InterestCoverageCard';
+import { CurrentRatioCard } from '@/components/metrics/CurrentRatioCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -257,6 +258,10 @@ const IndexContent: React.FC = () => {
                       <InterestCoverageCard 
                         currentValue={financialMetrics?.interestCoverage ?? null}
                         historicalData={financialMetrics?.historicalData?.interestCoverage}
+                      />
+                      <CurrentRatioCard 
+                        currentValue={financialMetrics?.metrics?.find(m => m.name === 'Current Ratio')?.value ?? null}
+                        historicalData={financialMetrics?.historicalData?.currentRatio}
                       />
                     </div>
                   </TabsContent>

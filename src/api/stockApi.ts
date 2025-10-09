@@ -1286,7 +1286,8 @@ export const getFinancialMetrics = async (ticker: string) => {
       freeCashFlow: [],
       netIncome: [],
       debtToAssets: [],
-      interestCoverage: []
+      interestCoverage: [],
+      currentRatio: []
     };
     
     // Add historical data if income statements are available
@@ -1916,6 +1917,74 @@ export const getFinancialMetrics = async (ticker: string) => {
         }
       } catch (error) {
         console.warn('Could not calculate TTM Interest Coverage:', error);
+      }
+    }
+
+    // Add historical Current Ratio data (last 10 years)
+    if (balanceSheets && balanceSheets.length > 1) {
+      const currentRatioData = [];
+      
+      for (let i = 0; i < Math.min(10, balanceSheets.length); i++) {
+        let ratioValue = null;
+        const year = balanceSheets[i].date ? new Date(balanceSheets[i].date).getFullYear() : null;
+        
+        if (!year) continue;
+        
+        // Calculate Current Ratio = Total Current Assets / Total Current Liabilities
+        const currentAssets = safeValue(balanceSheets[i].totalCurrentAssets);
+        const currentLiabilities = safeValue(balanceSheets[i].totalCurrentLiabilities);
+        
+        if (currentAssets !== null && currentLiabilities !== null && currentLiabilities > 0) {
+          ratioValue = currentAssets / currentLiabilities;
+        }
+        
+        if (ratioValue !== null) {
+          currentRatioData.push({
+            year: year,
+            value: Math.round(ratioValue * 100) / 100, // 2 decimal places
+            originalCurrency: balanceSheets[i]?.reportedCurrency || reportedCurrency
+          });
+        }
+      }
+      
+      // Sort chronologically (oldest first for chart)
+      historicalData.currentRatio = currentRatioData.reverse();
+      
+      // Add TTM calculation from quarterly data
+      try {
+        const quarterlyBalanceData = await fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?period=quarter&limit=20`);
+        
+        if (quarterlyBalanceData && quarterlyBalanceData.length >= 1) {
+          const latestQuarterDate = quarterlyBalanceData[0].date ? new Date(quarterlyBalanceData[0].date) : new Date();
+          
+          // Use the most recent quarter's balance sheet
+          const currentAssets = safeValue(quarterlyBalanceData[0].totalCurrentAssets);
+          const currentLiabilities = safeValue(quarterlyBalanceData[0].totalCurrentLiabilities);
+          
+          if (currentAssets !== null && currentLiabilities !== null && currentLiabilities > 0) {
+            const ttmCurrentRatio = currentAssets / currentLiabilities;
+            const ttmYear = latestQuarterDate.getFullYear();
+            const ttmLabel = `TTM ${ttmYear}`;
+            
+            const existingYearIndex = historicalData.currentRatio.findIndex((entry: any) => entry.year === ttmYear);
+            
+            if (existingYearIndex >= 0) {
+              historicalData.currentRatio[existingYearIndex] = {
+                year: ttmLabel,
+                value: Math.round(ttmCurrentRatio * 100) / 100,
+                originalCurrency: quarterlyBalanceData[0]?.reportedCurrency || reportedCurrency
+              };
+            } else {
+              historicalData.currentRatio.push({
+                year: ttmLabel,
+                value: Math.round(ttmCurrentRatio * 100) / 100,
+                originalCurrency: quarterlyBalanceData[0]?.reportedCurrency || reportedCurrency
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not calculate TTM Current Ratio:', error);
       }
     }
 
