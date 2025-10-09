@@ -134,6 +134,31 @@ const industryToPreset: Record<string, string> = {
   "Independent Power Producers": "UtilitiesTelecom",
   "Diversified Utilities": "UtilitiesTelecom",
   "General Utilities": "UtilitiesTelecom",
+  
+  // EnergyMaterials (Commodity-Zykliker)
+  "Steel": "EnergyMaterials",
+  "Silver": "EnergyMaterials",
+  "Other Precious Metals": "EnergyMaterials",
+  "Gold": "EnergyMaterials",
+  "Copper": "EnergyMaterials",
+  "Aluminum": "EnergyMaterials",
+  "Paper": "EnergyMaterials",
+  "Lumber & Forest Products": "EnergyMaterials",
+  "Industrial Materials": "EnergyMaterials",
+  "Construction Materials": "EnergyMaterials",
+  "Chemicals - Specialty": "EnergyMaterials",
+  "Chemicals": "EnergyMaterials",
+  "Agricultural Inputs": "EnergyMaterials",
+  "Uranium": "EnergyMaterials",
+  "Oil & Gas Refining & Marketing": "EnergyMaterials",
+  "Oil & Gas Midstream": "EnergyMaterials",
+  "Oil & Gas Integrated": "EnergyMaterials",
+  "Oil & Gas Exploration & Production": "EnergyMaterials",
+  "Oil & Gas Equipment & Services": "EnergyMaterials",
+  "Oil & Gas Energy": "EnergyMaterials",
+  "Oil & Gas Drilling": "EnergyMaterials",
+  "Coal": "EnergyMaterials",
+  "Agricultural - Commodities/Milling": "EnergyMaterials",
 };
 
 interface MetricsInput {
@@ -497,6 +522,73 @@ function scoreUtilitiesTelecomROA(roa: number | null): ScoreResult {
   return { score: 0, maxScore: 2 };
 }
 
+// EnergyMaterials Scoring Logic
+function scoreEnergyMaterialsROIC(roic: number | null, wacc: number | null): ScoreResult {
+  if (roic === null) return { score: 0, maxScore: 5 };
+  
+  const spread = wacc !== null ? roic - wacc : null;
+  
+  if (roic >= 14 && spread !== null && spread >= 4) return { score: 5, maxScore: 5 };
+  if (roic >= 12 && spread !== null && spread >= 2) return { score: 4, maxScore: 5 };
+  if (roic >= 10 && wacc !== null && roic > wacc) return { score: 3, maxScore: 5 };
+  if (roic >= 7) return { score: 1, maxScore: 5 };
+  
+  return { score: 0, maxScore: 5 };
+}
+
+function scoreEnergyMaterialsOperatingMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 3 };
+  
+  if (margin >= 22) return { score: 3, maxScore: 3 };
+  if (margin >= 16) return { score: 2, maxScore: 3 };
+  if (margin >= 12) return { score: 1, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreEnergyMaterialsNetMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 2 };
+  
+  // Handle decimal values (0.12 = 12%)
+  const percentValue = margin < 1 ? margin * 100 : margin;
+  
+  if (percentValue >= 12) return { score: 2, maxScore: 2 };
+  if (percentValue >= 8) return { score: 1, maxScore: 2 };
+  
+  return { score: 0, maxScore: 2 };
+}
+
+function scoreEnergyMaterialsYears(profitableYears: number, totalYears: number): ScoreResult {
+  if (totalYears === 0) return { score: 0, maxScore: 4 };
+  
+  if (profitableYears === 10 && totalYears === 10) return { score: 4, maxScore: 4 };
+  if (profitableYears === 9 && totalYears === 10) return { score: 3, maxScore: 4 };
+  if (profitableYears === 8 && totalYears >= 10) return { score: 2, maxScore: 4 };
+  if (profitableYears === 7 && totalYears >= 10) return { score: 1, maxScore: 4 };
+  
+  return { score: 0, maxScore: 4 };
+}
+
+function scoreEnergyMaterialsROE(roe: number | null): ScoreResult {
+  if (roe === null) return { score: 0, maxScore: 4 };
+  
+  if (roe >= 16) return { score: 4, maxScore: 4 };
+  if (roe >= 12) return { score: 3, maxScore: 4 };
+  if (roe >= 9) return { score: 2, maxScore: 4 };
+  if (roe >= 6) return { score: 1, maxScore: 4 };
+  
+  return { score: 0, maxScore: 4 };
+}
+
+function scoreEnergyMaterialsROA(roa: number | null): ScoreResult {
+  if (roa === null) return { score: 0, maxScore: 2 };
+  
+  if (roa >= 7) return { score: 2, maxScore: 2 };
+  if (roa >= 5) return { score: 1, maxScore: 2 };
+  
+  return { score: 0, maxScore: 2 };
+}
+
 function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse {
   let scores: ScoringResponse['scores'];
   
@@ -544,6 +636,15 @@ function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse
       years: scoreUtilitiesTelecomYears(metrics.profitableYears || 0, metrics.totalYears || 0),
       roe: scoreUtilitiesTelecomROE(metrics.roe),
       roa: scoreUtilitiesTelecomROA(metrics.roa),
+    };
+  } else if (preset === "EnergyMaterials") {
+    scores = {
+      roic: scoreEnergyMaterialsROIC(metrics.roic, metrics.wacc),
+      operatingMargin: scoreEnergyMaterialsOperatingMargin(metrics.operatingMargin),
+      netMargin: scoreEnergyMaterialsNetMargin(metrics.netMargin),
+      years: scoreEnergyMaterialsYears(metrics.profitableYears || 0, metrics.totalYears || 0),
+      roe: scoreEnergyMaterialsROE(metrics.roe),
+      roa: scoreEnergyMaterialsROA(metrics.roa),
     };
   } else {
     // Default/Fallback scoring
