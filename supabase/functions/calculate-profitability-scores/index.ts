@@ -89,6 +89,24 @@ const industryToPreset: Record<string, string> = {
   "Beverages - Wineries & Distilleries": "Staples",
   "Beverages - Non-Alcoholic": "Staples",
   "Beverages - Alcoholic": "Staples",
+  
+  // Retail Logistics (margenschwach, WC-lastig)
+  "Travel Lodging": "RetailLogistics",
+  "Travel Services": "RetailLogistics",
+  "Specialty Retail": "RetailLogistics",
+  "Luxury Goods": "RetailLogistics",
+  "Home Improvement": "RetailLogistics",
+  "Department Stores": "RetailLogistics",
+  "Personal Products & Services": "RetailLogistics",
+  "Leisure": "RetailLogistics",
+  "Gambling": "RetailLogistics",
+  "Resorts & Casinos": "RetailLogistics",
+  "Furnishings, Fixtures & Appliances": "RetailLogistics",
+  "Restaurants": "RetailLogistics",
+  "Auto - Dealerships": "RetailLogistics",
+  "Apparel - Retail": "RetailLogistics",
+  "Apparel - Manufacturers": "RetailLogistics",
+  "Apparel - Footwear & Accessories": "RetailLogistics",
 };
 
 interface MetricsInput {
@@ -319,6 +337,73 @@ function scoreStaplesROA(roa: number | null): ScoreResult {
   return { score: 0, maxScore: 1 };
 }
 
+// Retail Logistics Scoring Logic
+function scoreRetailLogisticsROIC(roic: number | null, wacc: number | null): ScoreResult {
+  if (roic === null) return { score: 0, maxScore: 5 };
+  
+  const spread = wacc !== null ? roic - wacc : null;
+  
+  if (roic >= 12 && spread !== null && spread >= 4) return { score: 5, maxScore: 5 };
+  if (roic >= 10 && spread !== null && spread >= 2) return { score: 4, maxScore: 5 };
+  if (roic >= 9 && wacc !== null && roic > wacc) return { score: 3, maxScore: 5 };
+  if (roic >= 7) return { score: 1, maxScore: 5 };
+  
+  return { score: 0, maxScore: 5 };
+}
+
+function scoreRetailLogisticsOperatingMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 3 };
+  
+  if (margin >= 10) return { score: 3, maxScore: 3 };
+  if (margin >= 7) return { score: 2, maxScore: 3 };
+  if (margin >= 5) return { score: 1, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreRetailLogisticsNetMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 2 };
+  
+  // Handle decimal values (0.06 = 6%)
+  const percentValue = margin < 1 ? margin * 100 : margin;
+  
+  if (percentValue >= 6) return { score: 2, maxScore: 2 };
+  if (percentValue >= 4) return { score: 1, maxScore: 2 };
+  
+  return { score: 0, maxScore: 2 };
+}
+
+function scoreRetailLogisticsYears(profitableYears: number, totalYears: number): ScoreResult {
+  if (totalYears === 0) return { score: 0, maxScore: 4 };
+  
+  if (profitableYears === 10 && totalYears === 10) return { score: 4, maxScore: 4 };
+  if (profitableYears === 9 && totalYears === 10) return { score: 3, maxScore: 4 };
+  if (profitableYears === 8 && totalYears >= 10) return { score: 2, maxScore: 4 };
+  if (profitableYears === 7 && totalYears >= 10) return { score: 1, maxScore: 4 };
+  
+  return { score: 0, maxScore: 4 };
+}
+
+function scoreRetailLogisticsROE(roe: number | null): ScoreResult {
+  if (roe === null) return { score: 0, maxScore: 4 };
+  
+  if (roe >= 15) return { score: 4, maxScore: 4 };
+  if (roe >= 12) return { score: 3, maxScore: 4 };
+  if (roe >= 9) return { score: 2, maxScore: 4 };
+  if (roe >= 6) return { score: 1, maxScore: 4 };
+  
+  return { score: 0, maxScore: 4 };
+}
+
+function scoreRetailLogisticsROA(roa: number | null): ScoreResult {
+  if (roa === null) return { score: 0, maxScore: 2 };
+  
+  if (roa >= 6) return { score: 2, maxScore: 2 };
+  if (roa >= 4) return { score: 1, maxScore: 2 };
+  
+  return { score: 0, maxScore: 2 };
+}
+
 function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse {
   let scores: ScoringResponse['scores'];
   
@@ -348,6 +433,15 @@ function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse
       years: scoreStaplesYears(metrics.profitableYears || 0, metrics.totalYears || 0),
       roe: scoreStaplesROE(metrics.roe),
       roa: scoreStaplesROA(metrics.roa),
+    };
+  } else if (preset === "RetailLogistics") {
+    scores = {
+      roic: scoreRetailLogisticsROIC(metrics.roic, metrics.wacc),
+      operatingMargin: scoreRetailLogisticsOperatingMargin(metrics.operatingMargin),
+      netMargin: scoreRetailLogisticsNetMargin(metrics.netMargin),
+      years: scoreRetailLogisticsYears(metrics.profitableYears || 0, metrics.totalYears || 0),
+      roe: scoreRetailLogisticsROE(metrics.roe),
+      roa: scoreRetailLogisticsROA(metrics.roa),
     };
   } else {
     // Default/Fallback scoring
