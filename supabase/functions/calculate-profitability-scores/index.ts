@@ -70,8 +70,11 @@ function scoreIndustrialsOperatingMargin(margin: number | null): ScoreResult {
 function scoreIndustrialsNetMargin(margin: number | null): ScoreResult {
   if (margin === null) return { score: 0, maxScore: 2 };
   
-  if (margin >= 10) return { score: 2, maxScore: 2 };
-  if (margin >= 7) return { score: 1, maxScore: 2 };
+  // Handle decimal values (0.239 = 23.9%)
+  const percentValue = margin < 1 ? margin * 100 : margin;
+  
+  if (percentValue >= 10) return { score: 2, maxScore: 2 };
+  if (percentValue >= 7) return { score: 1, maxScore: 2 };
   
   return { score: 0, maxScore: 2 };
 }
