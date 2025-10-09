@@ -41,20 +41,11 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
   }
 
   // Score calculation based on Net Margin value
-  const getScore = (value: number | null, preset: string = 'Software'): number => {
+  const getScore = (value: number | null): number => {
     if (value === null) return 0;
-    
-    // Industrials preset
-    if (preset === 'Industrials') {
-      if (value >= 10) return 2;
-      if (value >= 7) return 1;
-      return 0;
-    }
-    
-    // Software/Media preset (default)
-    if (value >= 18) return 3;
-    if (value >= 14) return 2;
-    if (value >= 10) return 1;
+    if (value >= 15) return 3;
+    if (value >= 10) return 2;
+    if (value >= 5) return 1;
     return 0;
   };
 
@@ -107,25 +98,18 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
         </p>
       </div>
       <div className="space-y-1">
-        <p className="font-medium text-sm">Punktelogik Software/Media:</p>
+        <p className="font-medium text-sm">Was ist „gut"?</p>
         <ul className="text-sm space-y-1 list-disc list-inside">
-          <li>≥18% → 3 Punkte</li>
-          <li>14-&lt;18% → 2 Punkte</li>
-          <li>10-&lt;14% → 1 Punkt</li>
-          <li>&lt;10% → 0 Punkte</li>
+          <li>
+            <strong className="text-green-600">Grün (stark):</strong> ≥ 15 % (Nicht-Finanz), über mehrere Jahre stabil.
+          </li>
+          <li>
+            <strong className="text-yellow-600">Gelb (ok):</strong> 10–15 % oder deutlich schwankend.
+          </li>
+          <li>
+            <strong className="text-red-600">Rot (schwach):</strong> &lt; 10 % dauerhaft.
+          </li>
         </ul>
-      </div>
-
-      <div className="space-y-1">
-        <p className="font-medium text-sm">Punktelogik Industrials:</p>
-        <ul className="text-sm space-y-1 list-disc list-inside">
-          <li>≥10% → 2 Punkte</li>
-          <li>7-&lt;10% → 1 Punkt</li>
-          <li>&lt;7% → 0 Punkte</li>
-        </ul>
-        <p className="text-xs text-muted-foreground italic mt-2">
-          Hinweis: Für andere Sektoren gelten angepasste Schwellenwerte.
-        </p>
       </div>
     </div>
   );
@@ -167,11 +151,11 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
             </TooltipTrigger>
             <TooltipContent side="right">
               <div className="space-y-1">
-                <p className="font-medium text-sm">Punktelogik (Software/Media):</p>
-                <p className="text-sm"><span className="text-green-600">●</span> 3 Pkt: ≥ 18%</p>
-                <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: 14–&lt;18%</p>
-                <p className="text-sm"><span className="text-orange-600">●</span> 1 Pkt: 10–&lt;14%</p>
-                <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 10%</p>
+                <p className="font-medium text-sm">Punktelogik:</p>
+                <p className="text-sm"><span className="text-green-600">●</span> 3 Pkt: ≥ 15%</p>
+                <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: 10–&lt;15%</p>
+                <p className="text-sm"><span className="text-orange-600">●</span> 1 Pkt: 5–&lt;10%</p>
+                <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 5%</p>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -210,9 +194,9 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
                   return null;
                 }}
               />
-              <ReferenceLine y={18} stroke="#16a34a" strokeDasharray="3 3" />
-              <ReferenceLine y={14} stroke="#ca8a04" strokeDasharray="3 3" />
-              <ReferenceLine y={10} stroke="#ea580c" strokeDasharray="3 3" />
+              <ReferenceLine y={15} stroke="#16a34a" strokeDasharray="3 3" />
+              <ReferenceLine y={10} stroke="#ca8a04" strokeDasharray="3 3" />
+              <ReferenceLine y={5} stroke="#ea580c" strokeDasharray="3 3" />
               <Line 
                 type="monotone" 
                 dataKey="value" 
@@ -223,9 +207,9 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
             </LineChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
-            <span><span className="text-green-600">---</span> 18%</span>
-            <span><span className="text-yellow-600">---</span> 14%</span>
-            <span><span className="text-orange-600">---</span> 10%</span>
+            <span><span className="text-green-600">---</span> 15% (Exzellent)</span>
+            <span><span className="text-yellow-600">---</span> 10% (Akzeptabel)</span>
+            <span><span className="text-orange-600">---</span> 5% (Minimal)</span>
           </div>
         </div>
       )}

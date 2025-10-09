@@ -29,15 +29,6 @@ import { OperatingMarginCard } from '@/components/metrics/OperatingMarginCard';
 import { NetMarginCard } from '@/components/metrics/NetMarginCard';
 import { ROACard } from '@/components/metrics/ROACard';
 import { YearsOfProfitabilityCard } from '@/components/metrics/YearsOfProfitabilityCard';
-import { TabScoreSummary } from '@/components/metrics/TabScoreSummary';
-import { 
-  calculateROEScore,
-  calculateROICScore,
-  calculateOperatingMarginScore,
-  calculateNetMarginScore,
-  calculateROAScore,
-  calculateYearsOfProfitabilityScore
-} from '@/utils/metricScoreCalculators';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -215,37 +206,6 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="profitability" className="mt-4 sm:mt-6">
                     <div className="space-y-4">
-                      <TabScoreSummary
-                        sector={stockInfo?.sector}
-                        industry={stockInfo?.industry}
-                        title="Rentabilität"
-                        metrics={[
-                          {
-                            name: 'ROE',
-                            ...calculateROEScore(financialMetrics?.roe ?? null)
-                          },
-                          {
-                            name: 'ROIC',
-                            ...calculateROICScore(financialMetrics?.roic ?? null)
-                          },
-                          {
-                            name: 'Operating Margin',
-                            ...calculateOperatingMarginScore(financialMetrics?.operatingMargin ?? null)
-                          },
-                          {
-                            name: 'Net Margin',
-                            ...calculateNetMarginScore(financialMetrics?.netMargin ?? null)
-                          },
-                          {
-                            name: 'ROA',
-                            ...calculateROAScore(financialMetrics?.roa ?? null)
-                          },
-                          {
-                            name: 'Jahre Profitabilität',
-                            ...calculateYearsOfProfitabilityScore(financialMetrics?.historicalData?.netIncome)
-                          }
-                        ]}
-                      />
                       <ROECard 
                         currentValue={financialMetrics?.roe ?? null}
                         historicalData={financialMetrics?.historicalData?.roe}
@@ -272,6 +232,7 @@ const IndexContent: React.FC = () => {
                       />
                     </div>
                   </TabsContent>
+                  
                   <TabsContent value="financial-strength" className="mt-4 sm:mt-6">
                     <Card className="p-6">
                       <h2 className="text-2xl font-semibold mb-4">Finanzielle Stärke</h2>
