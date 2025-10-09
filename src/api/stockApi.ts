@@ -1440,7 +1440,7 @@ export const getFinancialMetrics = async (ticker: string) => {
         if (roicValue !== null) {
           roicData.push({
             year: year,
-            value: Math.round(roicValue * 10) / 10, // Round to 1 decimal
+            value: Math.round(roicValue * 10) / 10,
             originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
           });
         }
@@ -1448,6 +1448,60 @@ export const getFinancialMetrics = async (ticker: string) => {
       
       // Sort chronologically (oldest first for chart)
       historicalData.roic = roicData.reverse();
+      
+      // Add TTM calculation from quarterly data (approximation using operating income)
+      try {
+        const quarterlyIncomeData = await fetchFromFMP(`/income-statement/${standardizedTicker}?period=quarter&limit=20`);
+        const quarterlyBalanceData = await fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?period=quarter&limit=20`);
+        
+        if (quarterlyIncomeData && quarterlyIncomeData.length >= 4 &&
+            quarterlyBalanceData && quarterlyBalanceData.length >= 4) {
+          let ttmOperatingIncome = 0;
+          let quarterCount = 0;
+          const latestQuarterDate = quarterlyIncomeData[0].date ? new Date(quarterlyIncomeData[0].date) : new Date();
+          
+          // Calculate TTM Operating Income (approximation for NOPAT)
+          for (let i = 0; i < Math.min(4, quarterlyIncomeData.length); i++) {
+            const qOpIncome = safeValue(quarterlyIncomeData[i].operatingIncome);
+            if (qOpIncome !== null) {
+              ttmOperatingIncome += qOpIncome;
+              quarterCount++;
+            }
+          }
+          
+          // Calculate Invested Capital from latest balance sheet
+          const latestBalance = quarterlyBalanceData[0];
+          const equity = safeValue(latestBalance.totalStockholdersEquity) || 0;
+          const longTermDebt = safeValue(latestBalance.longTermDebt) || 0;
+          const shortTermDebt = safeValue(latestBalance.shortTermDebt) || 0;
+          const investedCapital = equity + longTermDebt + shortTermDebt;
+          
+          if (quarterCount === 4 && investedCapital > 0) {
+            // Approximate ROIC = Operating Income / Invested Capital * 100
+            const ttmRoic = (ttmOperatingIncome / investedCapital) * 100;
+            const ttmYear = latestQuarterDate.getFullYear();
+            const ttmLabel = `TTM ${ttmYear}`;
+            
+            const existingYearIndex = historicalData.roic.findIndex((entry: any) => entry.year === ttmYear);
+            
+            if (existingYearIndex >= 0) {
+              historicalData.roic[existingYearIndex] = {
+                year: ttmLabel,
+                value: Math.round(ttmRoic * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              };
+            } else {
+              historicalData.roic.push({
+                year: ttmLabel,
+                value: Math.round(ttmRoic * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not calculate TTM ROIC:', error);
+      }
     }
 
     // Add historical Operating Margin data (last 10 years)
@@ -1473,7 +1527,7 @@ export const getFinancialMetrics = async (ticker: string) => {
         if (marginValue !== null) {
           operatingMarginData.push({
             year: year,
-            value: Math.round(marginValue * 10) / 10, // Round to 1 decimal
+            value: Math.round(marginValue * 10) / 10,
             originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
           });
         }
@@ -1481,6 +1535,55 @@ export const getFinancialMetrics = async (ticker: string) => {
       
       // Sort chronologically (oldest first for chart)
       historicalData.operatingMargin = operatingMarginData.reverse();
+      
+      // Add TTM calculation from quarterly data
+      try {
+        const quarterlyIncomeData = await fetchFromFMP(`/income-statement/${standardizedTicker}?period=quarter&limit=20`);
+        
+        if (quarterlyIncomeData && quarterlyIncomeData.length >= 4) {
+          let ttmEbit = 0;
+          let ttmRevenue = 0;
+          let quarterCount = 0;
+          const latestQuarterDate = quarterlyIncomeData[0].date ? new Date(quarterlyIncomeData[0].date) : new Date();
+          
+          for (let i = 0; i < Math.min(4, quarterlyIncomeData.length); i++) {
+            const qEbit = quarterlyIncomeData[i].ebitda !== undefined && quarterlyIncomeData[i].depreciationAndAmortization !== undefined
+              ? safeValue(quarterlyIncomeData[i].ebitda) - Math.abs(safeValue(quarterlyIncomeData[i].depreciationAndAmortization))
+              : safeValue(quarterlyIncomeData[i].operatingIncome);
+            const qRevenue = safeValue(quarterlyIncomeData[i].revenue);
+            
+            if (qEbit !== null && qRevenue !== null) {
+              ttmEbit += qEbit;
+              ttmRevenue += qRevenue;
+              quarterCount++;
+            }
+          }
+          
+          if (quarterCount === 4 && ttmRevenue > 0) {
+            const ttmMargin = (ttmEbit / ttmRevenue) * 100;
+            const ttmYear = latestQuarterDate.getFullYear();
+            const ttmLabel = `TTM ${ttmYear}`;
+            
+            const existingYearIndex = historicalData.operatingMargin.findIndex((entry: any) => entry.year === ttmYear);
+            
+            if (existingYearIndex >= 0) {
+              historicalData.operatingMargin[existingYearIndex] = {
+                year: ttmLabel,
+                value: Math.round(ttmMargin * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              };
+            } else {
+              historicalData.operatingMargin.push({
+                year: ttmLabel,
+                value: Math.round(ttmMargin * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not calculate TTM Operating Margin:', error);
+      }
     }
 
     // Add historical Net Margin data (last 10 years)
@@ -1504,7 +1607,7 @@ export const getFinancialMetrics = async (ticker: string) => {
         if (marginValue !== null) {
           netMarginData.push({
             year: year,
-            value: Math.round(marginValue * 10) / 10, // Round to 1 decimal
+            value: Math.round(marginValue * 10) / 10,
             originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
           });
         }
@@ -1512,6 +1615,53 @@ export const getFinancialMetrics = async (ticker: string) => {
       
       // Sort chronologically (oldest first for chart)
       historicalData.netMargin = netMarginData.reverse();
+      
+      // Add TTM calculation from quarterly data
+      try {
+        const quarterlyIncomeData = await fetchFromFMP(`/income-statement/${standardizedTicker}?period=quarter&limit=20`);
+        
+        if (quarterlyIncomeData && quarterlyIncomeData.length >= 4) {
+          let ttmNetIncome = 0;
+          let ttmRevenue = 0;
+          let quarterCount = 0;
+          const latestQuarterDate = quarterlyIncomeData[0].date ? new Date(quarterlyIncomeData[0].date) : new Date();
+          
+          for (let i = 0; i < Math.min(4, quarterlyIncomeData.length); i++) {
+            const qNetIncome = safeValue(quarterlyIncomeData[i].netIncome);
+            const qRevenue = safeValue(quarterlyIncomeData[i].revenue);
+            
+            if (qNetIncome !== null && qRevenue !== null) {
+              ttmNetIncome += qNetIncome;
+              ttmRevenue += qRevenue;
+              quarterCount++;
+            }
+          }
+          
+          if (quarterCount === 4 && ttmRevenue > 0) {
+            const ttmMargin = (ttmNetIncome / ttmRevenue) * 100;
+            const ttmYear = latestQuarterDate.getFullYear();
+            const ttmLabel = `TTM ${ttmYear}`;
+            
+            const existingYearIndex = historicalData.netMargin.findIndex((entry: any) => entry.year === ttmYear);
+            
+            if (existingYearIndex >= 0) {
+              historicalData.netMargin[existingYearIndex] = {
+                year: ttmLabel,
+                value: Math.round(ttmMargin * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              };
+            } else {
+              historicalData.netMargin.push({
+                year: ttmLabel,
+                value: Math.round(ttmMargin * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not calculate TTM Net Margin:', error);
+      }
     }
 
     // Add historical ROA data (last 10 years)
@@ -1535,7 +1685,7 @@ export const getFinancialMetrics = async (ticker: string) => {
         if (roaValue !== null) {
           roaData.push({
             year: year,
-            value: Math.round(roaValue * 10) / 10, // Round to 1 decimal
+            value: Math.round(roaValue * 10) / 10,
             originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
           });
         }
@@ -1543,6 +1693,53 @@ export const getFinancialMetrics = async (ticker: string) => {
       
       // Sort chronologically (oldest first for chart)
       historicalData.roa = roaData.reverse();
+      
+      // Add TTM calculation from quarterly data
+      try {
+        const quarterlyIncomeData = await fetchFromFMP(`/income-statement/${standardizedTicker}?period=quarter&limit=20`);
+        const quarterlyBalanceData = await fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?period=quarter&limit=20`);
+        
+        if (quarterlyIncomeData && quarterlyIncomeData.length >= 4 &&
+            quarterlyBalanceData && quarterlyBalanceData.length >= 4) {
+          let ttmNetIncome = 0;
+          let quarterCount = 0;
+          const latestQuarterDate = quarterlyIncomeData[0].date ? new Date(quarterlyIncomeData[0].date) : new Date();
+          
+          for (let i = 0; i < Math.min(4, quarterlyIncomeData.length); i++) {
+            const qNetIncome = safeValue(quarterlyIncomeData[i].netIncome);
+            if (qNetIncome !== null) {
+              ttmNetIncome += qNetIncome;
+              quarterCount++;
+            }
+          }
+          
+          const ttmAssets = safeValue(quarterlyBalanceData[0].totalAssets);
+          
+          if (quarterCount === 4 && ttmAssets !== null && ttmAssets > 0) {
+            const ttmRoa = (ttmNetIncome / ttmAssets) * 100;
+            const ttmYear = latestQuarterDate.getFullYear();
+            const ttmLabel = `TTM ${ttmYear}`;
+            
+            const existingYearIndex = historicalData.roa.findIndex((entry: any) => entry.year === ttmYear);
+            
+            if (existingYearIndex >= 0) {
+              historicalData.roa[existingYearIndex] = {
+                year: ttmLabel,
+                value: Math.round(ttmRoa * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              };
+            } else {
+              historicalData.roa.push({
+                year: ttmLabel,
+                value: Math.round(ttmRoa * 10) / 10,
+                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not calculate TTM ROA:', error);
+      }
     }
 
     // Add historical Net Income data (last 10 years) for Years of Profitability
