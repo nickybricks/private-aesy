@@ -2,15 +2,19 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
-import { HistoricalDataItem } from '@/context/StockContextTypes';
+import { HistoricalDataItem, ScoreResult } from '@/context/StockContextTypes';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip, Cell } from 'recharts';
 
 interface YearsOfProfitabilityCardProps {
   historicalNetIncome?: HistoricalDataItem[];
+  preset?: string;
+  scoreFromBackend?: ScoreResult;
 }
 
 export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> = ({
-  historicalNetIncome = []
+  historicalNetIncome = [],
+  preset = 'Default',
+  scoreFromBackend
 }) => {
   // Calculate profitable years count
   const profitableYears = historicalNetIncome.filter(item => item.isProfitable).length;
@@ -25,8 +29,8 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
     return 0;
   };
   
-  const score = calculateScore(profitableYears);
-  const maxScore = 4;
+  const score = scoreFromBackend?.score ?? calculateScore(profitableYears);
+  const maxScore = scoreFromBackend?.maxScore ?? 4;
   
   // Determine color based on score
   const getScoreColor = (score: number): string => {

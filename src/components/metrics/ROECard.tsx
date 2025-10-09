@@ -3,13 +3,16 @@ import { Card } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
+import { ScoreResult } from '@/context/StockContextTypes';
 
 interface ROECardProps {
   currentValue: number | null;
   historicalData?: Array<{ year: string; value: number }>;
+  preset?: string;
+  scoreFromBackend?: ScoreResult;
 }
 
-export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }) => {
+export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, preset = 'Default', scoreFromBackend }) => {
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -61,7 +64,8 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
     return 'bg-red-50 border-red-200';
   };
 
-  const score = getScore(displayValue);
+  const score = scoreFromBackend?.score ?? getScore(displayValue);
+  const maxScore = scoreFromBackend?.maxScore ?? 2;
 
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
@@ -108,7 +112,7 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData }
       <div className="flex items-center gap-2 mb-3">
         <div className="text-sm font-medium">Bewertung:</div>
         <div className={`px-2 py-1 rounded text-sm font-semibold ${getColor(score)}`}>
-          {score}/2 Punkte
+          {score}/{maxScore} Punkte
         </div>
         <TooltipProvider>
           <Tooltip>

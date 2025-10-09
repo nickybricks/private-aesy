@@ -1,10 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem, ValuationData } from './StockContextTypes';
+import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem, ValuationData, ProfitabilityScores } from './StockContextTypes';
 import { PredictabilityResult } from '@/services/PredictabilityStarsService';
 import { useStockSearch } from './StockSearchService';
 import { fetchStockNews, fetchPressReleases } from '@/api/stockApi';
 import { fetchValuation } from '@/services/ValuationService';
+import { supabase } from '@/integrations/supabase/client';
 
 // Define a more specific interface for stockInfo
 interface StockInfo {
@@ -45,6 +46,7 @@ export function StockProvider({ children }: StockProviderProps) {
   const [pressReleases, setPressReleases] = useState<NewsItem[]>([]);
   const [valuationData, setValuationData] = useState<ValuationData | undefined>(undefined);
   const [deepResearchPerformed, setDeepResearchPerformed] = useState(false);
+  const [profitabilityScores, setProfitabilityScores] = useState<ProfitabilityScores | null>(null);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
@@ -161,6 +163,41 @@ export function StockProvider({ children }: StockProviderProps) {
             // Don't set error state, valuation is optional
           });
       }
+
+      // Calculate profitability scores based on industry
+      if (info && info.industry && metricsData && !criticalDataMissing) {
+        console.log('🎯 Calculating profitability scores for industry:', info.industry);
+        
+        // Count profitable years from historical net income
+        const historicalNetIncome = metricsData.historicalData?.netIncome || [];
+        const profitableYears = historicalNetIncome.filter(item => item.isProfitable).length;
+        const totalYears = historicalNetIncome.length;
+        
+        supabase.functions.invoke('calculate-profitability-scores', {
+          body: {
+            industry: info.industry,
+            roic: metricsData.roic,
+            operatingMargin: metricsData.operatingMargin,
+            netMargin: metricsData.netMargin,
+            roe: metricsData.roe,
+            roa: metricsData.roa,
+            wacc: metricsData.wacc,
+            profitableYears,
+            totalYears,
+          }
+        })
+          .then(({ data, error }) => {
+            if (error) {
+              console.error('Error calculating profitability scores:', error);
+              return;
+            }
+            console.log('✅ Profitability scores calculated:', data);
+            setProfitabilityScores(data);
+          })
+          .catch((err) => {
+            console.error('Error calling profitability scores function:', err);
+          });
+      }
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
@@ -218,6 +255,7 @@ export function StockProvider({ children }: StockProviderProps) {
       newsItems,
       pressReleases,
       deepResearchPerformed,
+      profitabilityScores,
       setActiveTab,
       setLoadingProgress,
       handleSearch,

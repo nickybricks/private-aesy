@@ -3,17 +3,26 @@ import { Card } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
+import { ScoreResult } from '@/context/StockContextTypes';
 
 interface ROICCardProps {
   currentValue: number | null;
   historicalData?: Array<{ year: string; value: number }>;
   wacc?: number;
+  preset?: string;
+  scoreFromBackend?: ScoreResult;
 }
 
-export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData, wacc }) => {
-  // Debug: Log WACC value
+export const ROICCard: React.FC<ROICCardProps> = ({ 
+  currentValue, 
+  historicalData, 
+  wacc, 
+  preset = 'Default',
+  scoreFromBackend 
+}) => {
   console.log('ROICCard - WACC value:', wacc);
-  console.log('ROICCard - historicalData:', historicalData);
+  console.log('ROICCard - Preset:', preset);
+  console.log('ROICCard - Score from backend:', scoreFromBackend);
   
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
@@ -50,56 +59,54 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
     ? displayValue - wacc 
     : null;
 
-  // Score calculation based on ROIC value and WACC spread (0-6 points)
-  const getScore = (value: number | null, waccValue?: number): number => {
-    if (value === null) return 0;
-    
-    // If WACC is available, use the full logic
-    if (waccValue !== null && waccValue !== undefined) {
-      const spread = value - waccValue;
-      
-      // ≥ 15% und ROIC > WACC + 5 pp → 6
-      if (value >= 15 && spread > 5) return 6;
-      
-      // ≥ 12% und ROIC > WACC → 5
-      if (value >= 12 && spread > 0) return 5;
-      
-      // ≥ 10% und ROIC ≥ WACC → 4
-      if (value >= 10 && spread >= 0) return 4;
-      
-      // ≥ 8% → 2
-      if (value >= 8) return 2;
-      
-      // < 8% oder ≤ WACC → 0
-      if (value < 8 || value <= waccValue) return 0;
-      
-      return 0;
-    }
-    
-    // Fallback if WACC not available - use simplified scoring
-    if (value >= 15) return 6;
-    if (value >= 12) return 5;
-    if (value >= 10) return 4;
-    if (value >= 8) return 2;
-    return 0;
-  };
+  // Use backend score if available, otherwise calculate locally
+  const score = scoreFromBackend?.score ?? 0;
+  const maxScore = scoreFromBackend?.maxScore ?? 6;
 
-  // Get color based on score (0-6 scale)
-  const getColor = (score: number): string => {
-    if (score >= 5) return 'text-green-600';
-    if (score >= 4) return 'text-green-500';
-    if (score >= 2) return 'text-yellow-600';
+  // Get color based on score
+  const getColor = (score: number, maxScore: number): string => {
+    const ratio = score / maxScore;
+    if (ratio >= 0.83) return 'text-green-600'; // 5/6 or higher
+    if (ratio >= 0.67) return 'text-green-500'; // 4/6
+    if (ratio >= 0.33) return 'text-yellow-600'; // 2/6
     return 'text-red-600';
   };
 
-  const getBgColor = (score: number): string => {
-    if (score >= 5) return 'bg-green-50 border-green-200';
-    if (score >= 4) return 'bg-green-50/50 border-green-100';
-    if (score >= 2) return 'bg-yellow-50 border-yellow-200';
+  const getBgColor = (score: number, maxScore: number): string => {
+    const ratio = score / maxScore;
+    if (ratio >= 0.83) return 'bg-green-50 border-green-200';
+    if (ratio >= 0.67) return 'bg-green-50/50 border-green-100';
+    if (ratio >= 0.33) return 'bg-yellow-50 border-yellow-200';
     return 'bg-red-50 border-red-200';
   };
 
-  const score = getScore(displayValue, wacc);
+  // Preset-specific tooltip content
+  const getScoringTooltip = () => {
+    if (preset === 'Industrials') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Bewertung (0-5 Punkte) - Industrials:</p>
+          <p className="text-sm"><span className="text-green-600">●</span> 5 Pkt: ≥ 14% und ROIC &gt; WACC + 5 pp</p>
+          <p className="text-sm"><span className="text-green-600">●</span> 4 Pkt: ≥ 12% und ROIC &gt; WACC + 3 pp</p>
+          <p className="text-sm"><span className="text-green-500">●</span> 3 Pkt: ≥ 10% und ROIC &gt; WACC</p>
+          <p className="text-sm"><span className="text-yellow-600">●</span> 1 Pkt: ≥ 8%</p>
+          <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 8% oder ≤ WACC</p>
+        </div>
+      );
+    }
+    
+    // Default scoring
+    return (
+      <div className="space-y-1">
+        <p className="font-medium text-sm">Bewertung (0-6 Punkte):</p>
+        <p className="text-sm"><span className="text-green-600">●</span> 6 Pkt: ≥ 15% und ROIC &gt; WACC + 5 pp</p>
+        <p className="text-sm"><span className="text-green-600">●</span> 5 Pkt: ≥ 12% und ROIC &gt; WACC</p>
+        <p className="text-sm"><span className="text-green-500">●</span> 4 Pkt: ≥ 10% und ROIC ≥ WACC</p>
+        <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: ≥ 8%</p>
+        <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 8% oder ≤ WACC</p>
+      </div>
+    );
+  };
 
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
@@ -114,36 +121,39 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
         <ul className="text-sm space-y-1 list-disc list-inside ml-2">
           <li><strong>ROIC ≈ NOPAT / Invested Capital</strong></li>
           <li><strong>NOPAT</strong> = operativer Gewinn (EBIT) × (1 − normalisierte Steuerquote)</li>
-          <li><strong>Invested Capital</strong> = Betriebsvermögen (Working Capital + Anlagen + nötige immaterielle Werte) minus überschüssige Liquidität</li>
+          <li><strong>Invested Capital</strong> = Betriebsvermögen minus überschüssige Liquidität</li>
         </ul>
       </div>
 
       <div className="space-y-1">
         <p className="font-medium text-sm">Warum wichtig?</p>
         <ul className="text-sm space-y-1 list-disc list-inside">
-          <li><strong>Moat-Messer:</strong> Dauerhaft hoher ROIC zeigt Preissetzungsmacht, Effizienz und starke Position.</li>
-          <li><strong>Werttreiber:</strong> Nur wenn ROIC &gt; Kapitalkosten (WACC), wird nachhaltig Wert geschaffen.</li>
-          <li><strong>Manager-Score:</strong> Zeigt, wie gut das Management Kapital zuteilt (Investitionen, Zukäufe, Rückkäufe).</li>
+          <li><strong>Moat-Messer:</strong> Dauerhaft hoher ROIC zeigt Preissetzungsmacht.</li>
+          <li><strong>Werttreiber:</strong> Nur wenn ROIC &gt; WACC, wird nachhaltig Wert geschaffen.</li>
+          <li><strong>Manager-Score:</strong> Zeigt, wie gut das Management Kapital zuteilt.</li>
         </ul>
-      </div>
-
-      <div className="space-y-1">
-        <p className="font-medium text-sm">Mehrjahresblick & Stabilität:</p>
-        <p className="text-sm">10/5/3-Jahres-Median und Trend prüfen: ist ROIC konstant hoch oder zackig?</p>
       </div>
 
       <div className="space-y-1">
         <p className="font-medium text-sm">Spread über WACC:</p>
         <p className="text-sm">
           Entscheidend ist der Abstand: <strong>ROIC − WACC</strong>.
-          {' '}&gt; 0 = Wertschaffung; je größer, desto besser (Moat-Hinweis).
+          {' '}&gt; 0 = Wertschaffung; je größer, desto besser.
         </p>
       </div>
+
+      {preset !== 'Default' && (
+        <div className="mt-2 pt-2 border-t">
+          <p className="text-xs text-muted-foreground italic">
+            Scoring-Preset: <strong>{preset}</strong>
+          </p>
+        </div>
+      )}
     </div>
   );
 
   return (
-    <Card className={`p-4 border-2 ${getBgColor(score)}`}>
+    <Card className={`p-4 border-2 ${getBgColor(score, maxScore)}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold text-lg">ROIC (Return on Invested Capital)</h3>
@@ -159,7 +169,7 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
           </TooltipProvider>
         </div>
         <div className="text-right">
-          <div className={`text-2xl font-bold ${getColor(score)}`}>
+          <div className={`text-2xl font-bold ${getColor(score, maxScore)}`}>
             {displayValue !== null ? `${displayValue.toFixed(1)}%` : 'N/A'}
           </div>
           <div className="text-xs text-muted-foreground">{displayLabel}</div>
@@ -170,8 +180,8 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="text-sm font-medium">Bewertung:</div>
-          <div className={`px-2 py-1 rounded text-sm font-semibold ${getColor(score)}`}>
-            {score}/6 Punkte
+          <div className={`px-2 py-1 rounded text-sm font-semibold ${getColor(score, maxScore)}`}>
+            {score}/{maxScore} Punkte
           </div>
           <TooltipProvider>
             <Tooltip>
@@ -179,14 +189,7 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
                 <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
               </TooltipTrigger>
               <TooltipContent side="right">
-                <div className="space-y-1">
-                  <p className="font-medium text-sm">Bewertung (0-6 Punkte):</p>
-                  <p className="text-sm"><span className="text-green-600">●</span> 6 Pkt: ≥ 15% und ROIC &gt; WACC + 5 pp</p>
-                  <p className="text-sm"><span className="text-green-600">●</span> 5 Pkt: ≥ 12% und ROIC &gt; WACC</p>
-                  <p className="text-sm"><span className="text-green-500">●</span> 4 Pkt: ≥ 10% und ROIC ≥ WACC</p>
-                  <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: ≥ 8%</p>
-                  <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 8% oder ≤ WACC (kein Wertaufbau)</p>
-                </div>
+                {getScoringTooltip()}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -228,11 +231,11 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
                 domain={[
                   (dataMin: number) => {
                     const minVal = Math.min(dataMin, wacc || 0);
-                    return Math.floor(minVal / 5) * 5; // Round down to nearest 5
+                    return Math.floor(minVal / 5) * 5;
                   },
                   (dataMax: number) => {
                     const maxVal = Math.max(dataMax, wacc || 0, 15);
-                    return Math.ceil(maxVal / 5) * 5; // Round up to nearest 5
+                    return Math.ceil(maxVal / 5) * 5;
                   }
                 ]}
               />
@@ -277,13 +280,6 @@ export const ROICCard: React.FC<ROICCardProps> = ({ currentValue, historicalData
               />
             </LineChart>
           </ResponsiveContainer>
-          <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
-            <span><span className="text-green-600">---</span> 15% (Exzellent)</span>
-            <span><span className="text-yellow-600">---</span> 8% (Akzeptabel)</span>
-            {wacc !== null && wacc !== undefined && (
-              <span><span className="text-red-600">---</span> WACC ({wacc.toFixed(1)}%)</span>
-            )}
-          </div>
         </div>
       )}
     </Card>

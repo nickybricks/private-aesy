@@ -3,13 +3,24 @@ import { Card } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
+import { ScoreResult } from '@/context/StockContextTypes';
 
 interface NetMarginCardProps {
   currentValue: number | null;
   historicalData?: Array<{ year: string; value: number }>;
+  preset?: string;
+  scoreFromBackend?: ScoreResult;
 }
 
-export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, historicalData }) => {
+export const NetMarginCard: React.FC<NetMarginCardProps> = ({ 
+  currentValue, 
+  historicalData,
+  preset = 'Default',
+  scoreFromBackend 
+}) => {
+  console.log('NetMarginCard - Preset:', preset);
+  console.log('NetMarginCard - Score from backend:', scoreFromBackend);
+
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -40,31 +51,51 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
     chartData = last3Years;
   }
 
-  // Score calculation based on Net Margin value
-  const getScore = (value: number | null): number => {
-    if (value === null) return 0;
-    if (value >= 15) return 3;
-    if (value >= 10) return 2;
-    if (value >= 5) return 1;
-    return 0;
-  };
+  // Use backend score if available
+  const score = scoreFromBackend?.score ?? 0;
+  const maxScore = scoreFromBackend?.maxScore ?? 3;
 
   // Get color based on score
-  const getColor = (score: number): string => {
-    if (score === 3) return 'text-green-600';
-    if (score === 2) return 'text-yellow-600';
-    if (score === 1) return 'text-orange-600';
+  const getColor = (score: number, maxScore: number): string => {
+    const ratio = score / maxScore;
+    if (ratio === 1) return 'text-green-600';
+    if (ratio >= 0.67) return 'text-yellow-600';
+    if (ratio >= 0.33) return 'text-orange-600';
     return 'text-red-600';
   };
 
-  const getBgColor = (score: number): string => {
-    if (score === 3) return 'bg-green-50 border-green-200';
-    if (score === 2) return 'bg-yellow-50 border-yellow-200';
-    if (score === 1) return 'bg-orange-50 border-orange-200';
+  const getBgColor = (score: number, maxScore: number): string => {
+    const ratio = score / maxScore;
+    if (ratio === 1) return 'bg-green-50 border-green-200';
+    if (ratio >= 0.67) return 'bg-yellow-50 border-yellow-200';
+    if (ratio >= 0.33) return 'bg-orange-50 border-orange-200';
     return 'bg-red-50 border-red-200';
   };
 
-  const score = getScore(displayValue);
+  // Preset-specific tooltip content
+  const getScoringTooltip = () => {
+    if (preset === 'Industrials') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Bewertung (0-2 Punkte) - Industrials:</p>
+          <p className="text-sm"><span className="text-green-600">●</span> 2 Pkt: ≥ 10%</p>
+          <p className="text-sm"><span className="text-yellow-600">●</span> 1 Pkt: 7–&lt;10%</p>
+          <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 7%</p>
+        </div>
+      );
+    }
+    
+    // Default scoring
+    return (
+      <div className="space-y-1">
+        <p className="font-medium text-sm">Punktelogik:</p>
+        <p className="text-sm"><span className="text-green-600">●</span> 3 Pkt: ≥ 15%</p>
+        <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: 10–&lt;15%</p>
+        <p className="text-sm"><span className="text-orange-600">●</span> 1 Pkt: 5–&lt;10%</p>
+        <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 5%</p>
+      </div>
+    );
+  };
 
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
@@ -80,42 +111,29 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
         <p className="font-medium text-sm">Warum wichtig?</p>
         <ul className="text-sm space-y-1 list-disc list-inside">
           <li>
-            <strong>Preissetzung + Effizienz:</strong> Zeigt, ob die Firma Preise durchsetzen{' '}
-            <strong>und</strong> Kosten im Griff hat.
+            <strong>Preissetzung + Effizienz:</strong> Zeigt Preisdurchsetzung und Kostenkontrolle.
           </li>
           <li>
-            <strong>Krisenfestigkeit:</strong> Stabile Nettomargen durch Zyklen deuten auf einen „Moat".
+            <strong>Krisenfestigkeit:</strong> Stabile Nettomargen deuten auf einen „Moat".
           </li>
           <li>
-            <strong>Aktionärssicht:</strong> Was am Ende wirklich beim Eigentümer ankommt – nach Zinsen & Steuern.
+            <strong>Aktionärssicht:</strong> Was am Ende beim Eigentümer ankommt.
           </li>
         </ul>
       </div>
-      <div className="space-y-1">
-        <p className="font-medium text-sm">Mehrjahresblick & Stabilität</p>
-        <p className="text-sm">
-          <strong>10/5/3-Jahres-Median</strong> und <strong>Trend</strong> prüfen (konstant/steigend &gt; zackig/fallend).
-        </p>
-      </div>
-      <div className="space-y-1">
-        <p className="font-medium text-sm">Was ist „gut"?</p>
-        <ul className="text-sm space-y-1 list-disc list-inside">
-          <li>
-            <strong className="text-green-600">Grün (stark):</strong> ≥ 15 % (Nicht-Finanz), über mehrere Jahre stabil.
-          </li>
-          <li>
-            <strong className="text-yellow-600">Gelb (ok):</strong> 10–15 % oder deutlich schwankend.
-          </li>
-          <li>
-            <strong className="text-red-600">Rot (schwach):</strong> &lt; 10 % dauerhaft.
-          </li>
-        </ul>
-      </div>
+
+      {preset !== 'Default' && (
+        <div className="mt-2 pt-2 border-t">
+          <p className="text-xs text-muted-foreground italic">
+            Scoring-Preset: <strong>{preset}</strong>
+          </p>
+        </div>
+      )}
     </div>
   );
 
   return (
-    <Card className={`p-4 border-2 ${getBgColor(score)}`}>
+    <Card className={`p-4 border-2 ${getBgColor(score, maxScore)}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold text-lg">Nettomarge</h3>
@@ -131,7 +149,7 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
           </TooltipProvider>
         </div>
         <div className="text-right">
-          <div className={`text-2xl font-bold ${getColor(score)}`}>
+          <div className={`text-2xl font-bold ${getColor(score, maxScore)}`}>
             {displayValue !== null ? `${displayValue.toFixed(1)}%` : 'N/A'}
           </div>
           <div className="text-xs text-muted-foreground">{displayLabel}</div>
@@ -141,8 +159,8 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
       {/* Score indicator */}
       <div className="flex items-center gap-2 mb-3">
         <div className="text-sm font-medium">Bewertung:</div>
-        <div className={`px-2 py-1 rounded text-sm font-semibold ${getColor(score)}`}>
-          {score}/3 Punkte
+        <div className={`px-2 py-1 rounded text-sm font-semibold ${getColor(score, maxScore)}`}>
+          {score}/{maxScore} Punkte
         </div>
         <TooltipProvider>
           <Tooltip>
@@ -150,13 +168,7 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
             <TooltipContent side="right">
-              <div className="space-y-1">
-                <p className="font-medium text-sm">Punktelogik:</p>
-                <p className="text-sm"><span className="text-green-600">●</span> 3 Pkt: ≥ 15%</p>
-                <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: 10–&lt;15%</p>
-                <p className="text-sm"><span className="text-orange-600">●</span> 1 Pkt: 5–&lt;10%</p>
-                <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 5%</p>
-              </div>
+              {getScoringTooltip()}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -194,9 +206,6 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
                   return null;
                 }}
               />
-              <ReferenceLine y={15} stroke="#16a34a" strokeDasharray="3 3" />
-              <ReferenceLine y={10} stroke="#ca8a04" strokeDasharray="3 3" />
-              <ReferenceLine y={5} stroke="#ea580c" strokeDasharray="3 3" />
               <Line 
                 type="monotone" 
                 dataKey="value" 
@@ -206,11 +215,6 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({ currentValue, hist
               />
             </LineChart>
           </ResponsiveContainer>
-          <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
-            <span><span className="text-green-600">---</span> 15% (Exzellent)</span>
-            <span><span className="text-yellow-600">---</span> 10% (Akzeptabel)</span>
-            <span><span className="text-orange-600">---</span> 5% (Minimal)</span>
-          </div>
         </div>
       )}
     </Card>

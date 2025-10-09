@@ -3,14 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { ClickableTooltip } from '@/components/ClickableTooltip';
 import { Info } from 'lucide-react';
-import { HistoricalDataItem } from '@/context/StockContextTypes';
+import { HistoricalDataItem, ScoreResult } from '@/context/StockContextTypes';
 
 interface ROACardProps {
   currentValue: number | null;
   historicalData?: HistoricalDataItem[];
+  preset?: string;
+  scoreFromBackend?: ScoreResult;
 }
 
-export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData }) => {
+export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, preset = 'Default', scoreFromBackend }) => {
   // Calculate score based on ROA value
   const calculateScore = (value: number | null): number => {
     if (value === null) return 0;
@@ -33,8 +35,8 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData }
     return 'bg-red-50 border-red-200';
   };
 
-  const score = calculateScore(currentValue);
-  const maxScore = 1;
+  const score = scoreFromBackend?.score ?? calculateScore(currentValue);
+  const maxScore = scoreFromBackend?.maxScore ?? 1;
 
   // Calculate medians if historical data available
   const calculateMedian = (data: HistoricalDataItem[], years: number): number | null => {

@@ -118,6 +118,25 @@ export interface ValuationData {
   warnings?: string[];
 }
 
+export interface ScoreResult {
+  score: number;
+  maxScore: number;
+}
+
+export interface ProfitabilityScores {
+  preset: string;
+  scores: {
+    roic: ScoreResult;
+    operatingMargin: ScoreResult;
+    netMargin: ScoreResult;
+    years: ScoreResult;
+    roe: ScoreResult;
+    roa: ScoreResult;
+  };
+  totalScore: number;
+  maxTotalScore: number;
+}
+
 export interface StockContextType {
   isLoading: boolean;
   loadingProgress: number;
@@ -137,6 +156,7 @@ export interface StockContextType {
   newsItems: NewsItem[];
   pressReleases: NewsItem[];
   deepResearchPerformed: boolean;
+  profitabilityScores: ProfitabilityScores | null;
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string, enableDeepResearch?: boolean) => Promise<void>;
