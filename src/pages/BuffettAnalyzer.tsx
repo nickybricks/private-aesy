@@ -32,6 +32,7 @@ import { YearsOfProfitabilityCard } from '@/components/metrics/YearsOfProfitabil
 import { DebtToAssetsCard } from '@/components/metrics/DebtToAssetsCard';
 import { InterestCoverageCard } from '@/components/metrics/InterestCoverageCard';
 import { CurrentRatioCard } from '@/components/metrics/CurrentRatioCard';
+import { NetDebtToEbitdaCard } from '@/components/metrics/NetDebtToEbitdaCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -262,6 +263,10 @@ const IndexContent: React.FC = () => {
                       <CurrentRatioCard 
                         currentValue={financialMetrics?.metrics?.find(m => m.name === 'Current Ratio')?.value ?? null}
                         historicalData={financialMetrics?.historicalData?.currentRatio}
+                      />
+                      <NetDebtToEbitdaCard 
+                        currentValue={financialMetrics?.metrics?.find(m => m.name === 'Net Debt to EBITDA')?.value ?? null}
+                        historicalData={financialMetrics?.historicalData?.netDebtToEbitda}
                       />
                     </div>
                   </TabsContent>
