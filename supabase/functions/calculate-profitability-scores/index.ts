@@ -159,6 +159,21 @@ const industryToPreset: Record<string, string> = {
   "Oil & Gas Drilling": "EnergyMaterials",
   "Coal": "EnergyMaterials",
   "Agricultural - Commodities/Milling": "EnergyMaterials",
+  
+  // Healthcare (Pharma/Biotech/Medtech)
+  "Medical - Specialties": "Healthcare",
+  "Medical - Pharmaceuticals": "Healthcare",
+  "Medical - Instruments & Supplies": "Healthcare",
+  "Medical - Healthcare Plans": "Healthcare",
+  "Medical - Healthcare Information Services": "Healthcare",
+  "Medical - Equipment & Services": "Healthcare",
+  "Medical - Distribution": "Healthcare",
+  "Medical - Diagnostics & Research": "Healthcare",
+  "Medical - Devices": "Healthcare",
+  "Medical - Care Facilities": "Healthcare",
+  "Drug Manufacturers - Specialty & Generic": "Healthcare",
+  "Drug Manufacturers - General": "Healthcare",
+  "Biotechnology": "Healthcare",
 };
 
 interface MetricsInput {
@@ -589,6 +604,71 @@ function scoreEnergyMaterialsROA(roa: number | null): ScoreResult {
   return { score: 0, maxScore: 2 };
 }
 
+// Healthcare Scoring Logic
+function scoreHealthcareROIC(roic: number | null, wacc: number | null): ScoreResult {
+  if (roic === null) return { score: 0, maxScore: 6 };
+  
+  const spread = wacc !== null ? roic - wacc : null;
+  
+  if (roic >= 16 && spread !== null && spread >= 6) return { score: 6, maxScore: 6 };
+  if (roic >= 13 && spread !== null && spread >= 4) return { score: 5, maxScore: 6 };
+  if (roic >= 11 && wacc !== null && roic > wacc) return { score: 4, maxScore: 6 };
+  if (roic >= 9) return { score: 2, maxScore: 6 };
+  
+  return { score: 0, maxScore: 6 };
+}
+
+function scoreHealthcareOperatingMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 4 };
+  
+  if (margin >= 22) return { score: 4, maxScore: 4 };
+  if (margin >= 18) return { score: 3, maxScore: 4 };
+  if (margin >= 14) return { score: 2, maxScore: 4 };
+  if (margin >= 10) return { score: 1, maxScore: 4 };
+  
+  return { score: 0, maxScore: 4 };
+}
+
+function scoreHealthcareNetMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 3 };
+  
+  // Handle decimal values (0.16 = 16%)
+  const percentValue = margin < 1 ? margin * 100 : margin;
+  
+  if (percentValue >= 16) return { score: 3, maxScore: 3 };
+  if (percentValue >= 12) return { score: 2, maxScore: 3 };
+  if (percentValue >= 8) return { score: 1, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreHealthcareYears(profitableYears: number, totalYears: number): ScoreResult {
+  if (totalYears === 0) return { score: 0, maxScore: 3 };
+  
+  if (profitableYears === 10 && totalYears === 10) return { score: 3, maxScore: 3 };
+  if (profitableYears === 9 && totalYears === 10) return { score: 2, maxScore: 3 };
+  if (profitableYears === 8 && totalYears >= 10) return { score: 1, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreHealthcareROE(roe: number | null): ScoreResult {
+  if (roe === null) return { score: 0, maxScore: 3 };
+  
+  if (roe >= 15) return { score: 3, maxScore: 3 };
+  if (roe >= 10) return { score: 2, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreHealthcareROA(roa: number | null): ScoreResult {
+  if (roa === null) return { score: 0, maxScore: 1 };
+  
+  if (roa >= 8) return { score: 1, maxScore: 1 };
+  
+  return { score: 0, maxScore: 1 };
+}
+
 function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse {
   let scores: ScoringResponse['scores'];
   
@@ -645,6 +725,15 @@ function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse
       years: scoreEnergyMaterialsYears(metrics.profitableYears || 0, metrics.totalYears || 0),
       roe: scoreEnergyMaterialsROE(metrics.roe),
       roa: scoreEnergyMaterialsROA(metrics.roa),
+    };
+  } else if (preset === "Healthcare") {
+    scores = {
+      roic: scoreHealthcareROIC(metrics.roic, metrics.wacc),
+      operatingMargin: scoreHealthcareOperatingMargin(metrics.operatingMargin),
+      netMargin: scoreHealthcareNetMargin(metrics.netMargin),
+      years: scoreHealthcareYears(metrics.profitableYears || 0, metrics.totalYears || 0),
+      roe: scoreHealthcareROE(metrics.roe),
+      roa: scoreHealthcareROA(metrics.roa),
     };
   } else {
     // Default/Fallback scoring
