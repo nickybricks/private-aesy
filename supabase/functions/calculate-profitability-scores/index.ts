@@ -193,6 +193,14 @@ const industryToPreset: Record<string, string> = {
   "Asset Management - Leveraged": "Banks",
   "Asset Management - Cryptocurrency": "Banks",
   "Asset Management - Global": "Banks",
+  
+  // Financials - Insurance
+  "Insurance - Specialty": "Insurance",
+  "Insurance - Reinsurance": "Insurance",
+  "Insurance - Property & Casualty": "Insurance",
+  "Insurance - Life": "Insurance",
+  "Insurance - Diversified": "Insurance",
+  "Insurance - Brokers": "Insurance",
 };
 
 interface MetricsInput {
@@ -737,6 +745,67 @@ function scoreBanksROA(roa: number | null): ScoreResult {
   return { score: 0, maxScore: 4 };
 }
 
+// Insurance Scoring Logic (kein Operating-Proxy, Net-Margin ist brauchbar)
+function scoreInsuranceROIC(roic: number | null, wacc: number | null): ScoreResult {
+  if (roic === null) return { score: 0, maxScore: 2 };
+  
+  const spread = wacc !== null ? roic - wacc : null;
+  
+  if (roic >= 12 && spread !== null && spread >= 3) return { score: 2, maxScore: 2 };
+  if (roic >= 10 && spread !== null && spread >= 1) return { score: 1, maxScore: 2 };
+  
+  return { score: 0, maxScore: 2 };
+}
+
+function scoreInsuranceOperatingMargin(margin: number | null): ScoreResult {
+  // Operating Margin wird bei Insurance nicht gewertet
+  return { score: 0, maxScore: 0 };
+}
+
+function scoreInsuranceNetMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 3 };
+  
+  // Handle decimal values (0.08 = 8%)
+  const percentValue = margin < 1 ? margin * 100 : margin;
+  
+  if (percentValue >= 8) return { score: 3, maxScore: 3 };
+  if (percentValue >= 6) return { score: 2, maxScore: 3 };
+  if (percentValue >= 4) return { score: 1, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreInsuranceYears(profitableYears: number, totalYears: number): ScoreResult {
+  if (totalYears === 0) return { score: 0, maxScore: 5 };
+  
+  if (profitableYears === 10 && totalYears === 10) return { score: 5, maxScore: 5 };
+  if (profitableYears === 9 && totalYears === 10) return { score: 4, maxScore: 5 };
+  if (profitableYears === 8 && totalYears >= 10) return { score: 3, maxScore: 5 };
+  if (profitableYears === 7 && totalYears >= 10) return { score: 2, maxScore: 5 };
+  
+  return { score: 0, maxScore: 5 };
+}
+
+function scoreInsuranceROE(roe: number | null): ScoreResult {
+  if (roe === null) return { score: 0, maxScore: 8 };
+  
+  if (roe >= 14) return { score: 8, maxScore: 8 };
+  if (roe >= 12) return { score: 6, maxScore: 8 };
+  if (roe >= 10) return { score: 4, maxScore: 8 };
+  if (roe >= 8) return { score: 2, maxScore: 8 };
+  
+  return { score: 0, maxScore: 8 };
+}
+
+function scoreInsuranceROA(roa: number | null): ScoreResult {
+  if (roa === null) return { score: 0, maxScore: 2 };
+  
+  if (roa >= 1.0) return { score: 2, maxScore: 2 };
+  if (roa >= 0.8) return { score: 1, maxScore: 2 };
+  
+  return { score: 0, maxScore: 2 };
+}
+
 function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse {
   let scores: ScoringResponse['scores'];
   
@@ -811,6 +880,15 @@ function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse
       years: scoreBanksYears(metrics.profitableYears || 0, metrics.totalYears || 0),
       roe: scoreBanksROE(metrics.roe),
       roa: scoreBanksROA(metrics.roa),
+    };
+  } else if (preset === "Insurance") {
+    scores = {
+      roic: scoreInsuranceROIC(metrics.roic, metrics.wacc),
+      operatingMargin: scoreInsuranceOperatingMargin(metrics.operatingMargin),
+      netMargin: scoreInsuranceNetMargin(metrics.netMargin),
+      years: scoreInsuranceYears(metrics.profitableYears || 0, metrics.totalYears || 0),
+      roe: scoreInsuranceROE(metrics.roe),
+      roa: scoreInsuranceROA(metrics.roa),
     };
   } else {
     // Default/Fallback scoring
