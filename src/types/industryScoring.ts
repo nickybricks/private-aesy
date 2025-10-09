@@ -111,22 +111,22 @@ export const INDUSTRY_PRESETS: Record<IndustryPreset, { name: string; config: In
     }
   },
   retail: {
-    name: 'Handel / Einzelhandel',
+    name: 'Handel / Logistik',
     config: {
       netDebtToEbitda: {
-        thresholds: [1.0, 1.5, 2.0, 3.0],
+        thresholds: [1.5, 2.0, 2.5, 3.0],
         scores: [6, 5, 4, 2, 0]
       },
       interestCoverage: {
-        thresholds: [12, 8, 5, 3],
+        thresholds: [8, 5, 3, 2],
         scores: [6, 5, 3, 1, 0]
       },
       debtToAssets: {
-        thresholds: [40, 50],
-        scores: [3, 1, 0]
+        thresholds: [35, 45, 55],
+        scores: [4, 3, 1, 0]
       },
       currentRatio: {
-        thresholds: [2.0, 1.5, 1.2],
+        thresholds: [1.4, 1.2, 1.0],
         scores: [4, 3, 1, 0]
       }
     }
