@@ -232,20 +232,20 @@ interface ScoringResponse {
 function scoreSoftwareNetDebtToEbitda(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
   if (value <= 0) return { score: 6, maxScore: 6 }; // Net Cash
-  if (value <= 0.5) return { score: 6, maxScore: 6 };
-  if (value <= 1.0) return { score: 5, maxScore: 6 };
-  if (value <= 1.5) return { score: 4, maxScore: 6 };
-  if (value <= 2.0) return { score: 2, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value <= 1.0) return { score: 6, maxScore: 6 }; // ≤ 1.0× (sehr stark)
+  if (value <= 1.5) return { score: 5, maxScore: 6 }; // > 1.0-1.5× (stark)
+  if (value <= 2.0) return { score: 4, maxScore: 6 }; // > 1.5-2.0× (ok)
+  if (value <= 3.0) return { score: 2, maxScore: 6 }; // > 2.0-3.0× (beobachten)
+  return { score: 0, maxScore: 6 }; // > 3.0× (heikel)
 }
 
 function scoreSoftwareInterestCoverage(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
-  if (value >= 15) return { score: 6, maxScore: 6 };
-  if (value >= 10) return { score: 5, maxScore: 6 };
-  if (value >= 7) return { score: 3, maxScore: 6 };
-  if (value >= 4) return { score: 1, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value >= 12) return { score: 6, maxScore: 6 }; // ≥ 12× (exzellent)
+  if (value >= 8) return { score: 5, maxScore: 6 }; // ≥ 8-<12× (stark, Buffett-kompatibel)
+  if (value >= 5) return { score: 3, maxScore: 6 }; // ≥ 5-<8× (ok, beobachten)
+  if (value >= 3) return { score: 1, maxScore: 6 }; // ≥ 3-<5× (beobachten)
+  return { score: 0, maxScore: 6 }; // < 3× (riskant)
 }
 
 function scoreSoftwareDebtToAssets(value: number | null): ScoreResult {
@@ -258,30 +258,30 @@ function scoreSoftwareDebtToAssets(value: number | null): ScoreResult {
 
 function scoreSoftwareCurrentRatio(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 4 };
-  if (value >= 1.8) return { score: 4, maxScore: 4 };
-  if (value >= 1.4) return { score: 3, maxScore: 4 };
-  if (value >= 1.1) return { score: 1, maxScore: 4 };
-  return { score: 0, maxScore: 4 };
+  if (value >= 2.0) return { score: 4, maxScore: 4 }; // ≥ 2.0 (stark)
+  if (value >= 1.5) return { score: 3, maxScore: 4 }; // ≥ 1.5-<2.0 (ok)
+  if (value >= 1.2) return { score: 1, maxScore: 4 }; // ≥ 1.2-<1.5 (beobachten)
+  return { score: 0, maxScore: 4 }; // < 1.2 (riskant)
 }
 
 // ============ PRESET 2: STAPLES ============
 function scoreStaplesNetDebtToEbitda(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
   if (value <= 0) return { score: 6, maxScore: 6 }; // Net Cash
-  if (value <= 1.5) return { score: 6, maxScore: 6 };
-  if (value <= 2.0) return { score: 5, maxScore: 6 };
-  if (value <= 2.5) return { score: 4, maxScore: 6 };
-  if (value <= 3.0) return { score: 2, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value <= 1.0) return { score: 6, maxScore: 6 }; // ≤ 1.0× (sehr stark)
+  if (value <= 1.5) return { score: 5, maxScore: 6 }; // > 1.0-1.5× (stark)
+  if (value <= 2.0) return { score: 4, maxScore: 6 }; // > 1.5-2.0× (ok)
+  if (value <= 3.0) return { score: 2, maxScore: 6 }; // > 2.0-3.0× (beobachten)
+  return { score: 0, maxScore: 6 }; // > 3.0× (heikel)
 }
 
 function scoreStaplesInterestCoverage(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
-  if (value >= 10) return { score: 6, maxScore: 6 };
-  if (value >= 7) return { score: 5, maxScore: 6 };
-  if (value >= 5) return { score: 3, maxScore: 6 };
-  if (value >= 3) return { score: 1, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value >= 12) return { score: 6, maxScore: 6 }; // ≥ 12× (exzellent)
+  if (value >= 8) return { score: 5, maxScore: 6 }; // ≥ 8-<12× (stark, Buffett-kompatibel)
+  if (value >= 5) return { score: 3, maxScore: 6 }; // ≥ 5-<8× (ok, beobachten)
+  if (value >= 3) return { score: 1, maxScore: 6 }; // ≥ 3-<5× (beobachten)
+  return { score: 0, maxScore: 6 }; // < 3× (riskant)
 }
 
 function scoreStaplesDebtToAssets(value: number | null): ScoreResult {
@@ -294,30 +294,30 @@ function scoreStaplesDebtToAssets(value: number | null): ScoreResult {
 
 function scoreStaplesCurrentRatio(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 4 };
-  if (value >= 1.5) return { score: 4, maxScore: 4 };
-  if (value >= 1.3) return { score: 3, maxScore: 4 };
-  if (value >= 1.1) return { score: 1, maxScore: 4 };
-  return { score: 0, maxScore: 4 };
+  if (value >= 2.0) return { score: 4, maxScore: 4 }; // ≥ 2.0 (stark)
+  if (value >= 1.5) return { score: 3, maxScore: 4 }; // ≥ 1.5-<2.0 (ok)
+  if (value >= 1.2) return { score: 1, maxScore: 4 }; // ≥ 1.2-<1.5 (beobachten)
+  return { score: 0, maxScore: 4 }; // < 1.2 (riskant)
 }
 
 // ============ PRESET 3: INDUSTRIALS ============
 function scoreIndustrialsNetDebtToEbitda(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
   if (value <= 0) return { score: 6, maxScore: 6 }; // Net Cash
-  if (value <= 1.5) return { score: 6, maxScore: 6 };
-  if (value <= 2.0) return { score: 5, maxScore: 6 };
-  if (value <= 2.5) return { score: 4, maxScore: 6 };
-  if (value <= 3.5) return { score: 2, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value <= 1.0) return { score: 6, maxScore: 6 }; // ≤ 1.0× (sehr stark)
+  if (value <= 1.5) return { score: 5, maxScore: 6 }; // > 1.0-1.5× (stark)
+  if (value <= 2.0) return { score: 4, maxScore: 6 }; // > 1.5-2.0× (ok)
+  if (value <= 3.0) return { score: 2, maxScore: 6 }; // > 2.0-3.0× (beobachten)
+  return { score: 0, maxScore: 6 }; // > 3.0× (heikel)
 }
 
 function scoreIndustrialsInterestCoverage(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
-  if (value >= 10) return { score: 6, maxScore: 6 };
-  if (value >= 6) return { score: 5, maxScore: 6 };
-  if (value >= 4) return { score: 3, maxScore: 6 };
-  if (value >= 2.5) return { score: 1, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value >= 12) return { score: 6, maxScore: 6 }; // ≥ 12× (exzellent)
+  if (value >= 8) return { score: 5, maxScore: 6 }; // ≥ 8-<12× (stark, Buffett-kompatibel)
+  if (value >= 5) return { score: 3, maxScore: 6 }; // ≥ 5-<8× (ok, beobachten)
+  if (value >= 3) return { score: 1, maxScore: 6 }; // ≥ 3-<5× (beobachten)
+  return { score: 0, maxScore: 6 }; // < 3× (riskant)
 }
 
 function scoreIndustrialsDebtToAssets(value: number | null): ScoreResult {
@@ -330,30 +330,30 @@ function scoreIndustrialsDebtToAssets(value: number | null): ScoreResult {
 
 function scoreIndustrialsCurrentRatio(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 4 };
-  if (value >= 1.5) return { score: 4, maxScore: 4 };
-  if (value >= 1.3) return { score: 3, maxScore: 4 };
-  if (value >= 1.1) return { score: 1, maxScore: 4 };
-  return { score: 0, maxScore: 4 };
+  if (value >= 2.0) return { score: 4, maxScore: 4 }; // ≥ 2.0 (stark)
+  if (value >= 1.5) return { score: 3, maxScore: 4 }; // ≥ 1.5-<2.0 (ok)
+  if (value >= 1.2) return { score: 1, maxScore: 4 }; // ≥ 1.2-<1.5 (beobachten)
+  return { score: 0, maxScore: 4 }; // < 1.2 (riskant)
 }
 
 // ============ PRESET 4: RETAIL LOGISTICS ============
 function scoreRetailLogisticsNetDebtToEbitda(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
   if (value <= 0) return { score: 6, maxScore: 6 }; // Net Cash
-  if (value <= 1.5) return { score: 6, maxScore: 6 };
-  if (value <= 2.0) return { score: 5, maxScore: 6 };
-  if (value <= 2.5) return { score: 4, maxScore: 6 };
-  if (value <= 3.0) return { score: 2, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value <= 1.0) return { score: 6, maxScore: 6 }; // ≤ 1.0× (sehr stark)
+  if (value <= 1.5) return { score: 5, maxScore: 6 }; // > 1.0-1.5× (stark)
+  if (value <= 2.0) return { score: 4, maxScore: 6 }; // > 1.5-2.0× (ok)
+  if (value <= 3.0) return { score: 2, maxScore: 6 }; // > 2.0-3.0× (beobachten)
+  return { score: 0, maxScore: 6 }; // > 3.0× (heikel)
 }
 
 function scoreRetailLogisticsInterestCoverage(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
-  if (value >= 8) return { score: 6, maxScore: 6 };
-  if (value >= 5) return { score: 5, maxScore: 6 };
-  if (value >= 3) return { score: 3, maxScore: 6 };
-  if (value >= 2) return { score: 1, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value >= 12) return { score: 6, maxScore: 6 }; // ≥ 12× (exzellent)
+  if (value >= 8) return { score: 5, maxScore: 6 }; // ≥ 8-<12× (stark, Buffett-kompatibel)
+  if (value >= 5) return { score: 3, maxScore: 6 }; // ≥ 5-<8× (ok, beobachten)
+  if (value >= 3) return { score: 1, maxScore: 6 }; // ≥ 3-<5× (beobachten)
+  return { score: 0, maxScore: 6 }; // < 3× (riskant)
 }
 
 function scoreRetailLogisticsDebtToAssets(value: number | null): ScoreResult {
@@ -366,30 +366,30 @@ function scoreRetailLogisticsDebtToAssets(value: number | null): ScoreResult {
 
 function scoreRetailLogisticsCurrentRatio(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 4 };
-  if (value >= 1.4) return { score: 4, maxScore: 4 };
-  if (value >= 1.2) return { score: 3, maxScore: 4 };
-  if (value >= 1.0) return { score: 1, maxScore: 4 };
-  return { score: 0, maxScore: 4 };
+  if (value >= 2.0) return { score: 4, maxScore: 4 }; // ≥ 2.0 (stark)
+  if (value >= 1.5) return { score: 3, maxScore: 4 }; // ≥ 1.5-<2.0 (ok)
+  if (value >= 1.2) return { score: 1, maxScore: 4 }; // ≥ 1.2-<1.5 (beobachten)
+  return { score: 0, maxScore: 4 }; // < 1.2 (riskant)
 }
 
 // ============ PRESET 5: ENERGY MATERIALS ============
 function scoreEnergyMaterialsNetDebtToEbitda(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
   if (value <= 0) return { score: 6, maxScore: 6 }; // Net Cash
-  if (value <= 1.0) return { score: 6, maxScore: 6 };
-  if (value <= 1.5) return { score: 5, maxScore: 6 };
-  if (value <= 2.0) return { score: 4, maxScore: 6 };
-  if (value <= 3.0) return { score: 2, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value <= 1.0) return { score: 6, maxScore: 6 }; // ≤ 1.0× (sehr stark)
+  if (value <= 1.5) return { score: 5, maxScore: 6 }; // > 1.0-1.5× (stark)
+  if (value <= 2.0) return { score: 4, maxScore: 6 }; // > 1.5-2.0× (ok)
+  if (value <= 3.0) return { score: 2, maxScore: 6 }; // > 2.0-3.0× (beobachten)
+  return { score: 0, maxScore: 6 }; // > 3.0× (heikel)
 }
 
 function scoreEnergyMaterialsInterestCoverage(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
-  if (value >= 10) return { score: 6, maxScore: 6 };
-  if (value >= 6) return { score: 5, maxScore: 6 };
-  if (value >= 4) return { score: 3, maxScore: 6 };
-  if (value >= 2.5) return { score: 1, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value >= 12) return { score: 6, maxScore: 6 }; // ≥ 12× (exzellent)
+  if (value >= 8) return { score: 5, maxScore: 6 }; // ≥ 8-<12× (stark, Buffett-kompatibel)
+  if (value >= 5) return { score: 3, maxScore: 6 }; // ≥ 5-<8× (ok, beobachten)
+  if (value >= 3) return { score: 1, maxScore: 6 }; // ≥ 3-<5× (beobachten)
+  return { score: 0, maxScore: 6 }; // < 3× (riskant)
 }
 
 function scoreEnergyMaterialsDebtToAssets(value: number | null): ScoreResult {
@@ -402,30 +402,30 @@ function scoreEnergyMaterialsDebtToAssets(value: number | null): ScoreResult {
 
 function scoreEnergyMaterialsCurrentRatio(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 4 };
-  if (value >= 1.5) return { score: 4, maxScore: 4 };
-  if (value >= 1.3) return { score: 3, maxScore: 4 };
-  if (value >= 1.1) return { score: 1, maxScore: 4 };
-  return { score: 0, maxScore: 4 };
+  if (value >= 2.0) return { score: 4, maxScore: 4 }; // ≥ 2.0 (stark)
+  if (value >= 1.5) return { score: 3, maxScore: 4 }; // ≥ 1.5-<2.0 (ok)
+  if (value >= 1.2) return { score: 1, maxScore: 4 }; // ≥ 1.2-<1.5 (beobachten)
+  return { score: 0, maxScore: 4 }; // < 1.2 (riskant)
 }
 
 // ============ PRESET 6: HEALTHCARE ============
 function scoreHealthcareNetDebtToEbitda(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
   if (value <= 0) return { score: 6, maxScore: 6 }; // Net Cash
-  if (value <= 1.5) return { score: 6, maxScore: 6 };
-  if (value <= 2.0) return { score: 5, maxScore: 6 };
-  if (value <= 2.5) return { score: 4, maxScore: 6 };
-  if (value <= 3.0) return { score: 2, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value <= 1.0) return { score: 6, maxScore: 6 }; // ≤ 1.0× (sehr stark)
+  if (value <= 1.5) return { score: 5, maxScore: 6 }; // > 1.0-1.5× (stark)
+  if (value <= 2.0) return { score: 4, maxScore: 6 }; // > 1.5-2.0× (ok)
+  if (value <= 3.0) return { score: 2, maxScore: 6 }; // > 2.0-3.0× (beobachten)
+  return { score: 0, maxScore: 6 }; // > 3.0× (heikel)
 }
 
 function scoreHealthcareInterestCoverage(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
-  if (value >= 12) return { score: 6, maxScore: 6 };
-  if (value >= 8) return { score: 5, maxScore: 6 };
-  if (value >= 6) return { score: 3, maxScore: 6 };
-  if (value >= 3) return { score: 1, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value >= 12) return { score: 6, maxScore: 6 }; // ≥ 12× (exzellent)
+  if (value >= 8) return { score: 5, maxScore: 6 }; // ≥ 8-<12× (stark, Buffett-kompatibel)
+  if (value >= 5) return { score: 3, maxScore: 6 }; // ≥ 5-<8× (ok, beobachten)
+  if (value >= 3) return { score: 1, maxScore: 6 }; // ≥ 3-<5× (beobachten)
+  return { score: 0, maxScore: 6 }; // < 3× (riskant)
 }
 
 function scoreHealthcareDebtToAssets(value: number | null): ScoreResult {
@@ -438,30 +438,30 @@ function scoreHealthcareDebtToAssets(value: number | null): ScoreResult {
 
 function scoreHealthcareCurrentRatio(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 4 };
-  if (value >= 1.8) return { score: 4, maxScore: 4 };
-  if (value >= 1.5) return { score: 3, maxScore: 4 };
-  if (value >= 1.2) return { score: 1, maxScore: 4 };
-  return { score: 0, maxScore: 4 };
+  if (value >= 2.0) return { score: 4, maxScore: 4 }; // ≥ 2.0 (stark)
+  if (value >= 1.5) return { score: 3, maxScore: 4 }; // ≥ 1.5-<2.0 (ok)
+  if (value >= 1.2) return { score: 1, maxScore: 4 }; // ≥ 1.2-<1.5 (beobachten)
+  return { score: 0, maxScore: 4 }; // < 1.2 (riskant)
 }
 
 // ============ PRESET 7: UTILITIES TELECOM ============
 function scoreUtilitiesTelecomNetDebtToEbitda(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
   if (value <= 0) return { score: 6, maxScore: 6 }; // Net Cash (unusual for utilities)
-  if (value <= 3.5) return { score: 6, maxScore: 6 };
-  if (value <= 4.5) return { score: 5, maxScore: 6 };
-  if (value <= 5.5) return { score: 4, maxScore: 6 };
-  if (value <= 6.5) return { score: 2, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value <= 1.0) return { score: 6, maxScore: 6 }; // ≤ 1.0× (sehr stark)
+  if (value <= 1.5) return { score: 5, maxScore: 6 }; // > 1.0-1.5× (stark)
+  if (value <= 2.0) return { score: 4, maxScore: 6 }; // > 1.5-2.0× (ok)
+  if (value <= 3.0) return { score: 2, maxScore: 6 }; // > 2.0-3.0× (beobachten)
+  return { score: 0, maxScore: 6 }; // > 3.0× (heikel)
 }
 
 function scoreUtilitiesTelecomInterestCoverage(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 6 };
-  if (value >= 4.5) return { score: 6, maxScore: 6 };
-  if (value >= 3.5) return { score: 5, maxScore: 6 };
-  if (value >= 2.5) return { score: 3, maxScore: 6 };
-  if (value >= 2.0) return { score: 1, maxScore: 6 };
-  return { score: 0, maxScore: 6 };
+  if (value >= 12) return { score: 6, maxScore: 6 }; // ≥ 12× (exzellent)
+  if (value >= 8) return { score: 5, maxScore: 6 }; // ≥ 8-<12× (stark, Buffett-kompatibel)
+  if (value >= 5) return { score: 3, maxScore: 6 }; // ≥ 5-<8× (ok, beobachten)
+  if (value >= 3) return { score: 1, maxScore: 6 }; // ≥ 3-<5× (beobachten)
+  return { score: 0, maxScore: 6 }; // < 3× (riskant)
 }
 
 function scoreUtilitiesTelecomDebtToAssets(value: number | null): ScoreResult {
@@ -474,10 +474,10 @@ function scoreUtilitiesTelecomDebtToAssets(value: number | null): ScoreResult {
 
 function scoreUtilitiesTelecomCurrentRatio(value: number | null): ScoreResult {
   if (value === null) return { score: 0, maxScore: 4 };
-  if (value >= 1.2) return { score: 4, maxScore: 4 };
-  if (value >= 1.1) return { score: 3, maxScore: 4 };
-  if (value >= 1.0) return { score: 1, maxScore: 4 };
-  return { score: 0, maxScore: 4 };
+  if (value >= 2.0) return { score: 4, maxScore: 4 }; // ≥ 2.0 (stark)
+  if (value >= 1.5) return { score: 3, maxScore: 4 }; // ≥ 1.5-<2.0 (ok)
+  if (value >= 1.2) return { score: 1, maxScore: 4 }; // ≥ 1.2-<1.5 (beobachten)
+  return { score: 0, maxScore: 4 }; // < 1.2 (riskant)
 }
 
 // Main scoring function
