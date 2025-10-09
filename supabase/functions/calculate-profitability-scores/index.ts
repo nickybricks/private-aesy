@@ -174,6 +174,25 @@ const industryToPreset: Record<string, string> = {
   "Drug Manufacturers - Specialty & Generic": "Healthcare",
   "Drug Manufacturers - General": "Healthcare",
   "Biotechnology": "Healthcare",
+  
+  // Financials - Banks
+  "Shell Companies": "Banks",
+  "Investment - Banking & Investment Services": "Banks",
+  "Financial - Mortgages": "Banks",
+  "Financial - Diversified": "Banks",
+  "Financial - Data & Stock Exchanges": "Banks",
+  "Financial - Credit Services": "Banks",
+  "Financial - Conglomerates": "Banks",
+  "Financial - Capital Markets": "Banks",
+  "Banks - Regional": "Banks",
+  "Banks - Diversified": "Banks",
+  "Banks": "Banks",
+  "Asset Management": "Banks",
+  "Asset Management - Bonds": "Banks",
+  "Asset Management - Income": "Banks",
+  "Asset Management - Leveraged": "Banks",
+  "Asset Management - Cryptocurrency": "Banks",
+  "Asset Management - Global": "Banks",
 };
 
 interface MetricsInput {
@@ -669,6 +688,55 @@ function scoreHealthcareROA(roa: number | null): ScoreResult {
   return { score: 0, maxScore: 1 };
 }
 
+// Banks Scoring Logic (Op-Margin & Net-Margin nicht aussagekräftig)
+function scoreBanksROIC(roic: number | null, wacc: number | null): ScoreResult {
+  // ROIC wird bei Banks nicht gewertet
+  return { score: 0, maxScore: 0 };
+}
+
+function scoreBanksOperatingMargin(margin: number | null): ScoreResult {
+  // Operating Margin wird bei Banks nicht gewertet
+  return { score: 0, maxScore: 0 };
+}
+
+function scoreBanksNetMargin(margin: number | null): ScoreResult {
+  // Net Margin wird bei Banks nicht gewertet
+  return { score: 0, maxScore: 0 };
+}
+
+function scoreBanksYears(profitableYears: number, totalYears: number): ScoreResult {
+  if (totalYears === 0) return { score: 0, maxScore: 6 };
+  
+  if (profitableYears === 10 && totalYears === 10) return { score: 6, maxScore: 6 };
+  if (profitableYears === 9 && totalYears === 10) return { score: 5, maxScore: 6 };
+  if (profitableYears === 8 && totalYears >= 10) return { score: 4, maxScore: 6 };
+  if (profitableYears === 7 && totalYears >= 10) return { score: 2, maxScore: 6 };
+  
+  return { score: 0, maxScore: 6 };
+}
+
+function scoreBanksROE(roe: number | null): ScoreResult {
+  if (roe === null) return { score: 0, maxScore: 10 };
+  
+  if (roe >= 14) return { score: 10, maxScore: 10 };
+  if (roe >= 12) return { score: 8, maxScore: 10 };
+  if (roe >= 10) return { score: 6, maxScore: 10 };
+  if (roe >= 8) return { score: 3, maxScore: 10 };
+  
+  return { score: 0, maxScore: 10 };
+}
+
+function scoreBanksROA(roa: number | null): ScoreResult {
+  if (roa === null) return { score: 0, maxScore: 4 };
+  
+  if (roa >= 1.2) return { score: 4, maxScore: 4 };
+  if (roa >= 1.0) return { score: 3, maxScore: 4 };
+  if (roa >= 0.8) return { score: 2, maxScore: 4 };
+  if (roa >= 0.6) return { score: 1, maxScore: 4 };
+  
+  return { score: 0, maxScore: 4 };
+}
+
 function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse {
   let scores: ScoringResponse['scores'];
   
@@ -734,6 +802,15 @@ function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse
       years: scoreHealthcareYears(metrics.profitableYears || 0, metrics.totalYears || 0),
       roe: scoreHealthcareROE(metrics.roe),
       roa: scoreHealthcareROA(metrics.roa),
+    };
+  } else if (preset === "Banks") {
+    scores = {
+      roic: scoreBanksROIC(metrics.roic, metrics.wacc),
+      operatingMargin: scoreBanksOperatingMargin(metrics.operatingMargin),
+      netMargin: scoreBanksNetMargin(metrics.netMargin),
+      years: scoreBanksYears(metrics.profitableYears || 0, metrics.totalYears || 0),
+      roe: scoreBanksROE(metrics.roe),
+      roa: scoreBanksROA(metrics.roa),
     };
   } else {
     // Default/Fallback scoring
