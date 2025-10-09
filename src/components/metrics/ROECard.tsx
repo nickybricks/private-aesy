@@ -96,6 +96,17 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
       );
     }
     
+    if (preset === 'Software') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Bewertung (0-2 Punkte) - Software:</p>
+          <p className="text-sm"><span className="text-green-600">●</span> 2 Pkt: ≥ 18%</p>
+          <p className="text-sm"><span className="text-yellow-600">●</span> 1 Pkt: 12–&lt;18%</p>
+          <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 12%</p>
+        </div>
+      );
+    }
+    
     // Default scoring
     return (
       <div className="space-y-1">

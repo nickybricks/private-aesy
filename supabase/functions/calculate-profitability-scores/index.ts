@@ -57,6 +57,16 @@ const industryToPreset: Record<string, string> = {
   
   // Conglomerates
   "Conglomerates": "Industrials",
+  
+  // Software, Media, IP-light (asset-leicht)
+  "Software": "Software",
+  "Software - Application": "Software",
+  "Software - Infrastructure": "Software",
+  "Internet Content & Information": "Software",
+  "Entertainment": "Software",
+  "Broadcasting": "Software",
+  "Publishing": "Software",
+  "Electronic Gaming & Multimedia": "Software",
 };
 
 interface MetricsInput {
@@ -156,6 +166,72 @@ function scoreIndustrialsROA(roa: number | null): ScoreResult {
   return { score: 0, maxScore: 2 };
 }
 
+// Software Scoring Logic
+function scoreSoftwareROIC(roic: number | null, wacc: number | null): ScoreResult {
+  if (roic === null) return { score: 0, maxScore: 6 };
+  
+  const spread = wacc !== null ? roic - wacc : null;
+  
+  if (roic >= 18 && spread !== null && spread >= 8) return { score: 6, maxScore: 6 };
+  if (roic >= 15 && spread !== null && spread >= 5) return { score: 5, maxScore: 6 };
+  if (roic >= 12 && wacc !== null && roic > wacc) return { score: 4, maxScore: 6 };
+  if (roic >= 9) return { score: 2, maxScore: 6 };
+  
+  return { score: 0, maxScore: 6 };
+}
+
+function scoreSoftwareOperatingMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 4 };
+  
+  if (margin >= 22) return { score: 4, maxScore: 4 };
+  if (margin >= 18) return { score: 3, maxScore: 4 };
+  if (margin >= 14) return { score: 2, maxScore: 4 };
+  if (margin >= 10) return { score: 1, maxScore: 4 };
+  
+  return { score: 0, maxScore: 4 };
+}
+
+function scoreSoftwareNetMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 3 };
+  
+  // Handle decimal values (0.18 = 18%)
+  const percentValue = margin < 1 ? margin * 100 : margin;
+  
+  if (percentValue >= 18) return { score: 3, maxScore: 3 };
+  if (percentValue >= 14) return { score: 2, maxScore: 3 };
+  if (percentValue >= 10) return { score: 1, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreSoftwareYears(profitableYears: number, totalYears: number): ScoreResult {
+  if (totalYears === 0) return { score: 0, maxScore: 3 };
+  
+  if (profitableYears === 10 && totalYears === 10) return { score: 3, maxScore: 3 };
+  if (profitableYears === 9 && totalYears === 10) return { score: 2, maxScore: 3 };
+  if (profitableYears === 8 && totalYears >= 10) return { score: 1, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreSoftwareROE(roe: number | null): ScoreResult {
+  if (roe === null) return { score: 0, maxScore: 2 };
+  
+  if (roe >= 18) return { score: 2, maxScore: 2 };
+  if (roe >= 12) return { score: 1, maxScore: 2 };
+  
+  return { score: 0, maxScore: 2 };
+}
+
+function scoreSoftwareROA(roa: number | null): ScoreResult {
+  if (roa === null) return { score: 0, maxScore: 2 };
+  
+  if (roa >= 10) return { score: 2, maxScore: 2 };
+  if (roa >= 8) return { score: 1, maxScore: 2 };
+  
+  return { score: 0, maxScore: 2 };
+}
+
 function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse {
   let scores: ScoringResponse['scores'];
   
@@ -167,6 +243,15 @@ function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse
       years: scoreIndustrialsYears(metrics.profitableYears || 0, metrics.totalYears || 0),
       roe: scoreIndustrialsROE(metrics.roe),
       roa: scoreIndustrialsROA(metrics.roa),
+    };
+  } else if (preset === "Software") {
+    scores = {
+      roic: scoreSoftwareROIC(metrics.roic, metrics.wacc),
+      operatingMargin: scoreSoftwareOperatingMargin(metrics.operatingMargin),
+      netMargin: scoreSoftwareNetMargin(metrics.netMargin),
+      years: scoreSoftwareYears(metrics.profitableYears || 0, metrics.totalYears || 0),
+      roe: scoreSoftwareROE(metrics.roe),
+      roa: scoreSoftwareROA(metrics.roa),
     };
   } else {
     // Default/Fallback scoring

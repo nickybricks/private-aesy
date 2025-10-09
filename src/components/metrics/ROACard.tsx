@@ -58,9 +58,10 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
     value: item.value
   })) || [];
 
-  const tooltipContent = (
-    <div className="space-y-3 text-sm">
-      <div>
+  // Tooltip content generator based on preset
+  const getTooltipContent = () => {
+    const baseContent = (
+      <>
         <div className="font-semibold mb-1">ROA = Gewinn / Gesamtes Vermögen.</div>
         <p className="text-muted-foreground">
           Zeigt, wie viel <strong>Gewinn</strong> ein Unternehmen mit <strong>allen eingesetzten Vermögenswerten</strong> erwirtschaftet (Maschinen, Lager, Software, Cash …).
@@ -68,45 +69,83 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
         <p className="text-muted-foreground mt-2">
           Bildlich: Du besitzt Anlagen im Wert von 100 €. Verdient die Firma 8 € pro Jahr, ist die <strong>ROA = 8 %</strong>.
         </p>
-      </div>
-      
-      <div>
-        <div className="font-semibold mb-1">Warum wichtig?</div>
-        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-          <li><strong>Effizienz-Gesamtblick:</strong> Misst, wie gut <em>alle</em> Ressourcen arbeiten – nicht nur das Eigenkapital.</li>
-          <li><strong>Branchen-Thermometer:</strong> Kapitalleichte Firmen (Software) sollten meist höhere ROA haben als kapitalintensive (Industrie).</li>
-          <li><strong>Qualität der Gewinne:</strong> Stetig solide ROA über Jahre deutet auf gutes Management und Prozesse hin.</li>
-        </ul>
-      </div>
+        
+        <div className="mt-2">
+          <div className="font-semibold mb-1">Warum wichtig?</div>
+          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+            <li><strong>Effizienz-Gesamtblick:</strong> Misst, wie gut <em>alle</em> Ressourcen arbeiten – nicht nur das Eigenkapital.</li>
+            <li><strong>Branchen-Thermometer:</strong> Kapitalleichte Firmen (Software) sollten meist höhere ROA haben als kapitalintensive (Industrie).</li>
+            <li><strong>Qualität der Gewinne:</strong> Stetig solide ROA über Jahre deutet auf gutes Management und Prozesse hin.</li>
+          </ul>
+        </div>
 
-      <div>
-        <div className="font-semibold mb-1">Mehrjahresblick & Stabilität</div>
-        <p className="text-muted-foreground">
-          <strong>10/5/3-Jahres-Median</strong> und <strong>Trend</strong> ansehen (stabil/steigend besser als zackig/volatil).
-        </p>
-      </div>
+        <div className="mt-2">
+          <div className="font-semibold mb-1">Mehrjahresblick & Stabilität</div>
+          <p className="text-muted-foreground">
+            <strong>10/5/3-Jahres-Median</strong> und <strong>Trend</strong> ansehen (stabil/steigend besser als zackig/volatil).
+          </p>
+        </div>
 
-      <div>
-        <div className="font-semibold mb-1">Was ist „gut"?</div>
-        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-          <li><strong className="text-green-600">Grün (stark):</strong> <strong>≥ 8 %</strong> über mehrere Jahre (außer sehr kapitalintensiven Sektoren).</li>
-          <li><strong className="text-yellow-600">Gelb (ok):</strong> <strong>4–8 %</strong> oder stark schwankend.</li>
-          <li><strong className="text-red-600">Rot (schwach):</strong> <strong>&lt; 4 %</strong> dauerhaft.</li>
-        </ul>
-        <p className="text-muted-foreground text-xs mt-2">
-          <em>(Immer mit dem <strong>Sektor-Median</strong> spiegeln: in kapitalarmen Sektoren strenger, in kapitalintensiven etwas milder.)</em>
-        </p>
-      </div>
+        <div className="mt-2">
+          <div className="font-semibold mb-1">Was ist „gut"?</div>
+          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+            <li><strong className="text-green-600">Grün (stark):</strong> <strong>≥ 8 %</strong> über mehrere Jahre (außer sehr kapitalintensiven Sektoren).</li>
+            <li><strong className="text-yellow-600">Gelb (ok):</strong> <strong>4–8 %</strong> oder stark schwankend.</li>
+            <li><strong className="text-red-600">Rot (schwach):</strong> <strong>&lt; 4 %</strong> dauerhaft.</li>
+          </ul>
+          <p className="text-muted-foreground text-xs mt-2">
+            <em>(Immer mit dem <strong>Sektor-Median</strong> spiegeln: in kapitalarmen Sektoren strenger, in kapitalintensiven etwas milder.)</em>
+          </p>
+        </div>
+      </>
+    );
 
-      <div>
-        <div className="font-semibold mb-1">Punktelogik</div>
-        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-          <li><strong>≥ 8 %</strong> → <strong>1</strong></li>
-          <li><strong>&lt; 8 %</strong> → <strong>0</strong></li>
-        </ul>
+    if (preset === 'Industrials') {
+      return (
+        <div className="space-y-3 text-sm">
+          {baseContent}
+          <div className="mt-2 pt-2 border-t">
+            <div className="font-semibold mb-1">Punktelogik - Industrials (max 2 Pkt)</div>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              <li><strong>≥ 7 %</strong> → <strong>2 Pkt</strong></li>
+              <li><strong>5–&lt;7 %</strong> → <strong>1 Pkt</strong></li>
+              <li><strong>&lt; 5 %</strong> → <strong>0 Pkt</strong></li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    if (preset === 'Software') {
+      return (
+        <div className="space-y-3 text-sm">
+          {baseContent}
+          <div className="mt-2 pt-2 border-t">
+            <div className="font-semibold mb-1">Punktelogik - Software (max 2 Pkt)</div>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              <li><strong>≥ 10 %</strong> → <strong>2 Pkt</strong></li>
+              <li><strong>8–&lt;10 %</strong> → <strong>1 Pkt</strong></li>
+              <li><strong>&lt; 8 %</strong> → <strong>0 Pkt</strong></li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    // Default
+    return (
+      <div className="space-y-3 text-sm">
+        {baseContent}
+        <div className="mt-2 pt-2 border-t">
+          <div className="font-semibold mb-1">Punktelogik</div>
+          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+            <li><strong>≥ 8 %</strong> → <strong>1</strong></li>
+            <li><strong>&lt; 8 %</strong> → <strong>0</strong></li>
+          </ul>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <Card className={`border ${getBgColor(currentValue)}`}>
@@ -114,7 +153,7 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <CardTitle className="text-lg">ROA (Return on Assets)</CardTitle>
-            <ClickableTooltip content={tooltipContent}>
+            <ClickableTooltip content={getTooltipContent()}>
               <Info className="h-4 w-4 text-muted-foreground cursor-help" />
             </ClickableTooltip>
           </div>

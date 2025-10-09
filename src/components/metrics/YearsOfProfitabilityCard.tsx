@@ -61,6 +61,114 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
     return `${value.toFixed(0)}M`;
   };
 
+  // Tooltip content generator based on preset
+  const getTooltipContent = () => {
+    const baseContent = (
+      <>
+        <p className="font-semibold">Years of Profitability</p>
+        <p>
+          Zählt, in wie vielen der <strong>letzten 10 Geschäftsjahre</strong> die Firma{' '}
+          <strong>einen echten Gewinn</strong> erzielt hat (<strong>Net Income &gt; 0</strong>, 
+          bereinigt um Einmaleffekte).
+        </p>
+        <p>
+          Beispiel: 9 Jahre Gewinn, 1 Jahr Verlust ⇒ <strong>9/10</strong>.
+        </p>
+        <div className="space-y-2">
+          <p className="font-semibold">Warum wichtig?</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>
+              <strong>Robustheit:</strong> Zeigt, ob das Geschäftsmodell{' '}
+              <strong>durch Zyklen</strong> (Krisen/Boomphasen) trägt.
+            </li>
+            <li>
+              <strong>Qualität:</strong> Dauerhaft profitabel = oft <strong>Moat</strong>, 
+              solide Kundenbindung, gute Kostenkontrolle.
+            </li>
+            <li>
+              <strong>Risikobild:</strong> Viele Verlustjahre deuten auf{' '}
+              <strong>zyklische/fragile</strong> Strukturen oder Fehlsteuerung hin.
+            </li>
+          </ul>
+        </div>
+      </>
+    );
+
+    return (
+      <div className="space-y-3">
+        {baseContent}
+        <div className="space-y-2">
+          <p className="font-semibold">Was ist „gut"?</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>
+              <strong className="text-success">Grün (stark):</strong> ≥ 9/10 Jahre Gewinn 
+              (Top), ideal 10/10.
+            </li>
+            <li>
+              <strong className="text-warning">Gelb (ok):</strong> 8/10 Jahre Gewinn.
+            </li>
+            <li>
+              <strong className="text-danger">Rot (schwach):</strong> ≤ 7/10 Jahre Gewinn 
+              oder wiederkehrend große Verlustjahre.
+            </li>
+          </ul>
+        </div>
+        {preset !== 'Default' && (
+          <div className="mt-2 pt-2 border-t">
+            <p className="text-xs text-muted-foreground italic">
+              Scoring-Preset: <strong>{preset}</strong>
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const getScoringTooltip = () => {
+    if (preset === 'Industrials') {
+      return (
+        <div className="space-y-2">
+          <p className="font-semibold">Punktelogik - Industrials (max 4 Pkt)</p>
+          <ul className="space-y-1 text-sm">
+            <li>• <strong>10/10</strong> → 4 Punkte</li>
+            <li>• <strong>9/10</strong> → 3 Punkte</li>
+            <li>• <strong>8/10</strong> → 2 Punkte</li>
+            <li>• <strong>7/10</strong> → 1 Punkt</li>
+            <li>• <strong>≤ 6/10</strong> → 0 Punkte</li>
+          </ul>
+        </div>
+      );
+    }
+
+    if (preset === 'Software') {
+      return (
+        <div className="space-y-2">
+          <p className="font-semibold">Punktelogik - Software (max 3 Pkt)</p>
+          <ul className="space-y-1 text-sm">
+            <li>• <strong>10/10</strong> → 3 Punkte</li>
+            <li>• <strong>9/10</strong> → 2 Punkte</li>
+            <li>• <strong>8/10</strong> → 1 Punkt</li>
+            <li>• <strong>≤ 7/10</strong> → 0 Punkte</li>
+          </ul>
+        </div>
+      );
+    }
+
+    // Default
+    return (
+      <div className="space-y-2">
+        <p className="font-semibold">Punktelogik</p>
+        <ul className="space-y-1 text-sm">
+          <li>• <strong>10/10</strong> → 4 Punkte</li>
+          <li>• <strong>9/10</strong> → 3 Punkte</li>
+          <li>• <strong>8/10</strong> → 2 Punkte</li>
+          <li>• <strong>7/10</strong> → 1 Punkt</li>
+          <li>• <strong>≤ 6/10</strong> → 0 Punkte</li>
+        </ul>
+      </div>
+    );
+  };
+
   return (
     <Card className={`p-4 border-2 ${getBgColor(score)}`}>
       <div className="flex items-start justify-between mb-3">
@@ -72,50 +180,7 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
               <TooltipContent side="right" className="max-w-md">
-                <div className="space-y-3">
-                  <p className="font-semibold">Years of Profitability</p>
-                  <p>
-                    Zählt, in wie vielen der <strong>letzten 10 Geschäftsjahre</strong> die Firma{' '}
-                    <strong>einen echten Gewinn</strong> erzielt hat (<strong>Net Income &gt; 0</strong>, 
-                    bereinigt um Einmaleffekte).
-                  </p>
-                  <p>
-                    Beispiel: 9 Jahre Gewinn, 1 Jahr Verlust ⇒ <strong>9/10</strong>.
-                  </p>
-                  <div className="space-y-2">
-                    <p className="font-semibold">Warum wichtig?</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>
-                        <strong>Robustheit:</strong> Zeigt, ob das Geschäftsmodell{' '}
-                        <strong>durch Zyklen</strong> (Krisen/Boomphasen) trägt.
-                      </li>
-                      <li>
-                        <strong>Qualität:</strong> Dauerhaft profitabel = oft <strong>Moat</strong>, 
-                        solide Kundenbindung, gute Kostenkontrolle.
-                      </li>
-                      <li>
-                        <strong>Risikobild:</strong> Viele Verlustjahre deuten auf{' '}
-                        <strong>zyklische/fragile</strong> Strukturen oder Fehlsteuerung hin.
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="font-semibold">Was ist „gut"?</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>
-                        <strong className="text-success">Grün (stark):</strong> ≥ 9/10 Jahre Gewinn 
-                        (Top), ideal 10/10.
-                      </li>
-                      <li>
-                        <strong className="text-warning">Gelb (ok):</strong> 8/10 Jahre Gewinn.
-                      </li>
-                      <li>
-                        <strong className="text-danger">Rot (schwach):</strong> ≤ 7/10 Jahre Gewinn 
-                        oder wiederkehrend große Verlustjahre.
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+                {getTooltipContent()}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -140,16 +205,7 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
             <TooltipContent side="right">
-              <div className="space-y-2">
-                <p className="font-semibold">Punktelogik</p>
-                <ul className="space-y-1 text-sm">
-                  <li>• <strong>10/10</strong> → 4 Punkte</li>
-                  <li>• <strong>9/10</strong> → 3 Punkte</li>
-                  <li>• <strong>8/10</strong> → 2 Punkte</li>
-                  <li>• <strong>7/10</strong> → 1 Punkt</li>
-                  <li>• <strong>≤ 6/10</strong> → 0 Punkte</li>
-                </ul>
-              </div>
+              {getScoringTooltip()}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

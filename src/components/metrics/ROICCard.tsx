@@ -95,6 +95,19 @@ export const ROICCard: React.FC<ROICCardProps> = ({
       );
     }
     
+    if (preset === 'Software') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Bewertung (0-6 Punkte) - Software:</p>
+          <p className="text-sm"><span className="text-green-600">●</span> 6 Pkt: ≥ 18% und ROIC &gt; WACC + 8 pp</p>
+          <p className="text-sm"><span className="text-green-600">●</span> 5 Pkt: ≥ 15% und ROIC &gt; WACC + 5 pp</p>
+          <p className="text-sm"><span className="text-yellow-600">●</span> 4 Pkt: ≥ 12% und ROIC &gt; WACC</p>
+          <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: ≥ 9%</p>
+          <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 9%</p>
+        </div>
+      );
+    }
+    
     // Default scoring
     return (
       <div className="space-y-1">

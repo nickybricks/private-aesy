@@ -85,6 +85,18 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({
       );
     }
     
+    if (preset === 'Software') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Bewertung (0-3 Punkte) - Software:</p>
+          <p className="text-sm"><span className="text-green-600">●</span> 3 Pkt: ≥ 18%</p>
+          <p className="text-sm"><span className="text-green-500">●</span> 2 Pkt: 14–&lt;18%</p>
+          <p className="text-sm"><span className="text-yellow-600">●</span> 1 Pkt: 10–&lt;14%</p>
+          <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 10%</p>
+        </div>
+      );
+    }
+    
     // Default scoring
     return (
       <div className="space-y-1">

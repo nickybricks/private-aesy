@@ -89,6 +89,19 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({
       );
     }
     
+    if (preset === 'Software') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Bewertung (0-4 Punkte) - Software:</p>
+          <p className="text-sm"><span className="text-green-600">●</span> 4 Pkt: ≥ 22%</p>
+          <p className="text-sm"><span className="text-green-500">●</span> 3 Pkt: 18–&lt;22%</p>
+          <p className="text-sm"><span className="text-yellow-600">●</span> 2 Pkt: 14–&lt;18%</p>
+          <p className="text-sm"><span className="text-orange-600">●</span> 1 Pkt: 10–&lt;14%</p>
+          <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 10%</p>
+        </div>
+      );
+    }
+    
     // Default scoring
     return (
       <div className="space-y-1">
