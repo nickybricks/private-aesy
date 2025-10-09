@@ -1285,7 +1285,8 @@ export const getFinancialMetrics = async (ticker: string) => {
       operatingCashFlow: [],
       freeCashFlow: [],
       netIncome: [],
-      debtToAssets: []
+      debtToAssets: [],
+      interestCoverage: []
     };
     
     // Add historical data if income statements are available
@@ -1833,6 +1834,40 @@ export const getFinancialMetrics = async (ticker: string) => {
       } catch (error) {
         console.warn('Could not calculate TTM Debt/Assets:', error);
       }
+    }
+
+    // Add historical Interest Coverage data (last 10 years)
+    if (incomeStatements && incomeStatements.length > 1) {
+      const interestCoverageData = [];
+      
+      for (let i = 0; i < Math.min(10, incomeStatements.length); i++) {
+        let interestCoverageValue = null;
+        const year = incomeStatements[i].date ? new Date(incomeStatements[i].date).getFullYear() : null;
+        
+        if (!year) continue;
+        
+        // Calculate Interest Coverage = EBIT / Interest Expense
+        const ebit = incomeStatements[i].ebitda !== undefined && incomeStatements[i].depreciationAndAmortization !== undefined ?
+                    incomeStatements[i].ebitda - incomeStatements[i].depreciationAndAmortization : null;
+        const interestExpense = safeValue(incomeStatements[i].interestExpense);
+        
+        if (ebit !== null && interestExpense !== null && interestExpense !== 0) {
+          interestCoverageValue = ebit / Math.abs(interestExpense);
+        }
+        
+        if (interestCoverageValue !== null && interestCoverageValue > 0) {
+          interestCoverageData.push({
+            year: year,
+            value: Math.round(interestCoverageValue * 10) / 10,
+            originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
+          });
+        }
+      }
+      
+      // Sort chronologically (oldest first for chart)
+      historicalData.interestCoverage = interestCoverageData.reverse();
+      
+      console.log('[Historical Interest Coverage]:', historicalData.interestCoverage);
     }
 
     // Add historical cash flow data if available

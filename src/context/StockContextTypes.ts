@@ -54,6 +54,7 @@ export interface FinancialMetricsData {
     freeCashFlow: HistoricalDataItem[];
     netIncome: HistoricalDataItem[];
     debtToAssets: HistoricalDataItem[];
+    interestCoverage: HistoricalDataItem[];
   };
   wacc?: number;
 }
