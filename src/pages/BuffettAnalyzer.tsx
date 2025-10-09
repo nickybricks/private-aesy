@@ -29,6 +29,7 @@ import { OperatingMarginCard } from '@/components/metrics/OperatingMarginCard';
 import { NetMarginCard } from '@/components/metrics/NetMarginCard';
 import { ROACard } from '@/components/metrics/ROACard';
 import { YearsOfProfitabilityCard } from '@/components/metrics/YearsOfProfitabilityCard';
+import { DebtToAssetsCard } from '@/components/metrics/DebtToAssetsCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -242,6 +243,10 @@ const IndexContent: React.FC = () => {
                         historicalNetIncome={financialMetrics?.historicalData?.netIncome}
                         preset={profitabilityScores?.preset}
                         scoreFromBackend={profitabilityScores?.scores?.years}
+                      />
+                      <DebtToAssetsCard 
+                        currentValue={financialMetrics?.debtToAssets ?? null}
+                        historicalData={financialMetrics?.historicalData?.debtToAssets}
                       />
                     </div>
                   </TabsContent>

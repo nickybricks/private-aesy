@@ -53,6 +53,7 @@ export interface FinancialMetricsData {
     operatingCashFlow: HistoricalDataItem[];
     freeCashFlow: HistoricalDataItem[];
     netIncome: HistoricalDataItem[];
+    debtToAssets: HistoricalDataItem[];
   };
   wacc?: number;
 }

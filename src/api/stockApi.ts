@@ -1284,7 +1284,8 @@ export const getFinancialMetrics = async (ticker: string) => {
       roa: [],
       operatingCashFlow: [],
       freeCashFlow: [],
-      netIncome: []
+      netIncome: [],
+      debtToAssets: []
     };
     
     // Add historical data if income statements are available
@@ -1762,6 +1763,76 @@ export const getFinancialMetrics = async (ticker: string) => {
       
       // Sort chronologically (oldest first for display)
       historicalData.netIncome = netIncomeData.reverse();
+    }
+
+    // Add historical Debt/Assets data (last 10 years)
+    if (balanceSheets && balanceSheets.length > 1) {
+      const debtToAssetsData = [];
+      
+      for (let i = 0; i < Math.min(10, balanceSheets.length); i++) {
+        let debtToAssetsValue = null;
+        const year = balanceSheets[i].date ? new Date(balanceSheets[i].date).getFullYear() : null;
+        
+        if (!year) continue;
+        
+        // Calculate Debt/Assets = Total Debt / Total Assets * 100
+        const totalDebt = safeValue(balanceSheets[i].totalDebt) || 
+                         (safeValue(balanceSheets[i].shortTermDebt) + safeValue(balanceSheets[i].longTermDebt));
+        const totalAssets = safeValue(balanceSheets[i].totalAssets);
+        
+        if (totalAssets !== null && totalAssets > 0) {
+          debtToAssetsValue = (totalDebt / totalAssets) * 100;
+        }
+        
+        if (debtToAssetsValue !== null) {
+          debtToAssetsData.push({
+            year: year,
+            value: Math.round(debtToAssetsValue * 10) / 10,
+            originalCurrency: balanceSheets[i]?.reportedCurrency || reportedCurrency
+          });
+        }
+      }
+      
+      // Sort chronologically (oldest first for chart)
+      historicalData.debtToAssets = debtToAssetsData.reverse();
+      
+      // Add TTM calculation from quarterly data
+      try {
+        const quarterlyBalanceData = await fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?period=quarter&limit=20`);
+        
+        if (quarterlyBalanceData && quarterlyBalanceData.length >= 1) {
+          const latestQuarterDate = quarterlyBalanceData[0].date ? new Date(quarterlyBalanceData[0].date) : new Date();
+          
+          // Use the most recent quarter's balance sheet
+          const totalDebt = safeValue(quarterlyBalanceData[0].totalDebt) || 
+                           (safeValue(quarterlyBalanceData[0].shortTermDebt) + safeValue(quarterlyBalanceData[0].longTermDebt));
+          const totalAssets = safeValue(quarterlyBalanceData[0].totalAssets);
+          
+          if (totalAssets !== null && totalAssets > 0) {
+            const ttmDebtToAssets = (totalDebt / totalAssets) * 100;
+            const ttmYear = latestQuarterDate.getFullYear();
+            const ttmLabel = `TTM ${ttmYear}`;
+            
+            const existingYearIndex = historicalData.debtToAssets.findIndex((entry: any) => entry.year === ttmYear);
+            
+            if (existingYearIndex >= 0) {
+              historicalData.debtToAssets[existingYearIndex] = {
+                year: ttmLabel,
+                value: Math.round(ttmDebtToAssets * 10) / 10,
+                originalCurrency: quarterlyBalanceData[0]?.reportedCurrency || reportedCurrency
+              };
+            } else {
+              historicalData.debtToAssets.push({
+                year: ttmLabel,
+                value: Math.round(ttmDebtToAssets * 10) / 10,
+                originalCurrency: quarterlyBalanceData[0]?.reportedCurrency || reportedCurrency
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not calculate TTM Debt/Assets:', error);
+      }
     }
 
     // Add historical cash flow data if available
