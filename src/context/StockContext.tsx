@@ -167,6 +167,14 @@ export function StockProvider({ children }: StockProviderProps) {
       // Calculate profitability scores based on industry
       if (info && info.industry && metricsData && !criticalDataMissing) {
         console.log('🎯 Calculating profitability scores for industry:', info.industry);
+        console.log('📊 Metrics being sent:', {
+          roic: metricsData.roic,
+          operatingMargin: metricsData.operatingMargin,
+          netMargin: metricsData.netMargin,
+          roe: metricsData.roe,
+          roa: metricsData.roa,
+          wacc: metricsData.wacc
+        });
         
         // Count profitable years from historical net income
         const historicalNetIncome = metricsData.historicalData?.netIncome || [];

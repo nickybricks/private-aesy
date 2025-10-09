@@ -148,7 +148,15 @@ serve(async (req) => {
   try {
     const input: MetricsInput = await req.json();
     
-    console.log('Received input:', { industry: input.industry });
+    console.log('Received input:', { 
+      industry: input.industry,
+      roic: input.roic,
+      operatingMargin: input.operatingMargin,
+      netMargin: input.netMargin,
+      roe: input.roe,
+      roa: input.roa,
+      wacc: input.wacc
+    });
     
     // Map industry to preset
     const preset = industryToPreset[input.industry] || "Default";
