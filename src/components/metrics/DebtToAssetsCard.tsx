@@ -3,15 +3,13 @@ import { Card } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
-import { IndustryPreset, INDUSTRY_PRESETS, getScoreFromThresholds } from '@/types/industryScoring';
 
 interface DebtToAssetsCardProps {
   currentValue: number | null;
   historicalData?: Array<{ year: string; value: number }>;
-  industry?: IndustryPreset;
 }
 
-export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue, historicalData, industry = 'default' }) => {
+export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue, historicalData }) => {
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -167,42 +165,18 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
     </div>
   );
 
-  const getScoringTooltip = () => {
-    const config = INDUSTRY_PRESETS[industry].config.debtToAssets;
-    const { thresholds, scores } = config;
-    const maxScore = industry === 'software' ? 4 : 3;
-    
-    return (
-      <div className="space-y-1">
-        <p className="font-medium text-sm">Bewertung (0-{maxScore} Punkte) - {INDUSTRY_PRESETS[industry].name}:</p>
-        {scores.map((score, idx) => {
-          const isLast = idx === scores.length - 1;
-          const threshold = isLast ? thresholds[idx - 1] : thresholds[idx];
-          const nextThreshold = thresholds[idx];
-          
-          let label = '';
-          if (idx === 0 && !isLast) {
-            label = `< ${threshold}%`;
-          } else if (isLast) {
-            label = `≥ ${threshold}%`;
-          } else {
-            label = `${threshold}-<${nextThreshold}%`;
-          }
-          
-          const color = score >= maxScore * 0.67 ? 'text-green-600' : score >= maxScore * 0.33 ? 'text-yellow-600' : 'text-red-600';
-          
-          return (
-            <p key={idx} className="text-sm">
-              <span className={color}>●</span> {score} Punkte: {label}
-            </p>
-          );
-        })}
-        <p className="text-xs text-muted-foreground mt-2">
-          Sinkender Trend = gut, steigender Trend = Warnsignal
-        </p>
-      </div>
-    );
-  };
+  const scoringTooltip = (
+    <div className="space-y-1">
+      <p className="font-medium text-sm">Bewertung (0-3 Punkte):</p>
+      <p className="text-sm"><span className="text-green-600">●</span> 3 Punkte: &lt; 40% (stark)</p>
+      <p className="text-sm"><span className="text-yellow-600">●</span> 2 Punkte: 40-50% (ok)</p>
+      <p className="text-sm"><span className="text-orange-600">●</span> 1 Punkt: 50-60% (risikoreich)</p>
+      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: ≥ 60% (sehr risikoreich)</p>
+      <p className="text-xs text-muted-foreground mt-2">
+        Sinkender Trend = gut, steigender Trend = Warnsignal
+      </p>
+    </div>
+  );
 
   return (
     <Card className={`p-4 border-2 ${getBgColorByRatio(score, maxScore)}`}>
@@ -245,7 +219,7 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
             <TooltipContent side="right">
-              {getScoringTooltip()}
+              {scoringTooltip}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

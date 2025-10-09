@@ -33,13 +33,10 @@ import { DebtToAssetsCard } from '@/components/metrics/DebtToAssetsCard';
 import { InterestCoverageCard } from '@/components/metrics/InterestCoverageCard';
 import { CurrentRatioCard } from '@/components/metrics/CurrentRatioCard';
 import { NetDebtToEbitdaCard } from '@/components/metrics/NetDebtToEbitdaCard';
-import { IndustryPreset, INDUSTRY_PRESETS } from '@/types/industryScoring';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('news');
-  const [selectedIndustry, setSelectedIndustry] = useState<IndustryPreset>('default');
   const {
     isLoading,
     handleSearch,
@@ -255,49 +252,21 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="financial-strength" className="mt-4 sm:mt-6">
                     <div className="space-y-4">
-                      {/* Industry Selector */}
-                      <Card className="p-4 bg-muted/50">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                          <label htmlFor="industry-selector" className="text-sm font-medium whitespace-nowrap">
-                            Branche / Geschäftsmodell:
-                          </label>
-                          <Select value={selectedIndustry} onValueChange={(value) => setSelectedIndustry(value as IndustryPreset)}>
-                            <SelectTrigger id="industry-selector" className="w-full sm:w-[300px]">
-                              <SelectValue placeholder="Branche wählen" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.entries(INDUSTRY_PRESETS).map(([key, { name }]) => (
-                                <SelectItem key={key} value={key}>
-                                  {name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Wählen Sie die passende Branche für präzisere Bewertungskriterien
-                        </p>
-                      </Card>
-
                       <DebtToAssetsCard 
                         currentValue={financialMetrics?.debtToAssets ?? null}
                         historicalData={financialMetrics?.historicalData?.debtToAssets}
-                        industry={selectedIndustry}
                       />
                       <InterestCoverageCard 
                         currentValue={financialMetrics?.interestCoverage ?? null}
                         historicalData={financialMetrics?.historicalData?.interestCoverage}
-                        industry={selectedIndustry}
                       />
                       <CurrentRatioCard 
                         currentValue={financialMetrics?.metrics?.find(m => m.name === 'Current Ratio')?.value ?? null}
                         historicalData={financialMetrics?.historicalData?.currentRatio}
-                        industry={selectedIndustry}
                       />
                       <NetDebtToEbitdaCard 
                         currentValue={financialMetrics?.metrics?.find(m => m.name === 'Net Debt to EBITDA')?.value ?? null}
                         historicalData={financialMetrics?.historicalData?.netDebtToEbitda}
-                        industry={selectedIndustry}
                       />
                     </div>
                   </TabsContent>
