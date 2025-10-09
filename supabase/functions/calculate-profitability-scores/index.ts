@@ -107,6 +107,33 @@ const industryToPreset: Record<string, string> = {
   "Apparel - Retail": "RetailLogistics",
   "Apparel - Manufacturers": "RetailLogistics",
   "Apparel - Footwear & Accessories": "RetailLogistics",
+  
+  // UtilitiesTelecom (reguliert)
+  "Telecommunications Services": "UtilitiesTelecom",
+  "Solar": "UtilitiesTelecom",
+  "Waste Management": "UtilitiesTelecom",
+  "Environmental Services": "UtilitiesTelecom",
+  "Industrial - Infrastructure Operations": "UtilitiesTelecom",
+  "REIT - Specialty": "UtilitiesTelecom",
+  "REIT - Retail": "UtilitiesTelecom",
+  "REIT - Residential": "UtilitiesTelecom",
+  "REIT - Office": "UtilitiesTelecom",
+  "REIT - Mortgage": "UtilitiesTelecom",
+  "REIT - Industrial": "UtilitiesTelecom",
+  "REIT - Hotel & Motel": "UtilitiesTelecom",
+  "REIT - Healthcare Facilities": "UtilitiesTelecom",
+  "REIT - Diversified": "UtilitiesTelecom",
+  "Real Estate - Services": "UtilitiesTelecom",
+  "Real Estate - Diversified": "UtilitiesTelecom",
+  "Real Estate - Development": "UtilitiesTelecom",
+  "Real Estate - General": "UtilitiesTelecom",
+  "Renewable Utilities": "UtilitiesTelecom",
+  "Regulated Water": "UtilitiesTelecom",
+  "Regulated Gas": "UtilitiesTelecom",
+  "Regulated Electric": "UtilitiesTelecom",
+  "Independent Power Producers": "UtilitiesTelecom",
+  "Diversified Utilities": "UtilitiesTelecom",
+  "General Utilities": "UtilitiesTelecom",
 };
 
 interface MetricsInput {
@@ -404,6 +431,72 @@ function scoreRetailLogisticsROA(roa: number | null): ScoreResult {
   return { score: 0, maxScore: 2 };
 }
 
+// UtilitiesTelecom Scoring Logic
+function scoreUtilitiesTelecomROIC(roic: number | null, wacc: number | null): ScoreResult {
+  if (roic === null) return { score: 0, maxScore: 4 };
+  
+  const spread = wacc !== null ? roic - wacc : null;
+  
+  if (roic >= 10 && spread !== null && spread >= 2) return { score: 4, maxScore: 4 };
+  if (roic >= 9 && spread !== null && spread >= 1) return { score: 3, maxScore: 4 };
+  if (roic >= 8 && spread !== null && spread >= 0) return { score: 2, maxScore: 4 };
+  if (roic >= 7) return { score: 1, maxScore: 4 };
+  
+  return { score: 0, maxScore: 4 };
+}
+
+function scoreUtilitiesTelecomOperatingMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 3 };
+  
+  if (margin >= 18) return { score: 3, maxScore: 3 };
+  if (margin >= 15) return { score: 2, maxScore: 3 };
+  if (margin >= 12) return { score: 1, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreUtilitiesTelecomNetMargin(margin: number | null): ScoreResult {
+  if (margin === null) return { score: 0, maxScore: 3 };
+  
+  // Handle decimal values (0.10 = 10%)
+  const percentValue = margin < 1 ? margin * 100 : margin;
+  
+  if (percentValue >= 10) return { score: 3, maxScore: 3 };
+  if (percentValue >= 8) return { score: 2, maxScore: 3 };
+  if (percentValue >= 6) return { score: 1, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreUtilitiesTelecomYears(profitableYears: number, totalYears: number): ScoreResult {
+  if (totalYears === 0) return { score: 0, maxScore: 5 };
+  
+  if (profitableYears === 10 && totalYears === 10) return { score: 5, maxScore: 5 };
+  if (profitableYears === 9 && totalYears === 10) return { score: 4, maxScore: 5 };
+  if (profitableYears === 8 && totalYears >= 10) return { score: 3, maxScore: 5 };
+  if (profitableYears === 7 && totalYears >= 10) return { score: 2, maxScore: 5 };
+  
+  return { score: 0, maxScore: 5 };
+}
+
+function scoreUtilitiesTelecomROE(roe: number | null): ScoreResult {
+  if (roe === null) return { score: 0, maxScore: 3 };
+  
+  if (roe >= 12) return { score: 3, maxScore: 3 };
+  if (roe >= 8) return { score: 2, maxScore: 3 };
+  
+  return { score: 0, maxScore: 3 };
+}
+
+function scoreUtilitiesTelecomROA(roa: number | null): ScoreResult {
+  if (roa === null) return { score: 0, maxScore: 2 };
+  
+  if (roa >= 6) return { score: 2, maxScore: 2 };
+  if (roa >= 4) return { score: 1, maxScore: 2 };
+  
+  return { score: 0, maxScore: 2 };
+}
+
 function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse {
   let scores: ScoringResponse['scores'];
   
@@ -442,6 +535,15 @@ function calculateScores(preset: string, metrics: MetricsInput): ScoringResponse
       years: scoreRetailLogisticsYears(metrics.profitableYears || 0, metrics.totalYears || 0),
       roe: scoreRetailLogisticsROE(metrics.roe),
       roa: scoreRetailLogisticsROA(metrics.roa),
+    };
+  } else if (preset === "UtilitiesTelecom") {
+    scores = {
+      roic: scoreUtilitiesTelecomROIC(metrics.roic, metrics.wacc),
+      operatingMargin: scoreUtilitiesTelecomOperatingMargin(metrics.operatingMargin),
+      netMargin: scoreUtilitiesTelecomNetMargin(metrics.netMargin),
+      years: scoreUtilitiesTelecomYears(metrics.profitableYears || 0, metrics.totalYears || 0),
+      roe: scoreUtilitiesTelecomROE(metrics.roe),
+      roa: scoreUtilitiesTelecomROA(metrics.roa),
     };
   } else {
     // Default/Fallback scoring
