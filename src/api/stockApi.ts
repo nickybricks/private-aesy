@@ -1356,6 +1356,47 @@ export const getFinancialMetrics = async (ticker: string) => {
       
       // Sortiere chronologisch (ältestes zuerst für Chart)
       historicalData.roe = roeData.reverse();
+      
+      // Add TTM 2025 calculation from quarterly data
+      try {
+        const quarterlyIncomeData = await fetchFromFMP(`/income-statement/${standardizedTicker}?period=quarter&limit=20`);
+        const quarterlyBalanceData = await fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?period=quarter&limit=20`);
+        
+        if (quarterlyIncomeData && quarterlyIncomeData.length >= 4 && 
+            quarterlyBalanceData && quarterlyBalanceData.length >= 4) {
+          
+          // Finde die letzten 4 Quartale für TTM 2025
+          let ttmNetIncome = 0;
+          let ttmEquity = null;
+          let quarterCount = 0;
+          
+          for (let i = 0; i < Math.min(4, quarterlyIncomeData.length); i++) {
+            const qIncome = safeValue(quarterlyIncomeData[i].netIncome);
+            if (qIncome !== null) {
+              ttmNetIncome += qIncome;
+              quarterCount++;
+            }
+          }
+          
+          // Verwende das aktuellste Eigenkapital für den TTM-Zeitraum
+          ttmEquity = safeValue(quarterlyBalanceData[0].totalStockholdersEquity);
+          
+          if (quarterCount === 4 && ttmEquity !== null && ttmEquity > 0) {
+            const ttmRoe = (ttmNetIncome / ttmEquity) * 100;
+            
+            // Füge TTM 2025 hinzu
+            historicalData.roe.push({
+              year: 'TTM 2025',
+              value: Math.round(ttmRoe * 10) / 10,
+              originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
+            });
+            
+            console.log('TTM 2025 ROE berechnet:', ttmRoe);
+          }
+        }
+      } catch (error) {
+        console.warn('Could not calculate TTM 2025 ROE:', error);
+      }
     }
 
     // Add historical ROIC data (last 10 years)
