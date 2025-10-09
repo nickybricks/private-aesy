@@ -62,11 +62,20 @@ const industryToPreset: Record<string, string> = {
   "Software": "Software",
   "Software - Application": "Software",
   "Software - Infrastructure": "Software",
+  "Software - Services": "Software",
   "Internet Content & Information": "Software",
-  "Entertainment": "Software",
-  "Broadcasting": "Software",
   "Publishing": "Software",
+  "Broadcasting": "Software",
+  "Advertising Agencies": "Software",
+  "Entertainment": "Software",
+  "Education & Training Services": "Software",
+  "Consulting Services": "Software",
+  "Staffing & Employment Services": "Software",
+  "Security & Protection Services": "Software",
+  "Specialty Business Services": "Software",
+  "Information Technology Services": "Software",
   "Electronic Gaming & Multimedia": "Software",
+  "Media & Entertainment": "Software",
 };
 
 interface MetricsInput {
