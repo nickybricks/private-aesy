@@ -1287,8 +1287,7 @@ export const getFinancialMetrics = async (ticker: string) => {
       netIncome: [],
       debtToAssets: [],
       interestCoverage: [],
-      currentRatio: [],
-      netDebtToEbitda: []
+      currentRatio: []
     };
     
     // Add historical data if income statements are available
@@ -1986,96 +1985,6 @@ export const getFinancialMetrics = async (ticker: string) => {
         }
       } catch (error) {
         console.warn('Could not calculate TTM Current Ratio:', error);
-      }
-    }
-
-    // Add historical Net Debt/EBITDA data (last 10 years)
-    if (incomeStatements && balanceSheets && incomeStatements.length > 1 && balanceSheets.length > 1) {
-      const netDebtToEbitdaData = [];
-      
-      for (let i = 0; i < Math.min(10, Math.min(incomeStatements.length, balanceSheets.length)); i++) {
-        let ratioValue = null;
-        const year = incomeStatements[i].date ? new Date(incomeStatements[i].date).getFullYear() : null;
-        
-        if (!year) continue;
-        
-        // Calculate Net Debt = Total Debt - Cash
-        const totalDebt = safeValue(balanceSheets[i].totalDebt) || 
-                         (safeValue(balanceSheets[i].shortTermDebt) + safeValue(balanceSheets[i].longTermDebt));
-        const cash = safeValue(balanceSheets[i].cashAndCashEquivalents) || 0;
-        const netDebt = totalDebt - cash;
-        
-        // Get EBITDA
-        const ebitda = safeValue(incomeStatements[i].ebitda);
-        
-        // Calculate Net Debt/EBITDA
-        if (ebitda !== null && ebitda !== 0) {
-          ratioValue = netDebt / ebitda;
-        }
-        
-        if (ratioValue !== null) {
-          netDebtToEbitdaData.push({
-            year: year,
-            value: Math.round(ratioValue * 100) / 100, // 2 decimal places
-            originalCurrency: incomeStatements[i]?.reportedCurrency || reportedCurrency
-          });
-        }
-      }
-      
-      // Sort chronologically (oldest first for chart)
-      historicalData.netDebtToEbitda = netDebtToEbitdaData.reverse();
-      
-      // Add TTM calculation from quarterly data
-      try {
-        const quarterlyIncomeData = await fetchFromFMP(`/income-statement/${standardizedTicker}?period=quarter&limit=20`);
-        const quarterlyBalanceData = await fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?period=quarter&limit=20`);
-        
-        if (quarterlyIncomeData && quarterlyIncomeData.length >= 4 && 
-            quarterlyBalanceData && quarterlyBalanceData.length >= 1) {
-          
-          // Calculate TTM EBITDA from last 4 quarters
-          let ttmEbitda = 0;
-          let quarterCount = 0;
-          const latestQuarterDate = quarterlyIncomeData[0].date ? new Date(quarterlyIncomeData[0].date) : new Date();
-          
-          for (let i = 0; i < Math.min(4, quarterlyIncomeData.length); i++) {
-            const qEbitda = safeValue(quarterlyIncomeData[i].ebitda);
-            if (qEbitda !== null) {
-              ttmEbitda += qEbitda;
-              quarterCount++;
-            }
-          }
-          
-          // Get latest Net Debt from most recent quarter
-          const totalDebt = safeValue(quarterlyBalanceData[0].totalDebt) || 
-                           (safeValue(quarterlyBalanceData[0].shortTermDebt) + safeValue(quarterlyBalanceData[0].longTermDebt));
-          const cash = safeValue(quarterlyBalanceData[0].cashAndCashEquivalents) || 0;
-          const netDebt = totalDebt - cash;
-          
-          if (quarterCount === 4 && ttmEbitda !== 0) {
-            const ttmRatio = netDebt / ttmEbitda;
-            const ttmYear = latestQuarterDate.getFullYear();
-            const ttmLabel = `TTM ${ttmYear}`;
-            
-            const existingYearIndex = historicalData.netDebtToEbitda.findIndex((entry: any) => entry.year === ttmYear);
-            
-            if (existingYearIndex >= 0) {
-              historicalData.netDebtToEbitda[existingYearIndex] = {
-                year: ttmLabel,
-                value: Math.round(ttmRatio * 100) / 100,
-                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
-              };
-            } else {
-              historicalData.netDebtToEbitda.push({
-                year: ttmLabel,
-                value: Math.round(ttmRatio * 100) / 100,
-                originalCurrency: quarterlyIncomeData[0]?.reportedCurrency || reportedCurrency
-              });
-            }
-          }
-        }
-      } catch (error) {
-        console.warn('Could not calculate TTM Net Debt/EBITDA:', error);
       }
     }
 
