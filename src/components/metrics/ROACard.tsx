@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
-import { ClickableTooltip } from '@/components/ClickableTooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
 import { HistoricalDataItem, ScoreResult } from '@/context/StockContextTypes';
 
@@ -120,12 +120,9 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
         <div className="space-y-3 text-sm">
           {baseContent}
           <div className="mt-2 pt-2 border-t">
-            <div className="font-semibold mb-1">Punktelogik - Industrials (max 2 Pkt)</div>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-              <li><strong>≥ 7 %</strong> → <strong>2 Pkt</strong></li>
-              <li><strong>5–&lt;7 %</strong> → <strong>1 Pkt</strong></li>
-              <li><strong>&lt; 5 %</strong> → <strong>0 Pkt</strong></li>
-            </ul>
+            <p className="text-xs text-muted-foreground italic">
+              Scoring-Preset: <strong>{preset}</strong>
+            </p>
           </div>
         </div>
       );
@@ -136,12 +133,9 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
         <div className="space-y-3 text-sm">
           {baseContent}
           <div className="mt-2 pt-2 border-t">
-            <div className="font-semibold mb-1">Punktelogik - Software (max 2 Pkt)</div>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-              <li><strong>≥ 10 %</strong> → <strong>2 Pkt</strong></li>
-              <li><strong>8–&lt;10 %</strong> → <strong>1 Pkt</strong></li>
-              <li><strong>&lt; 8 %</strong> → <strong>0 Pkt</strong></li>
-            </ul>
+            <p className="text-xs text-muted-foreground italic">
+              Scoring-Preset: <strong>{preset}</strong>
+            </p>
           </div>
         </div>
       );
@@ -151,13 +145,39 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
     return (
       <div className="space-y-3 text-sm">
         {baseContent}
-        <div className="mt-2 pt-2 border-t">
-          <div className="font-semibold mb-1">Punktelogik</div>
-          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-            <li><strong>≥ 8 %</strong> → <strong>1</strong></li>
-            <li><strong>&lt; 8 %</strong> → <strong>0</strong></li>
-          </ul>
+      </div>
+    );
+  };
+
+  const getScoringTooltip = () => {
+    if (preset === 'Industrials') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Bewertung (0-2 Punkte) - Industrials:</p>
+          <p className="text-sm"><span className="text-green-600">●</span> 2 Pkt: ≥ 7%</p>
+          <p className="text-sm"><span className="text-yellow-600">●</span> 1 Pkt: 5–&lt;7%</p>
+          <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 5%</p>
         </div>
+      );
+    }
+
+    if (preset === 'Software') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Bewertung (0-2 Punkte) - Software:</p>
+          <p className="text-sm"><span className="text-green-600">●</span> 2 Pkt: ≥ 10%</p>
+          <p className="text-sm"><span className="text-yellow-600">●</span> 1 Pkt: 8–&lt;10%</p>
+          <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 8%</p>
+        </div>
+      );
+    }
+
+    // Default
+    return (
+      <div className="space-y-1">
+        <p className="font-medium text-sm">Bewertung:</p>
+        <p className="text-sm"><span className="text-green-600">●</span> 1 Pkt: ≥ 8%</p>
+        <p className="text-sm"><span className="text-red-600">●</span> 0 Pkt: &lt; 8%</p>
       </div>
     );
   };
@@ -168,9 +188,16 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <CardTitle className="text-lg">ROA (Return on Assets)</CardTitle>
-            <ClickableTooltip content={getTooltipContent()}>
-              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-            </ClickableTooltip>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-md">
+                  {getTooltipContent()}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <div className="text-right">
             <div className={`text-2xl font-bold ${getScoreColor(displayValue)}`}>
@@ -187,6 +214,16 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
           <div className={`px-2 py-1 rounded text-sm font-semibold ${getScoreColor(displayValue)}`}>
             {score}/{maxScore} Punkt{maxScore !== 1 ? 'e' : ''}
           </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {getScoringTooltip()}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         {historicalData && historicalData.length > 0 ? (
