@@ -3,6 +3,8 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 
 interface BuffettScoreSpiderChartProps {
   onTabChange?: (tab: string) => void;
+  profitabilityScore?: number;  // 0-20
+  financialStrengthScore?: number; // 0-20
 }
 
 // Helper function to create smooth curved path using Catmull-Rom splines
@@ -39,14 +41,18 @@ const createSmoothPath = (points: Array<{x: number, y: number}>) => {
   return path + ' Z';
 };
 
-const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTabChange }) => {
-  // Mock data - replace with actual data from context
+const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ 
+  onTabChange,
+  profitabilityScore = 0,
+  financialStrengthScore = 0
+}) => {
+  // Mix of real data (Profitability, Financial Strength) and mock data (others)
   const data = [
-    { criterion: 'Profitabilität', score: 85, tabValue: 'profitability' },
-    { criterion: 'Fin. Stärke', score: 70, tabValue: 'financial-strength' },
-    { criterion: 'Bewertung', score: 60, tabValue: 'valuation' },
-    { criterion: 'Growth', score: 90, tabValue: 'growth-rank' },
-    { criterion: 'KI Analyse', score: 75, tabValue: 'ai-analysis' },
+    { criterion: 'Profitabilität', score: profitabilityScore, tabValue: 'profitability' },
+    { criterion: 'Fin. Stärke', score: financialStrengthScore, tabValue: 'financial-strength' },
+    { criterion: 'Bewertung', score: 12, tabValue: 'valuation' },
+    { criterion: 'Growth', score: 18, tabValue: 'growth-rank' },
+    { criterion: 'KI Analyse', score: 15, tabValue: 'ai-analysis' },
   ];
 
   const handleLabelClick = (tabValue: string) => {
@@ -55,8 +61,8 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
     }
   };
 
-  // Calculate total score (each criterion worth 20 points max)
-  const totalScore = data.reduce((sum, item) => sum + item.score, 0) / data.length;
+  // Calculate total score (sum of all 5 criteria, max 100 points)
+  const totalScore = data.reduce((sum, item) => sum + item.score, 0);
 
   // Determine color based on score
   const getScoreColor = (score: number) => {
@@ -134,8 +140,8 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ onTab
             />
             <PolarRadiusAxis 
               angle={90} 
-              domain={[0, 100]}
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+              domain={[0, 20]}
+              tick={false}
             />
             
             <Radar

@@ -9,18 +9,28 @@ interface StockHeaderWithScoreProps {
 }
 
 const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange }) => {
-  const { overallRating } = useStock();
+  const { 
+    overallRating,
+    profitabilityScores,
+    financialStrengthScores 
+  } = useStock();
   
-  // Mock data for now - replace with actual data from context
-  const data = [
-    { criterion: 'Profitabilität', score: 85, tabValue: 'profitability' },
-    { criterion: 'Fin. Stärke', score: 70, tabValue: 'financial-strength' },
-    { criterion: 'Bewertung', score: 60, tabValue: 'valuation' },
-    { criterion: 'Growth', score: 90, tabValue: 'growth-rank' },
-    { criterion: 'KI Analyse', score: 75, tabValue: 'ai-analysis' },
-  ];
+  // Extract and normalize real scores to 0-20 scale
+  const profitabilityScore = profitabilityScores 
+    ? (profitabilityScores.totalScore / profitabilityScores.maxTotalScore) * 20 
+    : 0;
 
-  const totalScore = data.reduce((sum, item) => sum + item.score, 0) / data.length;
+  const financialStrengthScore = financialStrengthScores 
+    ? (financialStrengthScores.totalScore / financialStrengthScores.maxTotalScore) * 20 
+    : 0;
+
+  // Mock data for other criteria (0-20 each)
+  const valuationScore = 12;
+  const growthScore = 18;
+  const aiAnalysisScore = 15;
+
+  // Total score (max 100 = 5 × 20)
+  const totalScore = profitabilityScore + financialStrengthScore + valuationScore + growthScore + aiAnalysisScore;
 
   const getScoreColor = (score: number) => {
     if (score >= 95) return 'text-green-700';
@@ -52,7 +62,11 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
           </div>
           
           {/* Spider Chart ohne Card-Wrapper */}
-          <BuffettScoreSpiderChart onTabChange={onTabChange} />
+          <BuffettScoreSpiderChart 
+            onTabChange={onTabChange}
+            profitabilityScore={profitabilityScore}
+            financialStrengthScore={financialStrengthScore}
+          />
         </div>
       </div>
     </Card>
