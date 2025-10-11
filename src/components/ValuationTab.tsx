@@ -8,6 +8,7 @@ import { Info, Loader2, AlertTriangle, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useStock } from '@/context/StockContext';
 import { fetchValuation } from '@/services/ValuationService';
+import { PERatioCard } from '@/components/metrics/PERatioCard';
 
 type BasisMode = 'EPS_WO_NRI' | 'FCF_PER_SHARE' | 'ADJUSTED_DIVIDEND';
 
@@ -118,6 +119,16 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Kennzahlen Section */}
+      <div>
+        <h2 className="text-xl font-bold mb-4">Bewertungskennzahlen</h2>
+        <PERatioCard 
+          currentPrice={currentPrice}
+          eps={data.startValue} // Using startValue as EPS for now
+          historicalData={[]}
+        />
+      </div>
 
       {/* Mode Selection */}
       <Card className="p-3 sm:p-4">
