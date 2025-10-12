@@ -21,6 +21,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   const [selectedMode, setSelectedMode] = useState<BasisMode>('EPS_WO_NRI');
   const [loading, setLoading] = useState(false);
   const [valuationData, setValuationData] = useState<any>(null);
+  const [historicalPEData, setHistoricalPEData] = useState<Array<{ year: string; value: number }>>([]);
   const { toast } = useToast();
   const { valuationData: contextValuationData, financialMetrics } = useStock();
 
@@ -57,35 +58,10 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
     fetchValuationData();
   }, [ticker, selectedMode, currentPrice, contextValuationData]);
 
-  // Show loading state
-  if (loading || !valuationData) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const data = {
-    startValue: valuationData.components.startValuePerShare,
-    growthRate: valuationData.assumptions.growthRatePct,
-    terminalRate: valuationData.assumptions.terminalRatePct,
-    wacc: valuationData.assumptions.discountRatePct,
-    pvPhase1: valuationData.components.pvPhase1,
-    pvPhase2: valuationData.components.pvPhase2,
-    tangibleBook: valuationData.assumptions.tangibleBookPerShare,
-    fairValue: valuationData.fairValuePerShare,
-  };
-  
-  const marginOfSafety = valuationData.marginOfSafetyPct;
-  const warnings = valuationData.warnings || [];
-
   // Calculate historical P/E ratios from historical EPS data
-  const [historicalPEData, setHistoricalPEData] = useState<Array<{ year: string; value: number }>>([]);
-  
   useEffect(() => {
     const calculateHistoricalPE = async () => {
-      if (!financialMetrics?.historicalData?.eps) {
+      if (!financialMetrics?.historicalData?.eps || !valuationData?.components?.startValuePerShare) {
         setHistoricalPEData([]);
         return;
       }
@@ -140,11 +116,12 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
           );
         
         // Add current year TTM if available
-        if (data.startValue > 0) {
+        const startValue = valuationData.components.startValuePerShare;
+        if (startValue > 0) {
           const currentYear = new Date().getFullYear().toString();
           peData.push({
             year: currentYear + ' TTM',
-            value: currentPrice / data.startValue
+            value: currentPrice / startValue
           });
         }
         
@@ -156,7 +133,30 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
     };
     
     calculateHistoricalPE();
-  }, [financialMetrics, ticker, currentPrice, data.startValue]);
+  }, [financialMetrics, ticker, currentPrice, valuationData]);
+
+  // Show loading state
+  if (loading || !valuationData) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const data = {
+    startValue: valuationData.components.startValuePerShare,
+    growthRate: valuationData.assumptions.growthRatePct,
+    terminalRate: valuationData.assumptions.terminalRatePct,
+    wacc: valuationData.assumptions.discountRatePct,
+    pvPhase1: valuationData.components.pvPhase1,
+    pvPhase2: valuationData.components.pvPhase2,
+    tangibleBook: valuationData.assumptions.tangibleBookPerShare,
+    fairValue: valuationData.fairValuePerShare,
+  };
+  
+  const marginOfSafety = valuationData.marginOfSafetyPct;
+  const warnings = valuationData.warnings || [];
 
   const getMoSStatus = (mos: number): { label: string; variant: 'default' | 'secondary' | 'destructive' } => {
     if (mos >= 30) return { label: 'Unterbewertet', variant: 'default' };
