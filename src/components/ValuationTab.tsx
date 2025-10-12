@@ -22,7 +22,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   const [loading, setLoading] = useState(false);
   const [valuationData, setValuationData] = useState<any>(null);
   const { toast } = useToast();
-  const { valuationData: contextValuationData } = useStock();
+  const { valuationData: contextValuationData, financialMetrics } = useStock();
 
   // Use context data if available and matches current mode
   useEffect(() => {
@@ -80,6 +80,25 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   const marginOfSafety = valuationData.marginOfSafetyPct;
   const warnings = valuationData.warnings || [];
 
+  // Calculate historical P/E ratios from historical EPS data
+  const calculateHistoricalPE = () => {
+    if (!financialMetrics?.historicalData?.eps || !data.startValue) {
+      return [];
+    }
+
+    const historicalEps = financialMetrics.historicalData.eps;
+    
+    // Calculate P/E for each historical year
+    return historicalEps
+      .map(item => ({
+        year: item.year,
+        value: item.value > 0 ? currentPrice / item.value : 0
+      }))
+      .filter(item => item.value > 0 && item.value < 100); // Filter out outliers
+  };
+
+  const historicalPEData = calculateHistoricalPE();
+
   const getMoSStatus = (mos: number): { label: string; variant: 'default' | 'secondary' | 'destructive' } => {
     if (mos >= 30) return { label: 'Unterbewertet', variant: 'default' };
     if (mos >= 10) return { label: 'Leicht unterbewertet', variant: 'secondary' };
@@ -125,8 +144,8 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
         <h2 className="text-xl font-bold mb-4">Bewertungskennzahlen</h2>
         <PERatioCard 
           currentPrice={currentPrice}
-          eps={data.startValue} // Using startValue as EPS for now
-          historicalData={[]}
+          eps={data.startValue}
+          historicalData={historicalPEData}
         />
       </div>
 
