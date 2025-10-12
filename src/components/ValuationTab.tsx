@@ -81,23 +81,82 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   const warnings = valuationData.warnings || [];
 
   // Calculate historical P/E ratios from historical EPS data
-  const calculateHistoricalPE = () => {
-    if (!financialMetrics?.historicalData?.eps || !data.startValue) {
-      return [];
-    }
+  const [historicalPEData, setHistoricalPEData] = useState<Array<{ year: string; value: number }>>([]);
+  
+  useEffect(() => {
+    const calculateHistoricalPE = async () => {
+      if (!financialMetrics?.historicalData?.eps) {
+        setHistoricalPEData([]);
+        return;
+      }
 
-    const historicalEps = financialMetrics.historicalData.eps;
+      try {
+        const historicalEps = financialMetrics.historicalData.eps;
+        const fmpKey = localStorage.getItem('fmp_api_key') || 'u8nPCF5MUGd7TwkdcyNXePXoC_UoXA60';
+        
+        // Fetch historical prices from FMP
+        const response = await fetch(
+          `https://financialmodelingprep.com/api/v3/historical-price-full/${ticker}?apikey=${fmpKey}`
+        );
+        
+        if (!response.ok) {
+          console.error('Failed to fetch historical prices');
+          setHistoricalPEData([]);
+          return;
+        }
+        
+        const priceData = await response.json();
+        const historicalPrices = priceData.historical || [];
+        
+        // Create a map of year-end prices
+        const yearEndPrices = new Map<string, number>();
+        historicalPrices.forEach((item: any) => {
+          const year = new Date(item.date).getFullYear().toString();
+          const month = new Date(item.date).getMonth();
+          
+          // Keep December prices (month 11) or closest to year-end
+          if (month === 11 || !yearEndPrices.has(year)) {
+            if (!yearEndPrices.has(year) || month === 11) {
+              yearEndPrices.set(year, item.close);
+            }
+          }
+        });
+        
+        // Match EPS data with historical prices and calculate P/E
+        const peData = historicalEps
+          .map(item => {
+            const price = yearEndPrices.get(item.year);
+            if (price && item.value > 0) {
+              const peRatio = price / item.value;
+              return {
+                year: item.year,
+                value: peRatio
+              };
+            }
+            return null;
+          })
+          .filter((item): item is { year: string; value: number } => 
+            item !== null && item.value > 0 && item.value < 200
+          );
+        
+        // Add current year TTM if available
+        if (data.startValue > 0) {
+          const currentYear = new Date().getFullYear().toString();
+          peData.push({
+            year: currentYear + ' TTM',
+            value: currentPrice / data.startValue
+          });
+        }
+        
+        setHistoricalPEData(peData);
+      } catch (error) {
+        console.error('Error calculating historical P/E:', error);
+        setHistoricalPEData([]);
+      }
+    };
     
-    // Calculate P/E for each historical year
-    return historicalEps
-      .map(item => ({
-        year: item.year,
-        value: item.value > 0 ? currentPrice / item.value : 0
-      }))
-      .filter(item => item.value > 0 && item.value < 100); // Filter out outliers
-  };
-
-  const historicalPEData = calculateHistoricalPE();
+    calculateHistoricalPE();
+  }, [financialMetrics, ticker, currentPrice, data.startValue]);
 
   const getMoSStatus = (mos: number): { label: string; variant: 'default' | 'secondary' | 'destructive' } => {
     if (mos >= 30) return { label: 'Unterbewertet', variant: 'default' };
