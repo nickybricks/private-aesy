@@ -281,10 +281,10 @@ const IndexContent: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="valuation" className="mt-4 sm:mt-6">
-                    <ValuationTab 
-                      ticker={stockInfo.ticker}
-                      currentPrice={stockInfo.price}
-                    />
+                    <Card className="p-6">
+                      <h2 className="text-2xl font-semibold mb-4">Bewertung / Innerer Wert</h2>
+                      <p className="text-muted-foreground">Inhalt folgt...</p>
+                    </Card>
                   </TabsContent>
                   
                   <TabsContent value="growth-rank" className="mt-4 sm:mt-6">

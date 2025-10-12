@@ -8,7 +8,6 @@ import { Info, Loader2, AlertTriangle, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useStock } from '@/context/StockContext';
 import { fetchValuation } from '@/services/ValuationService';
-import { PERatioCard } from '@/components/metrics/PERatioCard';
 
 type BasisMode = 'EPS_WO_NRI' | 'FCF_PER_SHARE' | 'ADJUSTED_DIVIDEND';
 
@@ -21,9 +20,8 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   const [selectedMode, setSelectedMode] = useState<BasisMode>('EPS_WO_NRI');
   const [loading, setLoading] = useState(false);
   const [valuationData, setValuationData] = useState<any>(null);
-  const [historicalPEData, setHistoricalPEData] = useState<Array<{ year: string; value: number }>>([]);
   const { toast } = useToast();
-  const { valuationData: contextValuationData, financialMetrics } = useStock();
+  const { valuationData: contextValuationData } = useStock();
 
   // Use context data if available and matches current mode
   useEffect(() => {
@@ -57,83 +55,6 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
     
     fetchValuationData();
   }, [ticker, selectedMode, currentPrice, contextValuationData]);
-
-  // Calculate historical P/E ratios from historical EPS data
-  useEffect(() => {
-    const calculateHistoricalPE = async () => {
-      if (!financialMetrics?.historicalData?.eps || !valuationData?.components?.startValuePerShare) {
-        setHistoricalPEData([]);
-        return;
-      }
-
-      try {
-        const historicalEps = financialMetrics.historicalData.eps;
-        const fmpKey = localStorage.getItem('fmp_api_key') || 'u8nPCF5MUGd7TwkdcyNXePXoC_UoXA60';
-        
-        // Fetch historical prices from FMP
-        const response = await fetch(
-          `https://financialmodelingprep.com/api/v3/historical-price-full/${ticker}?apikey=${fmpKey}`
-        );
-        
-        if (!response.ok) {
-          console.error('Failed to fetch historical prices');
-          setHistoricalPEData([]);
-          return;
-        }
-        
-        const priceData = await response.json();
-        const historicalPrices = priceData.historical || [];
-        
-        // Create a map of year-end prices
-        const yearEndPrices = new Map<string, number>();
-        historicalPrices.forEach((item: any) => {
-          const year = new Date(item.date).getFullYear().toString();
-          const month = new Date(item.date).getMonth();
-          
-          // Keep December prices (month 11) or closest to year-end
-          if (month === 11 || !yearEndPrices.has(year)) {
-            if (!yearEndPrices.has(year) || month === 11) {
-              yearEndPrices.set(year, item.close);
-            }
-          }
-        });
-        
-        // Match EPS data with historical prices and calculate P/E
-        const peData = historicalEps
-          .map(item => {
-            const price = yearEndPrices.get(item.year);
-            if (price && item.value > 0) {
-              const peRatio = price / item.value;
-              return {
-                year: item.year,
-                value: peRatio
-              };
-            }
-            return null;
-          })
-          .filter((item): item is { year: string; value: number } => 
-            item !== null && item.value > 0 && item.value < 200
-          );
-        
-        // Add current year TTM if available
-        const startValue = valuationData.components.startValuePerShare;
-        if (startValue > 0) {
-          const currentYear = new Date().getFullYear().toString();
-          peData.push({
-            year: currentYear + ' TTM',
-            value: currentPrice / startValue
-          });
-        }
-        
-        setHistoricalPEData(peData);
-      } catch (error) {
-        console.error('Error calculating historical P/E:', error);
-        setHistoricalPEData([]);
-      }
-    };
-    
-    calculateHistoricalPE();
-  }, [financialMetrics, ticker, currentPrice, valuationData]);
 
   // Show loading state
   if (loading || !valuationData) {
@@ -197,16 +118,6 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
           </AlertDescription>
         </Alert>
       )}
-
-      {/* Kennzahlen Section */}
-      <div>
-        <h2 className="text-xl font-bold mb-4">Bewertungskennzahlen</h2>
-        <PERatioCard 
-          currentPrice={currentPrice}
-          eps={data.startValue}
-          historicalData={historicalPEData}
-        />
-      </div>
 
       {/* Mode Selection */}
       <Card className="p-3 sm:p-4">
