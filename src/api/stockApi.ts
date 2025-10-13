@@ -1277,6 +1277,7 @@ export const getFinancialMetrics = async (ticker: string) => {
       revenue: [],
       earnings: [],
       eps: [],
+      peRatio: [],
       roe: [],
       roic: [],
       operatingMargin: [],
@@ -1290,6 +1291,47 @@ export const getFinancialMetrics = async (ticker: string) => {
       currentRatio: [],
       netDebtToEbitda: []
     };
+    
+    // Fetch P/E ratio data from FMP API
+    let peRatioData = [];
+    try {
+      // Fetch annual ratios (includes priceToEarningsRatio)
+      const annualRatios = await fetchFromFMP(`/ratios/${standardizedTicker}?limit=10`);
+      
+      // Fetch TTM ratios
+      const ttmRatios = await fetchFromFMP(`/ratios-ttm/${standardizedTicker}`);
+      
+      console.log('Annual ratios data:', annualRatios);
+      console.log('TTM ratios data:', ttmRatios);
+      
+      // Process annual P/E ratios
+      if (annualRatios && annualRatios.length > 0) {
+        peRatioData = annualRatios
+          .filter(ratio => ratio.priceToEarningsRatio != null && ratio.priceToEarningsRatio > 0)
+          .map(ratio => ({
+            year: ratio.calendarYear || new Date(ratio.date).getFullYear().toString(),
+            value: safeValue(ratio.priceToEarningsRatio)
+          }))
+          .filter(item => item.value !== null);
+      }
+      
+      // Add TTM 2025 if available
+      if (ttmRatios && ttmRatios.length > 0 && ttmRatios[0].priceToEarningsRatioTTM != null) {
+        const ttmPE = safeValue(ttmRatios[0].priceToEarningsRatioTTM);
+        if (ttmPE !== null && ttmPE > 0) {
+          peRatioData.unshift({
+            year: 'TTM 2025',
+            value: ttmPE
+          });
+        }
+      }
+      
+      console.log('Processed P/E ratio data:', peRatioData);
+      historicalData.peRatio = peRatioData;
+    } catch (error) {
+      console.error('Error fetching P/E ratio data:', error);
+      historicalData.peRatio = [];
+    }
     
     // Add historical data if income statements are available
     if (incomeStatements && incomeStatements.length > 1) {

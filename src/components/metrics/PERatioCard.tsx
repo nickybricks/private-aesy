@@ -6,17 +6,28 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Refe
 
 interface PERatioCardProps {
   currentPrice: number;
-  historicalEPS?: Array<{ year: string; value: number }>;
+  historicalPE?: Array<{ year: string; value: number }>;
 }
 
-export const PERatioCard: React.FC<PERatioCardProps> = ({ currentPrice, historicalEPS }) => {
-  // Calculate P/E ratio for each year
-  const calculatePERatios = (epsData: Array<{ year: string; value: number }>, price: number) => {
-    return epsData.map(item => ({
-      year: item.year,
-      value: item.value > 0 ? price / item.value : null,
-      eps: item.value
-    })).filter(item => item.value !== null) as Array<{ year: string; value: number; eps: number }>;
+export const PERatioCard: React.FC<PERatioCardProps> = ({ currentPrice, historicalPE }) => {
+  // Sort P/E data chronologically (oldest to newest)
+  const sortPEData = (peData: Array<{ year: string; value: number }>) => {
+    return [...peData].sort((a, b) => {
+      // Extract year from string (handles "TTM 2025", "2024", etc.)
+      const getYear = (yearStr: string) => {
+        const match = yearStr.match(/\d{4}/);
+        return match ? parseInt(match[0]) : 0;
+      };
+      
+      const yearA = getYear(a.year);
+      const yearB = getYear(b.year);
+      
+      // TTM goes last
+      if (a.year.includes('TTM')) return 1;
+      if (b.year.includes('TTM')) return -1;
+      
+      return yearA - yearB;
+    });
   };
 
   // Calculate average from P/E ratios
@@ -26,37 +37,38 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({ currentPrice, historic
     return sum / data.length;
   };
 
-  // Calculate current P/E ratio
-  const currentEPS = historicalEPS && historicalEPS.length > 0 
-    ? historicalEPS[historicalEPS.length - 1].value 
+  // Get current P/E ratio (TTM if available, otherwise latest)
+  const currentPE = historicalPE && historicalPE.length > 0 
+    ? historicalPE.find(pe => pe.year.includes('TTM'))?.value || historicalPE[historicalPE.length - 1].value
     : null;
-  const currentPE = currentEPS && currentEPS > 0 ? currentPrice / currentEPS : null;
 
   // Determine which timeframe to use (10Y > 5Y > 3Y > current)
   let displayValue = currentPE;
   let displayLabel = 'Aktuell';
   let chartData: Array<{ year: string; value: number }> = [];
 
-  if (historicalEPS && historicalEPS.length > 0) {
-    const peRatios = calculatePERatios(historicalEPS, currentPrice);
+  if (historicalPE && historicalPE.length > 0) {
+    // Filter out TTM for average calculations
+    const annualPE = historicalPE.filter(pe => !pe.year.includes('TTM'));
+    const sortedPE = sortPEData(historicalPE);
     
-    if (peRatios.length >= 10) {
-      const last10Years = peRatios.slice(-10);
+    if (annualPE.length >= 10) {
+      const last10Years = annualPE.slice(-10);
       displayValue = calculateAverage(last10Years);
       displayLabel = '10-Jahres-Durchschnitt';
-      chartData = last10Years;
-    } else if (peRatios.length >= 5) {
-      const last5Years = peRatios.slice(-5);
+      chartData = sortedPE;
+    } else if (annualPE.length >= 5) {
+      const last5Years = annualPE.slice(-5);
       displayValue = calculateAverage(last5Years);
       displayLabel = '5-Jahres-Durchschnitt';
-      chartData = last5Years;
-    } else if (peRatios.length >= 3) {
-      const last3Years = peRatios.slice(-3);
+      chartData = sortedPE;
+    } else if (annualPE.length >= 3) {
+      const last3Years = annualPE.slice(-3);
       displayValue = calculateAverage(last3Years);
       displayLabel = '3-Jahres-Durchschnitt';
-      chartData = last3Years;
+      chartData = sortedPE;
     } else {
-      chartData = peRatios;
+      chartData = sortedPE;
     }
   }
 

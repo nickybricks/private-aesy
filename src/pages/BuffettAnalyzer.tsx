@@ -285,7 +285,7 @@ const IndexContent: React.FC = () => {
                     <div className="space-y-4">
                       <PERatioCard 
                         currentPrice={stockInfo.price}
-                        historicalEPS={financialMetrics?.historicalData?.eps}
+                        historicalPE={financialMetrics?.historicalData?.peRatio}
                       />
                     </div>
                   </TabsContent>
