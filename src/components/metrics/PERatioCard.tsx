@@ -10,16 +10,6 @@ interface PERatioCardProps {
 }
 
 export const PERatioCard: React.FC<PERatioCardProps> = ({ currentPrice, historicalEPS }) => {
-  // Sort EPS data chronologically (oldest first)
-  const sortedEPS = historicalEPS 
-    ? [...historicalEPS].sort((a, b) => {
-        // Extract year from strings like "2024", "2023", "TTM 2025"
-        const yearA = parseInt(a.year.replace(/[^0-9]/g, ''));
-        const yearB = parseInt(b.year.replace(/[^0-9]/g, ''));
-        return yearA - yearB;
-      })
-    : [];
-
   // Calculate P/E ratio for each year
   const calculatePERatios = (epsData: Array<{ year: string; value: number }>, price: number) => {
     return epsData.map(item => ({
@@ -37,8 +27,8 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({ currentPrice, historic
   };
 
   // Calculate current P/E ratio
-  const currentEPS = sortedEPS && sortedEPS.length > 0 
-    ? sortedEPS[sortedEPS.length - 1].value 
+  const currentEPS = historicalEPS && historicalEPS.length > 0 
+    ? historicalEPS[historicalEPS.length - 1].value 
     : null;
   const currentPE = currentEPS && currentEPS > 0 ? currentPrice / currentEPS : null;
 
@@ -47,8 +37,8 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({ currentPrice, historic
   let displayLabel = 'Aktuell';
   let chartData: Array<{ year: string; value: number }> = [];
 
-  if (sortedEPS && sortedEPS.length > 0) {
-    const peRatios = calculatePERatios(sortedEPS, currentPrice);
+  if (historicalEPS && historicalEPS.length > 0) {
+    const peRatios = calculatePERatios(historicalEPS, currentPrice);
     
     if (peRatios.length >= 10) {
       const last10Years = peRatios.slice(-10);
