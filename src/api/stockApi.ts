@@ -1329,8 +1329,8 @@ export const getFinancialMetrics = async (ticker: string) => {
       // Fetch annual ratios (up to 30 years with Premium plan)
       const annualRatios = await fetchFromFMP(`/ratios/${standardizedTicker}?limit=30`);
       
-      // Fetch historical prices (for fallback calculation)
-      const historicalPrices = await fetchFromFMP(`/historical-price-full/${standardizedTicker}`);
+      // Fetch historical prices (for fallback calculation) - get at least 10 years
+      const historicalPrices = await fetchFromFMP(`/historical-price-full/${standardizedTicker}?from=2015-01-01`);
       
       // Fetch quarterly income statements (for TTM EPS calculation)
       const quarterlyIncomeStatements = await fetchFromFMP(`/income-statement/${standardizedTicker}?period=quarter&limit=4`);
@@ -1354,26 +1354,44 @@ export const getFinancialMetrics = async (ticker: string) => {
           .filter(item => item.value !== null);
       }
       
+      console.log('Annual ratios with P/E:', annualRatios?.filter(r => r.priceToEarningsRatio > 0).length, 'records');
+      console.log('Years with P/E from FMP:', annualRatios?.filter(r => r.priceToEarningsRatio > 0).map(r => r.calendarYear).join(', '));
+      
       // 2. Fallback: Calculate P/E ratio for years without FMP data
+      // Ensure we calculate for at least 10 years (or as many as available)
       if (incomeStatements && incomeStatements.length > 0 && historicalPrices?.historical) {
         const existingYears = new Set(peRatioData.map(d => d.year));
+        const currentYear = new Date().getFullYear();
+        const targetYears = Array.from({ length: 10 }, (_, i) => currentYear - i);
         
-        incomeStatements.forEach((statement: any) => {
-          const year = new Date(statement.date).getFullYear();
-          const yearStr = year.toString();
+        console.log('Target years for P/E calculation:', targetYears.join(', '));
+        
+        targetYears.forEach(targetYear => {
+          const yearStr = targetYear.toString();
           
           // Only calculate if not already present
           if (!existingYears.has(yearStr)) {
-            const eps = statement.epsdiluted || statement.eps;
-            const yearEndPrice = getYearEndPrice(historicalPrices.historical, year);
+            // Find income statement for this year
+            const statement = incomeStatements.find((s: any) => 
+              new Date(s.date).getFullYear() === targetYear
+            );
             
-            if (eps && eps > 0 && yearEndPrice && yearEndPrice > 0) {
-              const calculatedPE = yearEndPrice / eps;
-              peRatioData.push({
-                year: yearStr,
-                value: calculatedPE
-              });
-              console.log(`Calculated P/E for ${year}: ${calculatedPE.toFixed(2)} (Price: ${yearEndPrice}, EPS: ${eps})`);
+            if (statement) {
+              const eps = statement.epsdiluted || statement.eps;
+              const yearEndPrice = getYearEndPrice(historicalPrices.historical, targetYear);
+              
+              if (eps && eps > 0 && yearEndPrice && yearEndPrice > 0) {
+                const calculatedPE = yearEndPrice / eps;
+                peRatioData.push({
+                  year: yearStr,
+                  value: calculatedPE
+                });
+                console.log(`✓ Calculated P/E for ${targetYear}: ${calculatedPE.toFixed(2)} (Price: ${yearEndPrice}, EPS: ${eps})`);
+              } else {
+                console.log(`✗ Cannot calculate P/E for ${targetYear}: EPS=${eps}, Price=${yearEndPrice}`);
+              }
+            } else {
+              console.log(`✗ No income statement found for ${targetYear}`);
             }
           }
         });
@@ -1385,6 +1403,8 @@ export const getFinancialMetrics = async (ticker: string) => {
           return yearA - yearB;
         });
       }
+      
+      console.log('Years after fallback calculation:', peRatioData.map(d => d.year).join(', '));
       
       // 3. Add TTM 2025
       // First try FMP TTM ratio
