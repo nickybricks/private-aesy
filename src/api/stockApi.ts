@@ -991,12 +991,13 @@ export const getFinancialMetrics = async (ticker: string) => {
   
   try {
     // Finanzkennzahlen abrufen - erweiterte Datenquellen für präzisere EPS und andere Werte
+    // Erhöhe Limits auf 30 Jahre für historische Daten (Premium Plan unterstützt bis zu 30 Jahre)
     const [ratios, keyMetrics, incomeStatements, balanceSheets, cashFlows, quote] = await Promise.all([
-      fetchFromFMP(`/ratios/${standardizedTicker}?limit=10`),
-      fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=5`),
-      fetchFromFMP(`/income-statement/${standardizedTicker}?limit=10`),
-      fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?limit=10`),
-      fetchFromFMP(`/cash-flow-statement/${standardizedTicker}?limit=5`),
+      fetchFromFMP(`/ratios/${standardizedTicker}?limit=30`),
+      fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=30`),
+      fetchFromFMP(`/income-statement/${standardizedTicker}?limit=30`),
+      fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?limit=30`),
+      fetchFromFMP(`/cash-flow-statement/${standardizedTicker}?limit=30`),
       fetchFromFMP(`/quote/${standardizedTicker}`)
     ]);
     
