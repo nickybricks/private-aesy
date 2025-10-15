@@ -19,6 +19,18 @@ export interface HistoricalDataItem {
   isProfitable?: boolean; // For netIncome: indicates if year was profitable
 }
 
+// New interfaces for weekly P/E data
+export interface PEDataItem {
+  date: string;        // ISO date format (YYYY-MM-DD)
+  stockPE: number;     // P/E ratio of the stock
+  industryPE?: number; // P/E ratio of the industry (optional)
+}
+
+export interface IndustryPEDataItem {
+  date: string;
+  value: number;
+}
+
 export interface FinancialMetricsData {
   eps?: any;
   roe?: any;
@@ -48,6 +60,8 @@ export interface FinancialMetricsData {
     earnings: HistoricalDataItem[];
     eps: HistoricalDataItem[];
     peRatio: HistoricalDataItem[];
+    peRatioWeekly?: PEDataItem[];      // NEW: Weekly P/E data (stock + industry)
+    industryPE?: IndustryPEDataItem[]; // NEW: Industry P/E historical data
     roe: HistoricalDataItem[];
     roic: HistoricalDataItem[];
     operatingMargin: HistoricalDataItem[];

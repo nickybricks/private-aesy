@@ -283,10 +283,21 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="valuation" className="mt-4 sm:mt-6">
                     <div className="space-y-4">
-                      <PERatioCard 
-                        currentPrice={stockInfo.price}
-                        historicalPE={financialMetrics?.historicalData?.peRatio}
-                      />
+              <PERatioCard 
+                currentPrice={stockInfo.price}
+                historicalPE={financialMetrics?.historicalData?.peRatio}
+                weeklyPE={financialMetrics?.historicalData?.peRatioWeekly}
+                currentStockPE={
+                  financialMetrics?.historicalData?.peRatio
+                    ?.find(pe => pe.year.includes('TTM'))?.value
+                }
+                currentIndustryPE={
+                  financialMetrics?.historicalData?.industryPE?.[
+                    financialMetrics.historicalData.industryPE.length - 1
+                  ]?.value
+                }
+                industry={stockInfo.industry}
+              />
                     </div>
                   </TabsContent>
                   

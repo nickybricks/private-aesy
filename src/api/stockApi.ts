@@ -1274,11 +1274,13 @@ export const getFinancialMetrics = async (ticker: string) => {
     }
     
     // Prepare historical data
-    const historicalData = {
+    const historicalData: any = {
       revenue: [],
       earnings: [],
       eps: [],
       peRatio: [],
+      peRatioWeekly: [],      // NEW
+      industryPE: [],         // NEW
       roe: [],
       roic: [],
       operatingMargin: [],
@@ -1296,8 +1298,77 @@ export const getFinancialMetrics = async (ticker: string) => {
     // Fetch P/E ratio data from FMP API with up to 30 years of historical data
     let peRatioData = [];
     try {
-      // Helper function to get year-end price from historical data
-      const getYearEndPrice = (historicalData: any[], year: number): number | null => {
+// Helper function to fetch industry P/E data
+const fetchIndustryPE = async (industry: string): Promise<Array<{ date: string; value: number }>> => {
+  try {
+    const data = await fetchFromFMP(
+      `/historical-industry-pe?industry=${encodeURIComponent(industry)}`
+    );
+    
+    if (data && Array.isArray(data)) {
+      return data
+        .filter((item: any) => item.pe && item.pe > 0)
+        .map((item: any) => ({
+          date: item.date,
+          value: item.pe
+        }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }
+  } catch (error) {
+    console.error('Error fetching industry P/E:', error);
+  }
+  return [];
+};
+
+// Helper function to calculate weekly stock P/E
+const calculateWeeklyStockPE = (
+  historicalPrices: any[],
+  quarterlyIncomeStatements: any[]
+): Array<{ date: string; stockPE: number }> => {
+  if (!historicalPrices || !quarterlyIncomeStatements) return [];
+  
+  const weeklyPE: Array<{ date: string; stockPE: number }> = [];
+  
+  // Sort prices chronologically (newest first)
+  const sortedPrices = [...historicalPrices].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+  
+  // Prepare quarterly EPS data
+  const quarterlyEPS = quarterlyIncomeStatements
+    .filter((s: any) => s.epsdiluted || s.eps)
+    .map((s: any) => ({
+      date: new Date(s.date),
+      eps: s.epsdiluted || s.eps
+    }))
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+  
+  // Sample weekly (every 7 days)
+  for (let i = 0; i < sortedPrices.length; i += 7) {
+    const priceData = sortedPrices[i];
+    const priceDate = new Date(priceData.date);
+    
+    // Calculate TTM EPS at this date (sum of last 4 quarters before this date)
+    const relevantQuarters = quarterlyEPS
+      .filter(q => q.date <= priceDate)
+      .slice(0, 4);
+    
+    if (relevantQuarters.length === 4) {
+      const ttmEPS = relevantQuarters.reduce((sum, q) => sum + q.eps, 0);
+      if (ttmEPS > 0 && priceData.close > 0) {
+        weeklyPE.push({
+          date: priceData.date,
+          stockPE: priceData.close / ttmEPS
+        });
+      }
+    }
+  }
+  
+  return weeklyPE.reverse(); // Return in chronological order (oldest first)
+};
+
+// Helper function to get year-end price from historical data
+const getYearEndPrice = (historicalData: any[], year: number): number | null => {
         if (!historicalData || !Array.isArray(historicalData)) return null;
         
         // Find the last trading day of the year
@@ -1405,6 +1476,43 @@ export const getFinancialMetrics = async (ticker: string) => {
       }
       
       console.log('Years after fallback calculation:', peRatioData.map(d => d.year).join(', '));
+      
+      // === NEW: Fetch industry P/E and calculate weekly stock P/E ===
+      // First, fetch the profile to get the industry
+      const profileData = await fetchFromFMP(`/profile/${standardizedTicker}`);
+      const industryName = profileData && profileData[0]?.industry ? profileData[0].industry : null;
+      
+      if (industryName && historicalPrices?.historical && quarterlyIncomeStatements) {
+        console.log(`📊 Fetching industry P/E for: ${industryName}`);
+        
+        // Fetch industry P/E data
+        const industryPEData = await fetchIndustryPE(industryName);
+        historicalData.industryPE = industryPEData;
+        console.log(`✓ Industry P/E data points: ${industryPEData.length}`);
+        
+        // Calculate weekly stock P/E
+        const weeklyStockPE = calculateWeeklyStockPE(
+          historicalPrices.historical,
+          quarterlyIncomeStatements
+        );
+        console.log(`✓ Weekly stock P/E data points: ${weeklyStockPE.length}`);
+        
+        // Merge stock P/E with industry P/E
+        const mergedWeeklyPE = weeklyStockPE.map(stockPE => {
+          // Find closest industry P/E for this date
+          const matchingIndustryPE = industryPEData.find(
+            indPE => indPE.date === stockPE.date
+          );
+          
+          return {
+            ...stockPE,
+            industryPE: matchingIndustryPE?.value
+          };
+        });
+        
+        historicalData.peRatioWeekly = mergedWeeklyPE;
+        console.log(`✓ Merged weekly P/E data: ${mergedWeeklyPE.length} points`);
+      }
       
       // 3. Add TTM 2025
       // First try FMP TTM ratio
