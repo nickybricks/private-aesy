@@ -30,6 +30,16 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
 }) => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('1Y');
 
+  // Debug logging
+  console.log('📊 PERatioCard received:', {
+    weeklyPELength: weeklyPE?.length || 0,
+    currentStockPE,
+    currentIndustryPE,
+    industry,
+    hasIndustryData: weeklyPE?.some(d => d.industryPE !== undefined),
+    weeklyPESample: weeklyPE?.slice(-3) // Last 3 entries
+  });
+
   // Helper function to get color based on score
   const getColorByScore = (score: number, maxScore: number): string => {
     const percentage = (score / maxScore) * 100;

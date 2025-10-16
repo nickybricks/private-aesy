@@ -982,6 +982,75 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   };
 };
 
+// Helper function to fetch industry P/E data
+const fetchIndustryPE = async (industry: string): Promise<Array<{ date: string; value: number }>> => {
+  try {
+    const data = await fetchFromFMP(
+      `/historical-industry-pe?industry=${encodeURIComponent(industry)}`
+    );
+    
+    if (data && Array.isArray(data)) {
+      return data
+        .filter((item: any) => item.pe && item.pe > 0)
+        .map((item: any) => ({
+          date: item.date,
+          value: item.pe
+        }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }
+  } catch (error) {
+    console.error('Error fetching industry P/E:', error);
+  }
+  return [];
+};
+
+// Helper function to calculate weekly stock P/E
+const calculateWeeklyStockPE = (
+  historicalPrices: any[],
+  quarterlyIncomeStatements: any[]
+): Array<{ date: string; stockPE: number }> => {
+  if (!historicalPrices || !quarterlyIncomeStatements) return [];
+  
+  const weeklyPE: Array<{ date: string; stockPE: number }> = [];
+  
+  // Sort prices chronologically (newest first)
+  const sortedPrices = [...historicalPrices].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+  
+  // Prepare quarterly EPS data
+  const quarterlyEPS = quarterlyIncomeStatements
+    .filter((s: any) => s.epsdiluted || s.eps)
+    .map((s: any) => ({
+      date: new Date(s.date),
+      eps: s.epsdiluted || s.eps
+    }))
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+  
+  // Sample weekly (every 7 days)
+  for (let i = 0; i < sortedPrices.length; i += 7) {
+    const priceData = sortedPrices[i];
+    const priceDate = new Date(priceData.date);
+    
+    // Calculate TTM EPS at this date (sum of last 4 quarters before this date)
+    const relevantQuarters = quarterlyEPS
+      .filter(q => q.date <= priceDate)
+      .slice(0, 4);
+    
+    if (relevantQuarters.length === 4) {
+      const ttmEPS = relevantQuarters.reduce((sum, q) => sum + q.eps, 0);
+      if (ttmEPS > 0 && priceData.close > 0) {
+        weeklyPE.push({
+          date: priceData.date,
+          stockPE: priceData.close / ttmEPS
+        });
+      }
+    }
+  }
+  
+  return weeklyPE.reverse(); // Return in chronological order (oldest first)
+};
+
 // Funktion, um Finanzkennzahlen zu holen
 export const getFinancialMetrics = async (ticker: string) => {
   console.log(`Getting financial metrics for ${ticker}`);
@@ -1298,74 +1367,6 @@ export const getFinancialMetrics = async (ticker: string) => {
     // Fetch P/E ratio data from FMP API with up to 30 years of historical data
     let peRatioData = [];
     try {
-// Helper function to fetch industry P/E data
-const fetchIndustryPE = async (industry: string): Promise<Array<{ date: string; value: number }>> => {
-  try {
-    const data = await fetchFromFMP(
-      `/historical-industry-pe?industry=${encodeURIComponent(industry)}`
-    );
-    
-    if (data && Array.isArray(data)) {
-      return data
-        .filter((item: any) => item.pe && item.pe > 0)
-        .map((item: any) => ({
-          date: item.date,
-          value: item.pe
-        }))
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    }
-  } catch (error) {
-    console.error('Error fetching industry P/E:', error);
-  }
-  return [];
-};
-
-// Helper function to calculate weekly stock P/E
-const calculateWeeklyStockPE = (
-  historicalPrices: any[],
-  quarterlyIncomeStatements: any[]
-): Array<{ date: string; stockPE: number }> => {
-  if (!historicalPrices || !quarterlyIncomeStatements) return [];
-  
-  const weeklyPE: Array<{ date: string; stockPE: number }> = [];
-  
-  // Sort prices chronologically (newest first)
-  const sortedPrices = [...historicalPrices].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-  
-  // Prepare quarterly EPS data
-  const quarterlyEPS = quarterlyIncomeStatements
-    .filter((s: any) => s.epsdiluted || s.eps)
-    .map((s: any) => ({
-      date: new Date(s.date),
-      eps: s.epsdiluted || s.eps
-    }))
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
-  
-  // Sample weekly (every 7 days)
-  for (let i = 0; i < sortedPrices.length; i += 7) {
-    const priceData = sortedPrices[i];
-    const priceDate = new Date(priceData.date);
-    
-    // Calculate TTM EPS at this date (sum of last 4 quarters before this date)
-    const relevantQuarters = quarterlyEPS
-      .filter(q => q.date <= priceDate)
-      .slice(0, 4);
-    
-    if (relevantQuarters.length === 4) {
-      const ttmEPS = relevantQuarters.reduce((sum, q) => sum + q.eps, 0);
-      if (ttmEPS > 0 && priceData.close > 0) {
-        weeklyPE.push({
-          date: priceData.date,
-          stockPE: priceData.close / ttmEPS
-        });
-      }
-    }
-  }
-  
-  return weeklyPE.reverse(); // Return in chronological order (oldest first)
-};
 
 // Helper function to get year-end price from historical data
 const getYearEndPrice = (historicalData: any[], year: number): number | null => {
@@ -1482,6 +1483,10 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
       const profileData = await fetchFromFMP(`/profile/${standardizedTicker}`);
       const industryName = profileData && profileData[0]?.industry ? profileData[0].industry : null;
       
+      console.log(`📊 Industry Name: ${industryName}`);
+      console.log(`📊 Historical Prices: ${historicalPrices?.historical?.length || 0} points`);
+      console.log(`📊 Quarterly Statements: ${quarterlyIncomeStatements?.length || 0} quarters`);
+      
       if (industryName && historicalPrices?.historical && quarterlyIncomeStatements) {
         console.log(`📊 Fetching industry P/E for: ${industryName}`);
         
@@ -1489,6 +1494,9 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
         const industryPEData = await fetchIndustryPE(industryName);
         historicalData.industryPE = industryPEData;
         console.log(`✓ Industry P/E data points: ${industryPEData.length}`);
+        if (industryPEData.length > 0) {
+          console.log(`✓ Industry P/E sample (first 3):`, industryPEData.slice(0, 3));
+        }
         
         // Calculate weekly stock P/E
         const weeklyStockPE = calculateWeeklyStockPE(
@@ -1496,6 +1504,9 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
           quarterlyIncomeStatements
         );
         console.log(`✓ Weekly stock P/E data points: ${weeklyStockPE.length}`);
+        if (weeklyStockPE.length > 0) {
+          console.log(`✓ Weekly stock P/E sample (first 3):`, weeklyStockPE.slice(0, 3));
+        }
         
         // Merge stock P/E with industry P/E
         const mergedWeeklyPE = weeklyStockPE.map(stockPE => {
@@ -1512,6 +1523,15 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
         
         historicalData.peRatioWeekly = mergedWeeklyPE;
         console.log(`✓ Merged weekly P/E data: ${mergedWeeklyPE.length} points`);
+        if (mergedWeeklyPE.length > 0) {
+          console.log(`✓ Merged data sample (last 3):`, mergedWeeklyPE.slice(-3));
+        }
+      } else {
+        console.warn('⚠️ Missing data for industry P/E calculation:', {
+          hasIndustryName: !!industryName,
+          hasPrices: !!historicalPrices?.historical,
+          hasStatements: !!quarterlyIncomeStatements
+        });
       }
       
       // 3. Add TTM 2025
