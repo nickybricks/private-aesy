@@ -1401,10 +1401,10 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
       const annualRatios = await fetchFromFMP(`/ratios/${standardizedTicker}?limit=30`);
       
       // Fetch historical prices (for fallback calculation) - get at least 10 years
-      const historicalPrices = await fetchFromFMP(`/historical-price-full/${standardizedTicker}?from=2015-01-01`);
+      const historicalPrices = await fetchFromFMP(`/historical-price-full/${standardizedTicker}?from=1995-01-01`);
       
       // Fetch quarterly income statements (for TTM EPS calculation)
-      const quarterlyIncomeStatements = await fetchFromFMP(`/income-statement/${standardizedTicker}?period=quarter&limit=4`);
+      const quarterlyIncomeStatements = await fetchFromFMP(`/income-statement/${standardizedTicker}?period=quarter&limit=120`);
       
       // Fetch TTM ratios
       const ttmRatios = await fetchFromFMP(`/ratios-ttm/${standardizedTicker}`);
