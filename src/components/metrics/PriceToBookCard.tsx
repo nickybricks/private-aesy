@@ -84,8 +84,7 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
           price: price.close,
           pb: price.close / bookValuePerShare,
           bookValue: bookValuePerShare
-        }))
-        .reverse();
+        }));
     }
 
     const bookValueMap = new Map(
@@ -104,8 +103,7 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
           bookValue: bvps
         };
       })
-      .filter(item => item !== null)
-      .reverse();
+      .filter(item => item !== null);
   }, [historicalPrices, historicalBookValue, bookValuePerShare]);
 
   // Filter data by selected range
