@@ -2447,8 +2447,9 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
     // Add historical cash flow data if available
     if (cashFlows && cashFlows.length > 1) {
       // Last 5 years of OCF data
+      // Last 30 years of Operating Cash Flow data
       historicalData.operatingCashFlow = cashFlows
-        .slice(0, Math.min(5, cashFlows.length))
+        .slice(0, Math.min(30, cashFlows.length))
         .map(statement => ({
           year: new Date(statement.date).getFullYear(),
           value: statement.operatingCashFlow || 0,
