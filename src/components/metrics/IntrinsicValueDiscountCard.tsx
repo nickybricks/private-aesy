@@ -212,16 +212,16 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
       </div>
 
       {/* Current Values */}
-      <div className="mb-3 p-3 bg-muted/30 rounded-lg text-sm space-y-1">
-        <div className="flex justify-between">
+      <div className="mb-3 p-3 bg-muted/30 rounded-lg text-sm">
+        <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
           <span className="text-muted-foreground">Aktueller Kurs:</span>
           <span className="font-medium">{currentPrice.toFixed(2)} {currency}</span>
-        </div>
-        <div className="flex justify-between">
+          
           <span className="text-muted-foreground">Innerer Wert:</span>
           <span className="font-medium">{fairValue.toFixed(2)} {currency}</span>
-        </div>
-        <div className="flex justify-between border-t pt-1 mt-1">
+          
+          <span className="text-muted-foreground border-t pt-1 col-span-2"></span>
+          
           <span className="text-muted-foreground">Differenz:</span>
           <span className={`font-bold ${discount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {discount >= 0 ? '+' : ''}{(fairValue - currentPrice).toFixed(2)} {currency}
@@ -231,23 +231,21 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
 
       {/* Score Breakdown */}
       <div className="space-y-2 mb-4 p-3 bg-muted/30 rounded-lg">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <div className="text-sm font-medium">Bewertung ({sector}):</div>
           <div className={`px-3 py-1 rounded text-sm font-bold ${getColorByScore(score, maxScore)}`}>
             {score}/{maxScore} Punkte
           </div>
         </div>
         
-        <div className="text-xs space-y-1 pl-3 border-l-2 border-border">
-          <div className="flex justify-between">
+        <div className="text-xs pl-3 border-l-2 border-border">
+          <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
             <span>Aktueller Discount:</span>
             <span className="font-medium">{discount.toFixed(1)}%</span>
-          </div>
-          <div className="flex justify-between">
+            
             <span>MoS-Ziel ({getSectorDescription()}):</span>
             <span className="font-medium">{mosTarget}%</span>
-          </div>
-          <div className="flex justify-between">
+            
             <span>Erreichungsgrad:</span>
             <span className="font-medium">{mosTarget > 0 ? ((discount / mosTarget) * 100).toFixed(0) : 0}%</span>
           </div>
