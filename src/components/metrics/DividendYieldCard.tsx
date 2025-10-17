@@ -1,15 +1,8 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Info, AlertTriangle } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
-import { 
-  DividendPreset, 
-  getPayoutRatioScore, 
-  getDividendGrowthScore, 
-  getPresetConfig,
-  isNonFCFPreset 
-} from '@/services/DividendScoringService';
 
 interface DividendYieldCardProps {
   currentPrice: number;
@@ -39,9 +32,30 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
     ? (currentDividendPerShare / currentPrice) * 100
     : 0;
 
-  const currentPreset = preset as DividendPreset;
-  const presetConfig = getPresetConfig(currentPreset);
-  const showBasisWarning = isNonFCFPreset(currentPreset);
+  // Scoring functions
+  const getPayoutRatioScore = (ratio: number | null): number => {
+    if (ratio === null || ratio < 0) return 0;
+    if (ratio >= 50 && ratio <= 65) return 2;
+    if (ratio < 50) return 1;
+    if (ratio > 65 && ratio <= 80) return 1;
+    return 0; // > 80%
+  };
+
+  const getDividendGrowthScore = (streak: number, cagr: number | null): number => {
+    let streakScore = 0;
+    if (streak >= 10) streakScore = 1;
+    else if (streak >= 5) streakScore = 0.66;
+    else if (streak >= 1) streakScore = 0.34;
+    
+    let cagrScore = 0;
+    if (cagr !== null) {
+      if (cagr >= 6) cagrScore = 1;
+      else if (cagr >= 3) cagrScore = 0.66;
+      else if (cagr >= 0) cagrScore = 0.34;
+    }
+    
+    return streakScore + cagrScore;
+  };
 
   // Use median CAGR from available data
   const getMedianCAGR = (): number | null => {
@@ -59,9 +73,9 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
     ? payoutRatioHistory[payoutRatioHistory.length - 1].value 
     : null;
 
-  // Calculate scores using preset-specific logic
-  const payoutScore = getPayoutRatioScore(latestPayoutRatio, currentPreset);
-  const growthScore = getDividendGrowthScore(dividendStreak, medianCAGR, currentPreset);
+  // Calculate scores
+  const payoutScore = getPayoutRatioScore(latestPayoutRatio);
+  const growthScore = getDividendGrowthScore(dividendStreak, medianCAGR);
   const totalScore = payoutScore + growthScore;
   const maxScore = 4;
 
@@ -119,26 +133,18 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
     </div>
   );
 
-  // Dynamic scoring tooltip based on preset
+  // Scoring tooltip
   const scoringTooltip = (
     <div className="space-y-2">
       <p className="font-medium text-sm">Bewertungssystem (0-4 Punkte):</p>
-      <p className="text-xs text-muted-foreground italic">{presetConfig.description}</p>
       
       <div className="space-y-1">
         <p className="font-medium text-xs">Ausschüttungsquote (Payout Ratio) – 0-2 Punkte</p>
-        <p className="text-xs text-muted-foreground">Dividenden / {presetConfig.basis}</p>
-        <p className="text-xs">
-          <span className="text-green-600">●</span> {presetConfig.payoutRatio.excellent.min}–{presetConfig.payoutRatio.excellent.max}% → 2 Punkte (exzellent)
-        </p>
-        {presetConfig.payoutRatio.good.map((range, idx) => (
-          <p key={idx} className="text-xs">
-            <span className="text-yellow-600">●</span> {range.min}–{range.max}% → 1 Punkt
-          </p>
-        ))}
-        <p className="text-xs">
-          <span className="text-red-600">●</span> &gt; {presetConfig.payoutRatio.poor.min}% → 0 Punkte (zu hoch)
-        </p>
+        <p className="text-xs text-muted-foreground">Dividenden / FCF</p>
+        <p className="text-xs"><span className="text-green-600">●</span> 50-65% → 2 Punkte</p>
+        <p className="text-xs"><span className="text-yellow-600">●</span> ≤ 50% → 1 Punkt (konservativ, Wachstumsraum)</p>
+        <p className="text-xs"><span className="text-yellow-600">●</span> 65-80% → 1 Punkt (ok, weniger Puffer)</p>
+        <p className="text-xs"><span className="text-red-600">●</span> &gt; 80% oder negatives EPS → 0 Punkte</p>
       </div>
 
       <div className="space-y-1">
@@ -146,20 +152,14 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
         
         <p className="text-xs font-medium mt-1">Streak (Jahre ohne Kürzung):</p>
         <p className="text-xs"><span className="text-green-600">●</span> ≥ 10 Jahre → 1 Punkt</p>
-        <p className="text-xs"><span className="text-yellow-600">●</span> 5–&lt;10 Jahre → 0,66 Punkte</p>
+        <p className="text-xs"><span className="text-yellow-600">●</span> 5-&lt;10 Jahre → 0,66 Punkte</p>
         <p className="text-xs"><span className="text-orange-600">●</span> &lt; 5 Jahre → 0,34 Punkte</p>
         <p className="text-xs"><span className="text-red-600">●</span> Cut in 5J → 0 Punkte</p>
         
         <p className="text-xs font-medium mt-1">CAGR (3/5/10J, Median):</p>
-        <p className="text-xs">
-          <span className="text-green-600">●</span> ≥ {presetConfig.cagrThresholds.excellent}% p.a. → 1 Punkt
-        </p>
-        <p className="text-xs">
-          <span className="text-yellow-600">●</span> {presetConfig.cagrThresholds.good}–&lt;{presetConfig.cagrThresholds.excellent}% → 0,66 Punkte
-        </p>
-        <p className="text-xs">
-          <span className="text-orange-600">●</span> 0–&lt;{presetConfig.cagrThresholds.good}% → 0,34 Punkte
-        </p>
+        <p className="text-xs"><span className="text-green-600">●</span> ≥ 6% p.a. → 1 Punkt</p>
+        <p className="text-xs"><span className="text-yellow-600">●</span> 3-&lt;6% → 0,66 Punkte</p>
+        <p className="text-xs"><span className="text-orange-600">●</span> 0-&lt;3% → 0,34 Punkte</p>
         <p className="text-xs"><span className="text-red-600">●</span> &lt; 0% → 0 Punkte</p>
       </div>
     </div>
@@ -236,17 +236,6 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
         </TooltipProvider>
       </div>
 
-      {/* Basis warning for non-FCF presets */}
-      {showBasisWarning && (
-        <div className="flex items-start gap-2 p-3 mb-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-yellow-800">
-            <strong>Hinweis:</strong> Preset "{preset}" nutzt {presetConfig.basis} als Basis, 
-            aktuell wird jedoch FCF verwendet. Die Bewertung könnte ungenau sein.
-          </div>
-        </div>
-      )}
-
       {/* Metrics summary */}
       <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
         <div>
@@ -311,27 +300,10 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
                 }}
               />
               
-              {/* Reference lines for Payout Ratio scoring - dynamic based on preset */}
-              <ReferenceLine 
-                yAxisId="left" 
-                y={presetConfig.payoutRatio.excellent.min} 
-                stroke="#16a34a" 
-                strokeDasharray="3 3" 
-              />
-              <ReferenceLine 
-                yAxisId="left" 
-                y={presetConfig.payoutRatio.excellent.max} 
-                stroke="#ca8a04" 
-                strokeDasharray="3 3" 
-              />
-              {presetConfig.payoutRatio.good.length > 1 && presetConfig.payoutRatio.good[1].max < 100 && (
-                <ReferenceLine 
-                  yAxisId="left" 
-                  y={presetConfig.payoutRatio.good[1].max} 
-                  stroke="#ea580c" 
-                  strokeDasharray="3 3" 
-                />
-              )}
+              {/* Reference lines for Payout Ratio scoring */}
+              <ReferenceLine yAxisId="left" y={50} stroke="#16a34a" strokeDasharray="3 3" />
+              <ReferenceLine yAxisId="left" y={65} stroke="#ca8a04" strokeDasharray="3 3" />
+              <ReferenceLine yAxisId="left" y={80} stroke="#ea580c" strokeDasharray="3 3" />
               
               {/* Bars for Payout Ratio */}
               <Bar yAxisId="left" dataKey="payoutRatio" fill="#93c5fd" name="Payout Ratio" />
@@ -349,17 +321,9 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
             </ComposedChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
-            <span>
-              <span className="text-green-600">---</span> {presetConfig.payoutRatio.excellent.min}% (Exzellent Start)
-            </span>
-            <span>
-              <span className="text-yellow-600">---</span> {presetConfig.payoutRatio.excellent.max}% (Exzellent Ende)
-            </span>
-            {presetConfig.payoutRatio.good.length > 1 && presetConfig.payoutRatio.good[1].max < 100 && (
-              <span>
-                <span className="text-orange-600">---</span> {presetConfig.payoutRatio.good[1].max}% (Risiko)
-              </span>
-            )}
+            <span><span className="text-green-600">---</span> 50% (Ideal Start)</span>
+            <span><span className="text-yellow-600">---</span> 65% (Grenze Gut)</span>
+            <span><span className="text-orange-600">---</span> 80% (Risiko)</span>
           </div>
         </div>
       )}
