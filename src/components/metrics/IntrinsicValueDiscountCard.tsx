@@ -108,6 +108,44 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
     return 'Normal Quality';
   };
 
+  // Filter historical data by selected time range
+  const filterDataByRange = (data: Array<{ date: string; value: number }> | undefined, range: TimeRange) => {
+    if (!data || data.length === 0) return [];
+    
+    const now = new Date();
+    const cutoffDate = new Date();
+    
+    switch (range) {
+      case '1M':
+        cutoffDate.setMonth(now.getMonth() - 1);
+        break;
+      case '6M':
+        cutoffDate.setMonth(now.getMonth() - 6);
+        break;
+      case 'YTD':
+        cutoffDate.setMonth(0);
+        cutoffDate.setDate(1);
+        break;
+      case '1Y':
+        cutoffDate.setFullYear(now.getFullYear() - 1);
+        break;
+      case '5Y':
+        cutoffDate.setFullYear(now.getFullYear() - 5);
+        break;
+      case '10Y':
+        cutoffDate.setFullYear(now.getFullYear() - 10);
+        break;
+      case '25Y':
+        cutoffDate.setFullYear(now.getFullYear() - 25);
+        break;
+      case 'MAX':
+        return data;
+    }
+    
+    return data.filter(point => new Date(point.date) >= cutoffDate);
+  };
+
+  const filteredData = filterDataByRange(historicalPrices, selectedRange);
 
   const tooltipContent = (
     <div className="space-y-3 max-w-md">
@@ -238,7 +276,7 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
           {/* Chart */}
           <div className="mt-4">
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={historicalPrices}>
+              <LineChart data={filteredData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis 
                   dataKey="date"
