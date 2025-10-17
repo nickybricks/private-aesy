@@ -1,10 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem, ValuationData, ProfitabilityScores, FinancialStrengthScores, ValuationScores } from './StockContextTypes';
+import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem, ValuationData, ProfitabilityScores, FinancialStrengthScores, ValuationScores, GrowthScores } from './StockContextTypes';
 import { PredictabilityResult } from '@/services/PredictabilityStarsService';
 import { useStockSearch } from './StockSearchService';
 import { fetchStockNews, fetchPressReleases } from '@/api/stockApi';
 import { fetchValuation } from '@/services/ValuationService';
+import { calculateGrowthScores } from '@/services/GrowthScoresService';
 import { supabase } from '@/integrations/supabase/client';
 
 // Define a more specific interface for stockInfo
@@ -49,6 +50,7 @@ export function StockProvider({ children }: StockProviderProps) {
   const [profitabilityScores, setProfitabilityScores] = useState<ProfitabilityScores | null>(null);
   const [financialStrengthScores, setFinancialStrengthScores] = useState<FinancialStrengthScores | null>(null);
   const [valuationScores, setValuationScores] = useState<ValuationScores | null>(null);
+  const [growthScores, setGrowthScores] = useState<GrowthScores | null>(null);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
@@ -219,11 +221,35 @@ export function StockProvider({ children }: StockProviderProps) {
                   console.error('Error calling valuation scores function:', err);
                 });
             }
+            
+            // Calculate Growth Scores
+            if (metricsData.historicalData) {
+              const growthScoresData = calculateGrowthScores(
+                metricsData.historicalData.revenue,
+                metricsData.historicalData.ebitda,
+                metricsData.historicalData.epsWoNri,
+                metricsData.historicalData.freeCashFlow
+              );
+              
+              const formattedGrowthScores: GrowthScores = {
+                scores: {
+                  revenue: { score: growthScoresData.revenueScore, maxScore: 4 },
+                  ebitda: { score: growthScoresData.ebitdaScore, maxScore: 4 },
+                  epsWoNri: { score: growthScoresData.epsWoNriScore, maxScore: 6 },
+                  fcf: { score: growthScoresData.fcfScore, maxScore: 6 },
+                },
+                totalScore: growthScoresData.totalScore,
+                maxTotalScore: growthScoresData.maxTotalScore
+              };
+              
+              console.log('✅ Growth scores calculated:', formattedGrowthScores);
+              setGrowthScores(formattedGrowthScores);
+            }
           })
           .catch((err) => {
             console.error('Error fetching valuation (non-critical):', err);
             // Don't set error state, valuation is optional
-           });
+          });
        }
 
        // Helper function to calculate median from historical data
@@ -444,6 +470,7 @@ export function StockProvider({ children }: StockProviderProps) {
       profitabilityScores,
       financialStrengthScores,
       valuationScores,
+      growthScores,
       setActiveTab,
       setLoadingProgress,
       handleSearch,

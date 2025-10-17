@@ -196,6 +196,17 @@ export interface ValuationScores {
   maxTotalScore: number;
 }
 
+export interface GrowthScores {
+  scores: {
+    revenue: ScoreResult;
+    ebitda: ScoreResult;
+    epsWoNri: ScoreResult;
+    fcf: ScoreResult;
+  };
+  totalScore: number;
+  maxTotalScore: number;
+}
+
 export interface StockContextType {
   isLoading: boolean;
   loadingProgress: number;
@@ -218,6 +229,7 @@ export interface StockContextType {
   profitabilityScores: ProfitabilityScores | null;
   financialStrengthScores: FinancialStrengthScores | null;
   valuationScores: ValuationScores | null;
+  growthScores: GrowthScores | null;
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string, enableDeepResearch?: boolean) => Promise<void>;
