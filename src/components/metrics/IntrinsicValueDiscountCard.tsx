@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import {
@@ -7,20 +7,26 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface IntrinsicValueDiscountCardProps {
   currentPrice: number;
   fairValue: number;
+  historicalPrices?: Array<{ date: string; value: number }>;
   sector?: string;
   currency?: string;
 }
 
+type TimeRange = '1M' | '6M' | 'YTD' | '1Y' | '5Y' | '10Y' | '25Y' | 'MAX';
+
 export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProps> = ({
   currentPrice,
   fairValue,
+  historicalPrices,
   sector = 'Default',
   currency = 'USD'
 }) => {
+  const [selectedRange, setSelectedRange] = useState<TimeRange>('1Y');
 
   // Calculate discount percentage
   const discount = fairValue > 0 ? ((fairValue - currentPrice) / fairValue) * 100 : 0;
@@ -210,6 +216,145 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
         </div>
       </div>
 
+      {/* Time Range Selector and Chart */}
+      {historicalPrices && historicalPrices.length > 0 && (
+        <>
+          <div className="flex gap-1 mb-3 overflow-x-auto pb-1">
+            {(['1M', '6M', 'YTD', '1Y', '5Y', '10Y', '25Y', 'MAX'] as TimeRange[]).map(range => (
+              <button
+                key={range}
+                onClick={() => setSelectedRange(range)}
+                className={`px-3 py-1.5 text-xs font-medium rounded whitespace-nowrap transition-colors ${
+                  selectedRange === range
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                {range}
+              </button>
+            ))}
+          </div>
+
+          {/* Chart */}
+          <div className="mt-4">
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={historicalPrices}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="date"
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    if (selectedRange === '1M' || selectedRange === '6M') {
+                      return `${date.getDate()}. ${date.toLocaleDateString('de-DE', { month: 'short' })}`;
+                    } else if (selectedRange === 'YTD' || selectedRange === '1Y') {
+                      return date.toLocaleDateString('de-DE', { month: 'short' });
+                    }
+                    return date.getFullYear().toString();
+                  }}
+                  tick={{ fontSize: 10 }}
+                  stroke="#9ca3af"
+                />
+                <YAxis 
+                  tick={{ fontSize: 10 }}
+                  stroke="#9ca3af"
+                  domain={['auto', 'auto']}
+                />
+                <RechartsTooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      const price = data.value;
+                      const discountAtPoint = fairValue > 0 
+                        ? ((fairValue - price) / fairValue) * 100 
+                        : 0;
+                      return (
+                        <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
+                          <p className="text-xs font-semibold mb-1">
+                            {new Date(data.date).toLocaleDateString('de-DE')}
+                          </p>
+                          <p className="text-sm text-blue-600">
+                            Kurs: <span className="font-bold">{price.toFixed(2)} {currency}</span>
+                          </p>
+                          <p className="text-sm text-green-600">
+                            Innerer Wert: <span className="font-bold">{fairValue.toFixed(2)} {currency}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Discount: <span className={`font-bold ${discountAtPoint >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {discountAtPoint >= 0 ? '+' : ''}{discountAtPoint.toFixed(1)}%
+                            </span>
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                
+                {/* Reference line for Fair Value (horizontal) */}
+                <ReferenceLine 
+                  y={fairValue} 
+                  stroke="#16a34a" 
+                  strokeDasharray="5 5" 
+                  strokeWidth={2}
+                  opacity={0.7}
+                  label={{ 
+                    value: `Fair Value: ${fairValue.toFixed(2)} ${currency}`, 
+                    position: 'insideTopRight', 
+                    fontSize: 11, 
+                    fill: '#16a34a',
+                    fontWeight: 600
+                  }}
+                />
+                
+                {/* Reference lines for discount targets */}
+                <ReferenceLine 
+                  y={fairValue * 0.8} 
+                  stroke="#3b82f6" 
+                  strokeDasharray="3 3" 
+                  opacity={0.4}
+                  label={{ value: '-20%', position: 'insideRight', fontSize: 10, fill: '#3b82f6' }}
+                />
+                <ReferenceLine 
+                  y={fairValue * 0.7} 
+                  stroke="#3b82f6" 
+                  strokeDasharray="3 3" 
+                  opacity={0.4}
+                  label={{ value: '-30%', position: 'insideRight', fontSize: 10, fill: '#3b82f6' }}
+                />
+                <ReferenceLine 
+                  y={fairValue * 0.6} 
+                  stroke="#3b82f6" 
+                  strokeDasharray="3 3" 
+                  opacity={0.4}
+                  label={{ value: '-40%', position: 'insideRight', fontSize: 10, fill: '#3b82f6' }}
+                />
+                
+                {/* Stock Price Line (blue) */}
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="#2563eb" 
+                  strokeWidth={2.5}
+                  dot={false}
+                  name="Aktienkurs"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+            
+            {/* Legend */}
+            <div className="flex justify-center gap-4 mt-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-6 h-0.5 bg-[#2563eb]"></span>
+                Aktienkurs
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-6 h-0.5 border-t-2 border-dashed border-[#16a34a]"></span>
+                Innerer Wert
+              </span>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Scoring Explanation */}
       <div className="mt-4 text-xs text-muted-foreground space-y-2 p-3 bg-muted/20 rounded-lg">
