@@ -229,7 +229,7 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
     fetchFromFMP(`/ratios/${standardizedTicker}`),
     fetchFromFMP(`/key-metrics/${standardizedTicker}`),
     fetchFromFMP(`/profile/${standardizedTicker}`),
-    fetchFromFMP(`/income-statement/${standardizedTicker}?period=annual&limit=5`),
+    fetchFromFMP(`/income-statement/${standardizedTicker}?period=annual&limit=30`),
     fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}`)
   ]);
   
@@ -1633,27 +1633,27 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
     
     // Add historical data if income statements are available
     if (incomeStatements && incomeStatements.length > 1) {
-      // Last 5 years of revenue data
+      // Last 30 years of revenue data
       historicalData.revenue = incomeStatements
-        .slice(0, Math.min(5, incomeStatements.length))
+        .slice(0, Math.min(30, incomeStatements.length))
         .map(statement => ({
           year: new Date(statement.date).getFullYear(),
           value: statement.revenue || 0,
           originalCurrency: statement.reportedCurrency || reportedCurrency
         }));
       
-      // Last 5 years of earnings data
+      // Last 30 years of earnings data
       historicalData.earnings = incomeStatements
-        .slice(0, Math.min(5, incomeStatements.length))
+        .slice(0, Math.min(30, incomeStatements.length))
         .map(statement => ({
           year: new Date(statement.date).getFullYear(),
           value: statement.netIncome || 0,
           originalCurrency: statement.reportedCurrency || reportedCurrency
         }));
       
-      // Last 5 years of EPS data
+      // Last 30 years of EPS data
       historicalData.eps = incomeStatements
-        .slice(0, Math.min(5, incomeStatements.length))
+        .slice(0, Math.min(30, incomeStatements.length))
         .map(statement => ({
           year: new Date(statement.date).getFullYear(),
           value: statement.eps || 0,
