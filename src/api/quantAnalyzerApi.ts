@@ -447,7 +447,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
 // Batch-Analyse für mehrere Aktien einer Börse oder eines Index mit Rate-Limiting
 export const analyzeMarket = async (
   marketId: string, 
-  limit: number = 500,
+  limit: number = 1000,
   onProgress?: (progress: number, currentOperation: string) => void
 ) => {
   try {
@@ -461,7 +461,7 @@ export const analyzeMarket = async (
     console.log(`Analysiere ${stocksToAnalyze.length} Aktien von ${marketName} in Batches`);
     
     const results: QuantAnalysisResult[] = [];
-    const batchSize = 50; // Etwa 50 Aktien pro Minute (300 API calls / 6 calls per stock)
+    const batchSize = 100; // Etwa 100 Aktien pro Minute (750 API calls / 7 calls per stock)
     const totalBatches = Math.ceil(stocksToAnalyze.length / batchSize);
     
     for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
@@ -488,16 +488,16 @@ export const analyzeMarket = async (
         }
       }
       
-      // Wait 65 seconds between batches (to ensure we don't hit the rate limit)
+      // Wait 60 seconds between batches (to ensure we don't hit the rate limit)
       if (batchIndex < totalBatches - 1) {
-        console.log(`Warte 65 Sekunden vor dem nächsten Batch...`);
+        console.log(`Warte 60 Sekunden vor dem nächsten Batch...`);
         if (onProgress) {
           onProgress(
             Math.round((batchIndex / totalBatches) * 100), 
-            `Warte 65 Sekunden vor Batch ${batchIndex + 2}/${totalBatches}...`
+            `Warte 60 Sekunden vor Batch ${batchIndex + 2}/${totalBatches}...`
           );
         }
-        await sleep(65000); // 65 seconds delay
+        await sleep(60000); // 60 seconds delay
       }
     }
     
