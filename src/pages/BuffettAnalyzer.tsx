@@ -42,6 +42,7 @@ import { PriceToCashFlowCard } from '@/components/metrics/PriceToCashFlowCard';
 import { RevenueGrowthCard } from '@/components/metrics/RevenueGrowthCard';
 import { EbitdaGrowthCard } from '@/components/metrics/EbitdaGrowthCard';
 import { EpsWoNriGrowthCard } from '@/components/metrics/EpsWoNriGrowthCard';
+import { FcfGrowthCard } from '@/components/metrics/FcfGrowthCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -417,6 +418,12 @@ const IndexContent: React.FC = () => {
                       {financialMetrics?.historicalData?.epsWoNri && (
                         <EpsWoNriGrowthCard 
                           historicalEpsWoNri={financialMetrics.historicalData.epsWoNri}
+                        />
+                      )}
+                      
+                      {financialMetrics?.historicalData?.freeCashFlow && (
+                        <FcfGrowthCard 
+                          historicalFcf={financialMetrics.historicalData.freeCashFlow}
                         />
                       )}
                     </div>

@@ -2455,9 +2455,9 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
           originalCurrency: statement.reportedCurrency || reportedCurrency
         }));
       
-      // Last 5 years of FCF data
+      // Last 30 years of FCF data
       historicalData.freeCashFlow = cashFlows
-        .slice(0, Math.min(5, cashFlows.length))
+        .slice(0, Math.min(30, cashFlows.length))
         .map(statement => ({
           year: new Date(statement.date).getFullYear(),
           value: statement.freeCashFlow || 0,
