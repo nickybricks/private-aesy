@@ -37,6 +37,7 @@ import { PERatioCard } from '@/components/metrics/PERatioCard';
 import { DividendYieldCard } from '@/components/metrics/DividendYieldCard';
 import { IntrinsicValueDiscountCard } from '@/components/metrics/IntrinsicValueDiscountCard';
 import { PeterLynchDiscountCard } from '@/components/metrics/PeterLynchDiscountCard';
+import { PriceToBookCard } from '@/components/metrics/PriceToBookCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -342,6 +343,28 @@ const IndexContent: React.FC = () => {
                   dividendCAGR3Y={financialMetrics.dividendMetrics.dividendCAGR3Y}
                   dividendCAGR5Y={financialMetrics.dividendMetrics.dividendCAGR5Y}
                   dividendCAGR10Y={financialMetrics.dividendMetrics.dividendCAGR10Y}
+                />
+              )}
+              
+              {/* Price to Book Card - positioned at the bottom */}
+              {financialMetrics?.metrics && (
+                <PriceToBookCard
+                  currentPrice={stockInfo.price}
+                  bookValuePerShare={
+                    financialMetrics.metrics.find(m => m.name === 'Book Value Per Share')?.value || 
+                    stockInfo.bookValuePerShare ||
+                    null
+                  }
+                  historicalPrices={financialMetrics?.historicalData?.peRatioWeekly?.map(pe => {
+                    const eps = financialMetrics.eps || 1;
+                    const price = pe.stockPE * (typeof eps === 'number' ? eps : 1);
+                    return {
+                      date: pe.date,
+                      close: price > 0 ? price : stockInfo.price
+                    };
+                  }) || []}
+                  historicalBookValue={[]}
+                  currency={stockInfo.currency}
                 />
               )}
                     </div>
