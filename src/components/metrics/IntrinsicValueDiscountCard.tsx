@@ -250,28 +250,28 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
       </div>
 
       {/* KPIs as 3-column grid */}
-      <div className="grid grid-cols-3 gap-3 mb-3">
-        <div className="p-3 bg-muted/30 rounded-lg">
-          <div className="text-xs text-muted-foreground mb-1">Aktueller Kurs</div>
-          <div className="text-lg font-bold">{currentPrice.toFixed(2)} {currency}</div>
+      <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+        <div>
+          <p className="text-xs text-muted-foreground">Aktueller Kurs</p>
+          <p className="font-semibold">{currentPrice.toFixed(2)} {currency}</p>
         </div>
-        <div className="p-3 bg-muted/30 rounded-lg">
-          <div className="text-xs text-muted-foreground mb-1">Innerer Wert</div>
-          <div className="text-lg font-bold">{fairValue.toFixed(2)} {currency}</div>
+        <div>
+          <p className="text-xs text-muted-foreground">Innerer Wert</p>
+          <p className="font-semibold">{fairValue.toFixed(2)} {currency}</p>
         </div>
-        <div className="p-3 bg-muted/30 rounded-lg">
-          <div className="text-xs text-muted-foreground mb-1">Differenz</div>
-          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-bold ${
+        <div>
+          <p className="text-xs text-muted-foreground">Differenz</p>
+          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
             discount >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
           }`}>
-            {discount >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+            {discount >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             {discount >= 0 ? '+' : ''}{(fairValue - currentPrice).toFixed(2)} {currency}
           </div>
         </div>
       </div>
 
       {/* Meta Row with tooltips */}
-      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-4 flex-wrap">
+      <div className="flex items-center justify-start gap-2 text-xs text-muted-foreground mb-4 flex-wrap">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -365,6 +365,7 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
                   tick={{ fontSize: 10 }}
                   stroke="#9ca3af"
                   domain={['auto', 'auto']}
+                  width={60}
                 />
                 <RechartsTooltip
                   content={({ active, payload }) => {
