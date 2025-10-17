@@ -43,19 +43,19 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
   // Helper function to get color based on score
   const getColorByScore = (score: number, maxScore: number): string => {
     const percentage = (score / maxScore) * 100;
-    if (percentage >= 80) return 'text-[#34c759]';
-    if (percentage >= 60) return 'text-[#ffcc00]';
+    if (percentage >= 80) return 'text-green-600';
+    if (percentage >= 60) return 'text-yellow-600';
     if (percentage >= 40) return 'text-orange-600';
-    return 'text-[#ff3b30]';
+    return 'text-red-600';
   };
 
   // Helper function to get background color based on score
   const getBgColorByScore = (score: number, maxScore: number): string => {
     const percentage = (score / maxScore) * 100;
-    if (percentage >= 80) return 'border-[#34c759]/20 bg-[#34c759]/5';
-    if (percentage >= 60) return 'border-[#ffcc00]/20 bg-[#ffcc00]/5';
+    if (percentage >= 80) return 'border-green-200 bg-green-50/30';
+    if (percentage >= 60) return 'border-yellow-200 bg-yellow-50/30';
     if (percentage >= 40) return 'border-orange-200 bg-orange-50/30';
-    return 'border-[#ff3b30]/20 bg-[#ff3b30]/5';
+    return 'border-red-200 bg-red-50/30';
   };
 
   // Absolute Score (0-1.5 points)
@@ -321,9 +321,9 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
                   />
                   
                   {/* Reference lines for absolute valuation */}
-                  <ReferenceLine y={15} stroke="#34c759" strokeDasharray="3 3" opacity={0.5} />
-                  <ReferenceLine y={20} stroke="#ffcc00" strokeDasharray="3 3" opacity={0.5} />
-                  <ReferenceLine y={25} stroke="#ff9500" strokeDasharray="3 3" opacity={0.5} />
+                  <ReferenceLine y={15} stroke="#16a34a" strokeDasharray="3 3" opacity={0.5} />
+                  <ReferenceLine y={20} stroke="#ca8a04" strokeDasharray="3 3" opacity={0.5} />
+                  <ReferenceLine y={25} stroke="#ea580c" strokeDasharray="3 3" opacity={0.5} />
                   
                   {/* Industry P/E Line (orange) */}
                   {filteredData.some(d => typeof d.industryPE === 'number') && (
