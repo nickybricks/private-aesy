@@ -67,7 +67,7 @@ async function fetchQuarterlyIncomeStatements(ticker: string): Promise<FmpIncome
   const apiKey = await getFmpApiKey();
   const url = `https://financialmodelingprep.com/api/v3/income-statement/${encodeURIComponent(
     ticker
-  )}?period=quarter&limit=40&apikey=${apiKey}`;
+  )}?period=quarter&limit=120&apikey=${apiKey}`;
 
   const res = await fetch(url);
   if (!res.ok) throw new Error('FMP income statement fetch failed');
