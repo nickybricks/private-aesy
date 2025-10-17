@@ -93,11 +93,15 @@ export const convertHistoricalData = async (historicalData: any, fromCurrency: s
     });
   };
   
-  return {
-    revenue: historicalData.revenue ? convertItemValues(historicalData.revenue) : [],
-    earnings: historicalData.earnings ? convertItemValues(historicalData.earnings) : [],
-    eps: historicalData.eps ? convertItemValues(historicalData.eps) : []
-  };
+  // Preserve all existing keys; only convert known currency-based series
+  const result: any = { ...historicalData };
+  result.revenue = historicalData.revenue ? convertItemValues(historicalData.revenue) : historicalData.revenue;
+  result.earnings = historicalData.earnings ? convertItemValues(historicalData.earnings) : historicalData.earnings;
+  result.eps = historicalData.eps ? convertItemValues(historicalData.eps) : historicalData.eps;
+  result.dividend = historicalData.dividend ? convertItemValues(historicalData.dividend) : historicalData.dividend;
+  // Do NOT convert percentages like payoutRatio; leave other keys untouched
+  
+  return result;
 };
 
 /**

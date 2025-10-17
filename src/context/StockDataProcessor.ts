@@ -61,6 +61,7 @@ export const processFinancialMetrics = (rawData: any, reportedCurrency: string, 
 
     metrics: processedMetrics,
     historicalData: rawData.historicalData || [],
+    dividendMetrics: rawData.dividendMetrics || null,
     reportedCurrency,
     priceCurrency
   };
