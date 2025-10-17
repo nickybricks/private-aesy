@@ -35,6 +35,7 @@ import { CurrentRatioCard } from '@/components/metrics/CurrentRatioCard';
 import { NetDebtToEbitdaCard } from '@/components/metrics/NetDebtToEbitdaCard';
 import { PERatioCard } from '@/components/metrics/PERatioCard';
 import { DividendYieldCard } from '@/components/metrics/DividendYieldCard';
+import { IntrinsicValueDiscountCard } from '@/components/metrics/IntrinsicValueDiscountCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -50,7 +51,8 @@ const IndexContent: React.FC = () => {
     pressReleases,
     financialMetrics,
     profitabilityScores,
-    financialStrengthScores
+    financialStrengthScores,
+    valuationData
   } = useStock();
   const { analyses, loading: analysesLoading } = useSavedAnalyses();
   const { toast } = useToast();
@@ -284,7 +286,17 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="valuation" className="mt-4 sm:mt-6">
                     <div className="space-y-4">
-              <PERatioCard 
+              {/* Intrinsic Value Discount Card - positioned before P/E Ratio */}
+              {valuationData?.fairValuePerShare && (
+                <IntrinsicValueDiscountCard
+                  currentPrice={stockInfo.price}
+                  fairValue={valuationData.fairValuePerShare}
+                  sector={stockInfo.sector}
+                  currency={stockInfo.currency}
+                />
+              )}
+              
+              <PERatioCard
                 currentPrice={stockInfo.price}
                 historicalPE={financialMetrics?.historicalData?.peRatio}
                 weeklyPE={financialMetrics?.historicalData?.peRatioWeekly}
