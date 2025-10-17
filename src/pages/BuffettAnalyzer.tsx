@@ -36,6 +36,7 @@ import { NetDebtToEbitdaCard } from '@/components/metrics/NetDebtToEbitdaCard';
 import { PERatioCard } from '@/components/metrics/PERatioCard';
 import { DividendYieldCard } from '@/components/metrics/DividendYieldCard';
 import { IntrinsicValueDiscountCard } from '@/components/metrics/IntrinsicValueDiscountCard';
+import { PeterLynchDiscountCard } from '@/components/metrics/PeterLynchDiscountCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -305,6 +306,14 @@ const IndexContent: React.FC = () => {
                   currency={stockInfo.currency}
                 />
               )}
+              
+              {/* Peter Lynch Discount Card - positioned before P/E Ratio */}
+              <PeterLynchDiscountCard
+                ticker={stockInfo.ticker}
+                currentPrice={stockInfo.price}
+                currency={stockInfo.currency}
+                sector={stockInfo.sector}
+              />
               
               <PERatioCard
                 currentPrice={stockInfo.price}
