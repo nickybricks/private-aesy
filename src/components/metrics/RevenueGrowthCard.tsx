@@ -8,7 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useStock } from '@/context/StockContext';
 import { HistoricalDataItem } from '@/context/StockContextTypes';
 
@@ -33,20 +33,18 @@ const getScoreFromCAGR = (cagr: number): number => {
 
 const getColorByScore = (score: number, maxScore: number): string => {
   const ratio = score / maxScore;
-  if (ratio === 1) return 'text-success';
-  if (ratio >= 0.75) return 'text-chart-2';
-  if (ratio >= 0.5) return 'text-warning';
-  if (ratio >= 0.25) return 'text-chart-4';
-  return 'text-destructive';
+  if (ratio === 1) return 'text-green-600';
+  if (ratio >= 0.75) return 'text-yellow-600';
+  if (ratio >= 0.5) return 'text-orange-600';
+  return 'text-red-600';
 };
 
 const getBgColorByScore = (score: number, maxScore: number): string => {
   const ratio = score / maxScore;
-  if (ratio === 1) return 'bg-success/10 border-success/50';
-  if (ratio >= 0.75) return 'bg-chart-2/10 border-chart-2/50';
-  if (ratio >= 0.5) return 'bg-warning/10 border-warning/50';
-  if (ratio >= 0.25) return 'bg-chart-4/10 border-chart-4/50';
-  return 'bg-destructive/10 border-destructive/50';
+  if (ratio === 1) return 'bg-green-50 border-green-200';
+  if (ratio >= 0.75) return 'bg-yellow-50 border-yellow-200';
+  if (ratio >= 0.5) return 'bg-orange-50 border-orange-200';
+  return 'bg-red-50 border-red-200';
 };
 
 export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historicalRevenue }) => {
@@ -230,7 +228,7 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
         {cagrData.cagr3Y !== null && (
           <div>
             <p className="text-xs text-muted-foreground">CAGR 3 Jahre</p>
-            <p className={`font-semibold ${cagrData.cagr3Y >= 8 ? 'text-success' : cagrData.cagr3Y >= 5 ? 'text-warning' : ''}`}>
+            <p className={`font-semibold ${cagrData.cagr3Y >= 8 ? 'text-green-600' : cagrData.cagr3Y >= 5 ? 'text-yellow-600' : ''}`}>
               {cagrData.cagr3Y.toFixed(1)}%
             </p>
           </div>
@@ -239,7 +237,7 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
         {cagrData.cagr5Y !== null && (
           <div>
             <p className="text-xs text-muted-foreground">CAGR 5 Jahre</p>
-            <p className={`font-semibold ${cagrData.cagr5Y >= 8 ? 'text-success' : cagrData.cagr5Y >= 5 ? 'text-warning' : ''}`}>
+            <p className={`font-semibold ${cagrData.cagr5Y >= 8 ? 'text-green-600' : cagrData.cagr5Y >= 5 ? 'text-yellow-600' : ''}`}>
               {cagrData.cagr5Y.toFixed(1)}%
             </p>
           </div>
@@ -248,7 +246,7 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
         {cagrData.cagr10Y !== null && (
           <div>
             <p className="text-xs text-muted-foreground">CAGR 10 Jahre</p>
-            <p className={`font-semibold ${cagrData.cagr10Y >= 8 ? 'text-success' : cagrData.cagr10Y >= 5 ? 'text-warning' : ''}`}>
+            <p className={`font-semibold ${cagrData.cagr10Y >= 8 ? 'text-green-600' : cagrData.cagr10Y >= 5 ? 'text-yellow-600' : ''}`}>
               {cagrData.cagr10Y.toFixed(1)}%
             </p>
           </div>
@@ -309,37 +307,25 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
       <div className="mt-4">
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis 
               dataKey="year"
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              stroke="hsl(var(--muted-foreground))"
+              tick={{ fontSize: 10 }}
+              stroke="#9ca3af"
             />
             <YAxis 
               yAxisId="left"
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              stroke="hsl(var(--muted-foreground))"
+              tick={{ fontSize: 10 }}
+              stroke="#9ca3af"
               domain={['auto', 'auto']}
               width={60}
-              label={{ 
-                value: `Umsatz (Mio. ${stockCurrency})`, 
-                angle: -90, 
-                position: 'insideLeft',
-                style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' }
-              }}
             />
             <YAxis 
               yAxisId="right"
               orientation="right"
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              stroke="hsl(var(--muted-foreground))"
+              tick={{ fontSize: 10 }}
+              stroke="#9ca3af"
               width={60}
-              label={{ 
-                value: 'Wachstum (%)', 
-                angle: 90, 
-                position: 'insideRight',
-                style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' }
-              }}
             />
             <RechartsTooltip
               content={({ active, payload }) => {
@@ -348,12 +334,12 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
                   return (
                     <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
                       <p className="text-xs font-semibold mb-1">{data.year}</p>
-                      <p className="text-sm" style={{ color: 'hsl(var(--chart-1))' }}>
+                      <p className="text-sm text-blue-600">
                         Umsatz: <span className="font-bold">{data.revenue.toFixed(2)} Mio. {stockCurrency}</span>
                       </p>
                       {data.growthRate !== null && (
-                        <p className="text-sm" style={{ color: 'hsl(var(--chart-2))' }}>
-                          Wachstum: <span className={`font-bold ${data.growthRate >= 0 ? 'text-success' : 'text-destructive'}`}>
+                        <p className="text-sm text-green-600">
+                          Wachstum: <span className={`font-bold ${data.growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {data.growthRate >= 0 ? '+' : ''}{data.growthRate.toFixed(1)}%
                           </span>
                         </p>
@@ -365,23 +351,28 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
               }}
             />
             
-            {/* Revenue Line */}
+            {/* Reference lines for growth targets */}
+            <ReferenceLine yAxisId="right" y={12} stroke="#16a34a" strokeDasharray="3 3" opacity={0.5} />
+            <ReferenceLine yAxisId="right" y={8} stroke="#ca8a04" strokeDasharray="3 3" opacity={0.5} />
+            <ReferenceLine yAxisId="right" y={5} stroke="#ea580c" strokeDasharray="3 3" opacity={0.5} />
+            
+            {/* Revenue Line (blue) */}
             <Line 
               yAxisId="left"
               type="monotone" 
               dataKey="revenue" 
-              stroke="hsl(var(--chart-1))" 
+              stroke="#2563eb" 
               strokeWidth={2.5}
               dot={false}
               name="Umsatz"
             />
             
-            {/* Growth Rate Line */}
+            {/* Growth Rate Line (green) */}
             <Line 
               yAxisId="right"
               type="monotone" 
               dataKey="growthRate" 
-              stroke="hsl(var(--chart-2))" 
+              stroke="#16a34a" 
               strokeWidth={2.5}
               dot={false}
               name="Wachstum"
@@ -393,12 +384,24 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
         {/* Legend */}
         <div className="flex justify-center gap-4 mt-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
-            <span className="w-3 h-0.5 rounded" style={{ backgroundColor: 'hsl(var(--chart-1))' }}></span>
-            Umsatz
+            <span className="w-3 h-0.5 bg-blue-600 rounded"></span>
+            Umsatz (Mio. {stockCurrency})
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-3 h-0.5 rounded" style={{ backgroundColor: 'hsl(var(--chart-2))' }}></span>
+            <span className="w-3 h-0.5 bg-green-600 rounded"></span>
             Wachstum (%)
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="text-green-600">---</span>
+            12% (Exzellent)
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="text-yellow-600">---</span>
+            8% (Gut)
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="text-orange-600">---</span>
+            5% (Akzeptabel)
           </span>
         </div>
       </div>
