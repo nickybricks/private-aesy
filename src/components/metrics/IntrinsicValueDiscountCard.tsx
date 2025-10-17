@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Info } from 'lucide-react';
 import {
   Tooltip,
@@ -230,44 +231,40 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
       </div>
 
       {/* Score Breakdown */}
-      <div className="space-y-2 mb-4 p-3 bg-muted/30 rounded-lg">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-sm font-medium">Bewertung ({sector}):</div>
-          <div className={`px-3 py-1 rounded text-sm font-bold ${getColorByScore(score, maxScore)}`}>
+      <div className="mb-4 p-3 bg-muted/30 rounded-lg">
+        <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+          <span className="text-sm font-medium">Bewertung ({sector}):</span>
+          <span className={`text-sm font-bold ${getColorByScore(score, maxScore)}`}>
             {score}/{maxScore} Punkte
-          </div>
-        </div>
-        
-        <div className="text-xs pl-3 border-l-2 border-border">
-          <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-            <span>Aktueller Discount:</span>
-            <span className="font-medium">{discount.toFixed(1)}%</span>
-            
-            <span>MoS-Ziel ({getSectorDescription()}):</span>
-            <span className="font-medium">{mosTarget}%</span>
-            
-            <span>Erreichungsgrad:</span>
-            <span className="font-medium">{mosTarget > 0 ? ((discount / mosTarget) * 100).toFixed(0) : 0}%</span>
-          </div>
+          </span>
+          
+          <span className="col-span-2 border-t pt-2 mb-1"></span>
+          
+          <span>Aktueller Discount:</span>
+          <span className="font-medium">{discount.toFixed(1)}%</span>
+          
+          <span>MoS-Ziel ({getSectorDescription()}):</span>
+          <span className="font-medium">{mosTarget}%</span>
+          
+          <span>Erreichungsgrad:</span>
+          <span className="font-medium">{mosTarget > 0 ? ((discount / mosTarget) * 100).toFixed(0) : 0}%</span>
         </div>
       </div>
 
       {/* Time Range Selector and Chart */}
       {historicalPrices && historicalPrices.length > 0 && (
         <>
-          <div className="flex gap-1 mb-3 overflow-x-auto pb-1">
+          <div className="flex justify-end gap-1 mb-3 overflow-x-auto pb-1">
             {(['1M', '6M', 'YTD', '1Y', '5Y', '10Y', '25Y', 'MAX'] as TimeRange[]).map(range => (
-              <button
+              <Button
                 key={range}
+                variant={selectedRange === range ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setSelectedRange(range)}
-                className={`px-3 py-1.5 text-xs font-medium rounded whitespace-nowrap transition-colors ${
-                  selectedRange === range
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                }`}
+                className="text-xs h-7 px-2.5 whitespace-nowrap"
               >
                 {range}
-              </button>
+              </Button>
             ))}
           </div>
 
