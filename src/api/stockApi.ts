@@ -1003,10 +1003,21 @@ const fetchFromFMPStable = async (endpoint: string, params: Record<string, strin
 // Helper function to fetch industry P/E data
 const fetchIndustryPE = async (industry: string): Promise<Array<{ date: string; value: number }>> => {
   try {
-    // Try stable endpoint first
+    // Calculate date range: 5 years back from today
+    const toDate = new Date();
+    const fromDate = new Date();
+    fromDate.setFullYear(fromDate.getFullYear() - 5);
+    
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+    
+    // Try stable endpoint with date range
     const data = await fetchFromFMPStable(
       `/historical-industry-pe`,
-      { industry: industry }
+      { 
+        industry: industry,
+        from: formatDate(fromDate),
+        to: formatDate(toDate)
+      }
     );
     
     console.log(`📊 Raw industry P/E response for "${industry}":`, data?.length || 0, 'items');
@@ -1023,7 +1034,8 @@ const fetchIndustryPE = async (industry: string): Promise<Array<{ date: string; 
       console.log(`✓ Processed ${processed.length} industry P/E data points`);
       if (processed.length > 0) {
         console.log(`✓ Date range: ${processed[0].date} to ${processed[processed.length - 1].date}`);
-        console.log(`✓ Sample:`, processed.slice(0, 3));
+        console.log(`✓ Sample (first 3):`, processed.slice(0, 3));
+        console.log(`✓ Sample (last 3):`, processed.slice(-3));
       }
       return processed;
     }
