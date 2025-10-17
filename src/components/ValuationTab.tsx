@@ -8,6 +8,7 @@ import { Info, Loader2, AlertTriangle, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useStock } from '@/context/StockContext';
 import { fetchValuation } from '@/services/ValuationService';
+import { DividendYieldCard } from '@/components/metrics/DividendYieldCard';
 
 type BasisMode = 'EPS_WO_NRI' | 'FCF_PER_SHARE' | 'ADJUSTED_DIVIDEND';
 
@@ -275,6 +276,18 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
           </div>
         </Card>
       </div>
+
+      {/* Dividend Analysis Section */}
+      <DividendYieldCard
+        currentPrice={currentPrice}
+        currentDividendPerShare={valuationData?.dividendMetrics?.currentDividendPerShare}
+        historicalDividends={valuationData?.historicalData?.dividend}
+        payoutRatioHistory={valuationData?.historicalData?.payoutRatio}
+        dividendStreak={valuationData?.dividendMetrics?.dividendStreak}
+        dividendCAGR3Y={valuationData?.dividendMetrics?.dividendCAGR3Y}
+        dividendCAGR5Y={valuationData?.dividendMetrics?.dividendCAGR5Y}
+        dividendCAGR10Y={valuationData?.dividendMetrics?.dividendCAGR10Y}
+      />
     </div>
   );
 };

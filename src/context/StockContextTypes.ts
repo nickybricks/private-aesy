@@ -74,6 +74,17 @@ export interface FinancialMetricsData {
     interestCoverage: HistoricalDataItem[];
     currentRatio: HistoricalDataItem[];
     netDebtToEbitda: HistoricalDataItem[];
+    dividend?: HistoricalDataItem[];           // NEW: Historical dividends per share
+    payoutRatio?: HistoricalDataItem[];        // NEW: Payout ratio (Dividends/FCF)
+    dividendGrowth?: HistoricalDataItem[];     // NEW: Annual dividend growth
+  };
+  dividendMetrics?: {
+    currentDividendPerShare: number;
+    currentPayoutRatio: number;
+    dividendStreak: number;                   // Years without cuts
+    dividendCAGR3Y: number | null;            // 3-year CAGR
+    dividendCAGR5Y: number | null;            // 5-year CAGR
+    dividendCAGR10Y: number | null;           // 10-year CAGR
   };
   wacc?: number;
 }
