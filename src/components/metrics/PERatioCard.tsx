@@ -52,10 +52,10 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
   // Helper function to get background color based on score
   const getBgColorByScore = (score: number, maxScore: number): string => {
     const percentage = (score / maxScore) * 100;
-    if (percentage >= 80) return 'border-green-200 bg-green-50/30';
-    if (percentage >= 60) return 'border-yellow-200 bg-yellow-50/30';
-    if (percentage >= 40) return 'border-orange-200 bg-orange-50/30';
-    return 'border-red-200 bg-red-50/30';
+    if (percentage >= 80) return 'bg-green-50 border-green-200';
+    if (percentage >= 60) return 'bg-yellow-50 border-yellow-200';
+    if (percentage >= 40) return 'bg-orange-50 border-orange-200';
+    return 'bg-red-50 border-red-200';
   };
 
   // Absolute Score (0-1.5 points)
@@ -362,6 +362,8 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
                     Branche ({industry})
                   </span>
                 )}
+                <span><span className="text-green-600">---</span> 15 (Günstig)</span>
+                <span><span className="text-yellow-600">---</span> 20 (Fair)</span>
               </div>
             </div>
           )}
