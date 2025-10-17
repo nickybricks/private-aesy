@@ -38,6 +38,7 @@ import { DividendYieldCard } from '@/components/metrics/DividendYieldCard';
 import { IntrinsicValueDiscountCard } from '@/components/metrics/IntrinsicValueDiscountCard';
 import { PeterLynchDiscountCard } from '@/components/metrics/PeterLynchDiscountCard';
 import { PriceToBookCard } from '@/components/metrics/PriceToBookCard';
+import { PriceToCashFlowCard } from '@/components/metrics/PriceToCashFlowCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -346,7 +347,7 @@ const IndexContent: React.FC = () => {
                 />
               )}
               
-              {/* Price to Book Card - positioned at the bottom */}
+              {/* Price to Book Card */}
               {valuationData?.assumptions?.tangibleBookPerShare && (
                 <PriceToBookCard
                   currentPrice={stockInfo.price}
@@ -360,6 +361,30 @@ const IndexContent: React.FC = () => {
                     };
                   }) || []}
                   historicalBookValue={[]}
+                  currency={stockInfo.currency}
+                  sector={stockInfo.sector}
+                />
+              )}
+              
+              {/* Price to Cash Flow Card - positioned below P/B */}
+              {financialMetrics?.historicalData?.freeCashFlow && financialMetrics.historicalData.freeCashFlow.length > 0 && (
+                <PriceToCashFlowCard
+                  currentPrice={stockInfo.price}
+                  fcfPerShare={
+                    stockInfo.sharesOutstanding && financialMetrics.historicalData.freeCashFlow[0]?.value
+                      ? financialMetrics.historicalData.freeCashFlow[0].value / stockInfo.sharesOutstanding
+                      : null
+                  }
+                  historicalPrices={financialMetrics?.historicalData?.peRatioWeekly?.map(pe => {
+                    const eps = financialMetrics.eps || 1;
+                    const price = pe.stockPE * (typeof eps === 'number' ? eps : 1);
+                    return {
+                      date: pe.date,
+                      close: price > 0 ? price : stockInfo.price
+                    };
+                  }) || []}
+                  historicalFCF={financialMetrics.historicalData.freeCashFlow}
+                  sharesOutstanding={stockInfo.sharesOutstanding}
                   currency={stockInfo.currency}
                   sector={stockInfo.sector}
                 />
