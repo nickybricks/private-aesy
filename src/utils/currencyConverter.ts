@@ -6,7 +6,8 @@ const API_KEY = import.meta.env.VITE_FMP_API_KEY || '';
 
 // Function to determine if currency conversion is needed
 export const shouldConvertCurrency = (fromCurrency: string, toCurrency: string): boolean => {
-  return fromCurrency !== toCurrency;
+  if (!fromCurrency || !toCurrency) return false;
+  return fromCurrency.toUpperCase() !== toCurrency.toUpperCase();
 };
 
 // Alias for shouldConvertCurrency for more semantic usage
@@ -182,6 +183,11 @@ export const convertCurrency = async (
 ): Promise<number> => {
   // Debug input values
   console.log(`Converting currency: ${value} from ${fromCurrency} to ${toCurrency}`);
+  
+  if (!fromCurrency || !toCurrency) {
+    console.warn(`Currency conversion skipped: invalid currency inputs from=${fromCurrency} to=${toCurrency}`);
+    return value;
+  }
   
   if (!shouldConvertCurrency(fromCurrency, toCurrency)) return value;
   
