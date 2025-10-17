@@ -256,24 +256,26 @@ const BuffettQuantAnalyzer = () => {
         <h2 className="text-xl font-semibold mb-4">Über den Boersen Analyzer</h2>
         <p className="text-gray-600 mb-4">
           Der Aesy Boersen Analyzer bewertet Aktien ausschließlich auf Basis von harten Finanzkennzahlen, 
-          gemäß bewährten Investmentprinzipien. Maximale Punktzahl: 13 Punkte (Innerer Wert kann 0-2 Punkte geben).
+          gemäß bewährten Investmentprinzipien. Für jedes der 12 Kriterien wird 1 Punkt vergeben, 
+          wenn die Aktie den Zielwert erreicht.
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h3 className="font-semibold mb-2">Bewertungskriterien:</h3>
             <ul className="list-disc pl-6 text-gray-600 space-y-1">
-              <li>ROE ≥ 15% (nur wenn ROIC &gt; 10% und Net Debt/EBITDA ≤ 2,5)</li>
-              <li>ROIC ≥ 12% und &gt; WACC + 5pp</li>
-              <li>Nettomarge ≥ 10% oder FCF-Marge ≥ 5%</li>
-              <li>EPS 5-J CAGR ≥ 5% & 4/5 Jahre ↑</li>
-              <li>Umsatz 5-J CAGR ≥ 3% & max. 1 Jahr ↓</li>
-              <li>Zinsdeckungsgrad &gt; 6</li>
-              <li>Net Debt/EBITDA &lt; 2,5 oder Net Debt/FCF &lt; 4</li>
+              <li>ROE (Eigenkapitalrendite) &gt; 15%</li>
+              <li>ROIC (Kapitalrendite) &gt; 10%</li>
+              <li>Nettomarge &gt; 10%</li>
+              <li>Stabiles EPS-Wachstum (positiv)</li>
+              <li>Stabiles Umsatzwachstum (positiv)</li>
+              <li>Zinsdeckungsgrad &gt; 5</li>
+              <li>Schuldenquote &lt; 70%</li>
               <li>KGV (P/E) &lt; 15</li>
               <li>P/B &lt; 1.5 (oder &lt; 3 bei starker Marge)</li>
-              <li>Dividendenrendite &gt; 2% (Payout ≤ 60%, 5-J Growth ≥ 3%)</li>
-              <li><strong>Innerer Wert: 0-2 Punkte gestaffelt (0P: &lt; Kurs | 1P: 0-20% | 2P: ≥ 20%)</strong></li>
+              <li>Dividendenrendite &gt; 2%</li>
+              <li><strong>Innerer Wert &gt; Aktienkurs</strong></li>
+              <li><strong>Innerer Wert mit 20% Sicherheitsmarge &gt; Aktienkurs</strong></li>
             </ul>
           </div>
           
@@ -282,15 +284,15 @@ const BuffettQuantAnalyzer = () => {
             <ul className="pl-6 text-gray-600 space-y-2">
               <li className="flex items-center">
                 <Badge className="bg-green-100 text-green-800 mr-2">🟢 Kandidat</Badge>
-                <span>Score 10-13: Starke Buffett-Kandidaten</span>
+                <span>Score 9-12: Starke Buffett-Kandidaten</span>
               </li>
               <li className="flex items-center">
                 <Badge className="bg-yellow-100 text-yellow-800 mr-2">🟡 Beobachten</Badge>
-                <span>Score 7-9: Moderate Buffett-Konformität</span>
+                <span>Score 6-8: Moderate Buffett-Konformität</span>
               </li>
               <li className="flex items-center">
                 <Badge className="bg-red-100 text-red-800 mr-2">🔴 Vermeiden</Badge>
-                <span>Score &lt;7: Nicht Buffett-konform</span>
+                <span>Score &lt;6: Nicht Buffett-konform</span>
               </li>
             </ul>
           </div>

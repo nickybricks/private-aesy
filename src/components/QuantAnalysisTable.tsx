@@ -58,44 +58,44 @@ const metricsDefinitions = {
   roe: {
     name: "ROE (Eigenkapitalrendite)",
     definition: "Misst, wie effizient das Eigenkapital für die Generierung von Gewinnen genutzt wird.",
-    target: "≥ 15% (nur wenn ROIC > 10% UND Net Debt/EBITDA ≤ 2,5)",
+    target: "> 15%",
     formula: "Jahresüberschuss ÷ Eigenkapital"
   },
   roic: {
     name: "ROIC (Kapitalrendite)",
     definition: "Zeigt, wie effizient das Gesamtkapital (inkl. Fremdkapital) eingesetzt wird.",
-    target: "≥ 12% UND > WACC + 5pp",
+    target: "> 10%",
     formula: "NOPAT ÷ Investiertes Kapital"
   },
   netMargin: {
     name: "Nettomarge",
     definition: "Prozentsatz des Umsatzes, der als Gewinn übrig bleibt.",
-    target: "≥ 10% ODER FCF-Marge ≥ 5%",
+    target: "> 10%",
     formula: "Jahresüberschuss ÷ Umsatz"
   },
   epsGrowth: {
     name: "EPS-Wachstum",
-    definition: "Wachstum des Gewinns pro Aktie über 5 Jahre.",
-    target: "5-J CAGR ≥ 5% & 4/5 Jahre positiv",
-    formula: "5-Jahres CAGR des EPS"
+    definition: "Wachstum des Gewinns pro Aktie über Zeit.",
+    target: "positiv",
+    formula: "Aktueller EPS ÷ Vorjahres-EPS - 1"
   },
   revenueGrowth: {
     name: "Umsatzwachstum",
-    definition: "Wachstum des Gesamtumsatzes über 5 Jahre.",
-    target: "5-J CAGR ≥ 3% & max. 1 Jahr negativ",
-    formula: "5-Jahres CAGR des Umsatzes"
+    definition: "Wachstum des Gesamtumsatzes über Zeit.",
+    target: "positiv",
+    formula: "Aktueller Umsatz ÷ Vorjahres-Umsatz - 1"
   },
   interestCoverage: {
     name: "Zinsdeckungsgrad",
     definition: "Fähigkeit des Unternehmens, Zinsen aus dem operativen Gewinn zu bedienen.",
-    target: "> 6",
+    target: "> 5",
     formula: "EBIT ÷ Zinsaufwand"
   },
   debtRatio: {
     name: "Schuldenquote",
-    definition: "Verhältnis der Nettoverschuldung zu EBITDA oder FCF.",
-    target: "Net Debt/EBITDA < 2,5 ODER Net Debt/FCF < 4",
-    formula: "Nettoverschuldung ÷ EBITDA"
+    definition: "Verhältnis der Gesamtverschuldung zur Bilanzsumme.",
+    target: "< 70%",
+    formula: "Gesamtschulden ÷ Bilanzsumme"
   },
   pe: {
     name: "KGV (Kurs-Gewinn-Verhältnis)",
@@ -111,22 +111,28 @@ const metricsDefinitions = {
   },
   dividendYield: {
     name: "Dividendenrendite",
-    definition: "Jährliche Dividendenzahlung im Verhältnis zum Aktienkurs mit Nachhaltigkeits-Checks.",
-    target: "> 2% (Payout ≤ 60%, 5-J Growth ≥ 3%)",
+    definition: "Jährliche Dividendenzahlung im Verhältnis zum Aktienkurs.",
+    target: "> 2%",
     formula: "Jährliche Dividende pro Aktie ÷ Aktienkurs"
   },
   intrinsicValue: {
-    name: "Innerer Wert (0-2 Punkte)",
-    definition: "Vereinfachte Berechnung des intrinsischen Wertes mit gestaffelter Punktevergabe.",
-    target: "0 Pkt: < Kurs | 1 Pkt: 0-20% | 2 Pkt: ≥ 20%",
+    name: "Innerer Wert",
+    definition: "Vereinfachte Berechnung des intrinsischen Wertes mittels Graham-Zahl und P/E-basierter Bewertung.",
+    target: "Innerer Wert > Aktienkurs",
     formula: "Median aus Graham-Zahl, P/E-basiert (12x), Umsatz-basiert"
+  },
+  intrinsicValueWithMargin: {
+    name: "Sicherheitsmarge (20%)",
+    definition: "Innerer Wert mit 20% Sicherheitsmarge nach Buffetts Prinzip.",
+    target: "Innerer Wert × 0.8 > Aktienkurs", 
+    formula: "Innerer Wert × 0.8"
   }
 };
 
 const BuffettScoreBadge = ({ score }: { score: number }) => {
-  if (score >= 10) {
+  if (score >= 9) {
     return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">🟢 Kandidat</Badge>;
-  } else if (score >= 7) {
+  } else if (score >= 6) {
     return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">🟡 Beobachten</Badge>;
   } else {
     return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">🔴 Vermeiden</Badge>;
@@ -296,6 +302,10 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           valueA = a.criteria.intrinsicValue.value || -9999;
           valueB = b.criteria.intrinsicValue.value || -9999;
           break;
+        case 'intrinsicValueWithMargin':
+          valueA = a.criteria.intrinsicValueWithMargin.value || -9999;
+          valueB = b.criteria.intrinsicValueWithMargin.value || -9999;
+          break;
         default:
           valueA = a.buffettScore;
           valueB = b.buffettScore;
@@ -437,7 +447,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               <SortableHeader 
                 field="buffettScore" 
                 name="Buffett Score" 
-                tooltipText="Erfüllte Buffett-Kriterien (max. 13 Punkte)"
+                tooltipText="Erfüllte Buffett-Kriterien (max. 12 Punkte)"
                 sortField={sortField}
                 sortDirection={sortDirection}
                 setSortField={setSortField}
@@ -542,13 +552,22 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+              <SortableHeader 
+                field="intrinsicValueWithMargin" 
+                name="Sicherheit" 
+                tooltipText={`${metricsDefinitions.intrinsicValueWithMargin.definition} Ziel: ${metricsDefinitions.intrinsicValueWithMargin.target}`}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                setSortField={setSortField}
+                setSortDirection={setSortDirection}
+              />
               <TableHead>Preis</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={16} className="text-center py-8">
+                <TableCell colSpan={17} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
                     <span>Analyse läuft...</span>
@@ -557,7 +576,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableRow>
             ) : filteredResults.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={16} className="text-center py-8">
+                <TableCell colSpan={17} className="text-center py-8">
                   Keine Ergebnisse gefunden
                 </TableCell>
               </TableRow>
@@ -675,7 +694,18 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                       <StatusIcon passed={stock.criteria.intrinsicValue.pass} value={stock.criteria.intrinsicValue.value} />
                       <span className="text-xs">
                         {stock.criteria.intrinsicValue.value !== null ? 
-                          `${stock.criteria.intrinsicValue.value.toFixed(2)} (${stock.criteria.intrinsicValue.points}P)` : 
+                          `${stock.criteria.intrinsicValue.value.toFixed(2)} vs ${stock.price.toFixed(2)}` : 
+                          'N/A'
+                        }
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.intrinsicValueWithMargin.pass} value={stock.criteria.intrinsicValueWithMargin.value} />
+                      <span className="text-xs">
+                        {stock.marginOfSafety !== null ? 
+                          `${stock.marginOfSafety.toFixed(1)}%` : 
                           'N/A'
                         }
                       </span>
