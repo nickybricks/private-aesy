@@ -14,7 +14,8 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
     valuationScores,
     profitabilityScores,
     financialStrengthScores,
-    growthScores
+    growthScores,
+    qualitativeScores
   } = useStock();
   
   // Extract and normalize real scores to 0-20 scale
@@ -34,8 +35,10 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
     ? (growthScores.totalScore / growthScores.maxTotalScore) * 20 
     : 0;
 
-  // Mock data for AI Analysis (0-20)
-  const aiAnalysisScore = 15;
+  // Real data for AI Analysis (0-20)
+  const aiAnalysisScore = qualitativeScores 
+    ? qualitativeScores.totalScore 
+    : 0;
 
   // Total score (max 100 = 5 × 20)
   const totalScore = profitabilityScore + financialStrengthScore + valuationScore + growthScore + aiAnalysisScore;
@@ -76,6 +79,7 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
             financialStrengthScore={financialStrengthScore}
             valuationScore={valuationScore}
             growthScore={growthScore}
+            aiAnalysisScore={aiAnalysisScore}
           />
         </div>
       </div>

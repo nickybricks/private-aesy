@@ -7,6 +7,7 @@ interface BuffettScoreSpiderChartProps {
   financialStrengthScore?: number; // 0-20
   valuationScore?: number; // 0-20
   growthScore?: number; // 0-20
+  aiAnalysisScore?: number; // 0-20
 }
 
 // Helper function to create smooth curved path using Catmull-Rom splines
@@ -48,15 +49,16 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
   profitabilityScore = 0,
   financialStrengthScore = 0,
   valuationScore = 0,
-  growthScore = 0
+  growthScore = 0,
+  aiAnalysisScore = 0
 }) => {
-  // Real data for all criteria except KI Analysis
+  // Real data for all criteria including KI Analysis
   const data = [
     { criterion: 'Profitabilität', score: profitabilityScore, tabValue: 'profitability' },
     { criterion: 'Fin. Stärke', score: financialStrengthScore, tabValue: 'financial-strength' },
     { criterion: 'Bewertung', score: valuationScore, tabValue: 'valuation' },
     { criterion: 'Growth', score: growthScore, tabValue: 'growth-rank' },
-    { criterion: 'KI Analyse', score: 15, tabValue: 'ai-analysis' }, // Still mock data
+    { criterion: 'KI Analyse', score: aiAnalysisScore, tabValue: 'ai-analysis' },
   ];
 
   const handleLabelClick = (tabValue: string) => {
