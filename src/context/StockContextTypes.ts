@@ -207,6 +207,27 @@ export interface GrowthScores {
   maxTotalScore: number;
 }
 
+export interface QualitativeAnswer {
+  question: string;
+  answer: 'yes' | 'partial' | 'no' | 'unclear';
+  evidence?: string;
+  weight: 0.5 | 1.0;
+}
+
+export interface QualitativeCriterion {
+  id: string;
+  title: string;
+  questions: QualitativeAnswer[];
+  score: number;
+  maxScore: number;
+}
+
+export interface QualitativeScores {
+  criteria: QualitativeCriterion[];
+  totalScore: number;
+  maxTotalScore: 20;
+}
+
 export interface StockContextType {
   isLoading: boolean;
   loadingProgress: number;
@@ -230,6 +251,7 @@ export interface StockContextType {
   financialStrengthScores: FinancialStrengthScores | null;
   valuationScores: ValuationScores | null;
   growthScores: GrowthScores | null;
+  qualitativeScores: QualitativeScores | null;
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string, enableDeepResearch?: boolean) => Promise<void>;

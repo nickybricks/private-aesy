@@ -1,11 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem, ValuationData, ProfitabilityScores, FinancialStrengthScores, ValuationScores, GrowthScores } from './StockContextTypes';
+import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem, ValuationData, ProfitabilityScores, FinancialStrengthScores, ValuationScores, GrowthScores, QualitativeScores } from './StockContextTypes';
 import { PredictabilityResult } from '@/services/PredictabilityStarsService';
 import { useStockSearch } from './StockSearchService';
 import { fetchStockNews, fetchPressReleases } from '@/api/stockApi';
 import { fetchValuation } from '@/services/ValuationService';
 import { calculateGrowthScores } from '@/services/GrowthScoresService';
+import { calculateQualitativeScores } from '@/services/QualitativeScoresService';
 import { supabase } from '@/integrations/supabase/client';
 
 // Define a more specific interface for stockInfo
@@ -51,11 +52,30 @@ export function StockProvider({ children }: StockProviderProps) {
   const [financialStrengthScores, setFinancialStrengthScores] = useState<FinancialStrengthScores | null>(null);
   const [valuationScores, setValuationScores] = useState<ValuationScores | null>(null);
   const [growthScores, setGrowthScores] = useState<GrowthScores | null>(null);
+  const [qualitativeScores, setQualitativeScores] = useState<QualitativeScores | null>(null);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
     setGptAvailable(hasGpt);
   }, []);
+
+  // Calculate qualitative scores when buffettCriteria is available after deep research
+  useEffect(() => {
+    if (buffettCriteria && deepResearchPerformed) {
+      console.log('🧠 Calculating qualitative scores from GPT analysis');
+      try {
+        const qualScores = calculateQualitativeScores(buffettCriteria);
+        console.log('✅ Qualitative scores calculated:', qualScores);
+        setQualitativeScores(qualScores);
+      } catch (error) {
+        console.error('Error calculating qualitative scores:', error);
+        setQualitativeScores(null);
+      }
+    } else if (!deepResearchPerformed) {
+      // Reset qualitative scores if not performing deep research
+      setQualitativeScores(null);
+    }
+  }, [buffettCriteria, deepResearchPerformed]);
 
   const handleSearch = async (ticker: string, enableDeepResearch = false) => {
     console.log('🔍 handleSearch called with:', { ticker, enableDeepResearch });
@@ -471,6 +491,7 @@ export function StockProvider({ children }: StockProviderProps) {
       financialStrengthScores,
       valuationScores,
       growthScores,
+      qualitativeScores,
       setActiveTab,
       setLoadingProgress,
       handleSearch,

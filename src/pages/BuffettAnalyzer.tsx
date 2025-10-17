@@ -43,6 +43,7 @@ import { RevenueGrowthCard } from '@/components/metrics/RevenueGrowthCard';
 import { EbitdaGrowthCard } from '@/components/metrics/EbitdaGrowthCard';
 import { EpsWoNriGrowthCard } from '@/components/metrics/EpsWoNriGrowthCard';
 import { FcfGrowthCard } from '@/components/metrics/FcfGrowthCard';
+import { QualitativeAnalysisTab } from '@/components/QualitativeAnalysisTab';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -59,7 +60,12 @@ const IndexContent: React.FC = () => {
     financialMetrics,
     profitabilityScores,
     financialStrengthScores,
-    valuationData
+    valuationData,
+    valuationScores,
+    growthScores,
+    qualitativeScores,
+    stockCurrency,
+    deepResearchPerformed
   } = useStock();
   const { analyses, loading: analysesLoading } = useSavedAnalyses();
   const { toast } = useToast();
@@ -430,10 +436,17 @@ const IndexContent: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="ai-analysis" className="mt-4 sm:mt-6">
-                    <Card className="p-6">
-                      <h2 className="text-2xl font-semibold mb-4">Qualitative KI Analyse</h2>
-                      <p className="text-muted-foreground">Inhalt folgt...</p>
-                    </Card>
+                    {qualitativeScores && deepResearchPerformed ? (
+                      <QualitativeAnalysisTab qualitativeScores={qualitativeScores} />
+                    ) : (
+                      <Card className="p-6">
+                        <h2 className="text-2xl font-semibold mb-4">Qualitative KI Analyse</h2>
+                        <p className="text-muted-foreground">
+                          Deep-Research erforderlich. Bitte führen Sie zuerst eine KI-Analyse durch, 
+                          um die 8 qualitativen Buffett-Kriterien zu bewerten.
+                        </p>
+                      </Card>
+                    )}
                   </TabsContent>
                   
                   <TabsContent value="statistics" className="mt-4 sm:mt-6">
