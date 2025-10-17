@@ -71,65 +71,111 @@ const CRITERION_QUESTIONS: Record<string, string[]> = {
   ]
 };
 
-function parseAnswerStatus(text: string): 'yes' | 'partial' | 'no' | 'unclear' {
-  const lowerText = text.toLowerCase();
-  
-  // Check for clear "yes" indicators
-  if (lowerText.includes('✅') || lowerText.includes('ja,') || lowerText.includes('ja.') ||
-      lowerText.includes('eindeutig ja') || lowerText.includes('klar ja')) {
-    return 'yes';
+function extractOverallScore(gptAnalysis: string): number {
+  const match = gptAnalysis.match(/von\s+3\s+teilaspekten\s+wurden\s+(\d+)\s+erfüllt/i);
+  if (match) {
+    return parseInt(match[1]);
   }
   
-  // Check for "partial" indicators
-  if (lowerText.includes('⚠️') || lowerText.includes('teilweise') || 
-      lowerText.includes('bedingt') || lowerText.includes('eingeschränkt')) {
-    return 'partial';
-  }
-  
-  // Check for "no" indicators
-  if (lowerText.includes('❌') || lowerText.includes('nein') || 
-      lowerText.includes('nicht erfüllt') || lowerText.includes('unzureichend')) {
-    return 'no';
-  }
-  
-  // Check for percentage-based assessment
-  const percentMatch = lowerText.match(/(\d+)%/);
-  if (percentMatch) {
-    const percent = parseInt(percentMatch[1]);
-    if (percent >= 75) return 'yes';
-    if (percent >= 40) return 'partial';
-    return 'no';
-  }
-  
-  return 'unclear';
+  // Fallback: Try to count "ja" occurrences
+  const jaCount = (gptAnalysis.toLowerCase().match(/\*\*ja\*\*|^ja,|eindeutig ja/g) || []).length;
+  return Math.min(jaCount, 3);
 }
 
-function extractEvidence(analysisText: string, questionIndex: number): string {
-  // Try to extract the relevant section for this question
-  const lines = analysisText.split('\n');
-  const relevantLines: string[] = [];
-  let capturing = false;
+function splitIntoQuestionSections(gptAnalysis: string): string[] {
+  const sections: string[] = [];
+  const lines = gptAnalysis.split('\n');
+  let currentSection = '';
+  let inQuestion = false;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Start capturing after finding the question number
-    if (line.includes(`${questionIndex + 1}.`) || line.includes(`Frage ${questionIndex + 1}`)) {
-      capturing = true;
-      continue;
-    }
-    
-    // Stop capturing when we hit the next question or a major section break
-    if (capturing && (line.includes(`${questionIndex + 2}.`) || line.includes('---') || line.includes('###'))) {
+    // Check if this is a question header (e.g., "**1. Question text**" or "1. Question text")
+    if (line.match(/^\*?\*?\d+\.\s+.+\*?\*?$/) && !line.toLowerCase().includes('bewertung')) {
+      if (currentSection) {
+        sections.push(currentSection);
+      }
+      currentSection = line + '\n';
+      inQuestion = true;
+    } else if (inQuestion && (line.includes('---') || line.includes('Bewertung') || line.includes('###'))) {
+      // End of questions section
+      if (currentSection) {
+        sections.push(currentSection);
+      }
       break;
-    }
-    
-    if (capturing && line.trim()) {
-      relevantLines.push(line.trim());
+    } else if (inQuestion) {
+      currentSection += line + '\n';
     }
   }
   
-  return relevantLines.slice(0, 3).join(' ').substring(0, 200);
+  // Add the last section if exists
+  if (currentSection && sections.length < 3) {
+    sections.push(currentSection);
+  }
+  
+  return sections;
+}
+
+function parseQuestionAnswer(
+  questionSection: string, 
+  questionIndex: number, 
+  overallScore: number
+): 'yes' | 'partial' | 'no' | 'unclear' {
+  const lowerText = questionSection.toLowerCase();
+  
+  // Check for explicit "yes" indicators
+  if (lowerText.includes('**ja**') || lowerText.includes('ja,') || 
+      lowerText.includes('eindeutig ja') || lowerText.includes('klar erfüllt') ||
+      lowerText.includes('vollständig erfüllt')) {
+    return 'yes';
+  }
+  
+  // Check for "partial" indicators
+  if (lowerText.includes('teilweise') || lowerText.includes('bedingt') || 
+      lowerText.includes('eingeschränkt') || lowerText.includes('überwiegend')) {
+    return 'partial';
+  }
+  
+  // Check for "no" indicators
+  if (lowerText.includes('**nein**') || lowerText.includes('nein,') ||
+      lowerText.includes('nicht erfüllt') || lowerText.includes('unzureichend') ||
+      lowerText.includes('schwierig') || lowerText.includes('unklar')) {
+    return 'no';
+  }
+  
+  // Fallback: Distribute based on overall score
+  if (overallScore >= 3) {
+    return 'yes';
+  } else if (overallScore === 2) {
+    return questionIndex < 2 ? 'yes' : 'partial';
+  } else if (overallScore === 1) {
+    return questionIndex === 0 ? 'yes' : 'no';
+  }
+  
+  return 'no';
+}
+
+function extractQuestionEvidence(questionSection: string): string {
+  const lines = questionSection.split('\n');
+  const evidenceLines: string[] = [];
+  let foundQuestion = false;
+  
+  for (const line of lines) {
+    // Skip the question header itself
+    if (line.match(/^\*?\*?\d+\.\s+.+\*?\*?$/) && !foundQuestion) {
+      foundQuestion = true;
+      continue;
+    }
+    
+    if (foundQuestion && line.trim()) {
+      evidenceLines.push(line.trim());
+    }
+  }
+  
+  // Join all evidence, keep up to 800 characters for reasonable display
+  const fullEvidence = evidenceLines.join('\n');
+  return fullEvidence.substring(0, 800) || 'Keine spezifische Begründung gefunden.';
 }
 
 function parseGptAnalysisToQuestions(
@@ -139,15 +185,28 @@ function parseGptAnalysisToQuestions(
   const questions = CRITERION_QUESTIONS[criterionId] || [];
   const weights = QUESTION_WEIGHTS[criterionId] || [true, true, true];
   
+  console.log(`\n=== Parsing ${criterionId} ===`);
+  console.log('GPT Analysis length:', gptAnalysis.length);
+  
+  // Extract overall score and split into sections
+  const overallScore = extractOverallScore(gptAnalysis);
+  const sections = splitIntoQuestionSections(gptAnalysis);
+  
+  console.log('Overall Score:', overallScore);
+  console.log('Sections found:', sections.length);
+  
   const answers: QualitativeAnswer[] = questions.map((question, index) => {
-    const answer = parseAnswerStatus(gptAnalysis);
-    const evidence = extractEvidence(gptAnalysis, index);
+    const questionSection = sections[index] || gptAnalysis;
+    const answer = parseQuestionAnswer(questionSection, index, overallScore);
+    const evidence = extractQuestionEvidence(questionSection);
     const weight = weights[index] ? 1.0 : 0.5;
+    
+    console.log(`Q${index + 1}: ${answer} (weight: ${weight}) - Evidence length: ${evidence.length}`);
     
     return {
       question,
       answer,
-      evidence: evidence || 'Keine spezifische Begründung gefunden.',
+      evidence,
       weight
     };
   });
