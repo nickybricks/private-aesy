@@ -2633,20 +2633,42 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
       });
     }
 
-    // P/E Ratio (KGV) Metrik
-    const pe = safeValue(latestRatios?.priceEarningsRatio);
-    
-    console.log('📊 P/E Calculation Debug:', {
-      ticker: standardizedTicker,
-      price: quoteData?.price,
-      priceCurrency: stockCurrency,
-      eps: latestIncomeStatement?.eps,
-      reportedCurrency: reportedCurrency,
-      peRatio: pe,
-      peSource: 'FMP ratios endpoint',
-      needsConversion: stockCurrency !== reportedCurrency
-    });
-    
+    // P/E Ratio (KGV) Metrik - mit Currency Conversion
+    let pe = null;
+    const stockPrice = quoteData?.price;
+
+    if (stockPrice && eps && eps > 0) {
+      let priceInReportedCurrency = stockPrice;
+      
+      // Wenn Währungen unterschiedlich sind, Stock Price konvertieren
+      if (stockCurrency !== reportedCurrency) {
+        try {
+          priceInReportedCurrency = await convertCurrency(
+            stockPrice, 
+            stockCurrency, 
+            reportedCurrency
+          );
+          console.log(`💱 Price Conversion: ${stockPrice} ${stockCurrency} → ${priceInReportedCurrency.toFixed(2)} ${reportedCurrency}`);
+        } catch (error) {
+          console.error('❌ Price conversion failed:', error);
+          priceInReportedCurrency = stockPrice; // Fallback to original
+        }
+      }
+      
+      pe = priceInReportedCurrency / eps;
+      
+      console.log('📊 P/E Calculation Debug:', {
+        ticker: standardizedTicker,
+        stockPrice: stockPrice,
+        stockCurrency: stockCurrency,
+        priceConverted: priceInReportedCurrency,
+        eps: eps,
+        reportedCurrency: reportedCurrency,
+        peRatio: pe.toFixed(2),
+        calculation: `${priceInReportedCurrency.toFixed(2)} / ${eps.toFixed(2)} = ${pe.toFixed(2)}`
+      });
+    }
+
     if (pe !== null && pe > 0) {
       metrics.push({
         name: 'P/E-Verhältnis (KGV)',
