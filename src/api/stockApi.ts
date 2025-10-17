@@ -982,25 +982,56 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   };
 };
 
+// Helper function to fetch from FMP stable endpoint
+const fetchFromFMPStable = async (endpoint: string, params: Record<string, string> = {}) => {
+  const baseUrl = 'https://financialmodelingprep.com/stable';
+  const queryParams = new URLSearchParams({ ...params, apikey: DEFAULT_FMP_API_KEY });
+  const url = `${baseUrl}${endpoint}?${queryParams}`;
+  
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`FMP Stable API error: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching from FMP Stable ${endpoint}:`, error);
+    throw error;
+  }
+};
+
 // Helper function to fetch industry P/E data
 const fetchIndustryPE = async (industry: string): Promise<Array<{ date: string; value: number }>> => {
   try {
-    const data = await fetchFromFMP(
-      `/historical-industry-pe?industry=${encodeURIComponent(industry)}`
+    // Try stable endpoint first
+    const data = await fetchFromFMPStable(
+      `/historical-industry-pe`,
+      { industry: industry }
     );
     
-    if (data && Array.isArray(data)) {
-      return data
+    console.log(`📊 Raw industry P/E response for "${industry}":`, data?.length || 0, 'items');
+    
+    if (data && Array.isArray(data) && data.length > 0) {
+      const processed = data
         .filter((item: any) => item.pe && item.pe > 0)
         .map((item: any) => ({
           date: item.date,
           value: item.pe
         }))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      console.log(`✓ Processed ${processed.length} industry P/E data points`);
+      if (processed.length > 0) {
+        console.log(`✓ Date range: ${processed[0].date} to ${processed[processed.length - 1].date}`);
+        console.log(`✓ Sample:`, processed.slice(0, 3));
+      }
+      return processed;
     }
   } catch (error) {
-    console.error('Error fetching industry P/E:', error);
+    console.error('Error fetching industry P/E from stable endpoint:', error);
   }
+  
+  console.warn(`⚠️ No industry P/E data found for "${industry}"`);
   return [];
 };
 
@@ -1508,23 +1539,50 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
           console.log(`✓ Weekly stock P/E sample (first 3):`, weeklyStockPE.slice(0, 3));
         }
         
-        // Merge stock P/E with industry P/E
+        // Merge stock P/E with industry P/E using robust matching
         const mergedWeeklyPE = weeklyStockPE.map(stockPE => {
-          // Find closest industry P/E for this date
-          const matchingIndustryPE = industryPEData.find(
-            indPE => indPE.date === stockPE.date
-          );
+          const stockDate = new Date(stockPE.date).getTime();
+          
+          // Find the last industry P/E on or before this date (within 5 trading days tolerance)
+          let matchingIndustryPE = null;
+          const toleranceDays = 5 * 24 * 60 * 60 * 1000; // 5 days in ms
+          
+          for (let i = industryPEData.length - 1; i >= 0; i--) {
+            const indDate = new Date(industryPEData[i].date).getTime();
+            if (indDate <= stockDate && (stockDate - indDate) <= toleranceDays) {
+              matchingIndustryPE = industryPEData[i];
+              break;
+            }
+          }
           
           return {
-            ...stockPE,
+            date: stockPE.date,
+            stockPE: stockPE.stockPE,
             industryPE: matchingIndustryPE?.value
           };
         });
         
+        const matchedCount = mergedWeeklyPE.filter(d => typeof d.industryPE === 'number').length;
+        const matchRate = mergedWeeklyPE.length > 0 
+          ? ((matchedCount / mergedWeeklyPE.length) * 100).toFixed(1)
+          : '0';
+        
         historicalData.peRatioWeekly = mergedWeeklyPE;
         console.log(`✓ Merged weekly P/E data: ${mergedWeeklyPE.length} points`);
+        console.log(`✓ Matched industry PE for ${matchedCount}/${mergedWeeklyPE.length} points (${matchRate}%)`);
         if (mergedWeeklyPE.length > 0) {
           console.log(`✓ Merged data sample (last 3):`, mergedWeeklyPE.slice(-3));
+        }
+        
+        // Set current industry P/E from latest matched data
+        if (matchedCount > 0) {
+          const latestWithIndustry = [...mergedWeeklyPE]
+            .reverse()
+            .find(d => typeof d.industryPE === 'number');
+          if (latestWithIndustry) {
+            historicalData.currentIndustryPE = latestWithIndustry.industryPE;
+            console.log(`✓ Current industry P/E: ${latestWithIndustry.industryPE.toFixed(2)}`);
+          }
         }
       } else {
         console.warn('⚠️ Missing data for industry P/E calculation:', {

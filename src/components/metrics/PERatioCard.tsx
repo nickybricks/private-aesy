@@ -36,7 +36,7 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
     currentStockPE,
     currentIndustryPE,
     industry,
-    hasIndustryData: weeklyPE?.some(d => d.industryPE !== undefined),
+    hasIndustryData: weeklyPE?.some(d => typeof d.industryPE === 'number'),
     weeklyPESample: weeklyPE?.slice(-3) // Last 3 entries
   });
 
@@ -326,7 +326,7 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
                   <ReferenceLine y={25} stroke="#ea580c" strokeDasharray="3 3" opacity={0.5} />
                   
                   {/* Industry P/E Line (orange) */}
-                  {filteredData.some(d => d.industryPE) && (
+                  {filteredData.some(d => typeof d.industryPE === 'number') && (
                     <Line 
                       type="monotone" 
                       dataKey="industryPE" 
@@ -356,7 +356,7 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
                   <span className="inline-block w-6 h-0.5 bg-[#2563eb]"></span>
                   Aktie
                 </span>
-                {filteredData.some(d => d.industryPE) && (
+                {filteredData.some(d => typeof d.industryPE === 'number') && (
                   <span className="flex items-center gap-1">
                     <span className="inline-block w-6 h-0.5 bg-[#f97316]"></span>
                     Branche ({industry})
