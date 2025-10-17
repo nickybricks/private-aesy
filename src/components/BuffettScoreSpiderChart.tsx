@@ -5,6 +5,7 @@ interface BuffettScoreSpiderChartProps {
   onTabChange?: (tab: string) => void;
   profitabilityScore?: number;  // 0-20
   financialStrengthScore?: number; // 0-20
+  valuationScore?: number; // 0-20
 }
 
 // Helper function to create smooth curved path using Catmull-Rom splines
@@ -44,13 +45,14 @@ const createSmoothPath = (points: Array<{x: number, y: number}>) => {
 const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({ 
   onTabChange,
   profitabilityScore = 0,
-  financialStrengthScore = 0
+  financialStrengthScore = 0,
+  valuationScore = 0
 }) => {
-  // Mix of real data (Profitability, Financial Strength) and mock data (others)
+  // Mix of real data (Profitability, Financial Strength, Valuation) and mock data (Growth, KI)
   const data = [
     { criterion: 'Profitabilität', score: profitabilityScore, tabValue: 'profitability' },
     { criterion: 'Fin. Stärke', score: financialStrengthScore, tabValue: 'financial-strength' },
-    { criterion: 'Bewertung', score: 12, tabValue: 'valuation' },
+    { criterion: 'Bewertung', score: valuationScore, tabValue: 'valuation' },
     { criterion: 'Growth', score: 18, tabValue: 'growth-rank' },
     { criterion: 'KI Analyse', score: 15, tabValue: 'ai-analysis' },
   ];

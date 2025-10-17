@@ -181,6 +181,19 @@ export interface FinancialStrengthScores {
   maxTotalScore: number;
 }
 
+export interface ValuationScores {
+  scores: {
+    intrinsicValueDiscount: ScoreResult;
+    peterLynchDiscount: ScoreResult;
+    peRatio: ScoreResult;
+    dividendYield: ScoreResult;
+    priceToBook: ScoreResult;
+    priceToCashFlow: ScoreResult;
+  };
+  totalScore: number;
+  maxTotalScore: number;
+}
+
 export interface StockContextType {
   isLoading: boolean;
   loadingProgress: number;
@@ -202,6 +215,7 @@ export interface StockContextType {
   deepResearchPerformed: boolean;
   profitabilityScores: ProfitabilityScores | null;
   financialStrengthScores: FinancialStrengthScores | null;
+  valuationScores: ValuationScores | null;
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string, enableDeepResearch?: boolean) => Promise<void>;

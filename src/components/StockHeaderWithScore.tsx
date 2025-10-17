@@ -11,6 +11,7 @@ interface StockHeaderWithScoreProps {
 const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange }) => {
   const { 
     overallRating,
+    valuationScores,
     profitabilityScores,
     financialStrengthScores 
   } = useStock();
@@ -24,8 +25,11 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
     ? (financialStrengthScores.totalScore / financialStrengthScores.maxTotalScore) * 20 
     : 0;
 
+  const valuationScore = valuationScores 
+    ? (valuationScores.totalScore / valuationScores.maxTotalScore) * 20 
+    : 0;
+
   // Mock data for other criteria (0-20 each)
-  const valuationScore = 12;
   const growthScore = 18;
   const aiAnalysisScore = 15;
 
@@ -66,6 +70,7 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
             onTabChange={onTabChange}
             profitabilityScore={profitabilityScore}
             financialStrengthScore={financialStrengthScore}
+            valuationScore={valuationScore}
           />
         </div>
       </div>

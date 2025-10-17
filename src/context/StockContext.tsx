@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem, ValuationData, ProfitabilityScores, FinancialStrengthScores } from './StockContextTypes';
+import { StockContextType, StockProviderProps, FinancialMetricsData, OverallRatingData, DCFData, NewsItem, ValuationData, ProfitabilityScores, FinancialStrengthScores, ValuationScores } from './StockContextTypes';
 import { PredictabilityResult } from '@/services/PredictabilityStarsService';
 import { useStockSearch } from './StockSearchService';
 import { fetchStockNews, fetchPressReleases } from '@/api/stockApi';
@@ -48,6 +48,7 @@ export function StockProvider({ children }: StockProviderProps) {
   const [deepResearchPerformed, setDeepResearchPerformed] = useState(false);
   const [profitabilityScores, setProfitabilityScores] = useState<ProfitabilityScores | null>(null);
   const [financialStrengthScores, setFinancialStrengthScores] = useState<FinancialStrengthScores | null>(null);
+  const [valuationScores, setValuationScores] = useState<ValuationScores | null>(null);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
@@ -158,6 +159,66 @@ export function StockProvider({ children }: StockProviderProps) {
           .then((valuation) => {
             console.log('✅ Valuation fetched:', valuation);
             setValuationData(valuation);
+            
+            // Calculate valuation scores after valuation data is loaded
+            if (metricsData && !criticalDataMissing) {
+              console.log('🎯 Calculating valuation scores');
+              
+              // Get latest FCF per share
+              const latestFCF = metricsData.historicalData?.freeCashFlow?.[0]?.value || null;
+              const fcfPerShare = latestFCF && info.sharesOutstanding 
+                ? latestFCF / info.sharesOutstanding 
+                : null;
+              
+              // Get Peter Lynch fair value (placeholder for now)
+              const peterLynchFairValue = null;
+              
+              // Get dividend metrics
+              const dividendYield = metricsData.dividendMetrics?.currentDividendPerShare 
+                ? (metricsData.dividendMetrics.currentDividendPerShare / info.price) * 100 
+                : null;
+              
+              const payoutRatio = metricsData.dividendMetrics?.currentPayoutRatio || null;
+              const dividendStreak = metricsData.dividendMetrics?.dividendStreak || 0;
+              const dividendCAGR3Y = metricsData.dividendMetrics?.dividendCAGR3Y || null;
+              const dividendCAGR5Y = metricsData.dividendMetrics?.dividendCAGR5Y || null;
+              const dividendCAGR10Y = metricsData.dividendMetrics?.dividendCAGR10Y || null;
+              
+              // Get current P/E
+              const currentPE = metricsData.historicalData?.peRatioWeekly?.[metricsData.historicalData.peRatioWeekly.length - 1]?.stockPE || null;
+              const industryPE = metricsData.historicalData?.peRatioWeekly?.[metricsData.historicalData.peRatioWeekly.length - 1]?.industryPE || null;
+              
+              supabase.functions.invoke('calculate-valuation-scores', {
+                body: {
+                  fairValuePerShare: valuation.fairValuePerShare,
+                  currentPrice: info.price,
+                  sector: info.sector || 'Default',
+                  peterLynchFairValue,
+                  currentPE,
+                  industryPE,
+                  dividendYield,
+                  payoutRatio,
+                  dividendStreak,
+                  dividendCAGR3Y,
+                  dividendCAGR5Y,
+                  dividendCAGR10Y,
+                  bookValuePerShare: valuation.assumptions?.tangibleBookPerShare || null,
+                  fcfPerShare,
+                  historicalFCF: metricsData.historicalData?.freeCashFlow || [],
+                }
+              })
+                .then(({ data, error }) => {
+                  if (error) {
+                    console.error('Error calculating valuation scores:', error);
+                    return;
+                  }
+                  console.log('✅ Valuation scores calculated:', data);
+                  setValuationScores(data);
+                })
+                .catch((err) => {
+                  console.error('Error calling valuation scores function:', err);
+                });
+            }
           })
           .catch((err) => {
             console.error('Error fetching valuation (non-critical):', err);
@@ -382,6 +443,7 @@ export function StockProvider({ children }: StockProviderProps) {
       deepResearchPerformed,
       profitabilityScores,
       financialStrengthScores,
+      valuationScores,
       setActiveTab,
       setLoadingProgress,
       handleSearch,
