@@ -367,7 +367,10 @@ const IndexContent: React.FC = () => {
               )}
               
               {/* Price to Cash Flow Card - positioned below P/B */}
-              {financialMetrics?.historicalData?.freeCashFlow && financialMetrics.historicalData.freeCashFlow.length > 0 && (
+              {financialMetrics?.historicalData?.freeCashFlow && 
+               financialMetrics.historicalData.freeCashFlow.length > 0 && 
+               financialMetrics?.historicalData?.peRatioWeekly && 
+               financialMetrics.historicalData.peRatioWeekly.length > 0 && (
                 <PriceToCashFlowCard
                   currentPrice={stockInfo.price}
                   fcfPerShare={

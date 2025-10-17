@@ -88,19 +88,24 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
   const chartData = useMemo(() => {
     if (!historicalPrices.length || !historicalFCF.length || !sharesOutstanding) return [];
 
+    // Sort FCF data by year (newest first, then reverse for chronological order)
+    const sortedFCF = [...historicalFCF].sort((a, b) => parseInt(a.year) - parseInt(b.year));
+    
     // Create a map of FCF per share by year
     const fcfPerShareMap = new Map(
-      historicalFCF.map(item => {
+      sortedFCF.map(item => {
         const fcfPS = item.value / sharesOutstanding;
         return [item.year, fcfPS];
       })
     );
 
-    return historicalPrices
+    // Process historical prices and match with FCF data
+    const processedData = historicalPrices
       .map(price => {
         const year = new Date(price.date).getFullYear().toString();
         const fcfPS = fcfPerShareMap.get(year);
         
+        // Skip if no FCF data for this year or FCF is negative/zero
         if (!fcfPS || fcfPS <= 0) return null;
         
         return {
@@ -111,6 +116,8 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
         };
       })
       .filter(item => item !== null);
+
+    return processedData;
   }, [historicalPrices, historicalFCF, sharesOutstanding]);
 
   // Filter data by selected range
