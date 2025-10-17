@@ -99,6 +99,7 @@ export const convertHistoricalData = async (historicalData: any, fromCurrency: s
   result.earnings = historicalData.earnings ? convertItemValues(historicalData.earnings) : historicalData.earnings;
   result.eps = historicalData.eps ? convertItemValues(historicalData.eps) : historicalData.eps;
   result.ebitda = historicalData.ebitda ? convertItemValues(historicalData.ebitda) : historicalData.ebitda;
+  result.epsWoNri = historicalData.epsWoNri ? convertItemValues(historicalData.epsWoNri) : historicalData.epsWoNri;
   result.dividend = historicalData.dividend ? convertItemValues(historicalData.dividend) : historicalData.dividend;
   // Do NOT convert percentages like payoutRatio; leave other keys untouched
   

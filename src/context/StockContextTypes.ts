@@ -78,6 +78,7 @@ export interface FinancialMetricsData {
     dividend?: HistoricalDataItem[];           // NEW: Historical dividends per share
     payoutRatio?: HistoricalDataItem[];        // NEW: Payout ratio (Dividends/FCF)
     dividendGrowth?: HistoricalDataItem[];     // NEW: Annual dividend growth
+    epsWoNri?: HistoricalDataItem[];           // NEW: EPS w/o NRI (Earnings Per Share without Non-Recurring Items)
   };
   dividendMetrics?: {
     currentDividendPerShare: number;

@@ -13,6 +13,7 @@ import {
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { convertCurrency, shouldConvertCurrency } from '@/utils/currencyConverter';
 import { NewsItem } from '@/context/StockContextTypes';
+import { calculateEpsWithoutNri } from '@/services/EpsWithoutNriService';
 
 // Base URL for the Financial Modeling Prep API
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
@@ -1668,6 +1669,22 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
           value: statement.ebitda || 0,
           originalCurrency: statement.reportedCurrency || reportedCurrency
         }));
+      
+      // EPS w/o NRI (Earnings Per Share without Non-Recurring Items)
+      try {
+        const epsWoNriResult = await calculateEpsWithoutNri(standardizedTicker, quote.price);
+        if (epsWoNriResult && epsWoNriResult.annual && epsWoNriResult.annual.length > 0) {
+          historicalData.epsWoNri = epsWoNriResult.annual.map(annual => ({
+            year: annual.year.toString(),
+            value: annual.epsWoNri,
+            originalCurrency: reportedCurrency
+          }));
+          console.log(`✅ EPS w/o NRI data loaded: ${historicalData.epsWoNri.length} years`);
+        }
+      } catch (error) {
+        console.warn('Could not calculate EPS w/o NRI:', error);
+        historicalData.epsWoNri = [];
+      }
     }
 
     // Add historical ROE data (last 10 years)
