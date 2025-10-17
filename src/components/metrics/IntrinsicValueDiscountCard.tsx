@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Info } from 'lucide-react';
+import { Info, TrendingUp, TrendingDown } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -148,7 +148,7 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
 
   const filteredData = filterDataByRange(historicalPrices, selectedRange);
 
-  const tooltipContent = (
+  const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
       <div>
         <p className="font-semibold">Innerer Wert-Abweichung (Discount)</p>
@@ -185,9 +185,28 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
     </div>
   );
 
+  const scoringTooltip = (
+    <div className="space-y-1">
+      {sector && (
+        <p className="text-xs text-muted-foreground mb-1">
+          Sektor: <strong>{sector}</strong> ({getSectorDescription()})
+        </p>
+      )}
+      <p className="font-medium text-sm">Bewertungssystem (0-5 Punkte):</p>
+      <p className="text-sm"><span className="text-green-600">●</span> 5 Punkte: ≥ {mosTarget}%</p>
+      <p className="text-sm"><span className="text-yellow-600">●</span> 3 Punkte: ≥ {(0.67 * mosTarget).toFixed(0)}%</p>
+      <p className="text-sm"><span className="text-orange-600">●</span> 2 Punkte: ≥ {(0.33 * mosTarget).toFixed(0)}%</p>
+      <p className="text-sm"><span className="text-yellow-600">●</span> 1 Punkt: ≥ 0%</p>
+      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: &lt; 0% (überbewertet)</p>
+      <p className="text-xs text-muted-foreground mt-2">
+        M = MoS-Ziel (Sicherheitsmarge) basierend auf Sektor/Qualität
+      </p>
+    </div>
+  );
+
   return (
     <Card className={`p-4 border-2 ${getBgColorByScore(score, maxScore)}`}>
-      {/* Header with Score */}
+      {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold text-lg">Innerer Wert-Abweichung</h3>
@@ -197,7 +216,7 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
               <TooltipContent side="right" className="max-w-md">
-                {tooltipContent}
+                {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -212,43 +231,98 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
         </div>
       </div>
 
-      {/* Current Values */}
-      <div className="mb-3 p-3 bg-muted/30 rounded-lg text-sm">
-        <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-          <span className="text-muted-foreground">Aktueller Kurs:</span>
-          <span className="font-medium">{currentPrice.toFixed(2)} {currency}</span>
-          
-          <span className="text-muted-foreground">Innerer Wert:</span>
-          <span className="font-medium">{fairValue.toFixed(2)} {currency}</span>
-          
-          <span className="text-muted-foreground border-t pt-1 col-span-2"></span>
-          
-          <span className="text-muted-foreground">Differenz:</span>
-          <span className={`font-bold ${discount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+      {/* Score indicator */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="text-sm font-medium">Bewertung:</div>
+        <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByScore(score, maxScore)}`}>
+          {score}/{maxScore} Punkte
+        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {scoringTooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {/* KPIs as 3-column grid */}
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        <div className="p-3 bg-muted/30 rounded-lg">
+          <div className="text-xs text-muted-foreground mb-1">Aktueller Kurs</div>
+          <div className="text-lg font-bold">{currentPrice.toFixed(2)} {currency}</div>
+        </div>
+        <div className="p-3 bg-muted/30 rounded-lg">
+          <div className="text-xs text-muted-foreground mb-1">Innerer Wert</div>
+          <div className="text-lg font-bold">{fairValue.toFixed(2)} {currency}</div>
+        </div>
+        <div className="p-3 bg-muted/30 rounded-lg">
+          <div className="text-xs text-muted-foreground mb-1">Differenz</div>
+          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-bold ${
+            discount >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+          }`}>
+            {discount >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
             {discount >= 0 ? '+' : ''}{(fairValue - currentPrice).toFixed(2)} {currency}
-          </span>
+          </div>
         </div>
       </div>
 
-      {/* Score Breakdown */}
-      <div className="mb-4 p-3 bg-muted/30 rounded-lg">
-        <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-          <span className="text-sm font-medium">Bewertung ({sector}):</span>
-          <span className={`text-sm font-bold ${getColorByScore(score, maxScore)}`}>
-            {score}/{maxScore} Punkte
-          </span>
-          
-          <span className="col-span-2 border-t pt-2 mb-1"></span>
-          
-          <span>Aktueller Discount:</span>
-          <span className="font-medium">{discount.toFixed(1)}%</span>
-          
-          <span>MoS-Ziel ({getSectorDescription()}):</span>
-          <span className="font-medium">{mosTarget}%</span>
-          
-          <span>Erreichungsgrad:</span>
-          <span className="font-medium">{mosTarget > 0 ? ((discount / mosTarget) * 100).toFixed(0) : 0}%</span>
-        </div>
+      {/* Meta Row with tooltips */}
+      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-4 flex-wrap">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                Abweichung <span className={`font-bold ${discount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {discount >= 0 ? '+' : ''}{discount.toFixed(1)}%
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Aktuelle Abweichung vom inneren Wert</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <span>•</span>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                MoS-Ziel <span className="font-bold">{mosTarget}%</span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Gewünschte Sicherheitsmarge für {sector}</p>
+              <p className="text-xs text-muted-foreground">{getSectorDescription()}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <span>•</span>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                Erfüllung MoS-Ziel <span className={`font-bold ${
+                  (discount / mosTarget) >= 1 ? 'text-green-600' : 
+                  (discount / mosTarget) >= 0.67 ? 'text-yellow-600' : 
+                  'text-red-600'
+                }`}>
+                  {mosTarget > 0 ? ((discount / mosTarget) * 100).toFixed(0) : 0}%
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Wie nahe die Abweichung am MoS-Ziel liegt</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Time Range Selector and Chart */}
@@ -389,24 +463,6 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
         </>
       )}
 
-      {/* Scoring Explanation */}
-      <div className="mt-4 text-xs text-muted-foreground space-y-2 p-3 bg-muted/20 rounded-lg">
-        <div>
-          <p className="font-semibold mb-1">Bewertungssystem (0-5 Punkte):</p>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
-          <span>• ≥ M ({mosTarget}%): <strong>5 Pkt</strong></span>
-          <span>• ≥ 0,67×M ({(0.67 * mosTarget).toFixed(0)}%): <strong>3 Pkt</strong></span>
-          <span>• ≥ 0,33×M ({(0.33 * mosTarget).toFixed(0)}%): <strong>2 Pkt</strong></span>
-          <span>• ≥ 0%: <strong>1 Pkt</strong></span>
-          <span className="col-span-2">• &lt; 0% (überbewertet): <strong>0 Pkt</strong></span>
-        </div>
-        
-        <div className="text-[10px] text-muted-foreground pt-1 border-t">
-          <p>M = MoS-Ziel (Sicherheitsmarge) basierend auf Sektor/Qualität</p>
-        </div>
-      </div>
     </Card>
   );
 };
