@@ -2862,23 +2862,14 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
             
             historicalData.payoutRatio = payoutRatioData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
             
-            // Calculate TTM-based current payout ratio
+            // Calculate TTM-based current payout ratio using actual dividends paid from cash flow
             const ttmFCF = safeValue(cashFlows[0].freeCashFlow);
-            const sharesOutstanding = safeValue(balanceSheets[0]?.commonStock) || safeValue(incomeStatements[0]?.weightedAverageShsOut);
+            const dividendsPaid = safeValue(cashFlows[0].dividendsPaid);
             
-            if (ttmFCF && ttmFCF > 0 && sharesOutstanding > 0) {
-              // Sum dividends from last 12 months
-              const now = new Date();
-              const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-              
-              const ttmDividends = dividendData.historical
-                .filter((item: any) => new Date(item.date) >= oneYearAgo)
-                .reduce((sum: number, item: any) => sum + (item.dividend || 0), 0);
-              
-              if (ttmDividends > 0) {
-                const totalDividendsPaid = ttmDividends * sharesOutstanding;
-                currentPayoutRatio = Math.round((totalDividendsPaid / ttmFCF) * 1000) / 10;
-              }
+            if (ttmFCF && ttmFCF > 0 && dividendsPaid) {
+              // dividendsPaid is negative in FMP API, so use Math.abs()
+              const totalDividendsPaid = Math.abs(dividendsPaid);
+              currentPayoutRatio = Math.round((totalDividendsPaid / ttmFCF) * 1000) / 10;
             }
           }
           
