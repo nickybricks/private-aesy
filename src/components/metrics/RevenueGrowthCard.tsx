@@ -1,13 +1,18 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClickableTooltip } from '@/components/ClickableTooltip';
-import { Info, TrendingUp } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Info, TrendingUp, TrendingDown } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { useStock } from '@/context/StockContext';
 import { HistoricalDataItem } from '@/context/StockContextTypes';
 
-type TimeRange = '3Y' | '5Y' | '10Y' | 'ALL';
+type TimeRange = '3Y' | '5Y' | '10Y' | 'MAX';
 
 interface RevenueGrowthCardProps {
   historicalRevenue: HistoricalDataItem[];
@@ -26,23 +31,28 @@ const getScoreFromCAGR = (cagr: number): number => {
   return 0;
 };
 
-const getScoreColor = (score: number): string => {
-  if (score >= 4) return 'text-success border-success/50';
-  if (score >= 3) return 'text-chart-2 border-chart-2/50';
-  if (score >= 2) return 'text-warning border-warning/50';
-  if (score >= 1) return 'text-chart-4 border-chart-4/50';
-  return 'text-destructive border-destructive/50';
+const getColorByScore = (score: number, maxScore: number): string => {
+  const ratio = score / maxScore;
+  if (ratio === 1) return 'text-success';
+  if (ratio >= 0.75) return 'text-chart-2';
+  if (ratio >= 0.5) return 'text-warning';
+  if (ratio >= 0.25) return 'text-chart-4';
+  return 'text-destructive';
 };
 
-const getScoreBadgeVariant = (score: number): "default" | "secondary" | "destructive" | "outline" => {
-  if (score >= 3) return 'default';
-  if (score >= 2) return 'secondary';
-  return 'destructive';
+const getBgColorByScore = (score: number, maxScore: number): string => {
+  const ratio = score / maxScore;
+  if (ratio === 1) return 'bg-success/10 border-success/50';
+  if (ratio >= 0.75) return 'bg-chart-2/10 border-chart-2/50';
+  if (ratio >= 0.5) return 'bg-warning/10 border-warning/50';
+  if (ratio >= 0.25) return 'bg-chart-4/10 border-chart-4/50';
+  return 'bg-destructive/10 border-destructive/50';
 };
 
 export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historicalRevenue }) => {
   const { stockCurrency } = useStock();
-  const [timeRange, setTimeRange] = useState<TimeRange>('10Y');
+  const [timeRange, setTimeRange] = useState<TimeRange>('MAX');
+  const maxScore = 4;
 
   // Calculate CAGRs for different periods
   const cagrData = useMemo(() => {
@@ -72,7 +82,6 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
   // Use the best available CAGR (prefer longer periods)
   const primaryCAGR = cagrData.cagr10Y ?? cagrData.cagr5Y ?? cagrData.cagr3Y ?? 0;
   const score = getScoreFromCAGR(primaryCAGR);
-  const scoreColor = getScoreColor(score);
 
   // Filter data based on time range
   const chartData = useMemo(() => {
@@ -83,7 +92,7 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
     );
 
     let filtered = sortedData;
-    if (timeRange !== 'ALL') {
+    if (timeRange !== 'MAX') {
       const years = parseInt(timeRange);
       filtered = sortedData.slice(-years - 1);
     }
@@ -107,212 +116,292 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
     });
   }, [historicalRevenue, timeRange]);
 
-  const tooltipContent = (
-    <div className="space-y-3 text-sm">
+  const mainTooltipContent = (
+    <div className="space-y-3 max-w-md">
       <div>
-        <h4 className="font-semibold mb-2">Was ist Revenue Growth?</h4>
-        <p className="text-muted-foreground">
+        <p className="font-semibold">Was ist Revenue Growth?</p>
+        <p className="text-xs mt-1">
           <strong>Umsatzwachstum = Wie stark die Erlöse steigen (oder fallen).</strong>
         </p>
       </div>
       
-      <div>
-        <p className="text-muted-foreground mb-2">Man betrachtet meist:</p>
-        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+      <div className="text-xs">
+        <p className="mb-2">Man betrachtet meist:</p>
+        <ul className="list-disc list-inside space-y-1 pl-2">
           <li><strong>YoY</strong> (Jahr-zu-Jahr) – kurzfristiger Blick.</li>
           <li><strong>CAGR</strong> (durchschnittliche jährliche Wachstumsrate über 3/5/10 Jahre) – <strong>stabilerer</strong> Blick.</li>
         </ul>
-        <p className="text-muted-foreground mt-2 text-xs italic">
+        <p className="mt-2 text-[10px] italic">
           Beispiel: 1.000 → 1.100 → 1.210 → 1.331 in 3 Jahren ⇒ <strong>CAGR ≈ 10 % p. a.</strong>
         </p>
       </div>
 
-      <div>
-        <h4 className="font-semibold mb-2">Warum wichtig?</h4>
-        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+      <div className="text-xs">
+        <p className="font-medium mb-1">Warum wichtig?</p>
+        <ul className="list-disc list-inside space-y-1 pl-2">
           <li><strong>Größenmotor:</strong> Ohne Umsatzwachstum ist nachhaltiges Gewinn-/Cash-Wachstum schwer.</li>
           <li><strong>Preissetzungsmacht:</strong> Wachstum aus <strong>Preis</strong> + <strong>Menge</strong> zeigt Marktmacht.</li>
           <li><strong>Skalierung:</strong> Langanhaltendes Wachstum erlaubt Margenhebel.</li>
         </ul>
       </div>
+    </div>
+  );
 
-      <div>
-        <h4 className="font-semibold mb-2">Punktelogik (CAGR):</h4>
-        <ul className="space-y-1 text-xs text-muted-foreground">
-          <li>≥ 12% → <span className="text-success font-semibold">4 Punkte</span></li>
-          <li>8–&lt;12% → <span className="text-chart-2 font-semibold">3 Punkte</span></li>
-          <li>5–&lt;8% → <span className="text-warning font-semibold">2 Punkte</span></li>
-          <li>2–&lt;5% → <span className="text-chart-4 font-semibold">1 Punkt</span></li>
-          <li>&lt; 2% → <span className="text-destructive font-semibold">0 Punkte</span></li>
-        </ul>
-      </div>
+  const scoringTooltip = (
+    <div className="space-y-1">
+      <p className="font-medium text-sm">Bewertungssystem (0-4 Punkte):</p>
+      <p className="text-sm"><span className="text-success">●</span> 4 Punkte: ≥ 12%</p>
+      <p className="text-sm"><span className="text-chart-2">●</span> 3 Punkte: 8–&lt;12%</p>
+      <p className="text-sm"><span className="text-warning">●</span> 2 Punkte: 5–&lt;8%</p>
+      <p className="text-sm"><span className="text-chart-4">●</span> 1 Punkt: 2–&lt;5%</p>
+      <p className="text-sm"><span className="text-destructive">●</span> 0 Punkte: &lt; 2%</p>
     </div>
   );
 
   if (!historicalRevenue || historicalRevenue.length < 2) {
     return (
-      <Card className="border-muted">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Revenue Growth (Umsatzwachstum)
-            <ClickableTooltip content={tooltipContent}>
-              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-            </ClickableTooltip>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Nicht genügend historische Umsatzdaten verfügbar.
-          </p>
-        </CardContent>
+      <Card className="p-4 border-2 border-muted">
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="font-semibold text-lg">Revenue Growth (Umsatzwachstum)</h3>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-md">
+                {mainTooltipContent}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Nicht genügend historische Umsatzdaten verfügbar.
+        </p>
       </Card>
     );
   }
 
   return (
-    <Card className={`border-2 transition-colors ${scoreColor}`}>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Revenue Growth (Umsatzwachstum)
-            <ClickableTooltip content={tooltipContent}>
-              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-            </ClickableTooltip>
-          </div>
-          <Badge variant={getScoreBadgeVariant(score)} className="text-sm font-semibold">
-            {score} / 4 Punkte
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
-        {/* KPI Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {cagrData.cagr3Y !== null && (
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-medium">CAGR 3 Jahre</p>
-              <p className={`text-xl font-bold ${cagrData.cagr3Y >= 8 ? 'text-success' : cagrData.cagr3Y >= 5 ? 'text-warning' : 'text-muted-foreground'}`}>
-                {cagrData.cagr3Y.toFixed(1)}%
-              </p>
-            </div>
-          )}
-          
-          {cagrData.cagr5Y !== null && (
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-medium">CAGR 5 Jahre</p>
-              <p className={`text-xl font-bold ${cagrData.cagr5Y >= 8 ? 'text-success' : cagrData.cagr5Y >= 5 ? 'text-warning' : 'text-muted-foreground'}`}>
-                {cagrData.cagr5Y.toFixed(1)}%
-              </p>
-            </div>
-          )}
-          
-          {cagrData.cagr10Y !== null && (
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-medium">CAGR 10 Jahre</p>
-              <p className={`text-xl font-bold ${cagrData.cagr10Y >= 8 ? 'text-success' : cagrData.cagr10Y >= 5 ? 'text-warning' : 'text-muted-foreground'}`}>
-                {cagrData.cagr10Y.toFixed(1)}%
-              </p>
-            </div>
-          )}
+    <Card className={`p-4 border-2 ${getBgColorByScore(score, maxScore)}`}>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-lg">Revenue Growth (Umsatzwachstum)</h3>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-md">
+                {mainTooltipContent}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
+        <div className="text-right">
+          <div className={`text-2xl font-bold ${getColorByScore(score, maxScore)}`}>
+            {primaryCAGR.toFixed(1)}%
+          </div>
+          <div className="text-xs text-muted-foreground">
+            CAGR
+          </div>
+        </div>
+      </div>
 
-        {/* Compact Meta Row */}
-        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground bg-muted/30 p-3 rounded-lg">
+      {/* Score indicator */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="text-sm font-medium">Bewertung:</div>
+        <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByScore(score, maxScore)}`}>
+          {score}/{maxScore} Punkte
+        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {scoringTooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      {/* KPIs as 3-column grid */}
+      <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+        {cagrData.cagr3Y !== null && (
           <div>
-            <span className="font-medium">Primär CAGR:</span>{' '}
-            <span className="font-semibold">{primaryCAGR.toFixed(1)}%</span>
+            <p className="text-xs text-muted-foreground">CAGR 3 Jahre</p>
+            <p className={`font-semibold ${cagrData.cagr3Y >= 8 ? 'text-success' : cagrData.cagr3Y >= 5 ? 'text-warning' : ''}`}>
+              {cagrData.cagr3Y.toFixed(1)}%
+            </p>
           </div>
+        )}
+        
+        {cagrData.cagr5Y !== null && (
           <div>
-            <span className="font-medium">Bewertung:</span>{' '}
-            <span className={scoreColor.split(' ')[0]}>
-              {score >= 4 ? 'Exzellent' : score >= 3 ? 'Gut' : score >= 2 ? 'Akzeptabel' : score >= 1 ? 'Schwach' : 'Ungenügend'}
-            </span>
+            <p className="text-xs text-muted-foreground">CAGR 5 Jahre</p>
+            <p className={`font-semibold ${cagrData.cagr5Y >= 8 ? 'text-success' : cagrData.cagr5Y >= 5 ? 'text-warning' : ''}`}>
+              {cagrData.cagr5Y.toFixed(1)}%
+            </p>
           </div>
-        </div>
+        )}
+        
+        {cagrData.cagr10Y !== null && (
+          <div>
+            <p className="text-xs text-muted-foreground">CAGR 10 Jahre</p>
+            <p className={`font-semibold ${cagrData.cagr10Y >= 8 ? 'text-success' : cagrData.cagr10Y >= 5 ? 'text-warning' : ''}`}>
+              {cagrData.cagr10Y.toFixed(1)}%
+            </p>
+          </div>
+        )}
+      </div>
 
-        {/* Time Range Selector */}
-        <div className="flex gap-2 justify-center">
-          {(['3Y', '5Y', '10Y', 'ALL'] as TimeRange[]).map((range) => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                timeRange === range
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted hover:bg-muted/80'
-              }`}
-            >
-              {range}
-            </button>
-          ))}
-        </div>
+      {/* Meta Row with tooltips */}
+      <div className="flex items-center justify-start gap-2 text-xs text-muted-foreground mb-4 flex-wrap">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                Primär CAGR <span className={`font-bold ${getColorByScore(score, maxScore)}`}>
+                  {primaryCAGR.toFixed(1)}%
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Beste verfügbare CAGR (bevorzugt 10Y, dann 5Y, dann 3Y)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <span>•</span>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                Bewertung <span className={`font-bold ${getColorByScore(score, maxScore)}`}>
+                  {score >= 4 ? 'Exzellent' : score >= 3 ? 'Gut' : score >= 2 ? 'Akzeptabel' : score >= 1 ? 'Schwach' : 'Ungenügend'}
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Qualitatives Rating basierend auf CAGR</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
 
-        {/* Chart */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Historisches Umsatzwachstum</h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis 
-                dataKey="year" 
-                className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
-              />
-              <YAxis 
-                yAxisId="left"
-                className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                label={{ value: `Umsatz (Mio. ${stockCurrency})`, angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))' } }}
-              />
-              <YAxis 
-                yAxisId="right"
-                orientation="right"
-                className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                label={{ value: 'Wachstum (%)', angle: 90, position: 'insideRight', style: { fill: 'hsl(var(--muted-foreground))' } }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
-                }}
-                formatter={(value: any, name: string) => {
-                  if (name === 'revenue') {
-                    return [`${value.toFixed(2)} Mio. ${stockCurrency}`, 'Umsatz'];
-                  }
-                  if (name === 'growthRate' && value !== null) {
-                    return [`${value.toFixed(1)}%`, 'Wachstum'];
-                  }
-                  return [value, name];
-                }}
-              />
-              <Legend />
-              <Line 
-                yAxisId="left"
-                type="monotone" 
-                dataKey="revenue" 
-                stroke="hsl(var(--chart-1))" 
-                strokeWidth={2}
-                name="Umsatz"
-                dot={{ fill: 'hsl(var(--chart-1))' }}
-              />
-              <Line 
-                yAxisId="right"
-                type="monotone" 
-                dataKey="growthRate" 
-                stroke="hsl(var(--chart-2))" 
-                strokeWidth={2}
-                name="Wachstum"
-                dot={{ fill: 'hsl(var(--chart-2))' }}
-                connectNulls
-              />
-            </LineChart>
-          </ResponsiveContainer>
+      {/* Time Range Selector */}
+      <div className="flex justify-end gap-1 mb-3 overflow-x-auto pb-1">
+        {(['3Y', '5Y', '10Y', 'MAX'] as TimeRange[]).map(range => (
+          <Button
+            key={range}
+            variant={timeRange === range ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTimeRange(range)}
+            className="text-xs h-7 px-2.5 whitespace-nowrap"
+          >
+            {range}
+          </Button>
+        ))}
+      </div>
+
+      {/* Chart */}
+      <div className="mt-4">
+        <ResponsiveContainer width="100%" height={250}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis 
+              dataKey="year"
+              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              stroke="hsl(var(--muted-foreground))"
+            />
+            <YAxis 
+              yAxisId="left"
+              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              stroke="hsl(var(--muted-foreground))"
+              domain={['auto', 'auto']}
+              width={60}
+              label={{ 
+                value: `Umsatz (Mio. ${stockCurrency})`, 
+                angle: -90, 
+                position: 'insideLeft',
+                style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' }
+              }}
+            />
+            <YAxis 
+              yAxisId="right"
+              orientation="right"
+              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              stroke="hsl(var(--muted-foreground))"
+              width={60}
+              label={{ 
+                value: 'Wachstum (%)', 
+                angle: 90, 
+                position: 'insideRight',
+                style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' }
+              }}
+            />
+            <RechartsTooltip
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
+                      <p className="text-xs font-semibold mb-1">{data.year}</p>
+                      <p className="text-sm" style={{ color: 'hsl(var(--chart-1))' }}>
+                        Umsatz: <span className="font-bold">{data.revenue.toFixed(2)} Mio. {stockCurrency}</span>
+                      </p>
+                      {data.growthRate !== null && (
+                        <p className="text-sm" style={{ color: 'hsl(var(--chart-2))' }}>
+                          Wachstum: <span className={`font-bold ${data.growthRate >= 0 ? 'text-success' : 'text-destructive'}`}>
+                            {data.growthRate >= 0 ? '+' : ''}{data.growthRate.toFixed(1)}%
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            
+            {/* Revenue Line */}
+            <Line 
+              yAxisId="left"
+              type="monotone" 
+              dataKey="revenue" 
+              stroke="hsl(var(--chart-1))" 
+              strokeWidth={2.5}
+              dot={false}
+              name="Umsatz"
+            />
+            
+            {/* Growth Rate Line */}
+            <Line 
+              yAxisId="right"
+              type="monotone" 
+              dataKey="growthRate" 
+              stroke="hsl(var(--chart-2))" 
+              strokeWidth={2.5}
+              dot={false}
+              name="Wachstum"
+              connectNulls
+            />
+          </LineChart>
+        </ResponsiveContainer>
+        
+        {/* Legend */}
+        <div className="flex justify-center gap-4 mt-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-0.5 rounded" style={{ backgroundColor: 'hsl(var(--chart-1))' }}></span>
+            Umsatz
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-0.5 rounded" style={{ backgroundColor: 'hsl(var(--chart-2))' }}></span>
+            Wachstum (%)
+          </span>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 };
