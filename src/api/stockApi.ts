@@ -1659,6 +1659,15 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
           value: statement.eps || 0,
           originalCurrency: statement.reportedCurrency || reportedCurrency
         }));
+      
+      // Last 30 years of EBITDA data
+      historicalData.ebitda = incomeStatements
+        .slice(0, Math.min(30, incomeStatements.length))
+        .map(statement => ({
+          year: new Date(statement.date).getFullYear(),
+          value: statement.ebitda || 0,
+          originalCurrency: statement.reportedCurrency || reportedCurrency
+        }));
     }
 
     // Add historical ROE data (last 10 years)

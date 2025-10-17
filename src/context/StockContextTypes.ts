@@ -59,6 +59,7 @@ export interface FinancialMetricsData {
     revenue: HistoricalDataItem[];
     earnings: HistoricalDataItem[];
     eps: HistoricalDataItem[];
+    ebitda: HistoricalDataItem[];
     peRatio: HistoricalDataItem[];
     peRatioWeekly?: PEDataItem[];      // NEW: Weekly P/E data (stock + industry)
     industryPE?: IndustryPEDataItem[]; // NEW: Industry P/E historical data

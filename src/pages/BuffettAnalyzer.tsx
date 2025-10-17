@@ -40,6 +40,7 @@ import { PeterLynchDiscountCard } from '@/components/metrics/PeterLynchDiscountC
 import { PriceToBookCard } from '@/components/metrics/PriceToBookCard';
 import { PriceToCashFlowCard } from '@/components/metrics/PriceToCashFlowCard';
 import { RevenueGrowthCard } from '@/components/metrics/RevenueGrowthCard';
+import { EbitdaGrowthCard } from '@/components/metrics/EbitdaGrowthCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -403,6 +404,12 @@ const IndexContent: React.FC = () => {
                       {financialMetrics?.historicalData?.revenue && (
                         <RevenueGrowthCard 
                           historicalRevenue={financialMetrics.historicalData.revenue}
+                        />
+                      )}
+                      
+                      {financialMetrics?.historicalData?.ebitda && (
+                        <EbitdaGrowthCard 
+                          historicalEbitda={financialMetrics.historicalData.ebitda}
                         />
                       )}
                     </div>
