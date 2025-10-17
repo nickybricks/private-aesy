@@ -1003,10 +1003,10 @@ const fetchFromFMPStable = async (endpoint: string, params: Record<string, strin
 // Helper function to fetch industry P/E data
 const fetchIndustryPE = async (industry: string): Promise<Array<{ date: string; value: number }>> => {
   try {
-    // Calculate date range: 5 years back from today
+    // Calculate date range: 30 years back from today
     const toDate = new Date();
     const fromDate = new Date();
-    fromDate.setFullYear(fromDate.getFullYear() - 5);
+    fromDate.setFullYear(fromDate.getFullYear() - 30);
     
     const formatDate = (date: Date) => date.toISOString().split('T')[0];
     
