@@ -277,17 +277,6 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
         </Card>
       </div>
 
-      {/* Dividend Analysis Section */}
-      <DividendYieldCard
-        currentPrice={currentPrice}
-        currentDividendPerShare={valuationData?.dividendMetrics?.currentDividendPerShare}
-        historicalDividends={valuationData?.historicalData?.dividend}
-        payoutRatioHistory={valuationData?.historicalData?.payoutRatio}
-        dividendStreak={valuationData?.dividendMetrics?.dividendStreak}
-        dividendCAGR3Y={valuationData?.dividendMetrics?.dividendCAGR3Y}
-        dividendCAGR5Y={valuationData?.dividendMetrics?.dividendCAGR5Y}
-        dividendCAGR10Y={valuationData?.dividendMetrics?.dividendCAGR10Y}
-      />
     </div>
   );
 };

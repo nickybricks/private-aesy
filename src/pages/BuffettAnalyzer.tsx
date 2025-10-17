@@ -34,6 +34,7 @@ import { InterestCoverageCard } from '@/components/metrics/InterestCoverageCard'
 import { CurrentRatioCard } from '@/components/metrics/CurrentRatioCard';
 import { NetDebtToEbitdaCard } from '@/components/metrics/NetDebtToEbitdaCard';
 import { PERatioCard } from '@/components/metrics/PERatioCard';
+import { DividendYieldCard } from '@/components/metrics/DividendYieldCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -298,6 +299,20 @@ const IndexContent: React.FC = () => {
                 }
                 industry={stockInfo.industry}
               />
+              
+              {/* Dividend Yield Card - positioned after P/E Ratio Chart */}
+              {financialMetrics?.dividendMetrics && (
+                <DividendYieldCard
+                  currentPrice={stockInfo.price}
+                  currentDividendPerShare={financialMetrics.dividendMetrics.currentDividendPerShare}
+                  historicalDividends={financialMetrics.historicalData?.dividend || []}
+                  payoutRatioHistory={financialMetrics.historicalData?.payoutRatio || []}
+                  dividendStreak={financialMetrics.dividendMetrics.dividendStreak}
+                  dividendCAGR3Y={financialMetrics.dividendMetrics.dividendCAGR3Y}
+                  dividendCAGR5Y={financialMetrics.dividendMetrics.dividendCAGR5Y}
+                  dividendCAGR10Y={financialMetrics.dividendMetrics.dividendCAGR10Y}
+                />
+              )}
                     </div>
                   </TabsContent>
                   

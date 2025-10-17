@@ -2812,6 +2812,103 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
       });
     }
 
+    // Fetch and process dividend data
+    let dividendMetrics = undefined;
+    try {
+      console.log(`Fetching dividend history for ${standardizedTicker}`);
+      const dividendData = await fetchFromFMP(`/historical-price-full/stock_dividend/${standardizedTicker}`);
+      
+      if (dividendData?.historical && Array.isArray(dividendData.historical) && dividendData.historical.length > 0) {
+        // Aggregate dividends by year (sum all payments in a year)
+        const yearlyDividends = new Map<number, number>();
+        dividendData.historical.forEach((item: any) => {
+          if (item.dividend && item.dividend > 0) {
+            const year = new Date(item.date).getFullYear();
+            yearlyDividends.set(year, (yearlyDividends.get(year) || 0) + item.dividend);
+          }
+        });
+        
+        // Convert to array and sort chronologically
+        const dividendHistory = Array.from(yearlyDividends.entries())
+          .map(([year, value]) => ({ year: year.toString(), value }))
+          .sort((a, b) => parseInt(a.year) - parseInt(b.year));
+        
+        if (dividendHistory.length > 0) {
+          historicalData.dividend = dividendHistory;
+          
+          // Calculate payout ratio (Dividends / FCF)
+          if (cashFlows && cashFlows.length > 0) {
+            const payoutRatioData = [];
+            
+            for (let i = 0; i < Math.min(10, cashFlows.length); i++) {
+              const year = new Date(cashFlows[i].date).getFullYear();
+              const fcf = safeValue(cashFlows[i].freeCashFlow);
+              const yearDividends = yearlyDividends.get(year) || 0;
+              
+              if (fcf && fcf > 0 && yearDividends > 0) {
+                // Get shares outstanding for this year
+                const sharesOutstanding = safeValue(balanceSheets[i]?.commonStock) || safeValue(incomeStatements[i]?.weightedAverageShsOut);
+                if (sharesOutstanding > 0) {
+                  const totalDividendsPaid = yearDividends * sharesOutstanding;
+                  const payoutRatio = (totalDividendsPaid / fcf) * 100;
+                  payoutRatioData.push({
+                    year: year.toString(),
+                    value: Math.round(payoutRatio * 10) / 10
+                  });
+                }
+              }
+            }
+            
+            historicalData.payoutRatio = payoutRatioData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
+          }
+          
+          // Calculate dividend streak (years without cuts)
+          let dividendStreak = 0;
+          const sortedDesc = [...dividendHistory].reverse();
+          
+          for (let i = 1; i < sortedDesc.length; i++) {
+            if (sortedDesc[i].value >= sortedDesc[i-1].value * 0.95) { // 5% tolerance
+              dividendStreak++;
+            } else {
+              break;
+            }
+          }
+          
+          // Calculate CAGRs
+          const calculateDividendCAGR = (years: number): number | null => {
+            if (dividendHistory.length < years + 1) return null;
+            const current = dividendHistory[dividendHistory.length - 1].value;
+            const past = dividendHistory[dividendHistory.length - 1 - years].value;
+            if (past <= 0) return null;
+            return (Math.pow(current / past, 1 / years) - 1) * 100;
+          };
+          
+          // Store dividend metrics
+          dividendMetrics = {
+            currentDividendPerShare: dividendHistory[dividendHistory.length - 1]?.value || 0,
+            currentPayoutRatio: historicalData.payoutRatio?.[historicalData.payoutRatio.length - 1]?.value || 0,
+            dividendStreak,
+            dividendCAGR3Y: calculateDividendCAGR(3),
+            dividendCAGR5Y: calculateDividendCAGR(5),
+            dividendCAGR10Y: calculateDividendCAGR(10)
+          };
+          
+          console.log(`✅ Dividend data fetched for ${standardizedTicker}:`, {
+            years: dividendHistory.length,
+            currentDPS: dividendMetrics.currentDividendPerShare,
+            streak: dividendStreak,
+            cagr3y: dividendMetrics.dividendCAGR3Y,
+            cagr5y: dividendMetrics.dividendCAGR5Y,
+            cagr10y: dividendMetrics.dividendCAGR10Y
+          });
+        }
+      } else {
+        console.log(`No dividend data available for ${standardizedTicker}`);
+      }
+    } catch (error) {
+      console.warn('Error fetching dividend data:', error);
+    }
+
     return {
       // Rendite-Kennzahlen
       eps,
@@ -2834,6 +2931,9 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
       
       // Historical data
       historicalData,
+      
+      // Dividend metrics
+      dividendMetrics,
       
       // WACC for ROIC analysis (already in percentage from calculateWACC)
       wacc: wacc
