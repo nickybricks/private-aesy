@@ -145,16 +145,16 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
   // Get color based on score ratio
   const getColorByRatio = (score: number, maxScore: number): string => {
     const ratio = score / maxScore;
-    if (ratio >= 0.67) return 'text-green-600'; // 2-3 points
-    if (ratio >= 0.33) return 'text-yellow-600'; // 1 point
-    return 'text-red-600'; // 0 points
+    if (ratio >= 0.67) return 'text-[#34c759]'; // 2-3 points
+    if (ratio >= 0.33) return 'text-[#ffcc00]'; // 1 point
+    return 'text-[#ff3b30]'; // 0 points
   };
 
   const getBgColorByRatio = (score: number, maxScore: number): string => {
     const ratio = score / maxScore;
-    if (ratio >= 0.67) return 'bg-green-50 border-green-200';
-    if (ratio >= 0.33) return 'bg-yellow-50 border-yellow-200';
-    return 'bg-red-50 border-red-200';
+    if (ratio >= 0.67) return 'bg-[#34c759]/5 border-[#34c759]/20';
+    if (ratio >= 0.33) return 'bg-[#ffcc00]/5 border-[#ffcc00]/20';
+    return 'bg-[#ff3b30]/5 border-[#ff3b30]/20';
   };
 
   const tooltipContent = (
@@ -187,10 +187,10 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
         </p>
       )}
       <p className="font-medium text-sm">Bewertung (0-4 Punkte):</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 4 Punkte: &lt; 40% (stark)</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 3 Punkte: 40-50% (ok)</p>
+      <p className="text-sm"><span className="text-[#34c759]">●</span> 4 Punkte: &lt; 40% (stark)</p>
+      <p className="text-sm"><span className="text-[#ffcc00]">●</span> 3 Punkte: 40-50% (ok)</p>
       <p className="text-sm"><span className="text-orange-600">●</span> 1 Punkt: 50-60% (risikoreich)</p>
-      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: ≥ 60% (sehr risikoreich)</p>
+      <p className="text-sm"><span className="text-[#ff3b30]">●</span> 0 Punkte: ≥ 60% (sehr risikoreich)</p>
       <p className="text-xs text-muted-foreground mt-2">
         Sinkender Trend = gut, steigender Trend = Warnsignal
       </p>
@@ -228,7 +228,7 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
           {score}/{maxScore} Punkte
         </div>
         {trendImproving && chartData.length >= 3 && (
-          <div className="text-xs text-green-600 flex items-center gap-1">
+          <div className="text-xs text-[#34c759] flex items-center gap-1">
             <span>↓</span> Verbesserung über Zeit
           </div>
         )}
@@ -276,8 +276,8 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
                   return null;
                 }}
               />
-              <ReferenceLine y={40} stroke="#16a34a" strokeDasharray="3 3" />
-              <ReferenceLine y={50} stroke="#ca8a04" strokeDasharray="3 3" />
+              <ReferenceLine y={40} stroke="#34c759" strokeDasharray="3 3" />
+              <ReferenceLine y={50} stroke="#ffcc00" strokeDasharray="3 3" />
               <Line 
                 type="monotone" 
                 dataKey="value" 
@@ -288,8 +288,8 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
             </LineChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
-            <span><span className="text-green-600">---</span> 40% (Stark)</span>
-            <span><span className="text-yellow-600">---</span> 50% (Akzeptabel)</span>
+            <span><span className="text-[#34c759]">---</span> 40% (Stark)</span>
+            <span><span className="text-[#ffcc00]">---</span> 50% (Akzeptabel)</span>
           </div>
         </div>
       )}
