@@ -2836,7 +2836,8 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
         if (dividendHistory.length > 0) {
           historicalData.dividend = dividendHistory;
           
-          // Calculate payout ratio (Dividends / FCF)
+          // Calculate payout ratio (Dividends / FCF) - Historical for chart
+          let currentPayoutRatio = 0;
           if (cashFlows && cashFlows.length > 0) {
             const payoutRatioData = [];
             
@@ -2860,17 +2861,41 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
             }
             
             historicalData.payoutRatio = payoutRatioData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
+            
+            // Calculate TTM-based current payout ratio
+            const ttmFCF = safeValue(cashFlows[0].freeCashFlow);
+            const sharesOutstanding = safeValue(balanceSheets[0]?.commonStock) || safeValue(incomeStatements[0]?.weightedAverageShsOut);
+            
+            if (ttmFCF && ttmFCF > 0 && sharesOutstanding > 0) {
+              // Sum dividends from last 12 months
+              const now = new Date();
+              const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+              
+              const ttmDividends = dividendData.historical
+                .filter((item: any) => new Date(item.date) >= oneYearAgo)
+                .reduce((sum: number, item: any) => sum + (item.dividend || 0), 0);
+              
+              if (ttmDividends > 0) {
+                const totalDividendsPaid = ttmDividends * sharesOutstanding;
+                currentPayoutRatio = Math.round((totalDividendsPaid / ttmFCF) * 1000) / 10;
+              }
+            }
           }
           
           // Calculate dividend streak (years without cuts)
           let dividendStreak = 0;
-          const sortedDesc = [...dividendHistory].reverse();
+          const sortedDesc = [...dividendHistory].reverse(); // [2024, 2023, 2022, ...]
           
+          // Compare newer year (i-1) with older year (i)
           for (let i = 1; i < sortedDesc.length; i++) {
-            if (sortedDesc[i].value >= sortedDesc[i-1].value * 0.95) { // 5% tolerance
+            const newerYear = sortedDesc[i-1];  // e.g., 2024
+            const olderYear = sortedDesc[i];    // e.g., 2023
+            
+            // Check if newer dividend >= older dividend (with 5% tolerance)
+            if (newerYear.value >= olderYear.value * 0.95) {
               dividendStreak++;
             } else {
-              break;
+              break; // Streak broken
             }
           }
           
@@ -2886,7 +2911,7 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
           // Store dividend metrics
           dividendMetrics = {
             currentDividendPerShare: dividendHistory[dividendHistory.length - 1]?.value || 0,
-            currentPayoutRatio: historicalData.payoutRatio?.[historicalData.payoutRatio.length - 1]?.value || 0,
+            currentPayoutRatio, // Use TTM-based calculation
             dividendStreak,
             dividendCAGR3Y: calculateDividendCAGR(3),
             dividendCAGR5Y: calculateDividendCAGR(5),
