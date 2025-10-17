@@ -39,6 +39,7 @@ import { IntrinsicValueDiscountCard } from '@/components/metrics/IntrinsicValueD
 import { PeterLynchDiscountCard } from '@/components/metrics/PeterLynchDiscountCard';
 import { PriceToBookCard } from '@/components/metrics/PriceToBookCard';
 import { PriceToCashFlowCard } from '@/components/metrics/PriceToCashFlowCard';
+import { RevenueGrowthCard } from '@/components/metrics/RevenueGrowthCard';
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -396,10 +397,15 @@ const IndexContent: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="growth-rank" className="mt-4 sm:mt-6">
-                    <Card className="p-6">
-                      <h2 className="text-2xl font-semibold mb-4">Growth Rank</h2>
-                      <p className="text-muted-foreground">Inhalt folgt...</p>
-                    </Card>
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-semibold">Growth Rank</h2>
+                      
+                      {financialMetrics?.historicalData?.revenue && (
+                        <RevenueGrowthCard 
+                          historicalRevenue={financialMetrics.historicalData.revenue}
+                        />
+                      )}
+                    </div>
                   </TabsContent>
                   
                   <TabsContent value="ai-analysis" className="mt-4 sm:mt-6">
