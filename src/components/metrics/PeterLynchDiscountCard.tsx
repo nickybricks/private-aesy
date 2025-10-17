@@ -291,35 +291,36 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
 
   const mosTarget = getMoSTarget(sector);
 
-  // Calculate score based on discount and MoS target
-  const getScore = (discount: number, target: number): number => {
-    if (discount >= target) return 5;
-    if (discount >= 0.67 * target) return 3;
-    if (discount >= 0.33 * target) return 2;
-    if (discount >= 0) return 1;
-    return 0;
+  // Calculate score based on price-to-fairValue ratio
+  const getScore = (currentPrice: number, fairValue: number | null): number => {
+    if (!fairValue || fairValue <= 0) return 0;
+    
+    const ratio = currentPrice / fairValue;
+    
+    if (ratio <= 0.75) return 3; // Deutlich unter Lynch-Wert
+    if (ratio <= 0.95) return 2;
+    if (ratio <= 1.10) return 1;
+    return 0; // Klar darüber
   };
 
-  const score = getScore(discount, mosTarget);
+  const score = getScore(currentPrice, latestData?.fairValue || null);
 
   // Get colors based on score
+  const maxScore = 3;
+  
   const getColorByScore = (score: number, maxScore: number): string => {
-    const ratio = score / maxScore;
-    if (ratio === 1) return 'text-green-600';
-    if (ratio >= 0.6) return 'text-yellow-600';
-    if (ratio >= 0.4) return 'text-orange-600';
+    if (score === 3) return 'text-green-600';
+    if (score === 2) return 'text-yellow-600';
+    if (score === 1) return 'text-orange-600';
     return 'text-red-600';
   };
 
   const getBgColorByScore = (score: number, maxScore: number): string => {
-    const ratio = score / maxScore;
-    if (ratio === 1) return 'bg-green-50 border-green-200';
-    if (ratio >= 0.6) return 'bg-yellow-50 border-yellow-200';
-    if (ratio >= 0.4) return 'bg-orange-50 border-orange-200';
+    if (score === 3) return 'bg-green-50 border-green-200';
+    if (score === 2) return 'bg-yellow-50 border-yellow-200';
+    if (score === 1) return 'bg-orange-50 border-orange-200';
     return 'bg-red-50 border-red-200';
   };
-
-  const maxScore = 5;
 
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
@@ -354,15 +355,11 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
 
   const scoringTooltip = (
     <div className="space-y-1">
-      <p className="font-medium text-sm">Bewertungssystem (0-5 Punkte):</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 5 Punkte: ≥ {mosTarget}%</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 3 Punkte: ≥ {(0.67 * mosTarget).toFixed(0)}%</p>
-      <p className="text-sm"><span className="text-orange-600">●</span> 2 Punkte: ≥ {(0.33 * mosTarget).toFixed(0)}%</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 1 Punkt: ≥ 0%</p>
-      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: &lt; 0% (überbewertet)</p>
-      <p className="text-xs text-muted-foreground mt-2">
-        M = MoS-Ziel (Sicherheitsmarge) = {mosTarget}%
-      </p>
+      <p className="font-medium text-sm">Bewertungssystem (0-3 Punkte):</p>
+      <p className="text-sm"><span className="text-green-600">●</span> 3 Punkte: Kurs/Fair Value ≤ 0.75 (deutlich unter Lynch-Wert)</p>
+      <p className="text-sm"><span className="text-yellow-600">●</span> 2 Punkte: Kurs/Fair Value 0.75-0.95</p>
+      <p className="text-sm"><span className="text-orange-600">●</span> 1 Punkt: Kurs/Fair Value 0.95-1.10</p>
+      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: Kurs/Fair Value &gt; 1.10 (klar darüber)</p>
     </div>
   );
 
