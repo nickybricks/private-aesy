@@ -5,14 +5,14 @@ export interface StockInfo {
   price: number | null;
   change: number | null;
   changePercent: number | null;
-  currency: string;           // Stock price currency (exchange-based, e.g., USD for NYSE)
-  reportedCurrency?: string;  // Financial statements currency (company-based, e.g., JPY for Toyota)
+  currency: string;
   marketCap: number | null;
   image?: string;
   intrinsicValue?: number | null;
   sharesOutstanding?: number | null;
   originalIntrinsicValue?: number | null;
   originalCurrency?: string;
+  reportedCurrency?: string;
   // Additional company information
   ceo?: string;
   employees?: number;

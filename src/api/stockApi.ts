@@ -183,23 +183,13 @@ export const fetchStockInfo = async (ticker: string) => {
   ].filter(Boolean);
   const fullAddress = addressParts.join(', ');
   
-  // Log currency information for debugging
-  console.log('💱 Currency Info:', {
-    ticker: profile.symbol,
-    stockCurrency: quote.currency,           // Exchange-based (e.g., USD for NYSE)
-    reportedCurrency: profile.currency,      // Company reports (e.g., JPY for Toyota)
-    exchange: profile.exchangeShortName,
-    needsConversion: quote.currency !== profile.currency
-  });
-
   return {
     name: profile.companyName,
     ticker: profile.symbol,
     price: quote.price,
     change: quote.change,
     changePercent: quote.changesPercentage,
-    currency: quote.currency,                // Stock price currency (from exchange)
-    reportedCurrency: profile.currency,      // Financial statements currency
+    currency: profile.currency,
     marketCap: profile.mktCap,
     image: profile.image,
     // Additional company information
@@ -248,29 +238,10 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
     throw new Error(`Keine ausreichenden Finanzkennzahlen gefunden für ${standardizedTicker}`);
   }
   
-  const companyProfile = profile[0];
-  
-  // Fallback: If reportedCurrency is missing, infer from exchange
-  let reportedCurrency = companyProfile.currency;
-  if (!reportedCurrency) {
-    const exchangeSuffix = companyProfile.exchangeShortName;
-    const currencyMap: Record<string, string> = {
-      'TSE': 'JPY', 'TYO': 'JPY', 'JPX': 'JPY',  // Tokyo
-      'LSE': 'GBP',                                 // London
-      'FRA': 'EUR', 'PAR': 'EUR',                   // Frankfurt, Paris
-      'SWX': 'CHF',                                 // Swiss Exchange
-      'HKG': 'HKD',                                 // Hong Kong
-      'TSX': 'CAD',                                 // Toronto
-      'ASX': 'AUD',                                 // Australia
-    };
-    
-    reportedCurrency = currencyMap[exchangeSuffix] || 'USD';
-    console.log(`⚠️ reportedCurrency missing, inferred ${reportedCurrency} from exchange ${exchangeSuffix}`);
-  }
-  
   // Die neuesten Daten verwenden
   const latestRatios = ratios[0];
   const latestMetrics = keyMetrics[0];
+  const companyProfile = profile[0];
   const latestIncomeStatement = incomeStatements && incomeStatements.length > 0 ? incomeStatements[0] : null;
   const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
   
@@ -1133,14 +1104,13 @@ export const getFinancialMetrics = async (ticker: string) => {
   try {
     // Finanzkennzahlen abrufen - erweiterte Datenquellen für präzisere EPS und andere Werte
     // Erhöhe Limits auf 30 Jahre für historische Daten (Premium Plan unterstützt bis zu 30 Jahre)
-    const [ratios, keyMetrics, incomeStatements, balanceSheets, cashFlows, quote, profile] = await Promise.all([
+    const [ratios, keyMetrics, incomeStatements, balanceSheets, cashFlows, quote] = await Promise.all([
       fetchFromFMP(`/ratios/${standardizedTicker}?limit=30`),
       fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=30`),
       fetchFromFMP(`/income-statement/${standardizedTicker}?limit=30`),
       fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?limit=30`),
       fetchFromFMP(`/cash-flow-statement/${standardizedTicker}?limit=30`),
-      fetchFromFMP(`/quote/${standardizedTicker}`),
-      fetchFromFMP(`/profile/${standardizedTicker}`)
+      fetchFromFMP(`/quote/${standardizedTicker}`)
     ]);
     
     // Daten validieren und überprüfen
@@ -1155,18 +1125,6 @@ export const getFinancialMetrics = async (ticker: string) => {
     const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
     const latestCashFlow = cashFlows && cashFlows.length > 0 ? cashFlows[0] : null;
     const quoteData = quote && quote.length > 0 ? quote[0] : null;
-    const profileData = profile && profile.length > 0 ? profile[0] : null;
-    
-    // Extract currencies
-    const stockCurrency = quoteData?.currency || 'USD';
-    const reportedCurrency = latestIncomeStatement?.reportedCurrency || profileData?.currency || stockCurrency;
-    
-    console.log('💱 Currency Info (getFinancialMetrics):', {
-      ticker: standardizedTicker,
-      stockCurrency,
-      reportedCurrency,
-      needsConversion: stockCurrency !== reportedCurrency
-    });
     
     console.log('Neueste Income Statement Daten:', JSON.stringify(latestIncomeStatement, null, 2));
     console.log('Neueste Balance Sheet Daten:', JSON.stringify(latestBalanceSheet, null, 2));
@@ -1405,7 +1363,16 @@ export const getFinancialMetrics = async (ticker: string) => {
       }
     }
 
-    console.log(`Reported currency: ${reportedCurrency}`);
+    // Determine the reported currency from the income statement or quote data
+    let reportedCurrency = 'USD'; // Default to USD if no currency info available
+    
+    if (latestIncomeStatement && latestIncomeStatement.reportedCurrency) {
+      reportedCurrency = latestIncomeStatement.reportedCurrency;
+    } else if (quoteData && quoteData.currency) {
+      reportedCurrency = quoteData.currency;
+    }
+    
+    console.log(`Reported currency identified as: ${reportedCurrency}`);
     
     // Calculate WACC using actual company data from FMP API
     let wacc = 10; // Default 10% as fallback
@@ -2633,42 +2600,8 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
       });
     }
 
-    // P/E Ratio (KGV) Metrik - mit Currency Conversion
-    let pe = null;
-    const stockPrice = quoteData?.price;
-
-    if (stockPrice && eps && eps > 0) {
-      let priceInReportedCurrency = stockPrice;
-      
-      // Wenn Währungen unterschiedlich sind, Stock Price konvertieren
-      if (stockCurrency !== reportedCurrency) {
-        try {
-          priceInReportedCurrency = await convertCurrency(
-            stockPrice, 
-            stockCurrency, 
-            reportedCurrency
-          );
-          console.log(`💱 Price Conversion: ${stockPrice} ${stockCurrency} → ${priceInReportedCurrency.toFixed(2)} ${reportedCurrency}`);
-        } catch (error) {
-          console.error('❌ Price conversion failed:', error);
-          priceInReportedCurrency = stockPrice; // Fallback to original
-        }
-      }
-      
-      pe = priceInReportedCurrency / eps;
-      
-      console.log('📊 P/E Calculation Debug:', {
-        ticker: standardizedTicker,
-        stockPrice: stockPrice,
-        stockCurrency: stockCurrency,
-        priceConverted: priceInReportedCurrency,
-        eps: eps,
-        reportedCurrency: reportedCurrency,
-        peRatio: pe.toFixed(2),
-        calculation: `${priceInReportedCurrency.toFixed(2)} / ${eps.toFixed(2)} = ${pe.toFixed(2)}`
-      });
-    }
-
+    // P/E Ratio (KGV) Metrik
+    const pe = safeValue(latestRatios?.priceEarningsRatio);
     if (pe !== null && pe > 0) {
       metrics.push({
         name: 'P/E-Verhältnis (KGV)',
@@ -2879,144 +2812,121 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
       });
     }
 
-    // Fetch and process dividend data - Calculate from Financial Statements
+    // Fetch and process dividend data
     let dividendMetrics = undefined;
     try {
-      console.log(`📊 Calculating dividend data from financial statements for ${standardizedTicker}`);
+      console.log(`Fetching dividend history for ${standardizedTicker}`);
+      const dividendData = await fetchFromFMP(`/historical-price-full/stock_dividend/${standardizedTicker}`);
       
-      // Step 1: Calculate DPS from Statements (dividendsPaid / shares)
-      const dpsByYear: Array<{ year: string; value: number }> = [];
-      const yearIndexLimit = Math.min(30, Math.min(incomeStatements?.length || 0, cashFlows?.length || 0));
-      
-      for (let i = 0; i < yearIndexLimit; i++) {
-        const year = new Date(cashFlows[i].date).getFullYear().toString();
-        const shares = Number(incomeStatements[i]?.weightedAverageShsOut || incomeStatements[i]?.weightedAverageShsOutDil || 0);
-        const divPaidRaw = Number(cashFlows[i]?.dividendsPaid);
-        
-        if (shares > 0 && divPaidRaw !== null && divPaidRaw !== undefined && !isNaN(divPaidRaw)) {
-          const dpsReported = Math.abs(divPaidRaw) / shares; // in reportedCurrency
-          if (dpsReported > 0) {
-            dpsByYear.push({ year, value: dpsReported });
-            console.log(`💵 [DPS] ${year}: |dividendsPaid|=${Math.abs(divPaidRaw).toLocaleString()} / shares=${shares.toLocaleString()} => DPS=${dpsReported.toFixed(3)} (${reportedCurrency})`);
+      if (dividendData?.historical && Array.isArray(dividendData.historical) && dividendData.historical.length > 0) {
+        // Aggregate dividends by year (sum all payments in a year)
+        const yearlyDividends = new Map<number, number>();
+        dividendData.historical.forEach((item: any) => {
+          if (item.dividend && item.dividend > 0) {
+            const year = new Date(item.date).getFullYear();
+            yearlyDividends.set(year, (yearlyDividends.get(year) || 0) + item.dividend);
           }
-        }
-      }
-      
-      // Step 2: Use DPS from Statements as primary source
-      const dividendHistory = dpsByYear.sort((a, b) => parseInt(a.year) - parseInt(b.year));
-      
-      if (dividendHistory.length > 0) {
-        historicalData.dividend = dividendHistory;
+        });
         
-        // Step 3: Calculate payout ratio history with fallback
-        const payoutRatioData: Array<{ year: string; value: number }> = [];
-        let currentPayoutRatio = 0;
+        // Convert to array and sort chronologically
+        const dividendHistory = Array.from(yearlyDividends.entries())
+          .map(([year, value]) => ({ year: year.toString(), value }))
+          .sort((a, b) => parseInt(a.year) - parseInt(b.year));
         
-        for (let i = 0; i < yearIndexLimit; i++) {
-          const year = new Date(cashFlows[i].date).getFullYear().toString();
-          const fcf = Number(cashFlows[i]?.freeCashFlow);
+        if (dividendHistory.length > 0) {
+          historicalData.dividend = dividendHistory;
           
-          // Try to get dividendsPaid directly, otherwise fallback to DPS * shares
-          let totalDividendsPaid = cashFlows[i]?.dividendsPaid !== undefined && cashFlows[i]?.dividendsPaid !== null
-            ? Math.abs(Number(cashFlows[i].dividendsPaid))
-            : 0;
-          
-          if (!totalDividendsPaid) {
-            // Fallback: use DPS * shares
-            const shares = Number(incomeStatements[i]?.weightedAverageShsOut || incomeStatements[i]?.weightedAverageShsOutDil || 0);
-            const dpsForYear = dividendHistory.find(d => d.year === year)?.value || 0;
-            if (shares > 0 && dpsForYear > 0) {
-              totalDividendsPaid = dpsForYear * shares;
-              console.log(`💰 [Payout Fallback] ${year}: DPS*Shares => ${totalDividendsPaid.toLocaleString()} (${reportedCurrency})`);
+          // Calculate payout ratio (Dividends Paid / FCF) - Historical + TTM
+          let currentPayoutRatio = 0;
+          if (cashFlows && cashFlows.length > 0) {
+            const payoutRatioData = [];
+            
+            // Historical payout ratios (up to 30 years)
+            for (let i = 0; i < Math.min(30, cashFlows.length); i++) {
+              const year = new Date(cashFlows[i].date).getFullYear();
+              const fcf = safeValue(cashFlows[i].freeCashFlow);
+              const dividendsPaid = safeValue(cashFlows[i].dividendsPaid);
+              
+              if (fcf && fcf > 0 && dividendsPaid) {
+                // dividendsPaid is negative in FMP, represents total cash paid
+                const totalDividendsPaid = Math.abs(dividendsPaid);
+                const payoutRatio = (totalDividendsPaid / fcf) * 100;
+                
+                payoutRatioData.push({
+                  year: year.toString(),
+                  value: Math.round(payoutRatio * 10) / 10
+                });
+              }
+            }
+            
+            historicalData.payoutRatio = payoutRatioData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
+            
+            // Calculate TTM-based current payout ratio
+            const ttmFCF = safeValue(cashFlows[0].freeCashFlow);
+            const dividendsPaid = safeValue(cashFlows[0].dividendsPaid);
+            
+            if (ttmFCF && ttmFCF > 0 && dividendsPaid) {
+              const totalDividendsPaid = Math.abs(dividendsPaid);
+              currentPayoutRatio = Math.round((totalDividendsPaid / ttmFCF) * 1000) / 10;
+              
+              console.log('TTM Payout Ratio:', {
+                ttmFCF: ttmFCF.toLocaleString(),
+                dividendsPaid: totalDividendsPaid.toLocaleString(),
+                ratio: currentPayoutRatio + '%'
+              });
             }
           }
           
-          if (fcf && fcf > 0 && totalDividendsPaid > 0) {
-            const ratio = (totalDividendsPaid / fcf) * 100;
-            payoutRatioData.push({ year, value: Math.round(ratio * 10) / 10 });
-            console.log(`💰 Payout Ratio ${year}: ${totalDividendsPaid.toLocaleString()} / ${fcf.toLocaleString()} = ${ratio.toFixed(1)}% (${reportedCurrency})`);
+          // Calculate dividend streak (years without cuts)
+          let dividendStreak = 0;
+          const sortedDesc = [...dividendHistory].reverse(); // [2024, 2023, 2022, ...]
+          
+          // Compare newer year (i-1) with older year (i)
+          for (let i = 1; i < sortedDesc.length; i++) {
+            const newerYear = sortedDesc[i-1];  // e.g., 2024
+            const olderYear = sortedDesc[i];    // e.g., 2023
+            
+            // Check if newer dividend >= older dividend (with 5% tolerance)
+            if (newerYear.value >= olderYear.value * 0.95) {
+              dividendStreak++;
+            } else {
+              break; // Streak broken
+            }
           }
-        }
-        
-        historicalData.payoutRatio = payoutRatioData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
-        
-        // Step 4: Calculate TTM payout ratio with fallback
-        const ttmFCF = Number(cashFlows?.[0]?.freeCashFlow || 0);
-        let ttmDivPaid = cashFlows?.[0]?.dividendsPaid !== undefined && cashFlows?.[0]?.dividendsPaid !== null
-          ? Math.abs(Number(cashFlows[0].dividendsPaid))
-          : 0;
-        
-        if (!ttmDivPaid) {
-          // Fallback: use latest DPS * shares
-          const latestShares = Number(incomeStatements?.[0]?.weightedAverageShsOut || incomeStatements?.[0]?.weightedAverageShsOutDil || 0);
-          const latestDps = dividendHistory.length > 0 ? dividendHistory[dividendHistory.length - 1].value : 0;
-          if (latestShares > 0 && latestDps > 0) {
-            ttmDivPaid = latestDps * latestShares;
-            console.log(`💰 [TTM Fallback] DPS*Shares = ${ttmDivPaid.toLocaleString()} (${reportedCurrency})`);
-          }
-        }
-        
-        if (ttmFCF > 0 && ttmDivPaid > 0) {
-          currentPayoutRatio = Math.round((ttmDivPaid / ttmFCF) * 1000) / 10;
-          console.log('💰 TTM Payout Ratio:', { 
-            ttmFCF: ttmFCF.toLocaleString(), 
-            dividendsPaid: ttmDivPaid.toLocaleString(), 
-            ratio: currentPayoutRatio + '%', 
-            currency: reportedCurrency 
+          
+          // Calculate CAGRs
+          const calculateDividendCAGR = (years: number): number | null => {
+            if (dividendHistory.length < years + 1) return null;
+            const current = dividendHistory[dividendHistory.length - 1].value;
+            const past = dividendHistory[dividendHistory.length - 1 - years].value;
+            if (past <= 0) return null;
+            return (Math.pow(current / past, 1 / years) - 1) * 100;
+          };
+          
+          // Store dividend metrics
+          dividendMetrics = {
+            currentDividendPerShare: dividendHistory[dividendHistory.length - 1]?.value || 0,
+            currentPayoutRatio, // Use TTM-based calculation
+            dividendStreak,
+            dividendCAGR3Y: calculateDividendCAGR(3),
+            dividendCAGR5Y: calculateDividendCAGR(5),
+            dividendCAGR10Y: calculateDividendCAGR(10)
+          };
+          
+          console.log(`✅ Dividend data fetched for ${standardizedTicker}:`, {
+            years: dividendHistory.length,
+            currentDPS: dividendMetrics.currentDividendPerShare,
+            streak: dividendStreak,
+            cagr3y: dividendMetrics.dividendCAGR3Y,
+            cagr5y: dividendMetrics.dividendCAGR5Y,
+            cagr10y: dividendMetrics.dividendCAGR10Y
           });
         }
-        
-        // Calculate dividend streak (years without cuts)
-        let dividendStreak = 0;
-        const sortedDesc = [...dividendHistory].reverse(); // [2024, 2023, 2022, ...]
-        
-        // Compare newer year (i-1) with older year (i)
-        for (let i = 1; i < sortedDesc.length; i++) {
-          const newerYear = sortedDesc[i-1];  // e.g., 2024
-          const olderYear = sortedDesc[i];    // e.g., 2023
-          
-          // Check if newer dividend >= older dividend (with 5% tolerance)
-          if (newerYear.value >= olderYear.value * 0.95) {
-            dividendStreak++;
-          } else {
-            break; // Streak broken
-          }
-        }
-        
-        // Calculate CAGRs
-        const calculateDividendCAGR = (years: number): number | null => {
-          if (dividendHistory.length < years + 1) return null;
-          const current = dividendHistory[dividendHistory.length - 1].value;
-          const past = dividendHistory[dividendHistory.length - 1 - years].value;
-          if (past <= 0) return null;
-          return (Math.pow(current / past, 1 / years) - 1) * 100;
-        };
-        
-        // Step 5: Store dividend metrics (DPS from Statements)
-        dividendMetrics = {
-          currentDividendPerShare: dividendHistory[dividendHistory.length - 1]?.value || 0,
-          currentPayoutRatio,
-          dividendStreak,
-          dividendCAGR3Y: calculateDividendCAGR(3),
-          dividendCAGR5Y: calculateDividendCAGR(5),
-          dividendCAGR10Y: calculateDividendCAGR(10)
-        };
-        
-        console.log(`✅ Dividend data calculated from statements for ${standardizedTicker}:`, {
-          years: dividendHistory.length,
-          currentDPS: dividendMetrics.currentDividendPerShare.toFixed(3),
-          currentPayoutRatio: currentPayoutRatio + '%',
-          streak: dividendStreak,
-          cagr3y: dividendMetrics.dividendCAGR3Y?.toFixed(1) + '%',
-          cagr5y: dividendMetrics.dividendCAGR5Y?.toFixed(1) + '%',
-          cagr10y: dividendMetrics.dividendCAGR10Y?.toFixed(1) + '%',
-          currency: reportedCurrency
-        });
       } else {
-        console.log(`No dividend data available in financial statements for ${standardizedTicker}`);
+        console.log(`No dividend data available for ${standardizedTicker}`);
       }
     } catch (error) {
-      console.warn('Error calculating dividend data from statements:', error);
+      console.warn('Error fetching dividend data:', error);
     }
 
     return {
