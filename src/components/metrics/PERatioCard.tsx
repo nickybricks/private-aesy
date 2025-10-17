@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Info, TrendingUp, TrendingDown } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -186,22 +187,68 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
   const xAxisTicks = getXAxisTicks(filteredData, selectedRange);
   const xAxisFormatter = getXAxisTickFormatter(selectedRange);
 
-  const tooltipContent = (
-    <div className="space-y-2">
-      <p className="font-medium">Kurs-Gewinn-Verhältnis (KGV)</p>
-      <p className="text-xs">
-        Das KGV zeigt, wie teuer eine Aktie im Verhältnis zu ihren Gewinnen ist.
-        Ein niedriges KGV deutet auf eine günstige Bewertung hin.
-      </p>
-      <p className="text-xs">
-        Formel: Aktienkurs / Gewinn je Aktie (EPS)
-      </p>
+  const mainTooltipContent = (
+    <div className="space-y-3 max-w-md">
+      <div>
+        <p className="font-semibold">Kurs-Gewinn-Verhältnis (KGV / P/E Ratio)</p>
+        <p className="text-xs mt-1">
+          Das KGV zeigt, wie teuer eine Aktie im Verhältnis zu ihren Gewinnen ist.
+          Ein niedriges KGV deutet auf eine günstige Bewertung hin.
+        </p>
+      </div>
+      
+      <div className="text-xs">
+        <p className="font-medium mb-1">Formel:</p>
+        <code className="bg-muted px-2 py-1 rounded text-[10px]">
+          KGV = Aktienkurs / Gewinn je Aktie (EPS)
+        </code>
+      </div>
+
+      <div className="text-xs space-y-1">
+        <p className="font-medium">Interpretation:</p>
+        <div className="space-y-1 pl-2 border-l-2 border-border">
+          <p>• KGV ≤ 15: <strong>Günstig bewertet</strong></p>
+          <p>• KGV 15-20: <strong>Fair bewertet</strong></p>
+          <p>• KGV 20-25: <strong>Leicht teuer</strong></p>
+          <p>• KGV &gt; 25: <strong>Teuer</strong></p>
+        </div>
+      </div>
     </div>
   );
 
+  const scoringTooltip = (
+    <div className="space-y-2">
+      <p className="font-medium text-sm">Bewertungssystem (0-3,0 Punkte):</p>
+      
+      <div className="space-y-1">
+        <p className="font-medium text-xs">Absolut (0-1,5 P):</p>
+        <div className="text-xs space-y-0.5">
+          <p><span className="text-green-600">●</span> ≤15: 1,5 Punkte</p>
+          <p><span className="text-yellow-600">●</span> 15-20: 1,0 Punkt</p>
+          <p><span className="text-orange-600">●</span> 20-25: 0,5 Punkte</p>
+          <p><span className="text-red-600">●</span> &gt;25: 0,0 Punkte</p>
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <p className="font-medium text-xs">Relativ zur Branche (0-1,5 P):</p>
+        <div className="text-xs space-y-0.5">
+          <p><span className="text-green-600">●</span> ≤0,80x: 1,5 Punkte (Discount)</p>
+          <p><span className="text-yellow-600">●</span> 0,80-1,10x: 1,0 Punkt (Fair)</p>
+          <p><span className="text-orange-600">●</span> 1,10-1,30x: 0,5 Punkte (Premium)</p>
+          <p><span className="text-red-600">●</span> &gt;1,30x: 0,0 Punkte (Overpremium)</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const relativeValue = currentStockPE && currentIndustryPE 
+    ? (currentStockPE / currentIndustryPE) 
+    : null;
+
   return (
     <Card className={`p-4 border-2 ${getBgColorByScore(totalScore, maxScore)}`}>
-      {/* Header with Score */}
+      {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold text-lg">KGV (Kurs-Gewinn-Verhältnis)</h3>
@@ -211,7 +258,7 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
               <TooltipContent side="right" className="max-w-md">
-                {tooltipContent}
+                {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -224,52 +271,137 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
         </div>
       </div>
 
-      {/* Score Breakdown */}
-      <div className="space-y-2 mb-4 p-3 bg-muted/30 rounded-lg">
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-medium">Gesamtbewertung:</div>
-          <div className={`px-3 py-1 rounded text-sm font-bold ${getColorByScore(totalScore, maxScore)}`}>
-            {totalScore.toFixed(1)}/{maxScore} Punkte
-          </div>
+      {/* Score indicator */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="text-sm font-medium">Bewertung:</div>
+        <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByScore(totalScore, maxScore)}`}>
+          {totalScore.toFixed(1)}/{maxScore} Punkte
         </div>
-        
-        <div className="text-xs space-y-1 pl-3 border-l-2 border-border">
-          <div className="flex justify-between">
-            <span>Absolut (KGV {currentStockPE?.toFixed(1) || 'N/A'}):</span>
-            <span className="font-medium">{absoluteScore.toFixed(1)}/1,5 P</span>
-          </div>
-          {currentIndustryPE && currentStockPE && (
-            <>
-              <div className="flex justify-between">
-                <span>
-                  Relativ zur Branche ({(currentStockPE / currentIndustryPE).toFixed(2)}x):
-                </span>
-                <span className="font-medium">{relativeScore.toFixed(1)}/1,5 P</span>
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-1">
-                Branche: {industry} (KGV: {currentIndustryPE.toFixed(1)})
-              </div>
-            </>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="right" className="max-w-md">
+              {scoringTooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {/* KPIs as 3-column grid */}
+      <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+        <div>
+          <p className="text-xs text-muted-foreground">KGV Aktie</p>
+          <p className="font-semibold">
+            {currentStockPE !== null && currentStockPE !== undefined ? currentStockPE.toFixed(1) : 'N/A'}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">KGV Branche</p>
+          <p className="font-semibold">
+            {currentIndustryPE !== null && currentIndustryPE !== undefined ? currentIndustryPE.toFixed(1) : 'N/A'}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Relativer Wert</p>
+          {relativeValue !== null ? (
+            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
+              relativeValue <= 0.8 ? 'bg-green-100 text-green-700' : 
+              relativeValue <= 1.1 ? 'bg-yellow-100 text-yellow-700' : 
+              'bg-red-100 text-red-700'
+            }`}>
+              {relativeValue <= 1 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+              {relativeValue.toFixed(2)}x
+            </div>
+          ) : (
+            <p className="font-semibold text-muted-foreground">N/A</p>
           )}
         </div>
+      </div>
+
+      {/* Meta Row with tooltips */}
+      <div className="flex items-center justify-start gap-2 text-xs text-muted-foreground mb-4 flex-wrap">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                Absolut-Score: <span className={`font-bold ${getColorByScore(absoluteScore, 1.5)}`}>
+                  {absoluteScore.toFixed(1)}/1,5
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Bewertung basierend auf KGV-Höhe</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <span>•</span>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                Relativ-Score: <span className={`font-bold ${getColorByScore(relativeScore, 1.5)}`}>
+                  {relativeScore.toFixed(1)}/1,5
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Vergleich zur Branche {industry}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        {currentIndustryPE && currentStockPE && (
+          <>
+            <span>•</span>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-help">
+                    Bewertung vs. Branche: <span className={`font-bold ${
+                      relativeValue && relativeValue <= 0.8 ? 'text-green-600' : 
+                      relativeValue && relativeValue <= 1.1 ? 'text-yellow-600' : 
+                      'text-red-600'
+                    }`}>
+                      {relativeValue ? (
+                        relativeValue <= 0.8 ? 'Discount' : 
+                        relativeValue <= 1.1 ? 'Fair' : 
+                        'Premium'
+                      ) : 'N/A'}
+                    </span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">
+                    {relativeValue && relativeValue <= 0.8 && 'Aktie ist günstiger als Branchenschnitt'}
+                    {relativeValue && relativeValue > 0.8 && relativeValue <= 1.1 && 'Aktie ist fair zur Branche bewertet'}
+                    {relativeValue && relativeValue > 1.1 && 'Aktie ist teurer als Branchenschnitt'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        )}
       </div>
 
       {/* Time Range Selector */}
       {weeklyPE && weeklyPE.length > 0 && (
         <>
-          <div className="flex gap-1 mb-3 overflow-x-auto pb-1">
+          <div className="flex justify-end gap-1 mb-3 overflow-x-auto pb-1">
             {(['1M', '6M', 'YTD', '1Y', '5Y', '10Y', '25Y', 'MAX'] as TimeRange[]).map(range => (
-              <button
+              <Button
                 key={range}
+                variant={selectedRange === range ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setSelectedRange(range)}
-                className={`px-3 py-1.5 text-xs font-medium rounded whitespace-nowrap transition-colors ${
-                  selectedRange === range
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                }`}
+                className="text-xs h-7 px-2.5 whitespace-nowrap"
               >
                 {range}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -290,6 +422,7 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
                     tick={{ fontSize: 10 }}
                     stroke="#9ca3af"
                     domain={[0, 'auto']}
+                    width={60}
                   />
                   <RechartsTooltip
                     content={({ active, payload }) => {
@@ -370,32 +503,6 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
         </>
       )}
 
-      {/* Extended Scoring Explanation */}
-      <div className="mt-4 text-xs text-muted-foreground space-y-2 p-3 bg-muted/20 rounded-lg">
-        <div>
-          <p className="font-semibold mb-1">Bewertungssystem (0-3,0 Punkte):</p>
-        </div>
-        
-        <div>
-          <p className="font-semibold text-[10px]">Absolut (0-1,5 P):</p>
-          <div className="grid grid-cols-2 gap-x-2 text-[10px]">
-            <span>• ≤15: 1,5 P</span>
-            <span>• 15-20: 1,0 P</span>
-            <span>• 20-25: 0,5 P</span>
-            <span>• &gt;25: 0,0 P</span>
-          </div>
-        </div>
-        
-        <div>
-          <p className="font-semibold text-[10px]">Relativ zur Branche (0-1,5 P):</p>
-          <div className="grid grid-cols-2 gap-x-2 text-[10px]">
-            <span>• ≤0,80x: 1,5 P</span>
-            <span>• 0,80-1,10x: 1,0 P</span>
-            <span>• 1,10-1,30x: 0,5 P</span>
-            <span>• &gt;1,30x: 0,0 P</span>
-          </div>
-        </div>
-      </div>
     </Card>
   );
 };
