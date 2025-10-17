@@ -2818,6 +2818,9 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
       console.log(`Fetching dividend history for ${standardizedTicker}`);
       const dividendData = await fetchFromFMP(`/historical-price-full/stock_dividend/${standardizedTicker}`);
       
+      // Fetch ratios data for accurate payout ratio calculation
+      const ratiosData = await fetchFromFMP(`/ratios/${standardizedTicker}`);
+      
       if (dividendData?.historical && Array.isArray(dividendData.historical) && dividendData.historical.length > 0) {
         // Aggregate dividends by year (sum all payments in a year)
         const yearlyDividends = new Map<number, number>();
@@ -2836,41 +2839,58 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
         if (dividendHistory.length > 0) {
           historicalData.dividend = dividendHistory;
           
-          // Calculate payout ratio (Dividends / FCF) - Historical for chart
+          // Calculate payout ratio using FMP ratios endpoint (Dividend Per Share / FCF Per Share)
           let currentPayoutRatio = 0;
-          if (cashFlows && cashFlows.length > 0) {
-            const payoutRatioData = [];
-            
-            for (let i = 0; i < Math.min(10, cashFlows.length); i++) {
-              const year = new Date(cashFlows[i].date).getFullYear();
-              const fcf = safeValue(cashFlows[i].freeCashFlow);
-              const yearDividends = yearlyDividends.get(year) || 0;
+          const payoutRatioData = [];
+          
+          if (ratiosData && Array.isArray(ratiosData) && ratiosData.length > 0) {
+            // Process historical payout ratios from ratios endpoint
+            for (let i = 0; i < Math.min(10, ratiosData.length); i++) {
+              const ratio = ratiosData[i];
+              const year = new Date(ratio.date).getFullYear();
+              const fcfPerShare = parseFloat(ratio.freeCashFlowPerShare);
+              const dividendPerShare = parseFloat(ratio.dividendPerShare);
               
-              if (fcf && fcf > 0 && yearDividends > 0) {
-                // Get shares outstanding for this year
-                const sharesOutstanding = safeValue(balanceSheets[i]?.commonStock) || safeValue(incomeStatements[i]?.weightedAverageShsOut);
-                if (sharesOutstanding > 0) {
-                  const totalDividendsPaid = yearDividends * sharesOutstanding;
-                  const payoutRatio = (totalDividendsPaid / fcf) * 100;
-                  payoutRatioData.push({
-                    year: year.toString(),
-                    value: Math.round(payoutRatio * 10) / 10
-                  });
-                }
+              if (fcfPerShare && fcfPerShare > 0 && dividendPerShare && dividendPerShare > 0) {
+                const payoutRatio = (dividendPerShare / fcfPerShare) * 100;
+                payoutRatioData.push({
+                  year: year.toString(),
+                  value: Math.round(payoutRatio * 10) / 10
+                });
               }
             }
             
             historicalData.payoutRatio = payoutRatioData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
             
-            // Calculate TTM-based current payout ratio using actual dividends paid from cash flow
+            // Current (TTM) payout ratio from most recent ratios data
+            const latestRatio = ratiosData[0];
+            const latestFcfPerShare = parseFloat(latestRatio.freeCashFlowPerShare);
+            const latestDividendPerShare = parseFloat(latestRatio.dividendPerShare);
+            
+            if (latestFcfPerShare && latestFcfPerShare > 0 && latestDividendPerShare && latestDividendPerShare > 0) {
+              currentPayoutRatio = Math.round((latestDividendPerShare / latestFcfPerShare) * 1000) / 10;
+            }
+            
+            console.log('Payout Ratio Calculation', {
+              latestFcfPerShare,
+              latestDividendPerShare,
+              currentPayoutRatio
+            });
+          } else if (cashFlows && cashFlows.length > 0) {
+            // Fallback: Use dividendsPaid from cash flow if ratios endpoint unavailable
             const ttmFCF = safeValue(cashFlows[0].freeCashFlow);
             const dividendsPaid = safeValue(cashFlows[0].dividendsPaid);
             
             if (ttmFCF && ttmFCF > 0 && dividendsPaid) {
-              // dividendsPaid is negative in FMP API, so use Math.abs()
               const totalDividendsPaid = Math.abs(dividendsPaid);
               currentPayoutRatio = Math.round((totalDividendsPaid / ttmFCF) * 1000) / 10;
             }
+            
+            console.log('Payout Ratio Calculation (Fallback)', {
+              ttmFCF,
+              dividendsPaid,
+              currentPayoutRatio
+            });
           }
           
           // Calculate dividend streak (years without cuts)
