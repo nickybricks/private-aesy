@@ -183,13 +183,23 @@ export const fetchStockInfo = async (ticker: string) => {
   ].filter(Boolean);
   const fullAddress = addressParts.join(', ');
   
+  // Log currency information for debugging
+  console.log('💱 Currency Info:', {
+    ticker: profile.symbol,
+    stockCurrency: quote.currency,           // Exchange-based (e.g., USD for NYSE)
+    reportedCurrency: profile.currency,      // Company reports (e.g., JPY for Toyota)
+    exchange: profile.exchangeShortName,
+    needsConversion: quote.currency !== profile.currency
+  });
+
   return {
     name: profile.companyName,
     ticker: profile.symbol,
     price: quote.price,
     change: quote.change,
     changePercent: quote.changesPercentage,
-    currency: profile.currency,
+    currency: quote.currency,                // Stock price currency (from exchange)
+    reportedCurrency: profile.currency,      // Financial statements currency
     marketCap: profile.mktCap,
     image: profile.image,
     // Additional company information
@@ -238,10 +248,29 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
     throw new Error(`Keine ausreichenden Finanzkennzahlen gefunden für ${standardizedTicker}`);
   }
   
+  const companyProfile = profile[0];
+  
+  // Fallback: If reportedCurrency is missing, infer from exchange
+  let reportedCurrency = companyProfile.currency;
+  if (!reportedCurrency) {
+    const exchangeSuffix = companyProfile.exchangeShortName;
+    const currencyMap: Record<string, string> = {
+      'TSE': 'JPY', 'TYO': 'JPY', 'JPX': 'JPY',  // Tokyo
+      'LSE': 'GBP',                                 // London
+      'FRA': 'EUR', 'PAR': 'EUR',                   // Frankfurt, Paris
+      'SWX': 'CHF',                                 // Swiss Exchange
+      'HKG': 'HKD',                                 // Hong Kong
+      'TSX': 'CAD',                                 // Toronto
+      'ASX': 'AUD',                                 // Australia
+    };
+    
+    reportedCurrency = currencyMap[exchangeSuffix] || 'USD';
+    console.log(`⚠️ reportedCurrency missing, inferred ${reportedCurrency} from exchange ${exchangeSuffix}`);
+  }
+  
   // Die neuesten Daten verwenden
   const latestRatios = ratios[0];
   const latestMetrics = keyMetrics[0];
-  const companyProfile = profile[0];
   const latestIncomeStatement = incomeStatements && incomeStatements.length > 0 ? incomeStatements[0] : null;
   const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
   
@@ -1104,13 +1133,14 @@ export const getFinancialMetrics = async (ticker: string) => {
   try {
     // Finanzkennzahlen abrufen - erweiterte Datenquellen für präzisere EPS und andere Werte
     // Erhöhe Limits auf 30 Jahre für historische Daten (Premium Plan unterstützt bis zu 30 Jahre)
-    const [ratios, keyMetrics, incomeStatements, balanceSheets, cashFlows, quote] = await Promise.all([
+    const [ratios, keyMetrics, incomeStatements, balanceSheets, cashFlows, quote, profile] = await Promise.all([
       fetchFromFMP(`/ratios/${standardizedTicker}?limit=30`),
       fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=30`),
       fetchFromFMP(`/income-statement/${standardizedTicker}?limit=30`),
       fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?limit=30`),
       fetchFromFMP(`/cash-flow-statement/${standardizedTicker}?limit=30`),
-      fetchFromFMP(`/quote/${standardizedTicker}`)
+      fetchFromFMP(`/quote/${standardizedTicker}`),
+      fetchFromFMP(`/profile/${standardizedTicker}`)
     ]);
     
     // Daten validieren und überprüfen
@@ -1125,6 +1155,18 @@ export const getFinancialMetrics = async (ticker: string) => {
     const latestBalanceSheet = balanceSheets && balanceSheets.length > 0 ? balanceSheets[0] : null;
     const latestCashFlow = cashFlows && cashFlows.length > 0 ? cashFlows[0] : null;
     const quoteData = quote && quote.length > 0 ? quote[0] : null;
+    const profileData = profile && profile.length > 0 ? profile[0] : null;
+    
+    // Extract currencies
+    const stockCurrency = quoteData?.currency || 'USD';
+    const reportedCurrency = latestIncomeStatement?.reportedCurrency || profileData?.currency || stockCurrency;
+    
+    console.log('💱 Currency Info (getFinancialMetrics):', {
+      ticker: standardizedTicker,
+      stockCurrency,
+      reportedCurrency,
+      needsConversion: stockCurrency !== reportedCurrency
+    });
     
     console.log('Neueste Income Statement Daten:', JSON.stringify(latestIncomeStatement, null, 2));
     console.log('Neueste Balance Sheet Daten:', JSON.stringify(latestBalanceSheet, null, 2));
@@ -1363,16 +1405,7 @@ export const getFinancialMetrics = async (ticker: string) => {
       }
     }
 
-    // Determine the reported currency from the income statement or quote data
-    let reportedCurrency = 'USD'; // Default to USD if no currency info available
-    
-    if (latestIncomeStatement && latestIncomeStatement.reportedCurrency) {
-      reportedCurrency = latestIncomeStatement.reportedCurrency;
-    } else if (quoteData && quoteData.currency) {
-      reportedCurrency = quoteData.currency;
-    }
-    
-    console.log(`Reported currency identified as: ${reportedCurrency}`);
+    console.log(`Reported currency: ${reportedCurrency}`);
     
     // Calculate WACC using actual company data from FMP API
     let wacc = 10; // Default 10% as fallback
@@ -2602,6 +2635,18 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
 
     // P/E Ratio (KGV) Metrik
     const pe = safeValue(latestRatios?.priceEarningsRatio);
+    
+    console.log('📊 P/E Calculation Debug:', {
+      ticker: standardizedTicker,
+      price: quoteData?.price,
+      priceCurrency: stockCurrency,
+      eps: latestIncomeStatement?.eps,
+      reportedCurrency: reportedCurrency,
+      peRatio: pe,
+      peSource: 'FMP ratios endpoint',
+      needsConversion: stockCurrency !== reportedCurrency
+    });
+    
     if (pe !== null && pe > 0) {
       metrics.push({
         name: 'P/E-Verhältnis (KGV)',
@@ -2852,6 +2897,14 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
                 const totalDividendsPaid = Math.abs(dividendsPaid);
                 const payoutRatio = (totalDividendsPaid / fcf) * 100;
                 
+                // Note: Both values are in reportedCurrency from Cash Flow Statement
+                console.log(`💰 Payout Ratio ${year}:`, {
+                  dividendsPaid: totalDividendsPaid.toLocaleString(),
+                  fcf: fcf.toLocaleString(),
+                  ratio: payoutRatio.toFixed(1) + '%',
+                  currency: reportedCurrency
+                });
+                
                 payoutRatioData.push({
                   year: year.toString(),
                   value: Math.round(payoutRatio * 10) / 10
@@ -2869,10 +2922,12 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
               const totalDividendsPaid = Math.abs(dividendsPaid);
               currentPayoutRatio = Math.round((totalDividendsPaid / ttmFCF) * 1000) / 10;
               
-              console.log('TTM Payout Ratio:', {
+              console.log('💰 TTM Payout Ratio:', {
                 ttmFCF: ttmFCF.toLocaleString(),
                 dividendsPaid: totalDividendsPaid.toLocaleString(),
-                ratio: currentPayoutRatio + '%'
+                ratio: currentPayoutRatio + '%',
+                currency: reportedCurrency,
+                note: 'Both values in reportedCurrency - no conversion needed'
               });
             }
           }
