@@ -1,11 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TrendingUp, TrendingDown, Info } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { Info, TrendingUp, TrendingDown } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface PriceToBookCardProps {
   currentPrice: number;
@@ -13,16 +17,20 @@ interface PriceToBookCardProps {
   historicalPrices?: Array<{ date: string; close: number }>;
   historicalBookValue?: Array<{ date: string; bookValuePerShare: number }>;
   currency: string;
+  sector?: string;
 }
+
+type TimeRange = '1M' | '6M' | 'YTD' | '1Y' | '5Y' | '10Y' | '25Y' | 'MAX';
 
 export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
   currentPrice,
   bookValuePerShare,
   historicalPrices = [],
   historicalBookValue = [],
-  currency
+  currency,
+  sector = 'Default'
 }) => {
-  const [selectedRange, setSelectedRange] = useState<string>('5Y');
+  const [selectedRange, setSelectedRange] = useState<TimeRange>('5Y');
 
   // Calculate P/B ratio
   const priceToBook = useMemo(() => {
@@ -58,9 +66,27 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
     return 'bg-red-50 border-red-200';
   };
 
+  // Calculate percentage deviation from ideal P/B of 1.0
+  const deviation = priceToBook ? ((priceToBook - 1.0) / 1.0) * 100 : 0;
+
   // Prepare historical data for chart
   const chartData = useMemo(() => {
-    if (!historicalPrices.length || !historicalBookValue.length) return [];
+    if (!historicalPrices.length) return [];
+
+    // If we have no historical book value data, we can only show price
+    if (!historicalBookValue.length) {
+      // Use current book value for all historical data points
+      if (!bookValuePerShare || bookValuePerShare <= 0) return [];
+      
+      return historicalPrices
+        .map(price => ({
+          date: price.date,
+          price: price.close,
+          pb: price.close / bookValuePerShare,
+          bookValue: bookValuePerShare
+        }))
+        .reverse();
+    }
 
     const bookValueMap = new Map(
       historicalBookValue.map(item => [item.date, item.bookValuePerShare])
@@ -80,10 +106,10 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
       })
       .filter(item => item !== null)
       .reverse();
-  }, [historicalPrices, historicalBookValue]);
+  }, [historicalPrices, historicalBookValue, bookValuePerShare]);
 
   // Filter data by selected range
-  const filterDataByRange = (data: any[], range: string) => {
+  const filterDataByRange = (data: any[], range: TimeRange) => {
     if (!data.length) return [];
     
     const now = new Date();
@@ -163,166 +189,185 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
 
   if (!bookValuePerShare || bookValuePerShare <= 0) {
     return (
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Kurs-Buchwert-Verhältnis (P/B)
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-md">
-                  {mainTooltipContent}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <AlertDescription>
-              Buchwert je Aktie nicht verfügbar oder Eigenkapital ≤ 0
-            </AlertDescription>
-          </Alert>
-        </CardContent>
+      <Card className="p-4 border-2 bg-gray-50 border-gray-200">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="font-semibold text-lg">Kurs-Buchwert-Verhältnis (P/B)</h3>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-md">
+                {mainTooltipContent}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Buchwert je Aktie nicht verfügbar oder Eigenkapital ≤ 0
+        </p>
       </Card>
     );
   }
 
   return (
-    <Card className={`shadow-sm border-2 ${getBgColorByScore(score)}`}>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-2">
-            <CardTitle>Kurs-Buchwert-Verhältnis (P/B)</CardTitle>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-md">
-                  {mainTooltipContent}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div className="text-right">
-            <div className={`text-2xl font-bold ${getColorByScore(score)}`}>
-              {priceToBook?.toFixed(2) || 'N/A'}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {score === 3 ? 'Attraktiv' : score === 2 ? 'Moderat' : score === 1 ? 'Hoch' : 'Sehr hoch'}
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Score Section */}
-        <div className="flex items-center gap-2 pb-4 border-b">
-          <span className="text-sm font-medium">Bewertung:</span>
-          <span className={`text-lg font-bold ${getColorByScore(score)}`}>
-            {score}/{maxScore}
-          </span>
+    <Card className={`p-4 border-2 ${getBgColorByScore(score)}`}>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-lg">Kurs-Buchwert-Verhältnis (P/B)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent>
-                {scoringTooltip}
+              <TooltipContent side="right" className="max-w-md">
+                {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
-
-        {/* KPI Grid */}
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Aktueller Kurs</p>
-            <p className="text-lg font-semibold">{currentPrice.toFixed(2)} {currency}</p>
+        <div className="text-right">
+          <div className={`text-2xl font-bold ${getColorByScore(score)}`}>
+            {priceToBook?.toFixed(2) || 'N/A'}
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Buchwert/Aktie</p>
-            <p className="text-lg font-semibold">{bookValuePerShare.toFixed(2)} {currency}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">P/B Verhältnis</p>
-            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-semibold ${
-              score === 3 ? 'bg-green-100 text-green-700' :
-              score === 2 ? 'bg-yellow-100 text-yellow-700' :
-              score === 1 ? 'bg-orange-100 text-orange-700' :
-              'bg-red-100 text-red-700'
-            }`}>
-              {priceToBook && priceToBook < 1 ? (
-                <TrendingDown className="h-3 w-3" />
-              ) : (
-                <TrendingUp className="h-3 w-3" />
-              )}
-              {priceToBook?.toFixed(2)}
-            </div>
+          <div className="text-xs text-muted-foreground">
+            {score === 3 ? 'Attraktiv' : score === 2 ? 'Moderat' : score === 1 ? 'Hoch' : 'Sehr hoch'}
           </div>
         </div>
+      </div>
 
-        {/* Meta Row */}
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="cursor-help hover:text-foreground transition-colors">
-                  P/B: {priceToBook?.toFixed(2) || 'N/A'}
+      {/* Score indicator */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="text-sm font-medium">Bewertung:</div>
+        <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByScore(score)}`}>
+          {score}/{maxScore} Punkte
+        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {scoringTooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {/* KPIs as 3-column grid */}
+      <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+        <div>
+          <p className="text-xs text-muted-foreground">Aktueller Kurs</p>
+          <p className="font-semibold">{currentPrice.toFixed(2)} {currency}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Buchwert/Aktie</p>
+          <p className="font-semibold">{bookValuePerShare.toFixed(2)} {currency}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">P/B Verhältnis</p>
+          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
+            score === 3 ? 'bg-green-100 text-green-700' :
+            score === 2 ? 'bg-yellow-100 text-yellow-700' :
+            score === 1 ? 'bg-orange-100 text-orange-700' :
+            'bg-red-100 text-red-700'
+          }`}>
+            {priceToBook && priceToBook < 1 ? (
+              <TrendingDown className="h-3 w-3" />
+            ) : (
+              <TrendingUp className="h-3 w-3" />
+            )}
+            {priceToBook?.toFixed(2)}
+          </div>
+        </div>
+      </div>
+
+      {/* Meta Row with tooltips */}
+      <div className="flex items-center justify-start gap-2 text-xs text-muted-foreground mb-4 flex-wrap">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                P/B <span className={`font-bold ${getColorByScore(score)}`}>
+                  {priceToBook?.toFixed(2) || 'N/A'}
                 </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Kurs-Buchwert-Verhältnis</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <span>•</span>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="cursor-help hover:text-foreground transition-colors">
-                  Buchwert: {bookValuePerShare.toFixed(2)} {currency}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Kurs-Buchwert-Verhältnis</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <span>•</span>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                Buchwert <span className="font-bold">{bookValuePerShare.toFixed(2)} {currency}</span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Eigenkapital je Aktie laut Bilanz</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <span>•</span>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                Abweichung von 1.0 <span className={`font-bold ${
+                  deviation >= 0 ? 'text-red-600' : 'text-green-600'
+                }`}>
+                  {deviation >= 0 ? '+' : ''}{deviation.toFixed(1)}%
                 </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Eigenkapital je Aktie laut Bilanz</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Ideales P/B = 1.0 (Kurs = Buchwert)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
 
-        {/* Chart Section */}
-        {filteredData.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex justify-end gap-1">
-              {['1M', '6M', 'YTD', '1Y', '5Y', '10Y', '25Y', 'MAX'].map((range) => (
-                <Button
-                  key={range}
-                  variant={selectedRange === range ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedRange(range)}
-                  className="text-xs h-7 px-2.5"
-                >
-                  {range}
-                </Button>
-              ))}
-            </div>
+      {/* Time Range Selector and Chart */}
+      {filteredData.length > 0 && (
+        <>
+          <div className="flex justify-end gap-1 mb-3 overflow-x-auto pb-1">
+            {(['1M', '6M', 'YTD', '1Y', '5Y', '10Y', '25Y', 'MAX'] as TimeRange[]).map(range => (
+              <Button
+                key={range}
+                variant={selectedRange === range ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedRange(range)}
+                className="text-xs h-7 px-2.5 whitespace-nowrap"
+              >
+                {range}
+              </Button>
+            ))}
+          </div>
 
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={filteredData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
+          {/* Chart */}
+          <div className="mt-4">
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={filteredData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
                   dataKey="date"
-                  tickFormatter={(date) => format(new Date(date), 'MM/yy')}
-                  className="text-xs"
+                  tickFormatter={(value) => format(new Date(value), 'MM/yy')}
+                  fontSize={11}
+                  stroke="#6b7280"
                 />
-                <YAxis
+                <YAxis 
+                  fontSize={11}
+                  stroke="#6b7280"
                   width={60}
                   tickFormatter={(value) => value.toFixed(1)}
-                  className="text-xs"
                 />
                 <RechartsTooltip
                   content={({ active, payload }) => {
@@ -353,44 +398,37 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
                     return null;
                   }}
                 />
-                <Legend 
-                  wrapperStyle={{ fontSize: '12px' }}
-                  formatter={(value) => {
-                    if (value === 'pb') return 'P/B Verhältnis';
-                    return value;
-                  }}
-                />
                 <Line
                   type="monotone"
                   dataKey="pb"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
                   dot={false}
-                  name="pb"
+                  name="P/B Verhältnis"
                 />
                 <ReferenceLine
                   y={1.5}
                   stroke="hsl(142, 76%, 36%)"
                   strokeDasharray="3 3"
-                  label={{ value: 'Ziel: 1.5', position: 'right', fontSize: 11 }}
+                  label={{ value: 'Ziel: 1.5', position: 'right', fontSize: 11, fill: '#6b7280' }}
                 />
                 <ReferenceLine
                   y={2.5}
                   stroke="hsl(45, 93%, 47%)"
                   strokeDasharray="3 3"
-                  label={{ value: '2.5', position: 'right', fontSize: 11 }}
+                  label={{ value: '2.5', position: 'right', fontSize: 11, fill: '#6b7280' }}
                 />
                 <ReferenceLine
                   y={3.5}
                   stroke="hsl(25, 95%, 53%)"
                   strokeDasharray="3 3"
-                  label={{ value: '3.5', position: 'right', fontSize: 11 }}
+                  label={{ value: '3.5', position: 'right', fontSize: 11, fill: '#6b7280' }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
-        )}
-      </CardContent>
+        </>
+      )}
     </Card>
   );
 };

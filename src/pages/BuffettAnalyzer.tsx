@@ -347,14 +347,10 @@ const IndexContent: React.FC = () => {
               )}
               
               {/* Price to Book Card - positioned at the bottom */}
-              {financialMetrics?.metrics && (
+              {valuationData?.assumptions?.tangibleBookPerShare && (
                 <PriceToBookCard
                   currentPrice={stockInfo.price}
-                  bookValuePerShare={
-                    financialMetrics.metrics.find(m => m.name === 'Book Value Per Share')?.value || 
-                    stockInfo.bookValuePerShare ||
-                    null
-                  }
+                  bookValuePerShare={valuationData.assumptions.tangibleBookPerShare}
                   historicalPrices={financialMetrics?.historicalData?.peRatioWeekly?.map(pe => {
                     const eps = financialMetrics.eps || 1;
                     const price = pe.stockPE * (typeof eps === 'number' ? eps : 1);
@@ -365,6 +361,7 @@ const IndexContent: React.FC = () => {
                   }) || []}
                   historicalBookValue={[]}
                   currency={stockInfo.currency}
+                  sector={stockInfo.sector}
                 />
               )}
                     </div>
