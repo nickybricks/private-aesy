@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BarChart3, Calculator, AlertCircle, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +64,50 @@ const BuffettQuantAnalyzer = () => {
   const [progress, setProgress] = useState(0);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [currentOperation, setCurrentOperation] = useState('');
+  
+  // Load persisted data from sessionStorage on mount
+  useEffect(() => {
+    const savedResults = sessionStorage.getItem('quantAnalyzerResults');
+    const savedHasAnalyzed = sessionStorage.getItem('quantAnalyzerHasAnalyzed');
+    const savedMarket = sessionStorage.getItem('quantAnalyzerMarket');
+    const savedSector = sessionStorage.getItem('quantAnalyzerSector');
+    const savedLimit = sessionStorage.getItem('quantAnalyzerLimit');
+    
+    if (savedResults) {
+      try {
+        setResults(JSON.parse(savedResults));
+      } catch (e) {
+        console.error('Failed to parse saved results:', e);
+      }
+    }
+    
+    if (savedHasAnalyzed === 'true') {
+      setHasAnalyzed(true);
+    }
+    
+    if (savedMarket) {
+      setSelectedMarket(savedMarket);
+    }
+    
+    if (savedSector) {
+      setSelectedSector(savedSector);
+    }
+    
+    if (savedLimit) {
+      setStockLimit(parseInt(savedLimit, 10));
+    }
+  }, []);
+  
+  // Persist results to sessionStorage whenever they change
+  useEffect(() => {
+    if (results.length > 0) {
+      sessionStorage.setItem('quantAnalyzerResults', JSON.stringify(results));
+      sessionStorage.setItem('quantAnalyzerHasAnalyzed', 'true');
+      sessionStorage.setItem('quantAnalyzerMarket', selectedMarket);
+      sessionStorage.setItem('quantAnalyzerSector', selectedSector);
+      sessionStorage.setItem('quantAnalyzerLimit', stockLimit.toString());
+    }
+  }, [results, selectedMarket, selectedSector, stockLimit]);
   
   // Schätzen der Analysezeit basierend auf der Anzahl der Aktien (mit Batch-Verarbeitung)
   const estimatedTime = useMemo(() => {
