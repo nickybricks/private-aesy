@@ -1,11 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TrendingUp, TrendingDown, AlertTriangle, Info } from 'lucide-react';
-import { ClickableTooltip } from '@/components/ClickableTooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 
@@ -44,12 +48,7 @@ interface PeterLynchDiscountCardProps {
   sector?: string;
 }
 
-const TIME_RANGES = [
-  { label: '1Y', value: '1year' },
-  { label: '3Y', value: '3years' },
-  { label: '5Y', value: '5years' },
-  { label: '10Y', value: '10years' },
-];
+type TimeRange = '1M' | '6M' | 'YTD' | '1Y' | '5Y' | '10Y' | '25Y' | 'MAX';
 
 const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
@@ -77,7 +76,7 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
   currency,
   sector = 'Technology'
 }) => {
-  const [selectedRange, setSelectedRange] = useState('5years');
+  const [selectedRange, setSelectedRange] = useState<TimeRange>('1Y');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -194,28 +193,40 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
   }, [annualData, ticker]);
 
   // Filter data by time range
-  const getFilteredData = (data: any[], range: string) => {
-    const endDate = new Date();
-    let startDate: Date;
+  const getFilteredData = (data: any[], range: TimeRange) => {
+    if (!data || data.length === 0) return [];
+    
+    const now = new Date();
+    const cutoffDate = new Date();
     
     switch (range) {
-      case '1year':
-        startDate = new Date(endDate.getFullYear() - 1, endDate.getMonth(), endDate.getDate());
+      case '1M':
+        cutoffDate.setMonth(now.getMonth() - 1);
         break;
-      case '3years':
-        startDate = new Date(endDate.getFullYear() - 3, endDate.getMonth(), endDate.getDate());
+      case '6M':
+        cutoffDate.setMonth(now.getMonth() - 6);
         break;
-      case '5years':
-        startDate = new Date(endDate.getFullYear() - 5, endDate.getMonth(), endDate.getDate());
+      case 'YTD':
+        cutoffDate.setMonth(0);
+        cutoffDate.setDate(1);
         break;
-      case '10years':
-        startDate = new Date(endDate.getFullYear() - 10, endDate.getMonth(), endDate.getDate());
+      case '1Y':
+        cutoffDate.setFullYear(now.getFullYear() - 1);
         break;
-      default:
-        startDate = new Date(endDate.getFullYear() - 5, endDate.getMonth(), endDate.getDate());
+      case '5Y':
+        cutoffDate.setFullYear(now.getFullYear() - 5);
+        break;
+      case '10Y':
+        cutoffDate.setFullYear(now.getFullYear() - 10);
+        break;
+      case '25Y':
+        cutoffDate.setFullYear(now.getFullYear() - 25);
+        break;
+      case 'MAX':
+        return data;
     }
     
-    return data.filter(item => new Date(item.date) >= startDate);
+    return data.filter(item => new Date(item.date) >= cutoffDate);
   };
 
   // Prepare chart data
@@ -292,229 +303,386 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
   const score = getScore(discount, mosTarget);
 
   // Get colors based on score
-  const getColorByScore = (score: number): string => {
-    if (score >= 4) return 'text-green-600 dark:text-green-400';
-    if (score >= 3) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
+  const getColorByScore = (score: number, maxScore: number): string => {
+    const ratio = score / maxScore;
+    if (ratio === 1) return 'text-green-600';
+    if (ratio >= 0.6) return 'text-yellow-600';
+    if (ratio >= 0.4) return 'text-orange-600';
+    return 'text-red-600';
   };
 
-  const getBgColorByScore = (score: number): string => {
-    if (score >= 4) return 'bg-green-50 dark:bg-green-950/30';
-    if (score >= 3) return 'bg-yellow-50 dark:bg-yellow-950/30';
-    return 'bg-red-50 dark:bg-red-950/30';
+  const getBgColorByScore = (score: number, maxScore: number): string => {
+    const ratio = score / maxScore;
+    if (ratio === 1) return 'bg-green-50 border-green-200';
+    if (ratio >= 0.6) return 'bg-yellow-50 border-yellow-200';
+    if (ratio >= 0.4) return 'bg-orange-50 border-orange-200';
+    return 'bg-red-50 border-red-200';
   };
+
+  const maxScore = 5;
 
   const mainTooltipContent = (
-    <div className="space-y-2 max-w-sm">
-      <p className="font-semibold">Idee nach Peter Lynch (GARP)</p>
-      <p className="text-sm">
-        <strong>Fairer KGV ≈ nachhaltige EPS-Wachstumsrate</strong> („PEG ≈ 1").
-      </p>
-      <p className="text-sm">
-        Wir leiten daraus einen <strong>fairen Wert</strong> ab und messen die <strong>Abweichung</strong> des Kurses davon.
-      </p>
+    <div className="space-y-3 max-w-md">
+      <div>
+        <p className="font-semibold">Peter Lynch Abweichung (GARP)</p>
+        <p className="text-xs mt-1">
+          Die Abweichung zeigt, wie weit der Aktienkurs unter/über dem fairen Wert nach Peter Lynch liegt.
+        </p>
+      </div>
+      
+      <div className="text-xs">
+        <p className="font-medium mb-1">Konzept:</p>
+        <p className="text-xs">
+          <strong>Fairer KGV ≈ nachhaltige EPS-Wachstumsrate</strong> („PEG ≈ 1")
+        </p>
+      </div>
+
+      <div className="text-xs">
+        <p className="font-medium mb-1">Formel:</p>
+        <code className="bg-muted px-2 py-1 rounded text-[10px]">
+          Fair Value = EPS × Wachstumsrate (5J-CAGR)
+        </code>
+      </div>
+
+      <div className="pt-2 border-t text-xs">
+        <p className="text-muted-foreground">
+          Wachstumsrate: <strong>{growthRate?.toFixed(1)}%</strong> (5J-CAGR)
+        </p>
+      </div>
     </div>
   );
 
   const scoringTooltip = (
-    <div className="space-y-2 max-w-sm">
-      <p className="font-semibold">Scoring-Preset: {sector}</p>
-      <p className="text-sm">MoS-Ziel: {mosTarget}%</p>
-      <div className="text-xs space-y-1 mt-2">
-        <p className="font-semibold">Punktelogik (M = {mosTarget}%):</p>
-        <p>≥ {mosTarget}% → 5 Punkte</p>
-        <p>≥ {(0.67 * mosTarget).toFixed(0)}% → 3 Punkte</p>
-        <p>≥ {(0.33 * mosTarget).toFixed(0)}% → 2 Punkte</p>
-        <p>≥ 0% → 1 Punkt</p>
-        <p>&lt; 0% → 0 Punkte</p>
-      </div>
+    <div className="space-y-1">
+      <p className="font-medium text-sm">Bewertungssystem (0-5 Punkte):</p>
+      <p className="text-sm"><span className="text-green-600">●</span> 5 Punkte: ≥ {mosTarget}%</p>
+      <p className="text-sm"><span className="text-yellow-600">●</span> 3 Punkte: ≥ {(0.67 * mosTarget).toFixed(0)}%</p>
+      <p className="text-sm"><span className="text-orange-600">●</span> 2 Punkte: ≥ {(0.33 * mosTarget).toFixed(0)}%</p>
+      <p className="text-sm"><span className="text-yellow-600">●</span> 1 Punkt: ≥ 0%</p>
+      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: &lt; 0% (überbewertet)</p>
+      <p className="text-xs text-muted-foreground mt-2">
+        M = MoS-Ziel (Sicherheitsmarge) = {mosTarget}%
+      </p>
     </div>
   );
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Peter Lynch Abweichung</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-sm text-muted-foreground">Lade Daten...</p>
-            </div>
+      <Card className="p-4">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">Lade Daten...</p>
           </div>
-        </CardContent>
+        </div>
       </Card>
     );
   }
 
   if (error || !latestData || growthRate === null) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Peter Lynch Abweichung</span>
-            <ClickableTooltip content={mainTooltipContent}>
-              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-            </ClickableTooltip>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              {error || 'PEG=1 Modus nicht verfügbar: Wachstumsrate unter 5% oder nicht genügend historische Daten.'}
-            </AlertDescription>
-          </Alert>
-        </CardContent>
+      <Card className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-lg">Peter Lynch Abweichung</h3>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-md">
+                  {mainTooltipContent}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            {error || 'PEG=1 Modus nicht verfügbar: Wachstumsrate unter 5% oder nicht genügend historische Daten.'}
+          </AlertDescription>
+        </Alert>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span>Peter Lynch Abweichung</span>
-            <ClickableTooltip content={mainTooltipContent}>
-              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-            </ClickableTooltip>
-          </div>
-          <div className={`text-3xl font-bold ${getColorByScore(score)}`}>
-            {discount > 0 ? '+' : ''}{discount.toFixed(1)}%
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Score and Bewertung */}
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-sm text-muted-foreground">Bewertung:</span>
-          <ClickableTooltip content={scoringTooltip}>
-            <Badge variant="outline" className={`${getBgColorByScore(score)} cursor-help`}>
-              {score} / 5 Punkte
-            </Badge>
-          </ClickableTooltip>
+    <Card className={`p-4 border-2 ${getBgColorByScore(score, maxScore)}`}>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-lg">Peter Lynch Abweichung</h3>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-md">
+                {mainTooltipContent}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
+        <div className="text-right">
+          <div className={`text-2xl font-bold ${getColorByScore(score, maxScore)}`}>
+            {discount >= 0 ? '+' : ''}{discount.toFixed(1)}%
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {discount >= 0 ? 'Unterbewertet' : 'Überbewertet'}
+          </div>
+        </div>
+      </div>
 
-        {/* KPIs in 3-column grid */}
-        <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
-          <div>
-            <div className="text-muted-foreground mb-1">Aktueller Kurs</div>
-            <div className="font-semibold">{currentPrice.toFixed(2)} {currency}</div>
+      {/* Score indicator */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="text-sm font-medium">Bewertung:</div>
+        <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByScore(score, maxScore)}`}>
+          {score}/{maxScore} Punkte
+        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {scoringTooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {/* KPIs as 3-column grid */}
+      <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+        <div>
+          <p className="text-xs text-muted-foreground">Aktueller Kurs</p>
+          <p className="font-semibold">{currentPrice.toFixed(2)} {currency}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Fair Value (PEG=1)</p>
+          <p className="font-semibold">{latestData.fairValue?.toFixed(2)} {currency}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Differenz</p>
+          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
+            discount >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+          }`}>
+            {discount >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+            {discount >= 0 ? '+' : ''}{(latestData.fairValue! - currentPrice).toFixed(2)} {currency}
           </div>
-          <div>
-            <div className="text-muted-foreground mb-1">Fairer Wert (PEG=1)</div>
-            <div className="font-semibold">{latestData.fairValue?.toFixed(2)} {currency}</div>
+        </div>
+      </div>
+
+      {/* Meta Row with tooltips */}
+      <div className="flex items-center justify-start gap-2 text-xs text-muted-foreground mb-4 flex-wrap">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                Abweichung <span className={`font-bold ${discount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {discount >= 0 ? '+' : ''}{discount.toFixed(1)}%
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Aktuelle Abweichung vom fairen Wert (PEG=1)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <span>•</span>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                MoS-Ziel <span className="font-bold">{mosTarget}%</span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Gewünschte Sicherheitsmarge für {sector}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <span>•</span>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">
+                Erfüllung MoS-Ziel <span className={`font-bold ${
+                  (discount / mosTarget) >= 1 ? 'text-green-600' : 
+                  (discount / mosTarget) >= 0.67 ? 'text-yellow-600' : 
+                  'text-red-600'
+                }`}>
+                  {mosTarget > 0 ? ((discount / mosTarget) * 100).toFixed(0) : 0}%
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Wie nahe die Abweichung am MoS-Ziel liegt</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {/* Time Range Selector and Chart */}
+      {chartData && chartData.length > 0 && (
+        <>
+          <div className="flex justify-end gap-1 mb-3 overflow-x-auto pb-1">
+            {(['1M', '6M', 'YTD', '1Y', '5Y', '10Y', '25Y', 'MAX'] as TimeRange[]).map(range => (
+              <Button
+                key={range}
+                variant={selectedRange === range ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedRange(range)}
+                className="text-xs h-7 px-2.5 whitespace-nowrap"
+              >
+                {range}
+              </Button>
+            ))}
           </div>
-          <div>
-            <div className="text-muted-foreground mb-1">Differenz</div>
-            <div className={`font-semibold flex items-center gap-1 ${getColorByScore(score)}`}>
-              {discount > 0 ? (
-                <TrendingUp className="h-3 w-3" />
-              ) : (
-                <TrendingDown className="h-3 w-3" />
-              )}
-              {Math.abs(latestData.fairValue! - currentPrice).toFixed(2)} {currency}
+
+          {/* Chart */}
+          <div className="mt-4">
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="date"
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    if (selectedRange === '1M' || selectedRange === '6M') {
+                      return `${date.getDate()}. ${date.toLocaleDateString('de-DE', { month: 'short' })}`;
+                    } else if (selectedRange === 'YTD' || selectedRange === '1Y') {
+                      return date.toLocaleDateString('de-DE', { month: 'short' });
+                    }
+                    return date.getFullYear().toString();
+                  }}
+                  tick={{ fontSize: 10 }}
+                  stroke="#9ca3af"
+                />
+                <YAxis 
+                  tick={{ fontSize: 10 }}
+                  stroke="#9ca3af"
+                  domain={['auto', 'auto']}
+                  width={60}
+                />
+                <RechartsTooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload as LynchDataPoint;
+                      const price = data.price;
+                      const fairValue = data.fairValue;
+                      const discountAtPoint = data.discount || 0;
+                      return (
+                        <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
+                          <p className="text-xs font-semibold mb-1">
+                            {new Date(data.date).toLocaleDateString('de-DE')}
+                          </p>
+                          <p className="text-sm text-blue-600">
+                            Kurs: <span className="font-bold">{price.toFixed(2)} {currency}</span>
+                          </p>
+                          {fairValue && (
+                            <p className="text-sm text-green-600">
+                              Fair Value: <span className="font-bold">{fairValue.toFixed(2)} {currency}</span>
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Discount: <span className={`font-bold ${discountAtPoint >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {discountAtPoint >= 0 ? '+' : ''}{discountAtPoint.toFixed(1)}%
+                            </span>
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                
+                {/* Reference line for Fair Value (horizontal) */}
+                {latestData.fairValue && (
+                  <ReferenceLine 
+                    y={latestData.fairValue} 
+                    stroke="#16a34a" 
+                    strokeDasharray="5 5" 
+                    strokeWidth={2}
+                    opacity={0.7}
+                    label={{ 
+                      value: `Fair Value: ${latestData.fairValue.toFixed(2)} ${currency}`, 
+                      position: 'insideTopRight', 
+                      fontSize: 11, 
+                      fill: '#16a34a',
+                      fontWeight: 600
+                    }}
+                  />
+                )}
+                
+                {/* Reference lines for discount targets */}
+                {latestData.fairValue && (
+                  <>
+                    <ReferenceLine 
+                      y={latestData.fairValue * 0.8} 
+                      stroke="#3b82f6" 
+                      strokeDasharray="3 3" 
+                      opacity={0.4}
+                      label={{ value: '-20%', position: 'insideRight', fontSize: 10, fill: '#3b82f6' }}
+                    />
+                    <ReferenceLine 
+                      y={latestData.fairValue * 0.7} 
+                      stroke="#3b82f6" 
+                      strokeDasharray="3 3" 
+                      opacity={0.4}
+                      label={{ value: '-30%', position: 'insideRight', fontSize: 10, fill: '#3b82f6' }}
+                    />
+                    <ReferenceLine 
+                      y={latestData.fairValue * 0.6} 
+                      stroke="#3b82f6" 
+                      strokeDasharray="3 3" 
+                      opacity={0.4}
+                      label={{ value: '-40%', position: 'insideRight', fontSize: 10, fill: '#3b82f6' }}
+                    />
+                  </>
+                )}
+                
+                {/* Stock Price Line (blue) */}
+                <Line 
+                  type="monotone" 
+                  dataKey="price" 
+                  stroke="#2563eb" 
+                  strokeWidth={2.5}
+                  dot={false}
+                  name="Aktienkurs"
+                />
+                
+                {/* Fair Value Line */}
+                {latestData.fairValue && (
+                  <Line 
+                    type="monotone" 
+                    dataKey="fairValue" 
+                    stroke="#16a34a" 
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    name="Fair Value (PEG=1)"
+                  />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+            
+            {/* Legend */}
+            <div className="flex justify-center gap-4 mt-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-0.5 bg-blue-600"></span> Aktienkurs
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-0.5 bg-green-600 border-dashed border-t-2 border-green-600"></span> Fair Value
+              </span>
             </div>
           </div>
-        </div>
-
-        {/* Meta Row - left aligned */}
-        <div className="flex justify-start gap-4 text-xs text-muted-foreground mb-4">
-          <span>Abweichung: {discount > 0 ? '+' : ''}{discount.toFixed(1)}%</span>
-          <span>•</span>
-          <span>MoS-Ziel: {mosTarget}%</span>
-          <span>•</span>
-          <span>Wachstumsrate: {growthRate.toFixed(1)}%</span>
-        </div>
-
-        {/* Time Range Selector - right aligned */}
-        <div className="flex justify-end gap-1 mb-2">
-          {TIME_RANGES.map(range => (
-            <Button
-              key={range.value}
-              variant={selectedRange === range.value ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedRange(range.value)}
-            >
-              {range.label}
-            </Button>
-          ))}
-        </div>
-
-        {/* Chart */}
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis 
-                dataKey="date" 
-                tickFormatter={(value) => new Date(value).toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })}
-                className="text-xs"
-              />
-              <YAxis 
-                width={60}
-                tickFormatter={(value) => `${value.toFixed(0)}`}
-                className="text-xs"
-              />
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (!active || !payload || !payload.length) return null;
-                  const data = payload[0].payload as LynchDataPoint;
-                  return (
-                    <div className="bg-background border rounded-lg p-3 shadow-lg">
-                      <p className="font-semibold text-sm mb-2">
-                        {new Date(data.date).toLocaleDateString('de-DE')}
-                      </p>
-                      <div className="space-y-1 text-xs">
-                        <p>Kurs: {data.price.toFixed(2)} {currency}</p>
-                        <p>Fair Value: {data.fairValue?.toFixed(2)} {currency}</p>
-                        {data.discount !== undefined && (
-                          <p className={data.discount > 0 ? 'text-green-600' : 'text-red-600'}>
-                            Abweichung: {data.discount > 0 ? '+' : ''}{data.discount.toFixed(1)}%
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                }}
-              />
-              <Legend />
-              <ReferenceLine 
-                y={latestData.fairValue || 0} 
-                stroke="hsl(var(--destructive))" 
-                strokeDasharray="3 3"
-                label={{ value: 'Fair Value', position: 'right', fill: 'hsl(var(--muted-foreground))' }}
-              />
-              <ReferenceLine 
-                y={(latestData.fairValue || 0) * (1 - mosTarget / 100)} 
-                stroke="hsl(var(--success))" 
-                strokeDasharray="3 3"
-                label={{ value: `MoS-Ziel (${mosTarget}%)`, position: 'right', fill: 'hsl(var(--muted-foreground))' }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="price" 
-                stroke="hsl(var(--primary))" 
-                strokeWidth={2}
-                dot={false}
-                name="Aktienkurs"
-              />
-              <Line 
-                type="monotone" 
-                dataKey="fairValue" 
-                stroke="hsl(var(--destructive))" 
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                dot={false}
-                name={`Fair Value (PEG=1)`}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
+        </>
+      )}
     </Card>
   );
 };
