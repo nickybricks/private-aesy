@@ -132,33 +132,44 @@ export interface QuantAnalysisResult {
   name: string;
   exchange: string;
   sector: string;
-  buffettScore: number;
+  buffettScore: number; // Max 9 points
   criteria: {
-    roe: { value: number | null; pass: boolean },
+    yearsOfProfitability: { 
+      value: number | null; // Years profitable of 10
+      pass: boolean;
+      profitableYearsLast3: number | null;
+    },
+    pe: { 
+      value: number | null; 
+      pass: boolean;
+      revenueCagr5y?: number | null;
+      fcfMarginTrend?: 'steigend' | 'fallend' | 'stabil' | null;
+      roicTrend?: 'steigend' | 'fallend' | 'stabil' | null;
+      netDebtToEbitda?: number | null;
+    },
     roic: { value: number | null; pass: boolean },
-    netMargin: { value: number | null; pass: boolean },
-    epsGrowth: { value: number | null; pass: boolean },
-    revenueGrowth: { value: number | null; pass: boolean },
-    interestCoverage: { value: number | null; pass: boolean },
-    debtRatio: { value: number | null; pass: boolean },
-    pe: { value: number | null; pass: boolean },
-    pb: { value: number | null; pass: boolean },
+    roe: { value: number | null; pass: boolean },
     dividendYield: { value: number | null; pass: boolean },
-    intrinsicValue: { value: number | null; pass: boolean },
-    intrinsicValueWithMargin: { value: number | null; pass: boolean }
+    epsGrowth: { 
+      value: number | null; // 5-Y CAGR
+      pass: boolean;
+      median3y?: number | null;
+    },
+    revenueGrowth: { 
+      value: number | null; // 5-Y CAGR
+      pass: boolean 
+    },
+    netDebtToEbitda: { value: number | null; pass: boolean },
+    netMargin: { value: number | null; pass: boolean }
   };
   price: number;
   currency: string;
-  intrinsicValue?: number | null;
+  intrinsicValue?: number | null; // Display only, not evaluated
   marginOfSafety?: number | null;
   originalValues?: {
     roe?: number | null;
     roic?: number | null;
     netMargin?: number | null;
-    eps?: number | null;
-    revenue?: number | null;
-    pe?: number | null;
-    pb?: number | null;
     price?: number | null;
     intrinsicValue?: number | null;
   };
@@ -231,7 +242,85 @@ const calculateSimplifiedIntrinsicValue = (
 // Sleep function for delays
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Analyze a single ticker by Buffett criteria
+// Helper: Calculate Years of Profitability
+const calculateYearsOfProfitability = (
+  incomeStatements: any[]
+): { total: number; last3Years: number } | null => {
+  if (!incomeStatements || incomeStatements.length < 3) return null;
+  
+  const statements = incomeStatements.slice(0, 10); // Up to 10 years
+  let profitableYears = 0;
+  let profitableLast3 = 0;
+  
+  statements.forEach((statement, index) => {
+    const netIncome = safeValue(statement.netIncome);
+    if (netIncome !== null && netIncome > 0) {
+      profitableYears++;
+      if (index < 3) profitableLast3++;
+    }
+  });
+  
+  return {
+    total: profitableYears,
+    last3Years: profitableLast3
+  };
+};
+
+// Helper: Calculate 5-Year CAGR
+const calculate5YearCAGR = (values: number[]): number | null => {
+  if (values.length < 5) return null;
+  
+  const startValue = values[4]; // 5 years ago
+  const endValue = values[0]; // Current
+  
+  if (startValue <= 0 || endValue <= 0) return null;
+  
+  const cagr = (Math.pow(endValue / startValue, 1/5) - 1) * 100;
+  return cagr;
+};
+
+// Helper: Calculate 3-Year Median
+const calculate3YearMedian = (values: number[]): number | null => {
+  if (values.length < 3) return null;
+  
+  const threeYears = [...values.slice(0, 3)].sort((a, b) => a - b);
+  return threeYears[1]; // Middle value
+};
+
+// Helper: Calculate Trend (for FCF Margin & ROIC)
+const calculateTrend = (values: number[]): 'steigend' | 'fallend' | 'stabil' | null => {
+  if (values.length < 3) return null;
+  
+  const current = values[0];
+  const previousAvg = values.slice(1, 3).reduce((sum, v) => sum + v, 0) / Math.min(2, values.length - 1);
+  
+  if (previousAvg === 0) return null;
+  const change = ((current - previousAvg) / Math.abs(previousAvg)) * 100;
+  
+  if (change > 5) return 'steigend';
+  if (change < -5) return 'fallend';
+  return 'stabil';
+};
+
+// Helper: Calculate FCF Margin
+const calculateFCFMargin = (fcf: number | null, revenue: number | null): number | null => {
+  if (revenue === null || revenue === 0 || fcf === null) return null;
+  return (fcf / revenue) * 100;
+};
+
+// Helper: Calculate Net Debt to EBITDA
+const calculateNetDebtToEbitda = (
+  totalDebt: number | null,
+  cash: number | null,
+  ebitda: number | null
+): number | null => {
+  if (ebitda === null || ebitda === 0) return null;
+  
+  const netDebt = (totalDebt || 0) - (cash || 0);
+  return netDebt / ebitda;
+};
+
+// Analyze a single ticker by Buffett criteria (NEW 9-CRITERIA VERSION)
 export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<QuantAnalysisResult | null> => {
   try {
     // Fetch all necessary data in parallel
@@ -242,14 +331,18 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       incomeStatements, 
       balanceSheets,
       keyMetrics,
+      keyMetricsHistorical,
+      cashFlowStatements,
       quote
     ] = await Promise.all([
       fetchFromFMP(`/ratios-ttm/${ticker}`),
       fetchFromFMP(`/ratios/${ticker}?limit=3`),
       fetchFromFMP(`/profile/${ticker}`),
-      fetchFromFMP(`/income-statement/${ticker}?limit=10`),
+      fetchFromFMP(`/income-statement/${ticker}?limit=10`), // 10 years for profitability
       fetchFromFMP(`/balance-sheet-statement/${ticker}?limit=5`),
       fetchFromFMP(`/key-metrics-ttm/${ticker}`),
+      fetchFromFMP(`/key-metrics/${ticker}?limit=5`), // For ROIC trend
+      fetchFromFMP(`/cash-flow-statement/${ticker}?limit=5`), // For FCF
       fetchFromFMP(`/quote/${ticker}`)
     ]);
 
@@ -268,115 +361,131 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     const stockCurrency = companyProfile.currency || 'USD';
     console.log(`Analyzing ${ticker} with currency: ${stockCurrency}`);
     
-    // Store original values before any currency conversion
+    // Store original values
+    const currentPrice = quoteData ? quoteData.price : 0;
     const originalValues = {
       roe: safeValue(ratios.returnOnEquityTTM) * 100,
       roic: metrics ? safeValue(metrics.roicTTM) * 100 : null,
       netMargin: safeValue(ratios.netProfitMarginTTM) * 100,
-      price: quoteData ? quoteData.price : 0
+      price: currentPrice
     };
 
-    // 1. ROE > 15%
-    const roe = safeValue(ratios.returnOnEquityTTM) * 100;
-    const roePass = roe !== null && roe > 15;
-
-    // 2. ROIC > 10%
-    const roic = metrics ? safeValue(metrics.roicTTM) * 100 : null;
-    const roicPass = roic !== null && roic > 10;
-
-    // 3. Net margin > 10%
-    const netMargin = safeValue(ratios.netProfitMarginTTM) * 100;
-    const netMarginPass = netMargin !== null && netMargin > 10;
-
-    // 4. Stable EPS growth
-    let epsGrowth = null;
-    let epsGrowthPass = false;
+    // ===== NEW 9 CRITERIA =====
     
-    if (incomeStatements && incomeStatements.length >= 3) {
-      const currentEps = safeValue(incomeStatements[0].eps);
-      const pastEps = safeValue(incomeStatements[2].eps);
-      
-      if (currentEps !== null && pastEps !== null && pastEps !== 0) {
-        epsGrowth = ((currentEps - pastEps) / Math.abs(pastEps)) * 100;
-        epsGrowthPass = epsGrowth > 0;
-      }
-    }
+    // 1. Years of Profitability ≥ 8/10 (or ≥ 6/10 + no losses in last 3Y)
+    const profitabilityYears = calculateYearsOfProfitability(incomeStatements);
+    const profitYearsPass = profitabilityYears 
+      ? (profitabilityYears.total >= 8) || 
+        (profitabilityYears.total >= 6 && profitabilityYears.last3Years === 3)
+      : false;
 
-    // 5. Stable revenue growth
-    let revenueGrowth = null;
-    let revenueGrowthPass = false;
-    
-    if (incomeStatements && incomeStatements.length >= 3) {
-      const currentRevenue = safeValue(incomeStatements[0].revenue);
-      const pastRevenue = safeValue(incomeStatements[2].revenue);
-      
-      if (currentRevenue !== null && pastRevenue !== null && pastRevenue !== 0) {
-        revenueGrowth = ((currentRevenue - pastRevenue) / pastRevenue) * 100;
-        revenueGrowthPass = revenueGrowth > 0;
-      }
-    }
-
-    // 6. Interest coverage > 5
-    const interestCoverage = safeValue(ratios.interestCoverageTTM);
-    const interestCoveragePass = interestCoverage !== null && interestCoverage > 5;
-
-    // 7. Debt ratio < 70%
-    let debtRatio = null;
-    let debtRatioPass = false;
-    
-    if (balanceSheets && balanceSheets.length > 0) {
-      const totalDebt = safeValue(balanceSheets[0].totalDebt) || 
-                       (safeValue(balanceSheets[0].shortTermDebt) + safeValue(balanceSheets[0].longTermDebt));
-      const totalAssets = safeValue(balanceSheets[0].totalAssets);
-      
-      if (totalDebt !== null && totalAssets !== null && totalAssets !== 0) {
-        debtRatio = (totalDebt / totalAssets) * 100;
-        debtRatioPass = debtRatio < 70;
-      }
-    }
-
-    // 8. P/E < 15
+    // 2. KGV < 20 (or > 20 with growth conditions)
     const pe = safeValue(ratios.priceEarningsRatioTTM);
-    const pePass = pe !== null && pe > 0 && pe < 15;
-
-    // 9. P/B < 1.5 (or < 3 for moat companies)
-    const pb = safeValue(ratios.priceToBookRatioTTM);
-    // Simplified: We assume companies with higher gross margin might have a moat
-    const hasMoat = safeValue(ratios.grossProfitMarginTTM) > 0.5; // 50% gross margin as a proxy for moat
-    const pbThreshold = hasMoat ? 3 : 1.5;
-    const pbPass = pb !== null && pb > 0 && pb < pbThreshold;
-
-    // 10. Dividend yield > 2%
-    let dividendYield = safeValue(ratios.dividendYieldTTM) * 100;
+    let pePass = pe !== null && pe > 0 && pe < 20; // Base rule
     
-    // Falls aktuelle Dividendenrendite 0 ist, versuche historische Daten
+    let revenueCagr5y: number | null = null;
+    let fcfMarginTrend: 'steigend' | 'fallend' | 'stabil' | null = null;
+    let roicTrend: 'steigend' | 'fallend' | 'stabil' | null = null;
+    let netDebtToEbitdaForPE: number | null = null;
+    
+    // Alternative for Growth: P/E > 20 allowed if all 4 conditions met
+    if (pe !== null && pe >= 20) {
+      // Revenue 5-Y CAGR
+      const revenueValues = incomeStatements.slice(0, 5)
+        .map(s => safeValue(s.revenue))
+        .filter(v => v !== null && v > 0) as number[];
+      revenueCagr5y = calculate5YearCAGR(revenueValues);
+      
+      // FCF Margin Trend
+      const fcfMargins: number[] = [];
+      for (let i = 0; i < Math.min(3, cashFlowStatements.length); i++) {
+        const fcf = safeValue(cashFlowStatements[i].freeCashFlow);
+        const revenue = incomeStatements[i] ? safeValue(incomeStatements[i].revenue) : null;
+        const margin = calculateFCFMargin(fcf, revenue);
+        if (margin !== null) fcfMargins.push(margin);
+      }
+      fcfMarginTrend = calculateTrend(fcfMargins);
+      
+      // ROIC Trend
+      const roicValues = keyMetricsHistorical
+        .slice(0, 3)
+        .map(m => safeValue(m.roic) * 100)
+        .filter(v => v !== null) as number[];
+      roicTrend = calculateTrend(roicValues);
+      
+      // NetDebt/EBITDA
+      netDebtToEbitdaForPE = calculateNetDebtToEbitda(
+        balanceSheets[0] ? safeValue(balanceSheets[0].totalDebt) : null,
+        balanceSheets[0] ? safeValue(balanceSheets[0].cashAndCashEquivalents) : null,
+        incomeStatements[0] ? safeValue(incomeStatements[0].ebitda) : null
+      );
+      
+      // All 4 conditions must be met
+      pePass = (revenueCagr5y !== null && revenueCagr5y >= 15) && 
+               fcfMarginTrend === 'steigend' && 
+               roicTrend === 'steigend' && 
+               netDebtToEbitdaForPE !== null && netDebtToEbitdaForPE <= 1;
+    }
+
+    // 3. ROIC ≥ 12%
+    const roic = metrics ? safeValue(metrics.roicTTM) * 100 : null;
+    const roicPass = roic !== null && roic >= 12;
+
+    // 4. ROE ≥ 15%
+    const roe = safeValue(ratios.returnOnEquityTTM) * 100;
+    const roePass = roe !== null && roe >= 15;
+
+    // 5. Dividend Yield > 2%
+    let dividendYield = safeValue(ratios.dividendYieldTTM) * 100;
     if (dividendYield === 0 && ratiosHistorical && ratiosHistorical.length > 1) {
-      const previousYearRatios = ratiosHistorical[1];
-      const previousDividendYield = safeValue(previousYearRatios.dividendYield) * 100;
+      const previousDividendYield = safeValue(ratiosHistorical[1].dividendYield) * 100;
       if (previousDividendYield > 0) {
         dividendYield = previousDividendYield;
-        console.log('Dividendenrendite aus Vorjahr verwendet (Quant):', dividendYield);
       }
     }
-    
     const dividendYieldPass = dividendYield !== null && dividendYield > 2;
 
-    // 11. Calculate Intrinsic Value and compare to current price
-    const currentPrice = quoteData ? quoteData.price : 0;
-    let intrinsicValueCalc = null;
-    let intrinsicValuePass = false;
-    let intrinsicValueWithMarginPass = false;
-    let marginOfSafety = null;
+    // 6. Stable EPS Growth (5-Y CAGR ≥ 5% + no negative 3-Y median)
+    const epsValues = incomeStatements.slice(0, 5)
+      .map(s => safeValue(s.eps))
+      .filter(v => v !== null && v > 0) as number[];
+    const epsCagr5y = calculate5YearCAGR(epsValues);
+    
+    const eps3yValues = incomeStatements.slice(0, 3)
+      .map(s => safeValue(s.eps))
+      .filter(v => v !== null) as number[];
+    const eps3yMedian = calculate3YearMedian(eps3yValues);
+    
+    const epsGrowthPass = epsCagr5y !== null && epsCagr5y >= 5 && 
+                          eps3yMedian !== null && eps3yMedian >= 0;
 
-    // Get additional data for intrinsic value calculation
+    // 7. Stable Revenue Growth (5-Y CAGR ≥ 5%)
+    const revenueValues = incomeStatements.slice(0, 5)
+      .map(s => safeValue(s.revenue))
+      .filter(v => v !== null && v > 0) as number[];
+    const revenueGrowthCagr = calculate5YearCAGR(revenueValues);
+    const revenueGrowthPass = revenueGrowthCagr !== null && revenueGrowthCagr >= 5;
+
+    // 8. NetDebt / EBITDA < 2.5
+    const netDebtToEbitda = calculateNetDebtToEbitda(
+      balanceSheets[0] ? safeValue(balanceSheets[0].totalDebt) : null,
+      balanceSheets[0] ? safeValue(balanceSheets[0].cashAndCashEquivalents) : null,
+      incomeStatements[0] ? safeValue(incomeStatements[0].ebitda) : null
+    );
+    const netDebtToEbitdaPass = netDebtToEbitda !== null && netDebtToEbitda < 2.5;
+
+    // 9. Net Margin ≥ 10%
+    const netMargin = safeValue(ratios.netProfitMarginTTM) * 100;
+    const netMarginPass = netMargin !== null && netMargin >= 10;
+
+    // Calculate Intrinsic Value (display only, NOT evaluated)
     const currentEps = incomeStatements && incomeStatements.length > 0 ? safeValue(incomeStatements[0].eps) : null;
     const bookValuePerShare = balanceSheets && balanceSheets.length > 0 ? 
       safeValue(balanceSheets[0].totalStockholdersEquity) / safeValue(companyProfile.mktCap / currentPrice) : null;
     const currentRevenue = incomeStatements && incomeStatements.length > 0 ? safeValue(incomeStatements[0].revenue) : null;
     const sharesOutstanding = safeValue(companyProfile.mktCap / currentPrice);
 
-    // Calculate intrinsic value using our simplified method
-    intrinsicValueCalc = calculateSimplifiedIntrinsicValue(
+    const intrinsicValueCalc = calculateSimplifiedIntrinsicValue(
       currentEps,
       bookValuePerShare, 
       pe,
@@ -385,32 +494,31 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       sharesOutstanding
     );
 
+    let marginOfSafety = null;
     if (intrinsicValueCalc !== null && currentPrice > 0) {
-      // Check if intrinsic value > current price (positive)
-      intrinsicValuePass = intrinsicValueCalc > currentPrice;
-      
-      // Check if intrinsic value with 20% margin > current price (even more positive)  
-      const intrinsicValueWith20PercentMargin = intrinsicValueCalc * 0.8; // 20% safety margin
-      intrinsicValueWithMarginPass = intrinsicValueWith20PercentMargin > currentPrice;
-      
-      // Calculate margin of safety percentage
       marginOfSafety = ((intrinsicValueCalc - currentPrice) / currentPrice) * 100;
-      
-      console.log(`${ticker}: Intrinsic Value: ${intrinsicValueCalc}, Price: ${currentPrice}, Margin of Safety: ${marginOfSafety?.toFixed(2)}%`);
     }
 
-    // Store original intrinsic value
+    // Store intrinsic value
     const updatedOriginalValues = {
       ...originalValues,
       intrinsicValue: intrinsicValueCalc
     };
 
-    // Calculate Buffett Score (1 point per criterion met) - now 12 criteria total
+    // Calculate Buffett Score (max 9 points)
     const buffettScore = [
-      roePass, roicPass, netMarginPass, epsGrowthPass, revenueGrowthPass,
-      interestCoveragePass, debtRatioPass, pePass, pbPass, dividendYieldPass,
-      intrinsicValuePass, intrinsicValueWithMarginPass
+      profitYearsPass,
+      pePass,
+      roicPass,
+      roePass,
+      dividendYieldPass,
+      epsGrowthPass,
+      revenueGrowthPass,
+      netDebtToEbitdaPass,
+      netMarginPass
     ].filter(Boolean).length;
+
+    console.log(`${ticker} Score: ${buffettScore}/9 - Profitable years: ${profitabilityYears?.total}/10, P/E: ${pe}, ROIC: ${roic}%, ROE: ${roe}%`);
 
     return {
       symbol: ticker,
@@ -419,18 +527,33 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       sector: companyProfile.sector || 'Unknown',
       buffettScore,
       criteria: {
-        roe: { value: roe, pass: roePass },
+        yearsOfProfitability: { 
+          value: profitabilityYears?.total || null, 
+          pass: profitYearsPass,
+          profitableYearsLast3: profitabilityYears?.last3Years || null
+        },
+        pe: { 
+          value: pe, 
+          pass: pePass,
+          revenueCagr5y,
+          fcfMarginTrend,
+          roicTrend,
+          netDebtToEbitda: netDebtToEbitdaForPE
+        },
         roic: { value: roic, pass: roicPass },
-        netMargin: { value: netMargin, pass: netMarginPass },
-        epsGrowth: { value: epsGrowth, pass: epsGrowthPass },
-        revenueGrowth: { value: revenueGrowth, pass: revenueGrowthPass },
-        interestCoverage: { value: interestCoverage, pass: interestCoveragePass },
-        debtRatio: { value: debtRatio, pass: debtRatioPass },
-        pe: { value: pe, pass: pePass },
-        pb: { value: pb, pass: pbPass },
+        roe: { value: roe, pass: roePass },
         dividendYield: { value: dividendYield, pass: dividendYieldPass },
-        intrinsicValue: { value: intrinsicValueCalc, pass: intrinsicValuePass },
-        intrinsicValueWithMargin: { value: intrinsicValueCalc ? intrinsicValueCalc * 0.8 : null, pass: intrinsicValueWithMarginPass }
+        epsGrowth: { 
+          value: epsCagr5y, 
+          pass: epsGrowthPass,
+          median3y: eps3yMedian
+        },
+        revenueGrowth: { 
+          value: revenueGrowthCagr, 
+          pass: revenueGrowthPass 
+        },
+        netDebtToEbitda: { value: netDebtToEbitda, pass: netDebtToEbitdaPass },
+        netMargin: { value: netMargin, pass: netMarginPass }
       },
       price: currentPrice,
       currency: stockCurrency,
@@ -519,33 +642,47 @@ export const analyzeExchange = analyzeMarket;
 // Exportieren der CSV-Datei
 export const exportToCsv = (results: QuantAnalysisResult[]) => {
   const headers = [
-    'Symbol', 'Name', 'Exchange', 'Sector', 'Buffett Score',
-    'ROE (%)', 'ROIC (%)', 'Net Margin (%)', 'EPS Growth (%)', 'Revenue Growth (%)',
-    'Interest Coverage', 'Debt Ratio (%)', 'P/E', 'P/B', 'Dividend Yield (%)',
-    'Intrinsic Value', 'Intrinsic Value with Margin', 'Price', 'Currency', 'Margin of Safety (%)'
+    'Symbol', 'Name', 'Sektor', 'Börse', 'Preis', 'Währung',
+    'Buffett Score (max 9)',
+    'Innerer Wert (Info)',
+    'Jahre Profitabel (von 10)', 'Pass',
+    'KGV', 'Pass',
+    'ROIC (%)', 'Pass',
+    'ROE (%)', 'Pass',
+    'Dividende (%)', 'Pass',
+    'EPS Wachstum 5J CAGR (%)', 'Pass',
+    'Umsatz Wachstum 5J CAGR (%)', 'Pass',
+    'NetDebt/EBITDA', 'Pass',
+    'Nettomarge (%)', 'Pass'
   ];
   
   const rows = results.map(result => [
     result.symbol,
     result.name,
-    result.exchange,
     result.sector,
-    result.buffettScore,
-    result.criteria.roe.value !== null ? result.criteria.roe.value.toFixed(2) : 'N/A',
-    result.criteria.roic.value !== null ? result.criteria.roic.value.toFixed(2) : 'N/A',
-    result.criteria.netMargin.value !== null ? result.criteria.netMargin.value.toFixed(2) : 'N/A',
-    result.criteria.epsGrowth.value !== null ? result.criteria.epsGrowth.value.toFixed(2) : 'N/A',
-    result.criteria.revenueGrowth.value !== null ? result.criteria.revenueGrowth.value.toFixed(2) : 'N/A',
-    result.criteria.interestCoverage.value !== null ? result.criteria.interestCoverage.value.toFixed(2) : 'N/A',
-    result.criteria.debtRatio.value !== null ? result.criteria.debtRatio.value.toFixed(2) : 'N/A',
-    result.criteria.pe.value !== null ? result.criteria.pe.value.toFixed(2) : 'N/A',
-    result.criteria.pb.value !== null ? result.criteria.pb.value.toFixed(2) : 'N/A',
-    result.criteria.dividendYield.value !== null ? result.criteria.dividendYield.value.toFixed(2) : 'N/A',
-    result.criteria.intrinsicValue.value !== null ? result.criteria.intrinsicValue.value.toFixed(2) : 'N/A',
-    result.criteria.intrinsicValueWithMargin.value !== null ? result.criteria.intrinsicValueWithMargin.value.toFixed(2) : 'N/A',
+    result.exchange,
     result.price.toFixed(2),
     result.currency,
-    result.marginOfSafety !== null ? result.marginOfSafety.toFixed(2) : 'N/A'
+    result.buffettScore,
+    result.intrinsicValue?.toFixed(2) || 'N/A',
+    result.criteria.yearsOfProfitability.value || 'N/A',
+    result.criteria.yearsOfProfitability.pass ? 'Ja' : 'Nein',
+    result.criteria.pe.value !== null ? result.criteria.pe.value.toFixed(2) : 'N/A',
+    result.criteria.pe.pass ? 'Ja' : 'Nein',
+    result.criteria.roic.value !== null ? result.criteria.roic.value.toFixed(2) : 'N/A',
+    result.criteria.roic.pass ? 'Ja' : 'Nein',
+    result.criteria.roe.value !== null ? result.criteria.roe.value.toFixed(2) : 'N/A',
+    result.criteria.roe.pass ? 'Ja' : 'Nein',
+    result.criteria.dividendYield.value !== null ? result.criteria.dividendYield.value.toFixed(2) : 'N/A',
+    result.criteria.dividendYield.pass ? 'Ja' : 'Nein',
+    result.criteria.epsGrowth.value !== null ? result.criteria.epsGrowth.value.toFixed(2) : 'N/A',
+    result.criteria.epsGrowth.pass ? 'Ja' : 'Nein',
+    result.criteria.revenueGrowth.value !== null ? result.criteria.revenueGrowth.value.toFixed(2) : 'N/A',
+    result.criteria.revenueGrowth.pass ? 'Ja' : 'Nein',
+    result.criteria.netDebtToEbitda.value !== null ? result.criteria.netDebtToEbitda.value.toFixed(2) : 'N/A',
+    result.criteria.netDebtToEbitda.pass ? 'Ja' : 'Nein',
+    result.criteria.netMargin.value !== null ? result.criteria.netMargin.value.toFixed(2) : 'N/A',
+    result.criteria.netMargin.pass ? 'Ja' : 'Nein'
   ]);
   
   const csvContent = [

@@ -55,87 +55,75 @@ interface QuantAnalysisTableProps {
 }
 
 const metricsDefinitions = {
-  roe: {
-    name: "ROE (Eigenkapitalrendite)",
-    definition: "Misst, wie effizient das Eigenkapital für die Generierung von Gewinnen genutzt wird.",
-    target: "> 15%",
-    formula: "Jahresüberschuss ÷ Eigenkapital"
+  yearsOfProfitability: {
+    name: "Profitabilität",
+    definition: "Anzahl profitabler Jahre in den letzten 10 Jahren",
+    target: "≥ 8/10 oder ≥ 6/10 + keine Verluste in letzten 3J",
+    formula: "Anzahl Jahre mit NetIncome > 0"
+  },
+  pe: {
+    name: "KGV",
+    definition: "Kurs-Gewinn-Verhältnis mit Growth-Exception",
+    target: "< 20 (Reife) oder > 20 bei Growth-Kriterien",
+    formula: "Preis ÷ EPS"
   },
   roic: {
-    name: "ROIC (Kapitalrendite)",
-    definition: "Zeigt, wie effizient das Gesamtkapital (inkl. Fremdkapital) eingesetzt wird.",
-    target: "> 10%",
+    name: "ROIC",
+    definition: "Return on Invested Capital",
+    target: "≥ 12%",
     formula: "NOPAT ÷ Investiertes Kapital"
   },
-  netMargin: {
-    name: "Nettomarge",
-    definition: "Prozentsatz des Umsatzes, der als Gewinn übrig bleibt.",
-    target: "> 10%",
-    formula: "Jahresüberschuss ÷ Umsatz"
+  roe: {
+    name: "ROE",
+    definition: "Eigenkapitalrendite",
+    target: "≥ 15%",
+    formula: "Nettogewinn ÷ Eigenkapital"
+  },
+  dividendYield: {
+    name: "Dividende",
+    definition: "Dividendenrendite",
+    target: "> 2%",
+    formula: "Jährliche Dividende ÷ Preis"
   },
   epsGrowth: {
     name: "EPS-Wachstum",
-    definition: "Wachstum des Gewinns pro Aktie über Zeit.",
-    target: "positiv",
-    formula: "Aktueller EPS ÷ Vorjahres-EPS - 1"
+    definition: "5-Jahres EPS CAGR mit Stabilitäts-Check",
+    target: "5-J CAGR ≥ 5% & 3-J Median nicht negativ",
+    formula: "EPS CAGR über 5 Jahre"
   },
   revenueGrowth: {
-    name: "Umsatzwachstum",
-    definition: "Wachstum des Gesamtumsatzes über Zeit.",
-    target: "positiv",
-    formula: "Aktueller Umsatz ÷ Vorjahres-Umsatz - 1"
+    name: "Umsatz-Wachstum",
+    definition: "5-Jahres Umsatz CAGR",
+    target: "≥ 5%",
+    formula: "Umsatz CAGR über 5 Jahre"
   },
-  interestCoverage: {
-    name: "Zinsdeckungsgrad",
-    definition: "Fähigkeit des Unternehmens, Zinsen aus dem operativen Gewinn zu bedienen.",
-    target: "> 5",
-    formula: "EBIT ÷ Zinsaufwand"
+  netDebtToEbitda: {
+    name: "Verschuldung",
+    definition: "Nettoverschuldung zu EBITDA",
+    target: "< 2,5",
+    formula: "(Total Debt - Cash) ÷ EBITDA"
   },
-  debtRatio: {
-    name: "Schuldenquote",
-    definition: "Verhältnis der Gesamtverschuldung zur Bilanzsumme.",
-    target: "< 70%",
-    formula: "Gesamtschulden ÷ Bilanzsumme"
-  },
-  pe: {
-    name: "KGV (Kurs-Gewinn-Verhältnis)",
-    definition: "Verhältnis zwischen Aktienkurs und Gewinn pro Aktie.",
-    target: "< 15",
-    formula: "Aktienkurs ÷ Gewinn pro Aktie"
-  },
-  pb: {
-    name: "P/B (Kurs-Buchwert-Verhältnis)",
-    definition: "Verhältnis zwischen Aktienkurs und Buchwert pro Aktie.",
-    target: "< 1.5 (bis 3 bei starken Margen)",
-    formula: "Aktienkurs ÷ Buchwert pro Aktie"
-  },
-  dividendYield: {
-    name: "Dividendenrendite",
-    definition: "Jährliche Dividendenzahlung im Verhältnis zum Aktienkurs.",
-    target: "> 2%",
-    formula: "Jährliche Dividende pro Aktie ÷ Aktienkurs"
+  netMargin: {
+    name: "Nettomarge",
+    definition: "Gewinnmarge",
+    target: "≥ 10%",
+    formula: "Nettogewinn ÷ Umsatz"
   },
   intrinsicValue: {
     name: "Innerer Wert",
-    definition: "Vereinfachte Berechnung des intrinsischen Wertes mittels Graham-Zahl und P/E-basierter Bewertung.",
-    target: "Innerer Wert > Aktienkurs",
-    formula: "Median aus Graham-Zahl, P/E-basiert (12x), Umsatz-basiert"
-  },
-  intrinsicValueWithMargin: {
-    name: "Sicherheitsmarge (20%)",
-    definition: "Innerer Wert mit 20% Sicherheitsmarge nach Buffetts Prinzip.",
-    target: "Innerer Wert × 0.8 > Aktienkurs", 
-    formula: "Innerer Wert × 0.8"
+    definition: "Geschätzter fairer Wert (nur Info, keine Bewertung)",
+    target: "-",
+    formula: "Graham + DCF vereinfacht"
   }
 };
 
 const BuffettScoreBadge = ({ score }: { score: number }) => {
-  if (score >= 9) {
-    return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">🟢 Kandidat</Badge>;
-  } else if (score >= 6) {
-    return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">🟡 Beobachten</Badge>;
-  } else {
-    return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">🔴 Vermeiden</Badge>;
+  if (score >= 7) { // 7-9
+    return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Kandidat</Badge>;
+  } else if (score >= 5) { // 5-6
+    return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Beobachten</Badge>;
+  } else { // 0-4
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Vermeiden</Badge>;
   }
 };
 
@@ -258,17 +246,33 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           valueA = a.sector;
           valueB = b.sector;
           break;
-        case 'roe':
-          valueA = a.criteria.roe.value || -9999;
-          valueB = b.criteria.roe.value || -9999;
+        case 'price':
+          valueA = a.price;
+          valueB = b.price;
+          break;
+        case 'intrinsicValue':
+          valueA = a.intrinsicValue || -9999;
+          valueB = b.intrinsicValue || -9999;
+          break;
+        case 'yearsOfProfitability':
+          valueA = a.criteria.yearsOfProfitability.value || -1;
+          valueB = b.criteria.yearsOfProfitability.value || -1;
+          break;
+        case 'pe':
+          valueA = a.criteria.pe.value || 9999;
+          valueB = b.criteria.pe.value || 9999;
           break;
         case 'roic':
           valueA = a.criteria.roic.value || -9999;
           valueB = b.criteria.roic.value || -9999;
           break;
-        case 'netMargin':
-          valueA = a.criteria.netMargin.value || -9999;
-          valueB = b.criteria.netMargin.value || -9999;
+        case 'roe':
+          valueA = a.criteria.roe.value || -9999;
+          valueB = b.criteria.roe.value || -9999;
+          break;
+        case 'dividendYield':
+          valueA = a.criteria.dividendYield.value || -9999;
+          valueB = b.criteria.dividendYield.value || -9999;
           break;
         case 'epsGrowth':
           valueA = a.criteria.epsGrowth.value || -9999;
@@ -278,33 +282,13 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           valueA = a.criteria.revenueGrowth.value || -9999;
           valueB = b.criteria.revenueGrowth.value || -9999;
           break;
-        case 'interestCoverage':
-          valueA = a.criteria.interestCoverage.value || -9999;
-          valueB = b.criteria.interestCoverage.value || -9999;
+        case 'netDebtToEbitda':
+          valueA = a.criteria.netDebtToEbitda.value || 9999;
+          valueB = b.criteria.netDebtToEbitda.value || 9999;
           break;
-        case 'debtRatio':
-          valueA = a.criteria.debtRatio.value || 9999;
-          valueB = b.criteria.debtRatio.value || 9999;
-          break;
-        case 'pe':
-          valueA = a.criteria.pe.value || 9999;
-          valueB = b.criteria.pe.value || 9999;
-          break;
-        case 'pb':
-          valueA = a.criteria.pb.value || 9999;
-          valueB = b.criteria.pb.value || 9999;
-          break;
-        case 'dividendYield':
-          valueA = a.criteria.dividendYield.value || -9999;
-          valueB = b.criteria.dividendYield.value || -9999;
-          break;
-        case 'intrinsicValue':
-          valueA = a.criteria.intrinsicValue.value || -9999;
-          valueB = b.criteria.intrinsicValue.value || -9999;
-          break;
-        case 'intrinsicValueWithMargin':
-          valueA = a.criteria.intrinsicValueWithMargin.value || -9999;
-          valueB = b.criteria.intrinsicValueWithMargin.value || -9999;
+        case 'netMargin':
+          valueA = a.criteria.netMargin.value || -9999;
+          valueB = b.criteria.netMargin.value || -9999;
           break;
         default:
           valueA = a.buffettScore;
@@ -446,17 +430,43 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               />
               <SortableHeader 
                 field="buffettScore" 
-                name="Buffett Score" 
-                tooltipText="Erfüllte Buffett-Kriterien (max. 12 Punkte)"
+                name="Score" 
+                tooltipText="Erfüllte Kriterien (max. 9)"
+                sortField={sortField}
+                sortDirection={sortDirection}
+                setSortField={setSortField}
+                setSortDirection={setSortDirection}
+              />
+              <SortableHeader
+                field="price" 
+                name="Preis" 
                 sortField={sortField}
                 sortDirection={sortDirection}
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
               <SortableHeader 
-                field="roe" 
-                name="ROE" 
-                tooltipText={`${metricsDefinitions.roe.definition} Ziel: ${metricsDefinitions.roe.target}`}
+                field="intrinsicValue" 
+                name="Innerer Wert" 
+                tooltipText={metricsDefinitions.intrinsicValue.definition}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                setSortField={setSortField}
+                setSortDirection={setSortDirection}
+              />
+              <SortableHeader 
+                field="yearsOfProfitability" 
+                name="Jahre +" 
+                tooltipText={`${metricsDefinitions.yearsOfProfitability.definition} Ziel: ${metricsDefinitions.yearsOfProfitability.target}`}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                setSortField={setSortField}
+                setSortDirection={setSortDirection}
+              />
+              <SortableHeader
+                field="pe" 
+                name="KGV" 
+                tooltipText={`${metricsDefinitions.pe.definition} Ziel: ${metricsDefinitions.pe.target}`}
                 sortField={sortField}
                 sortDirection={sortDirection}
                 setSortField={setSortField}
@@ -472,9 +482,18 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortDirection={setSortDirection}
               />
               <SortableHeader 
-                field="netMargin" 
-                name="Marge" 
-                tooltipText={`${metricsDefinitions.netMargin.definition} Ziel: ${metricsDefinitions.netMargin.target}`}
+                field="roe" 
+                name="ROE" 
+                tooltipText={`${metricsDefinitions.roe.definition} Ziel: ${metricsDefinitions.roe.target}`}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                setSortField={setSortField}
+                setSortDirection={setSortDirection}
+              />
+              <SortableHeader 
+                field="dividendYield" 
+                name="Div %" 
+                tooltipText={`${metricsDefinitions.dividendYield.definition} Ziel: ${metricsDefinitions.dividendYield.target}`}
                 sortField={sortField}
                 sortDirection={sortDirection}
                 setSortField={setSortField}
@@ -499,75 +518,29 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortDirection={setSortDirection}
               />
               <SortableHeader 
-                field="interestCoverage" 
-                name="Zinsdeckung" 
-                tooltipText={`${metricsDefinitions.interestCoverage.definition} Ziel: ${metricsDefinitions.interestCoverage.target}`}
+                field="netDebtToEbitda" 
+                name="Schulden" 
+                tooltipText={`${metricsDefinitions.netDebtToEbitda.definition} Ziel: ${metricsDefinitions.netDebtToEbitda.target}`}
                 sortField={sortField}
                 sortDirection={sortDirection}
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
               <SortableHeader 
-                field="debtRatio" 
-                name="Schulden %" 
-                tooltipText={`${metricsDefinitions.debtRatio.definition} Ziel: ${metricsDefinitions.debtRatio.target}`}
+                field="netMargin" 
+                name="Marge" 
+                tooltipText={`${metricsDefinitions.netMargin.definition} Ziel: ${metricsDefinitions.netMargin.target}`}
                 sortField={sortField}
                 sortDirection={sortDirection}
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
-              <SortableHeader
-                field="pe" 
-                name="KGV" 
-                tooltipText={`${metricsDefinitions.pe.definition} Ziel: ${metricsDefinitions.pe.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-              <SortableHeader 
-                field="pb" 
-                name="KBV" 
-                tooltipText={`${metricsDefinitions.pb.definition} Ziel: ${metricsDefinitions.pb.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-              <SortableHeader 
-                field="dividendYield" 
-                name="Div %" 
-                tooltipText={`${metricsDefinitions.dividendYield.definition} Ziel: ${metricsDefinitions.dividendYield.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-              <SortableHeader 
-                field="intrinsicValue" 
-                name="Innerer Wert" 
-                tooltipText={`${metricsDefinitions.intrinsicValue.definition} Ziel: ${metricsDefinitions.intrinsicValue.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-              <SortableHeader 
-                field="intrinsicValueWithMargin" 
-                name="Sicherheit" 
-                tooltipText={`${metricsDefinitions.intrinsicValueWithMargin.definition} Ziel: ${metricsDefinitions.intrinsicValueWithMargin.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-              <TableHead>Preis</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={17} className="text-center py-8">
+                <TableCell colSpan={15} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
                     <span>Analyse läuft...</span>
@@ -576,7 +549,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableRow>
             ) : filteredResults.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={17} className="text-center py-8">
+                <TableCell colSpan={15} className="text-center py-8">
                   Keine Ergebnisse gefunden
                 </TableCell>
               </TableRow>
@@ -625,14 +598,26 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   <TableCell>{stock.sector}</TableCell>
                   <TableCell>
                     <div className="flex items-center">
-                      <span className="mr-2">{stock.buffettScore}/12</span>
+                      <span className="mr-2">{stock.buffettScore}/9</span>
                       <BuffettScoreBadge score={stock.buffettScore} />
                     </div>
                   </TableCell>
                   <TableCell>
+                    {stock.price?.toFixed(2)} {stock.currency}
+                  </TableCell>
+                  <TableCell>
+                    <span>{stock.intrinsicValue ? stock.intrinsicValue.toFixed(2) : 'N/A'}</span>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.roe.pass} value={stock.criteria.roe.value} />
-                      <span>{formatValue(stock.criteria.roe.value)}</span>
+                      <StatusIcon passed={stock.criteria.yearsOfProfitability.pass} value={stock.criteria.yearsOfProfitability.value} />
+                      <span>{stock.criteria.yearsOfProfitability.value || 'N/A'}/10</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.pe.pass} value={stock.criteria.pe.value} />
+                      <span>{formatValue(stock.criteria.pe.value, 1, false)}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -643,8 +628,14 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.netMargin.pass} value={stock.criteria.netMargin.value} />
-                      <span>{formatValue(stock.criteria.netMargin.value)}</span>
+                      <StatusIcon passed={stock.criteria.roe.pass} value={stock.criteria.roe.value} />
+                      <span>{formatValue(stock.criteria.roe.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.dividendYield.pass} value={stock.criteria.dividendYield.value} />
+                      <span>{formatValue(stock.criteria.dividendYield.value)}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -661,58 +652,15 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.interestCoverage.pass} value={stock.criteria.interestCoverage.value} />
-                      <span>{formatValue(stock.criteria.interestCoverage.value, 1, false)}</span>
+                      <StatusIcon passed={stock.criteria.netDebtToEbitda.pass} value={stock.criteria.netDebtToEbitda.value} />
+                      <span>{formatValue(stock.criteria.netDebtToEbitda.value, 2, false)}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.debtRatio.pass} value={stock.criteria.debtRatio.value} />
-                      <span>{formatValue(stock.criteria.debtRatio.value)}</span>
+                      <StatusIcon passed={stock.criteria.netMargin.pass} value={stock.criteria.netMargin.value} />
+                      <span>{formatValue(stock.criteria.netMargin.value)}</span>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.pe.pass} value={stock.criteria.pe.value} />
-                      <span>{formatValue(stock.criteria.pe.value, 1, false)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.pb.pass} value={stock.criteria.pb.value} />
-                      <span>{formatValue(stock.criteria.pb.value, 1, false)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.dividendYield.pass} value={stock.criteria.dividendYield.value} />
-                      <span>{formatValue(stock.criteria.dividendYield.value)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.intrinsicValue.pass} value={stock.criteria.intrinsicValue.value} />
-                      <span className="text-xs">
-                        {stock.criteria.intrinsicValue.value !== null ? 
-                          `${stock.criteria.intrinsicValue.value.toFixed(2)} vs ${stock.price.toFixed(2)}` : 
-                          'N/A'
-                        }
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.intrinsicValueWithMargin.pass} value={stock.criteria.intrinsicValueWithMargin.value} />
-                      <span className="text-xs">
-                        {stock.marginOfSafety !== null ? 
-                          `${stock.marginOfSafety.toFixed(1)}%` : 
-                          'N/A'
-                        }
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {stock.price?.toFixed(2)} {stock.currency}
                   </TableCell>
                 </TableRow>
               ))

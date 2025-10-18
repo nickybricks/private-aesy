@@ -255,9 +255,9 @@ const BuffettQuantAnalyzer = () => {
               <Clock className="h-4 w-4 mr-1 inline" />
               Geschätzte Analysezeit: <span className="font-medium ml-1">{estimatedTime}</span>
             </p>
-            <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-400 mt-1">
               Die Analyse läuft in Batches mit Wartezeiten, um API-Limits zu umgehen.
-            </p>
+          </p>
           </div>
           
           <div>
@@ -285,7 +285,7 @@ const BuffettQuantAnalyzer = () => {
           </div>
           <Progress value={progress} className="h-2" />
           <p className="text-xs text-gray-500 mt-2">
-            Die Analyse läuft in Batches von 50 Aktien mit 65 Sekunden Wartezeit zwischen den Batches.
+            Die Analyse läuft in Batches von 100 Aktien mit 60 Sekunden Wartezeit zwischen den Batches.
           </p>
         </div>
       )}
@@ -300,7 +300,7 @@ const BuffettQuantAnalyzer = () => {
         <h2 className="text-xl font-semibold mb-4">Über den Boersen Analyzer</h2>
         <p className="text-gray-600 mb-4">
           Der Aesy Boersen Analyzer bewertet Aktien ausschließlich auf Basis von harten Finanzkennzahlen, 
-          gemäß bewährten Investmentprinzipien. Für jedes der 12 Kriterien wird 1 Punkt vergeben, 
+          gemäß bewährten Investmentprinzipien. Für jedes der 9 Kriterien wird 1 Punkt vergeben, 
           wenn die Aktie den Zielwert erreicht.
         </p>
         
@@ -308,18 +308,15 @@ const BuffettQuantAnalyzer = () => {
           <div>
             <h3 className="font-semibold mb-2">Bewertungskriterien:</h3>
             <ul className="list-disc pl-6 text-gray-600 space-y-1">
-              <li>ROE (Eigenkapitalrendite) &gt; 15%</li>
-              <li>ROIC (Kapitalrendite) &gt; 10%</li>
-              <li>Nettomarge &gt; 10%</li>
-              <li>Stabiles EPS-Wachstum (positiv)</li>
-              <li>Stabiles Umsatzwachstum (positiv)</li>
-              <li>Zinsdeckungsgrad &gt; 5</li>
-              <li>Schuldenquote &lt; 70%</li>
-              <li>KGV (P/E) &lt; 15</li>
-              <li>P/B &lt; 1.5 (oder &lt; 3 bei starker Marge)</li>
+              <li>Years of Profitability ≥ 8/10 (oder ≥ 6/10 + keine Verluste in letzten 3J)</li>
+              <li>KGV &lt; 20 für Reife; oder &gt; 20 bei Umsatz-CAGR ≥ 15%, FCF-Marge ↑, ROIC ↑, NetDebt/EBITDA ≤ 1</li>
+              <li>ROIC ≥ 12%</li>
+              <li>ROE ≥ 15%</li>
               <li>Dividendenrendite &gt; 2%</li>
-              <li><strong>Innerer Wert &gt; Aktienkurs</strong></li>
-              <li><strong>Innerer Wert mit 20% Sicherheitsmarge &gt; Aktienkurs</strong></li>
+              <li>Stabiles EPS-Wachstum (5-J CAGR ≥ 5%, kein negativer 3-J Median)</li>
+              <li>Stabiles Umsatzwachstum (5-J CAGR ≥ 5%)</li>
+              <li>NetDebt / EBITDA &lt; 2,5</li>
+              <li>Nettomarge ≥ 10%</li>
             </ul>
           </div>
           
@@ -327,16 +324,16 @@ const BuffettQuantAnalyzer = () => {
             <h3 className="font-semibold mb-2">Bewertungslegende:</h3>
             <ul className="pl-6 text-gray-600 space-y-2">
               <li className="flex items-center">
-                <Badge className="bg-green-100 text-green-800 mr-2">🟢 Kandidat</Badge>
-                <span>Score 9-12: Starke Buffett-Kandidaten</span>
+                <Badge className="bg-green-100 text-green-800 mr-2">Kandidat</Badge>
+                <span>Score 7-9: Hochqualitative Aktien mit starkem Value</span>
               </li>
               <li className="flex items-center">
-                <Badge className="bg-yellow-100 text-yellow-800 mr-2">🟡 Beobachten</Badge>
-                <span>Score 6-8: Moderate Buffett-Konformität</span>
+                <Badge className="bg-yellow-100 text-yellow-800 mr-2">Beobachten</Badge>
+                <span>Score 5-6: Interessante Aktien, weitere Analyse nötig</span>
               </li>
               <li className="flex items-center">
-                <Badge className="bg-red-100 text-red-800 mr-2">🔴 Vermeiden</Badge>
-                <span>Score &lt;6: Nicht Buffett-konform</span>
+                <Badge className="bg-red-100 text-red-800 mr-2">Vermeiden</Badge>
+                <span>Score &lt;5: Erfüllt zu wenige Qualitätskriterien</span>
               </li>
             </ul>
           </div>
@@ -345,8 +342,8 @@ const BuffettQuantAnalyzer = () => {
         <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h3 className="font-semibold mb-2 text-blue-800">Batch-Verarbeitung</h3>
           <p className="text-blue-700 text-sm">
-            Um API-Limits zu umgehen, läuft die Analyse in Batches von 50 Aktien. 
-            Zwischen den Batches wird 65 Sekunden gewartet, um das 300-Calls/Minute-Limit zu respektieren. 
+            Um API-Limits zu umgehen, läuft die Analyse in Batches von 100 Aktien. 
+            Zwischen den Batches wird 60 Sekunden gewartet, um das 750-Calls/Minute-Limit zu respektieren. 
             Dies ermöglicht die Analyse von deutlich mehr Aktien als zuvor.
           </p>
         </div>
