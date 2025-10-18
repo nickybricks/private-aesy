@@ -75,13 +75,28 @@ const BuffettQuantAnalyzer = () => {
     
     if (savedResults) {
       try {
-        setResults(JSON.parse(savedResults));
+        const parsedResults = JSON.parse(savedResults);
+        
+        // Validate that results have the new 9-criteria structure
+        const expectedCriteria = ['yearsOfProfitability', 'pe', 'roic', 'roe', 'dividendYield', 'epsGrowth', 'revenueGrowth', 'netDebtToEbitda', 'netMargin'];
+        const isValidStructure = parsedResults.length > 0 && parsedResults[0].criteria && 
+          expectedCriteria.every(key => parsedResults[0].criteria.hasOwnProperty(key));
+        
+        if (isValidStructure) {
+          setResults(parsedResults);
+        } else {
+          // Old structure detected, clear sessionStorage
+          console.log('Old data structure detected, clearing cache');
+          sessionStorage.removeItem('quantAnalyzerResults');
+          sessionStorage.removeItem('quantAnalyzerHasAnalyzed');
+        }
       } catch (e) {
         console.error('Failed to parse saved results:', e);
+        sessionStorage.removeItem('quantAnalyzerResults');
       }
     }
     
-    if (savedHasAnalyzed === 'true') {
+    if (savedHasAnalyzed === 'true' && results.length > 0) {
       setHasAnalyzed(true);
     }
     
