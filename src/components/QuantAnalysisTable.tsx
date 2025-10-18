@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Check, AlertTriangle, X, Info, HelpCircle, AlertCircle, CheckCircle2, XCircle, ArrowUp, ArrowDown, MoreHorizontal, TrendingUp, Plus } from 'lucide-react';
+import { Check, AlertTriangle, X, Info, HelpCircle, AlertCircle, CheckCircle2, XCircle, ArrowUp, ArrowDown, MoreHorizontal, TrendingUp, Plus, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useWatchlists } from '@/hooks/useWatchlists';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +45,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { QuantAnalysisResult } from '@/api/quantAnalyzerApi';
+import { QuantAnalysisResult, exportToCsv } from '@/api/quantAnalyzerApi';
 import { useUserStocks } from '@/hooks/useUserStocks';
 import { addStockToWatchlist } from '@/utils/watchlistService';
 
@@ -383,14 +383,27 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Buffett Aktienbewertung</h2>
           
-          <div className="w-64">
-            <Input
-              type="text"
-              placeholder="Suche nach Aktie oder Sektor..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-            />
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={() => exportToCsv(filteredResults)}
+              variant="outline"
+              size="sm"
+              disabled={filteredResults.length === 0}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              CSV Export
+            </Button>
+            
+            <div className="w-64">
+              <Input
+                type="text"
+                placeholder="Suche nach Aktie oder Sektor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
           </div>
         </div>
         
