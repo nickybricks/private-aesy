@@ -120,7 +120,8 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
 
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
-      <p className="font-semibold">ROE = Gewinn / Eigenkapital</p>
+      <p className="font-semibold">Eigenkapitalrendite = Gewinn / Eigenkapital</p>
+      <p className="text-sm text-muted-foreground">(ROE = Return on Equity)</p>
       <p className="text-sm">
         Sagt, wie viel Gewinn ein Unternehmen pro eingesetztem Eigenkapital erwirtschaftet.
       </p>
@@ -147,7 +148,7 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
     <Card className={`p-4 border-2 ${getBgColorByRatio(score, maxScore)}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">ROE (Eigenkapitalrendite)</h3>
+          <h3 className="font-semibold text-lg">Eigenkapitalrendite (ROE)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
