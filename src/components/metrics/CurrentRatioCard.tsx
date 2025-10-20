@@ -159,7 +159,8 @@ export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue
 
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
-      <p className="font-semibold">Current Ratio = Umlaufvermögen / kurzfristige Verbindlichkeiten</p>
+      <p className="font-semibold">Liquidität = Umlaufvermögen / kurzfristige Verbindlichkeiten</p>
+      <p className="text-sm text-muted-foreground">(Current Ratio = Current Assets / Current Liabilities)</p>
       <p className="text-sm">
         Sie zeigt, ob die <strong>kurzfristigen Vermögenswerte</strong> (Kasse, Forderungen, Vorräte etc.) ausreichen, 
         um die <strong>kurzfristigen Schulden</strong> (innerhalb 12 Monate fällig) zu decken.
@@ -202,7 +203,7 @@ export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({ currentValue
     <Card className={`p-4 border-2 ${getBgColorByRatio(score, maxScore)}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Current Ratio (Liquidität)</h3>
+          <h3 className="font-semibold text-lg">Liquidität (Current Ratio)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

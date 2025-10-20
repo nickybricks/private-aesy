@@ -163,6 +163,7 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
       <p className="font-semibold">Zinsdeckungsgrad = EBIT / Zinsaufwand</p>
+      <p className="text-sm text-muted-foreground">(Interest Coverage Ratio)</p>
       <p className="text-sm">
         Er zeigt, <strong>wie oft</strong> das operative Ergebnis (vor Zinsen & Steuern) die <strong>jährlichen Zinsen</strong> deckt.
       </p>

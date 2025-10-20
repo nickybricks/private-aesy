@@ -159,7 +159,8 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
 
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
-      <p className="font-semibold">Debt/Assets = Schulden / Vermögen</p>
+      <p className="font-semibold">Verschuldungsgrad = Schulden / Vermögen</p>
+      <p className="text-sm text-muted-foreground">(Debt/Assets = Total Debt / Total Assets)</p>
       <p className="text-sm">
         Sagt, welcher Anteil des gesamten Vermögens durch Schulden finanziert ist.
       </p>
@@ -201,7 +202,7 @@ export const DebtToAssetsCard: React.FC<DebtToAssetsCardProps> = ({ currentValue
     <Card className={`p-4 border-2 ${getBgColorByRatio(score, maxScore)}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Debt/Assets (Schulden/Vermögen)</h3>
+          <h3 className="font-semibold text-lg">Verschuldungsgrad (Debt/Assets)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

@@ -167,7 +167,8 @@ export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ curren
 
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
-      <p className="font-semibold">Net Debt/EBITDA = verzinsliche Schulden / EBITDA</p>
+      <p className="font-semibold">Nettoverschuldung = Verzinsliche Schulden / EBITDA</p>
+      <p className="text-sm text-muted-foreground">(Net Debt/EBITDA Ratio)</p>
       <p className="text-sm">
         Zeigt, <strong>wie viele Jahre</strong> das Unternehmen (theoretisch) mit seinem{' '}
         <strong>operativen Gewinn vor Abschreibungen</strong> braucht, um die <strong>Schulden</strong> zurückzuzahlen 
@@ -212,7 +213,7 @@ export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ curren
     <Card className={`p-4 border-2 ${getBgColorByRatio(score, maxScore)}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Net Debt/EBITDA</h3>
+          <h3 className="font-semibold text-lg">Nettoverschuldung (Net Debt/EBITDA)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
