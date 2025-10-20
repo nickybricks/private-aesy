@@ -225,50 +225,8 @@ export const analyzeLongTermProspects = async (companyName: string, industry: st
   return await queryGPT(prompt);
 };
 
-// Function to analyze cyclical behavior using Perplexity with current business strategy news
+// Function to analyze cyclical behavior using Perplexity with current market behavior
 export const analyzeCyclicalBehavior = async (companyName: string, industry: string): Promise<string> => {
-  const prompt = `
-    Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Rationalität & Disziplin".
-    Nutze die aktuellsten verfügbaren Informationen über Unternehmensstrategie und Managemententscheidungen für deine Analyse.
-    
-    Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
-    
-    1. Handelt das Management diszipliniert und langfristig denkend?
-    2. Gab es in der Vergangenheit überteuerte Übernahmen oder strategische Sprunghaftigkeit?
-    3. Werden Ressourcen sinnvoll und effizient eingesetzt?
-    
-    Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
-    
-    **1. Handelt das Management diszipliniert und langfristig denkend?**  
-    - [Aussage 1]  
-    - [Aussage 2]
-
-    **2. Gab es in der Vergangenheit überteuerte Übernahmen oder strategische Sprunghaftigkeit?**  
-    - [Aussage 1]  
-    - [Aussage 2]
-
-    **3. Werden Ressourcen sinnvoll und effizient eingesetzt?**  
-    - [Aussage 1]  
-    - [Aussage 2]
-
-    **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
-    
-    Hinweise:
-    - Verwende exakt die Formulierung am Ende:  
-      **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
-    - Bewertungstext **muss** eine der folgenden Optionen sein:
-      - Rationales Verhalten (Pass)
-      - Gemischtes Bild (Warning)
-      - Irrationales Verhalten (Fail)
-    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.")
-    - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
-    `;
-  
-  return await queryGPT(prompt);
-};
-
-// Function to analyze if success is based on one-time effects using Perplexity with current market behavior
-export const analyzeOneTimeEffects = async (companyName: string, industry: string): Promise<string> => {
   const prompt = `
     Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Antizyklisches Verhalten".
     Nutze die aktuellsten verfügbaren Informationen über das Marktverhalten des Unternehmens für deine Analyse.
@@ -309,8 +267,8 @@ export const analyzeOneTimeEffects = async (companyName: string, industry: strin
   return await queryGPT(prompt);
 };
 
-// Function to analyze if the company is a turnaround case using Perplexity with current business developments
-export const analyzeTurnaround = async (companyName: string, industry: string): Promise<string> => {
+// Function to analyze if success is based on one-time effects using Perplexity with current business developments
+export const analyzeOneTimeEffects = async (companyName: string, industry: string): Promise<string> => {
   const prompt = `
     Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Vergangenheit ≠ Zukunft".
     Nutze die aktuellsten verfügbaren Informationen über die Geschäftsentwicklung des Unternehmens für deine Analyse.
@@ -351,8 +309,8 @@ export const analyzeTurnaround = async (companyName: string, industry: string): 
   return await queryGPT(prompt);
 };
 
-// Function to analyze rational behavior using Perplexity with current corporate developments
-export const analyzeRationalBehavior = async (companyName: string, industry: string): Promise<string> => {
+// Function to analyze if the company is a turnaround case using Perplexity with current corporate developments
+export const analyzeTurnaround = async (companyName: string, industry: string): Promise<string> => {
   const prompt = `
     Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Keine Turnarounds".
     Nutze die aktuellsten verfügbaren Informationen über Unternehmensentwicklungen und Restrukturierungen für deine Analyse.
@@ -386,6 +344,48 @@ export const analyzeRationalBehavior = async (companyName: string, industry: str
       - Kein Turnaround (Pass)
       - Fraglich (Warning)
       - Offensichtlicher Turnaround (Fail)
+    - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.")
+    - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
+    `;
+  
+  return await queryGPT(prompt);
+};
+
+// Function to analyze rational behavior using Perplexity with current business strategy news
+export const analyzeRationalBehavior = async (companyName: string, industry: string): Promise<string> => {
+  const prompt = `
+    Analysiere ${companyName} (Branche: ${industry}) nach Warren Buffetts Kriterium "Rationalität & Disziplin".
+    Nutze die aktuellsten verfügbaren Informationen über Unternehmensstrategie und Managemententscheidungen für deine Analyse.
+    
+    Beantworte dazu exakt die folgenden 3 Teilaspekte, jeweils mit einer kurzen Einschätzung:
+    
+    1. Handelt das Management diszipliniert und langfristig denkend?
+    2. Gab es in der Vergangenheit überteuerte Übernahmen oder strategische Sprunghaftigkeit?
+    3. Werden Ressourcen sinnvoll und effizient eingesetzt?
+    
+    Gib deine Antworten **ausschließlich** in folgender Struktur zurück:
+    
+    **1. Handelt das Management diszipliniert und langfristig denkend?**  
+    - [Aussage 1]  
+    - [Aussage 2]
+
+    **2. Gab es in der Vergangenheit überteuerte Übernahmen oder strategische Sprunghaftigkeit?**  
+    - [Aussage 1]  
+    - [Aussage 2]
+
+    **3. Werden Ressourcen sinnvoll und effizient eingesetzt?**  
+    - [Aussage 1]  
+    - [Aussage 2]
+
+    **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    
+    Hinweise:
+    - Verwende exakt die Formulierung am Ende:  
+      **Bewertung:** <Bewertungstext>. Von 3 Teilaspekten wurden <x> erfüllt.
+    - Bewertungstext **muss** eine der folgenden Optionen sein:
+      - Rationales Verhalten (Pass)
+      - Gemischtes Bild (Warning)
+      - Irrationales Verhalten (Fail)
     - Wenn du "Warning" gibst, **musst du die erfüllten Teilaspekte angeben** (z. B. „Von 3 Teilaspekten wurden 2 erfüllt.")
     - Mach keine Interpretationen oder Zusammenfassungen außerhalb der Struktur.
     `;
