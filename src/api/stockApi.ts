@@ -18,23 +18,83 @@ import { calculateEpsWithoutNri } from '@/services/EpsWithoutNriService';
 // Base URL for the Financial Modeling Prep API
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
-// Hilfsfunktion, um API-Anfragen zu machen
-const fetchFromFMP = async (endpoint: string, params = {}) => {
-  try {
-    const response = await axios.get(`${BASE_URL}${endpoint}`, {
-      params: {
-        apikey: DEFAULT_FMP_API_KEY,
-        ...params
+// Hilfsfunktion mit Retry-Logik für robustere API-Anfragen
+const fetchFromFMP = async (endpoint: string, params = {}, retries = 3, delayMs = 1000) => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await axios.get(`${BASE_URL}${endpoint}`, {
+        params: {
+          apikey: DEFAULT_FMP_API_KEY,
+          ...params
+        },
+        timeout: 15000 // 15 Sekunden Timeout
+      });
+      
+      // Erfolg - Daten zurückgeben
+      if (attempt > 0) {
+        console.log(`✅ FMP API erfolgreich nach ${attempt} Retry(s) für ${endpoint}`);
       }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching data from FMP:', error);
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
-      throw new Error(`API-Key ist ungültig. Bitte kontaktieren Sie den Administrator.`);
+      return response.data;
+      
+    } catch (error) {
+      const isLastAttempt = attempt === retries;
+      
+      if (axios.isAxiosError(error)) {
+        // 401 Unauthorized - API-Key ungültig (nicht wiederholen)
+        if (error.response?.status === 401) {
+          throw new Error(`API-Key ist ungültig. Bitte kontaktieren Sie den Administrator.`);
+        }
+        
+        // 429 Rate Limit - längere Wartezeit
+        if (error.response?.status === 429) {
+          if (!isLastAttempt) {
+            const waitTime = delayMs * Math.pow(2, attempt) * 2; // Doppelte Wartezeit für Rate Limits
+            console.warn(`⚠️ Rate Limit erreicht für ${endpoint}, warte ${waitTime}ms...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          }
+          throw new Error(`API-Rate-Limit erreicht. Bitte warten Sie einen Moment und versuchen Sie es erneut.`);
+        }
+        
+        // 5xx Server-Fehler oder Netzwerkfehler - wiederholen
+        if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED' || 
+            (error.response?.status && error.response.status >= 500)) {
+          
+          if (!isLastAttempt) {
+            const waitTime = delayMs * Math.pow(2, attempt); // Exponential backoff
+            console.warn(`⚠️ Netzwerkfehler für ${endpoint} (Versuch ${attempt + 1}/${retries + 1}), warte ${waitTime}ms...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          }
+          throw new Error(`Netzwerkverbindung zur Finanzdaten-API fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung.`);
+        }
+        
+        // 404 Not Found - Ticker nicht gefunden
+        if (error.response?.status === 404) {
+          throw new Error(`Keine Daten für dieses Aktiensymbol gefunden. Bitte überprüfen Sie das Symbol.`);
+        }
+        
+        // Andere HTTP-Fehler
+        if (error.response) {
+          console.error(`❌ FMP API Error ${error.response.status} für ${endpoint}:`, error.response.data);
+          throw new Error(`API-Fehler (${error.response.status}). Bitte versuchen Sie es später erneut.`);
+        }
+      }
+      
+      // Unbekannter Fehler
+      console.error('❌ Unerwarteter Fehler bei FMP API-Anfrage:', error);
+      if (!isLastAttempt) {
+        const waitTime = delayMs * Math.pow(2, attempt);
+        console.warn(`⚠️ Wiederhole nach ${waitTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      throw new Error(`Fehler beim Abrufen von Daten. Bitte versuchen Sie es später erneut.`);
     }
-    throw new Error(`Fehler beim Abrufen von Daten. Bitte versuchen Sie es später erneut.`);
   }
+  
+  // Sollte nie erreicht werden
+  throw new Error(`Fehler beim Abrufen von Daten nach ${retries} Versuchen.`);
 };
 
 // Helper to normalize news to unified shape
