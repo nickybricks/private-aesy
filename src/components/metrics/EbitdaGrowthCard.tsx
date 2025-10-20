@@ -117,9 +117,10 @@ export const EbitdaGrowthCard: React.FC<EbitdaGrowthCardProps> = ({ historicalEb
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
       <div>
-        <p className="font-semibold">Was ist EBITDA-Wachstum?</p>
+        <p className="font-semibold">EBITDA-Wachstum</p>
+        <p className="text-sm text-muted-foreground">(EBITDA Growth = Earnings Before Interest, Taxes, Depreciation & Amortization Growth)</p>
         <p className="text-xs mt-1">
-          <strong>EBITDA-Wachstum</strong> misst, wie stark der <strong>operative Gewinn vor Abschreibungen</strong> über die Zeit steigt.
+          Misst, wie stark der <strong>operative Gewinn vor Abschreibungen</strong> über die Zeit steigt.
         </p>
       </div>
       
@@ -160,7 +161,7 @@ export const EbitdaGrowthCard: React.FC<EbitdaGrowthCardProps> = ({ historicalEb
     return (
       <Card className="p-4 border-2 border-muted">
         <div className="flex items-center gap-2 mb-2">
-          <h3 className="font-semibold text-lg">EBITDA Growth (EBITDA-Wachstum)</h3>
+          <h3 className="font-semibold text-lg">EBITDA-Wachstum (EBITDA Growth)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -184,7 +185,7 @@ export const EbitdaGrowthCard: React.FC<EbitdaGrowthCardProps> = ({ historicalEb
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">EBITDA Growth (EBITDA-Wachstum)</h3>
+          <h3 className="font-semibold text-lg">EBITDA-Wachstum (EBITDA Growth)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

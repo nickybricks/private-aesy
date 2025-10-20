@@ -117,10 +117,8 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
       <div>
-        <p className="font-semibold">Was ist Revenue Growth?</p>
-        <p className="text-xs mt-1">
-          <strong>Umsatzwachstum = Wie stark die Erlöse steigen (oder fallen).</strong>
-        </p>
+        <p className="font-semibold">Umsatzwachstum = Wie stark die Erlöse steigen (oder fallen)</p>
+        <p className="text-sm text-muted-foreground">(Revenue Growth)</p>
       </div>
       
       <div className="text-xs">
@@ -160,7 +158,7 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
     return (
       <Card className="p-4 border-2 border-muted">
         <div className="flex items-center gap-2 mb-2">
-          <h3 className="font-semibold text-lg">Revenue Growth (Umsatzwachstum)</h3>
+          <h3 className="font-semibold text-lg">Umsatzwachstum (Revenue Growth)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -184,7 +182,7 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Revenue Growth (Umsatzwachstum)</h3>
+          <h3 className="font-semibold text-lg">Umsatzwachstum (Revenue Growth)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

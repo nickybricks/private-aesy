@@ -131,9 +131,10 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
       <div>
-        <p className="font-semibold">Was ist EPS w/o NRI Wachstum?</p>
+        <p className="font-semibold">EPS w/o NRI-Wachstum</p>
+        <p className="text-sm text-muted-foreground">(EPS without NRI Growth = Earnings per Share without Non-Recurring Items Growth)</p>
         <p className="text-xs mt-1">
-          <strong>EPS w/o NRI</strong> = <strong>Gewinn je Aktie</strong> (<em>Earnings per Share</em>) <strong>ohne Sondereffekte</strong> (<em>Non-Recurring Items</em>).
+          <strong>Gewinn je Aktie ohne Sondereffekte</strong> – zeigt das bereinigte Gewinnwachstum.
         </p>
       </div>
       
@@ -173,7 +174,7 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
     return (
       <Card className="p-4 border-2 border-muted">
         <div className="flex items-center gap-2 mb-2">
-          <h3 className="font-semibold text-lg">EPS w/o NRI Growth (EPS w/o NRI-Wachstum)</h3>
+          <h3 className="font-semibold text-lg">EPS w/o NRI-Wachstum (EPS without NRI Growth)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -197,7 +198,7 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">EPS w/o NRI Growth (EPS w/o NRI-Wachstum)</h3>
+          <h3 className="font-semibold text-lg">EPS w/o NRI-Wachstum (EPS without NRI Growth)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
