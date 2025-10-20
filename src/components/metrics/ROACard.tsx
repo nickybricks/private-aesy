@@ -77,7 +77,8 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
   const getTooltipContent = () => {
     const baseContent = (
       <>
-        <div className="font-semibold mb-1">ROA = Gewinn / Gesamtes Vermögen.</div>
+        <div className="font-semibold mb-1">Gesamtkapitalrendite = Gewinn / Gesamtes Vermögen</div>
+        <p className="text-sm text-muted-foreground">(ROA = Return on Assets)</p>
         <p className="text-muted-foreground">
           Zeigt, wie viel <strong>Gewinn</strong> ein Unternehmen mit <strong>allen eingesetzten Vermögenswerten</strong> erwirtschaftet (Maschinen, Lager, Software, Cash …).
         </p>
@@ -187,7 +188,7 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <CardTitle className="text-lg">ROA (Return on Assets)</CardTitle>
+            <CardTitle className="text-lg">Gesamtkapitalrendite (ROA)</CardTitle>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

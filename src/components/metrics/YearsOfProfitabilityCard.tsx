@@ -65,7 +65,8 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
   const getTooltipContent = () => {
     const baseContent = (
       <>
-        <p className="font-semibold">Years of Profitability</p>
+        <p className="font-semibold">Jahre mit Gewinn</p>
+        <p className="text-sm text-muted-foreground">(Years of Profitability)</p>
         <p>
           Zählt, in wie vielen der <strong>letzten 10 Geschäftsjahre</strong> die Firma{' '}
           <strong>einen echten Gewinn</strong> erzielt hat (<strong>Net Income &gt; 0</strong>, 
@@ -173,7 +174,7 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
     <Card className={`p-4 border-2 ${getBgColor(score)}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Years of Profitability</h3>
+          <h3 className="font-semibold text-lg">Jahre mit Gewinn (Years of Profitability)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

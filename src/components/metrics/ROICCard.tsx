@@ -123,7 +123,8 @@ export const ROICCard: React.FC<ROICCardProps> = ({
 
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
-      <p className="font-semibold">ROIC = Rendite auf das im Kerngeschäft gebundene Kapital</p>
+      <p className="font-semibold">Kapitalrendite = Rendite auf das im Kerngeschäft gebundene Kapital</p>
+      <p className="text-sm text-muted-foreground">(ROIC = Return on Invested Capital)</p>
       <p className="text-sm italic">
         Einfach gesagt: Wie viel Gewinn nach Steuern verdient die Firma auf jeden Euro, 
         der im Geschäft arbeitet (Maschinen, Lager, Software – abzüglich überschüssiger Kasse).
@@ -169,7 +170,7 @@ export const ROICCard: React.FC<ROICCardProps> = ({
     <Card className={`p-4 border-2 ${getBgColor(score, maxScore)}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">ROIC (Return on Invested Capital)</h3>
+          <h3 className="font-semibold text-lg">Kapitalrendite (ROIC)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

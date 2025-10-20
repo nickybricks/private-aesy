@@ -117,7 +117,8 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({
 
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
-      <p className="font-semibold">Operating Margin = EBIT / Umsatz</p>
+      <p className="font-semibold">EBIT-Marge = EBIT / Umsatz</p>
+      <p className="text-sm text-muted-foreground">(Operating Margin)</p>
       <p className="text-sm">
         Sie zeigt, <strong>wie viel vom Umsatz nach allen operativen Kosten</strong> (Material, Löhne, Vertrieb, Verwaltung, F&E) 
         übrig bleibt – <strong>vor</strong> Zinsen und Steuern.
@@ -149,7 +150,7 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({
     <Card className={`p-4 border-2 ${getBgColor(score, maxScore)}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Operating Margin (EBIT-Marge)</h3>
+          <h3 className="font-semibold text-lg">EBIT-Marge (Operating Margin)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

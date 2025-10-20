@@ -112,6 +112,7 @@ export const NetMarginCard: React.FC<NetMarginCardProps> = ({
   const tooltipContent = (
     <div className="max-w-sm space-y-2">
       <p className="font-semibold">Nettomarge = Reingewinn / Umsatz</p>
+      <p className="text-sm text-muted-foreground">(Net Margin)</p>
       <p className="text-sm">
         Sie sagt, wie viel <strong>vom Umsatz nach allen Kosten und Steuern</strong> als{' '}
         <strong>Gewinn</strong> übrig bleibt.
