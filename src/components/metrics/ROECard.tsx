@@ -1,9 +1,12 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
 import { ScoreResult } from '@/context/StockContextTypes';
+
+type TimeRange = '1Y' | '3Y' | '5Y' | '10Y' | 'MAX';
 
 interface ROECardProps {
   currentValue: number | null;
@@ -13,6 +16,7 @@ interface ROECardProps {
 }
 
 export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, preset = 'Default', scoreFromBackend }) => {
+  const [selectedRange, setSelectedRange] = useState<TimeRange>('MAX');
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -21,24 +25,39 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
     return values.length % 2 === 0 ? (values[mid - 1] + values[mid]) / 2 : values[mid];
   };
 
-  // Determine which timeframe to use - always use all available data (up to 30 years max)
+  // Filter data by selected time range
+  const filterDataByRange = (data: Array<{ year: string; value: number }> | undefined, range: TimeRange) => {
+    if (!data || data.length === 0) return [];
+    
+    switch (range) {
+      case '1Y':
+        return data.slice(-1);
+      case '3Y':
+        return data.slice(-3);
+      case '5Y':
+        return data.slice(-5);
+      case '10Y':
+        return data.slice(-10);
+      case 'MAX':
+        return data;
+    }
+  };
+
+  const filteredData = filterDataByRange(historicalData, selectedRange);
+
+  // Calculate display value from filtered data
   let displayValue = currentValue;
   let displayLabel = 'Aktuell';
-  let chartData = historicalData || [];
 
-  // Use all available historical data for median calculation and display
-  if (historicalData && historicalData.length >= 10) {
-    displayValue = calculateMedian(historicalData);
-    displayLabel = `${historicalData.length}-Jahres-Median`;
-    chartData = historicalData;
-  } else if (historicalData && historicalData.length >= 5) {
-    displayValue = calculateMedian(historicalData);
-    displayLabel = `${historicalData.length}-Jahres-Median`;
-    chartData = historicalData;
-  } else if (historicalData && historicalData.length >= 3) {
-    displayValue = calculateMedian(historicalData);
-    displayLabel = `${historicalData.length}-Jahres-Median`;
-    chartData = historicalData;
+  if (filteredData.length >= 10) {
+    displayValue = calculateMedian(filteredData);
+    displayLabel = `${filteredData.length}-Jahres-Median`;
+  } else if (filteredData.length >= 5) {
+    displayValue = calculateMedian(filteredData);
+    displayLabel = `${filteredData.length}-Jahres-Median`;
+  } else if (filteredData.length >= 3) {
+    displayValue = calculateMedian(filteredData);
+    displayLabel = `${filteredData.length}-Jahres-Median`;
   }
 
   // Score calculation based on ROE value
@@ -142,90 +161,165 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
   );
 
   return (
-    <Card className={`border ${getBgColorByRatio(score, maxScore)}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-lg">Eigenkapitalrendite (ROE)</CardTitle>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="right" className="max-w-md">
-                  {tooltipContent}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div className="text-right">
-            <div className={`text-2xl font-bold ${getColorByRatio(score, maxScore)}`}>
-              {displayValue !== null ? `${displayValue.toFixed(1)}%` : 'N/A'}
-            </div>
-            <div className="text-xs text-muted-foreground">{displayLabel}</div>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {/* Score indicator */}
-        <div className="flex items-center gap-2 mb-3">
-          <div className="text-sm font-medium">Bewertung:</div>
-          <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByRatio(score, maxScore)}`}>
-            {score}/{maxScore} Punkt{maxScore !== 1 ? 'e' : ''}
-          </div>
+    <Card className={`p-4 border-2 ${getBgColorByRatio(score, maxScore)}`}>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-lg">Eigenkapitalrendite (ROE)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right">
-                {getScoringTooltip()}
+              <TooltipContent side="right" className="max-w-md">
+                {tooltipContent}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
+        <div className="text-right">
+          <div className={`text-2xl font-bold ${getColorByRatio(score, maxScore)}`}>
+            {displayValue !== null ? `${displayValue.toFixed(1)}%` : 'N/A'}
+          </div>
+          <div className="text-xs text-muted-foreground">{displayLabel}</div>
+        </div>
+      </div>
 
-        {/* Chart if historical data available */}
-        {chartData.length > 1 && (
+      {/* Score indicator */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="text-sm font-medium">Bewertung:</div>
+        <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByRatio(score, maxScore)}`}>
+          {score}/{maxScore} Punkt{maxScore !== 1 ? 'e' : ''}
+        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {getScoringTooltip()}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      {/* KPIs Grid */}
+      {currentValue !== null && displayValue !== null && (
+        <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
           <div>
-            <div className="text-xs text-muted-foreground mb-2">Historischer Verlauf</div>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+            <p className="text-xs text-muted-foreground">Aktuell</p>
+            <p className="font-semibold">{currentValue.toFixed(1)}%</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Median</p>
+            <p className="font-semibold">{displayValue.toFixed(1)}%</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Jahre</p>
+            <p className="font-semibold">{filteredData.length}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Time Range Selector and Chart */}
+      {historicalData && historicalData.length > 0 && (
+        <>
+          <div className="flex justify-end gap-1 mb-3 overflow-x-auto pb-1">
+            {(['1Y', '3Y', '5Y', '10Y', 'MAX'] as TimeRange[]).map(range => (
+              <Button
+                key={range}
+                variant={selectedRange === range ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedRange(range)}
+                className="text-xs h-7 px-2.5 whitespace-nowrap"
+              >
+                {range}
+              </Button>
+            ))}
+          </div>
+
+          {/* Chart */}
+          <div className="mt-4">
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={filteredData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis 
                   dataKey="year" 
-                  tick={{ fill: '#666', fontSize: 12 }}
+                  tick={{ fontSize: 10 }}
+                  stroke="#9ca3af"
                 />
                 <YAxis 
-                  tick={{ fill: '#666', fontSize: 12 }}
+                  tick={{ fontSize: 10 }}
+                  stroke="#9ca3af"
+                  domain={[0, 'auto']}
+                  width={60}
                   tickFormatter={(value) => `${value}%`}
                 />
                 <RechartsTooltip
-                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'ROE']}
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px'
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const value = payload[0].payload.value;
+                      return (
+                        <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
+                          <p className="text-sm font-semibold">{payload[0].payload.year}</p>
+                          <p className="text-sm text-primary">
+                            ROE: <span className="font-bold">{typeof value === 'number' ? value.toFixed(1) : value}%</span>
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
                 />
-                <ReferenceLine y={15} stroke="#16a34a" strokeDasharray="3 3" />
-                <ReferenceLine y={10} stroke="#ca8a04" strokeDasharray="3 3" />
+                <ReferenceLine 
+                  y={15} 
+                  stroke="#16a34a" 
+                  strokeDasharray="5 5" 
+                  strokeWidth={2}
+                  opacity={0.7}
+                  label={{ 
+                    value: '15% (Exzellent)', 
+                    position: 'insideTopRight', 
+                    fontSize: 11, 
+                    fill: '#16a34a',
+                    fontWeight: 600
+                  }}
+                />
+                <ReferenceLine 
+                  y={10} 
+                  stroke="#ca8a04" 
+                  strokeDasharray="3 3" 
+                  opacity={0.5}
+                  label={{ value: '10% (Akzeptabel)', position: 'insideRight', fontSize: 10, fill: '#ca8a04' }}
+                />
                 <Line 
                   type="monotone" 
                   dataKey="value" 
                   stroke="#2563eb" 
-                  strokeWidth={2}
-                  dot={{ fill: '#2563eb', r: 4 }}
+                  strokeWidth={2.5}
+                  dot={false}
                 />
               </LineChart>
             </ResponsiveContainer>
-            <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
-              <span><span className="text-green-600">---</span> 15% (Exzellent)</span>
-              <span><span className="text-yellow-600">---</span> 10% (Akzeptabel)</span>
+            
+            {/* Legend */}
+            <div className="flex justify-center gap-4 mt-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-8 h-0.5 bg-[#2563eb]"></span>
+                Eigenkapitalrendite
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-8 h-0.5 border-t-2 border-dashed border-[#16a34a]"></span>
+                Exzellent (15%)
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-8 h-0.5 border-t-2 border-dashed border-[#ca8a04]"></span>
+                Akzeptabel (10%)
+              </span>
             </div>
           </div>
-        )}
-      </CardContent>
+        </>
+      )}
     </Card>
   );
 };
