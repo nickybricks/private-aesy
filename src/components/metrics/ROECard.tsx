@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
@@ -21,26 +21,24 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
     return values.length % 2 === 0 ? (values[mid - 1] + values[mid]) / 2 : values[mid];
   };
 
-  // Determine which timeframe to use (10Y > 5Y > 3Y > current)
+  // Determine which timeframe to use - always use all available data (up to 30 years max)
   let displayValue = currentValue;
   let displayLabel = 'Aktuell';
   let chartData = historicalData || [];
 
+  // Use all available historical data for median calculation and display
   if (historicalData && historicalData.length >= 10) {
-    const last10Years = historicalData.slice(-10);
-    displayValue = calculateMedian(last10Years);
-    displayLabel = '10-Jahres-Median';
-    chartData = last10Years;
+    displayValue = calculateMedian(historicalData);
+    displayLabel = `${historicalData.length}-Jahres-Median`;
+    chartData = historicalData;
   } else if (historicalData && historicalData.length >= 5) {
-    const last5Years = historicalData.slice(-5);
-    displayValue = calculateMedian(last5Years);
-    displayLabel = '5-Jahres-Median';
-    chartData = last5Years;
+    displayValue = calculateMedian(historicalData);
+    displayLabel = `${historicalData.length}-Jahres-Median`;
+    chartData = historicalData;
   } else if (historicalData && historicalData.length >= 3) {
-    const last3Years = historicalData.slice(-3);
-    displayValue = calculateMedian(last3Years);
-    displayLabel = '3-Jahres-Median';
-    chartData = last3Years;
+    displayValue = calculateMedian(historicalData);
+    displayLabel = `${historicalData.length}-Jahres-Median`;
+    chartData = historicalData;
   }
 
   // Score calculation based on ROE value
@@ -144,96 +142,90 @@ export const ROECard: React.FC<ROECardProps> = ({ currentValue, historicalData, 
   );
 
   return (
-    <Card className={`p-4 border-2 ${getBgColorByRatio(score, maxScore)}`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">ROE (Eigenkapitalrendite)</h3>
+    <Card className={`border ${getBgColorByRatio(score, maxScore)}`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg">Eigenkapitalrendite (ROE)</CardTitle>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-md">
+                  {tooltipContent}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div className="text-right">
+            <div className={`text-2xl font-bold ${getColorByRatio(score, maxScore)}`}>
+              {displayValue !== null ? `${displayValue.toFixed(1)}%` : 'N/A'}
+            </div>
+            <div className="text-xs text-muted-foreground">{displayLabel}</div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {/* Score indicator */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="text-sm font-medium">Bewertung:</div>
+          <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByRatio(score, maxScore)}`}>
+            {score}/{maxScore} Punkt{maxScore !== 1 ? 'e' : ''}
+          </div>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
-                {tooltipContent}
+              <TooltipContent side="right">
+                {getScoringTooltip()}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
-        <div className="text-right">
-          <div className={`text-2xl font-bold ${getColorByRatio(score, maxScore)}`}>
-            {displayValue !== null ? `${displayValue.toFixed(1)}%` : 'N/A'}
-          </div>
-          <div className="text-xs text-muted-foreground">{displayLabel}</div>
-        </div>
-      </div>
 
-      {/* Score indicator */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="text-sm font-medium">Bewertung:</div>
-        <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByRatio(score, maxScore)}`}>
-          {score}/{maxScore} Punkte
-        </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              {getScoringTooltip()}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      {/* Chart if historical data available */}
-      {chartData.length > 1 && (
-        <div className="mt-4">
-          <div className="text-xs text-muted-foreground mb-2">Historischer Verlauf</div>
-          <ResponsiveContainer width="100%" height={120}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                dataKey="year" 
-                tick={{ fontSize: 10 }}
-                stroke="#9ca3af"
-              />
-              <YAxis 
-                tick={{ fontSize: 10 }}
-                stroke="#9ca3af"
-                domain={[0, 'auto']}
-              />
-              <RechartsTooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
-                        <p className="text-sm font-semibold">{payload[0].payload.year}</p>
-                        <p className="text-sm text-primary">
-                          ROE: <span className="font-bold">{payload[0].value}%</span>
-                        </p>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <ReferenceLine y={15} stroke="#16a34a" strokeDasharray="3 3" />
-              <ReferenceLine y={10} stroke="#ca8a04" strokeDasharray="3 3" />
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke="#2563eb" 
-                strokeWidth={2}
-                dot={{ fill: '#2563eb', r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-          <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
-            <span><span className="text-green-600">---</span> 15% (Exzellent)</span>
-            <span><span className="text-yellow-600">---</span> 10% (Akzeptabel)</span>
+        {/* Chart if historical data available */}
+        {chartData.length > 1 && (
+          <div>
+            <div className="text-xs text-muted-foreground mb-2">Historischer Verlauf</div>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis 
+                  dataKey="year" 
+                  tick={{ fill: '#666', fontSize: 12 }}
+                />
+                <YAxis 
+                  tick={{ fill: '#666', fontSize: 12 }}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <RechartsTooltip
+                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'ROE']}
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px'
+                  }}
+                />
+                <ReferenceLine y={15} stroke="#16a34a" strokeDasharray="3 3" />
+                <ReferenceLine y={10} stroke="#ca8a04" strokeDasharray="3 3" />
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="#2563eb" 
+                  strokeWidth={2}
+                  dot={{ fill: '#2563eb', r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+            <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
+              <span><span className="text-green-600">---</span> 15% (Exzellent)</span>
+              <span><span className="text-yellow-600">---</span> 10% (Akzeptabel)</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </CardContent>
     </Card>
   );
 };
