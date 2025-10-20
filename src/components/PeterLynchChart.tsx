@@ -59,6 +59,7 @@ const TIME_RANGES = [
   { label: '3Y', value: '3years' },
   { label: '5Y', value: '5years' },
   { label: '10Y', value: '10years' },
+  { label: 'MAX', value: 'max' },
 ];
 
 const fetchFromFMP = async (endpoint: string, params = {}) => {
@@ -112,10 +113,15 @@ const PeterLynchChartNew: React.FC<Props> = ({
       setError(null);
       
       try {
+        // Calculate date 30 years ago for maximum historical data
+        const thirtyYearsAgo = new Date();
+        thirtyYearsAgo.setFullYear(thirtyYearsAgo.getFullYear() - 30);
+        const fromDate = thirtyYearsAgo.toISOString().split('T')[0];
+        
         const [quarterly, annual, prices] = await Promise.all([
           fetchFromFMP(`/income-statement/${ticker}`, { period: 'quarter', limit: 40 }),
-          fetchFromFMP(`/income-statement/${ticker}`, { period: 'annual', limit: 10 }),
-          fetchFromFMP(`/historical-price-full/${ticker}`, { from: '2014-01-01' })
+          fetchFromFMP(`/income-statement/${ticker}`, { period: 'annual', limit: 30 }),
+          fetchFromFMP(`/historical-price-full/${ticker}`, { from: fromDate })
         ]);
 
         // Process quarterly data
@@ -224,6 +230,10 @@ const PeterLynchChartNew: React.FC<Props> = ({
 
   // Filter data by time range
   const getFilteredData = (data: any[], range: string) => {
+    if (range === 'max') {
+      return data; // Return all data for MAX
+    }
+    
     const endDate = new Date();
     let startDate: Date;
     

@@ -82,8 +82,11 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
           priceEndpoint = `https://financialmodelingprep.com/api/v3/historical-chart/1hour/${symbol}?apikey=${DEFAULT_FMP_API_KEY}`;
           isIntradayData = true;
         } else {
-          // Daily historical data for longer ranges
-          priceEndpoint = `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?apikey=${DEFAULT_FMP_API_KEY}`;
+          // Daily historical data for longer ranges - get maximum 30 years
+          const thirtyYearsAgo = new Date();
+          thirtyYearsAgo.setFullYear(thirtyYearsAgo.getFullYear() - 30);
+          const fromDate = thirtyYearsAgo.toISOString().split('T')[0];
+          priceEndpoint = `https://financialmodelingprep.com/api/v3/historical-price-full/${symbol}?from=${fromDate}&apikey=${DEFAULT_FMP_API_KEY}`;
         }
         
         // Fetch both historical price data and financial data in parallel
