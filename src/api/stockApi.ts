@@ -285,13 +285,13 @@ export const analyzeBuffettCriteria = async (ticker: string, enableDeepResearch 
   // Standardisieren des Tickers für die API
   const standardizedTicker = ticker.trim().toUpperCase();
   
-  // Verschiedene Finanzdaten abrufen
+  // Verschiedene Finanzdaten abrufen (mit limit=30 für bis zu 30 Jahre historische Daten)
   const [ratios, keyMetrics, profile, incomeStatements, balanceSheets] = await Promise.all([
-    fetchFromFMP(`/ratios/${standardizedTicker}`),
-    fetchFromFMP(`/key-metrics/${standardizedTicker}`),
+    fetchFromFMP(`/ratios/${standardizedTicker}?limit=30`),
+    fetchFromFMP(`/key-metrics/${standardizedTicker}?limit=30`),
     fetchFromFMP(`/profile/${standardizedTicker}`),
     fetchFromFMP(`/income-statement/${standardizedTicker}?period=annual&limit=30`),
-    fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}`)
+    fetchFromFMP(`/balance-sheet-statement/${standardizedTicker}?limit=30`)
   ]);
   
   // Überprüfen, ob Daten zurückgegeben wurden
