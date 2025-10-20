@@ -163,7 +163,8 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
       <div>
-        <p className="font-semibold text-sm mb-1">Was ist P/CF?</p>
+        <p className="font-semibold text-sm mb-1">Kurs-Cashflow-Verhältnis</p>
+        <p className="text-sm text-muted-foreground mb-1">(P/FCF = Price to Free Cash Flow)</p>
         <p className="text-sm">
           <strong>P/FCF = Aktienkurs / Free Cashflow je Aktie.</strong>
         </p>
@@ -207,7 +208,7 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
     return (
       <Card className="p-4 border-2 bg-gray-50 border-gray-200">
         <div className="flex items-center gap-2 mb-3">
-          <h3 className="font-semibold text-lg">Kurs-Cashflow-Verhältnis (P/CF)</h3>
+          <h3 className="font-semibold text-lg">Kurs-Cashflow-Verhältnis (P/FCF)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -231,7 +232,7 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Kurs-Cashflow-Verhältnis (P/CF)</h3>
+          <h3 className="font-semibold text-lg">Kurs-Cashflow-Verhältnis (P/FCF)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

@@ -151,7 +151,8 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
       <div>
-        <p className="font-semibold">Innerer Wert-Abweichung (Discount)</p>
+        <p className="font-semibold">Abweichung zum inneren Wert</p>
+        <p className="text-sm text-muted-foreground">(Intrinsic Value Discount)</p>
         <p className="text-xs mt-1">
           Die Abweichung zeigt, wie weit der Aktienkurs unter/über dem inneren Wert liegt.
         </p>
@@ -209,7 +210,7 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Innerer Wert-Abweichung</h3>
+          <h3 className="font-semibold text-lg">Abweichung zum inneren Wert (Intrinsic Value Discount)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

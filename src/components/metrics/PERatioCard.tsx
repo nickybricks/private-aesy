@@ -190,7 +190,8 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
       <div>
-        <p className="font-semibold">Kurs-Gewinn-Verhältnis (KGV / P/E Ratio)</p>
+        <p className="font-semibold">Kurs-Gewinn-Verhältnis = Aktienkurs / Gewinn je Aktie</p>
+        <p className="text-sm text-muted-foreground">(P/E Ratio = Price / Earnings per Share)</p>
         <p className="text-xs mt-1">
           Das KGV zeigt, wie teuer eine Aktie im Verhältnis zu ihren Gewinnen ist.
           Ein niedriges KGV deutet auf eine günstige Bewertung hin.
@@ -251,7 +252,7 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">KGV (Kurs-Gewinn-Verhältnis)</h3>
+          <h3 className="font-semibold text-lg">Kurs-Gewinn-Verhältnis (KGV / P/E Ratio)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

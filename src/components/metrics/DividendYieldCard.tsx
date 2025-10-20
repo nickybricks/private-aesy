@@ -109,8 +109,8 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
   // Main tooltip content
   const mainTooltipContent = (
     <div className="max-w-sm space-y-2">
-      <p className="font-semibold">Was ist die Dividendenrendite?</p>
-      <p className="text-sm font-medium">Dividendenrendite = Jahresdividende je Aktie / Aktienkurs</p>
+      <p className="font-semibold">Dividendenrendite = Jahresdividende je Aktie / Aktienkurs</p>
+      <p className="text-sm text-muted-foreground">(Dividend Yield = Annual Dividend per Share / Stock Price)</p>
       <p className="text-sm">
         Sie sagt, wie viel „Bargeld-Ertrag" du pro Jahr im Verhältnis zum aktuellen Kurs bekommst.
       </p>
@@ -171,7 +171,7 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
       <Card className="p-4 border-2 bg-muted/30">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-lg">Dividendenrendite</h3>
+            <h3 className="font-semibold text-lg">Dividendenrendite (Dividend Yield)</h3>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -193,7 +193,7 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
     <Card className={`p-4 border-2 ${getBgColorByRatio(totalScore, maxScore)}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Dividendenrendite</h3>
+          <h3 className="font-semibold text-lg">Dividendenrendite (Dividend Yield)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

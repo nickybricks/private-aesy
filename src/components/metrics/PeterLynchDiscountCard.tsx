@@ -325,7 +325,8 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
       <div>
-        <p className="font-semibold">Peter Lynch Abweichung (GARP)</p>
+        <p className="font-semibold">Peter Lynch-Abweichung</p>
+        <p className="text-sm text-muted-foreground">(GARP: Growth at Reasonable Price)</p>
         <p className="text-xs mt-1">
           Die Abweichung zeigt, wie weit der Aktienkurs unter/über dem fairen Wert nach Peter Lynch liegt.
         </p>
@@ -381,7 +382,7 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
       <Card className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-lg">Peter Lynch Abweichung</h3>
+            <h3 className="font-semibold text-lg">Peter Lynch-Abweichung (Fair Value GARP)</h3>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -409,7 +410,7 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Peter Lynch Abweichung</h3>
+          <h3 className="font-semibold text-lg">Peter Lynch-Abweichung (Fair Value GARP)</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
