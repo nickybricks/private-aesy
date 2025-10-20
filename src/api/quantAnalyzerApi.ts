@@ -640,63 +640,62 @@ export const analyzeMarket = async (
 export const analyzeExchange = analyzeMarket;
 
 // Exportieren der CSV-Datei
-export const exportToCsv = (results: QuantAnalysisResult[]) => {
-  const headers = [
-    'Symbol', 'Name', 'Sektor', 'Börse', 'Preis', 'Währung',
-    'Buffett Score (max 9)',
-    'Innerer Wert (Info)',
-    'Jahre Profitabel (von 10)', 'Pass',
-    'KGV', 'Pass',
-    'ROIC (%)', 'Pass',
-    'ROE (%)', 'Pass',
-    'Dividende (%)', 'Pass',
-    'EPS Wachstum 5J CAGR (%)', 'Pass',
-    'Umsatz Wachstum 5J CAGR (%)', 'Pass',
-    'NetDebt/EBITDA', 'Pass',
-    'Nettomarge (%)', 'Pass'
-  ];
-  
-  const rows = results.map(result => [
-    result.symbol,
-    result.name,
-    result.sector,
-    result.exchange,
-    result.price.toFixed(2),
-    result.currency,
-    result.buffettScore,
-    result.intrinsicValue?.toFixed(2) || 'N/A',
-    result.criteria.yearsOfProfitability.value || 'N/A',
-    result.criteria.yearsOfProfitability.pass ? 'Ja' : 'Nein',
-    result.criteria.pe.value !== null ? result.criteria.pe.value.toFixed(2) : 'N/A',
-    result.criteria.pe.pass ? 'Ja' : 'Nein',
-    result.criteria.roic.value !== null ? result.criteria.roic.value.toFixed(2) : 'N/A',
-    result.criteria.roic.pass ? 'Ja' : 'Nein',
-    result.criteria.roe.value !== null ? result.criteria.roe.value.toFixed(2) : 'N/A',
-    result.criteria.roe.pass ? 'Ja' : 'Nein',
-    result.criteria.dividendYield.value !== null ? result.criteria.dividendYield.value.toFixed(2) : 'N/A',
-    result.criteria.dividendYield.pass ? 'Ja' : 'Nein',
-    result.criteria.epsGrowth.value !== null ? result.criteria.epsGrowth.value.toFixed(2) : 'N/A',
-    result.criteria.epsGrowth.pass ? 'Ja' : 'Nein',
-    result.criteria.revenueGrowth.value !== null ? result.criteria.revenueGrowth.value.toFixed(2) : 'N/A',
-    result.criteria.revenueGrowth.pass ? 'Ja' : 'Nein',
-    result.criteria.netDebtToEbitda.value !== null ? result.criteria.netDebtToEbitda.value.toFixed(2) : 'N/A',
-    result.criteria.netDebtToEbitda.pass ? 'Ja' : 'Nein',
-    result.criteria.netMargin.value !== null ? result.criteria.netMargin.value.toFixed(2) : 'N/A',
-    result.criteria.netMargin.pass ? 'Ja' : 'Nein'
-  ]);
-  
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.join(','))
-  ].join('\n');
-  
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `buffett-analysis-${new Date().toISOString().split('T')[0]}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+export const exportToExcel = (results: QuantAnalysisResult[]) => {
+  // Dynamically import xlsx
+  import('xlsx').then((XLSX) => {
+    const headers = [
+      'Symbol', 'Name', 'Sektor', 'Börse', 'Preis', 'Währung',
+      'Buffett Score (max 9)',
+      'Innerer Wert (Info)',
+      'Jahre Profitabel (von 10)', 'Pass',
+      'KGV', 'Pass',
+      'ROIC (%)', 'Pass',
+      'ROE (%)', 'Pass',
+      'Dividende (%)', 'Pass',
+      'EPS Wachstum 5J CAGR (%)', 'Pass',
+      'Umsatz Wachstum 5J CAGR (%)', 'Pass',
+      'NetDebt/EBITDA', 'Pass',
+      'Nettomarge (%)', 'Pass'
+    ];
+    
+    const rows = results.map(result => [
+      result.symbol,
+      result.name,
+      result.sector,
+      result.exchange,
+      parseFloat(result.price.toFixed(2)),
+      result.currency,
+      result.buffettScore,
+      result.intrinsicValue ? parseFloat(result.intrinsicValue.toFixed(2)) : 'N/A',
+      result.criteria.yearsOfProfitability.value || 'N/A',
+      result.criteria.yearsOfProfitability.pass ? 'Ja' : 'Nein',
+      result.criteria.pe.value !== null ? parseFloat(result.criteria.pe.value.toFixed(2)) : 'N/A',
+      result.criteria.pe.pass ? 'Ja' : 'Nein',
+      result.criteria.roic.value !== null ? parseFloat(result.criteria.roic.value.toFixed(2)) : 'N/A',
+      result.criteria.roic.pass ? 'Ja' : 'Nein',
+      result.criteria.roe.value !== null ? parseFloat(result.criteria.roe.value.toFixed(2)) : 'N/A',
+      result.criteria.roe.pass ? 'Ja' : 'Nein',
+      result.criteria.dividendYield.value !== null ? parseFloat(result.criteria.dividendYield.value.toFixed(2)) : 'N/A',
+      result.criteria.dividendYield.pass ? 'Ja' : 'Nein',
+      result.criteria.epsGrowth.value !== null ? parseFloat(result.criteria.epsGrowth.value.toFixed(2)) : 'N/A',
+      result.criteria.epsGrowth.pass ? 'Ja' : 'Nein',
+      result.criteria.revenueGrowth.value !== null ? parseFloat(result.criteria.revenueGrowth.value.toFixed(2)) : 'N/A',
+      result.criteria.revenueGrowth.pass ? 'Ja' : 'Nein',
+      result.criteria.netDebtToEbitda.value !== null ? parseFloat(result.criteria.netDebtToEbitda.value.toFixed(2)) : 'N/A',
+      result.criteria.netDebtToEbitda.pass ? 'Ja' : 'Nein',
+      result.criteria.netMargin.value !== null ? parseFloat(result.criteria.netMargin.value.toFixed(2)) : 'N/A',
+      result.criteria.netMargin.pass ? 'Ja' : 'Nein'
+    ]);
+    
+    // Create worksheet with headers and data
+    const wsData = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // Create workbook and add the worksheet
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Buffett Analysis');
+    
+    // Generate Excel file and trigger download
+    XLSX.writeFile(wb, `buffett-analysis-${new Date().toISOString().split('T')[0]}.xlsx`);
+  });
 };

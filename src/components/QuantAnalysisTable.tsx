@@ -45,7 +45,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { QuantAnalysisResult, exportToCsv } from '@/api/quantAnalyzerApi';
+import { QuantAnalysisResult, exportToExcel } from '@/api/quantAnalyzerApi';
 import { useUserStocks } from '@/hooks/useUserStocks';
 import { addStockToWatchlist } from '@/utils/watchlistService';
 
@@ -385,14 +385,14 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           
           <div className="flex items-center gap-3">
             <Button 
-              onClick={() => exportToCsv(filteredResults)}
+              onClick={() => exportToExcel(filteredResults)}
               variant="outline"
               size="sm"
               disabled={filteredResults.length === 0}
               className="flex items-center gap-2"
             >
               <Download className="h-4 w-4" />
-              CSV Export
+              Excel Export
             </Button>
             
             <div className="w-64">
