@@ -1,6 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import {
   Table,
@@ -208,9 +207,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
   const [showNewWatchlistDialog, setShowNewWatchlistDialog] = useState(false);
   const [selectedStock, setSelectedStock] = useState<QuantAnalysisResult | null>(null);
   const [newWatchlistName, setNewWatchlistName] = useState('');
-  
-  // Ref for virtualization
-  const parentRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
   // Sort the results using useMemo for performance
   const sortedResults = useMemo(() => {
@@ -302,13 +300,19 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
     return sorted;
   }, [results, sortField, sortDirection]);
 
-  // Setup virtualizer
-  const rowVirtualizer = useVirtualizer({
-    count: sortedResults.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 60,
-    overscan: 5,
-  });
+  // Paginate results
+  const paginatedResults = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedResults.slice(startIndex, endIndex);
+  }, [sortedResults, currentPage]);
+
+  const totalPages = Math.ceil(sortedResults.length / itemsPerPage);
+
+  // Reset to page 1 when sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortField, sortDirection]);
 
   // Format a numeric value with optional percentage and decimal places
   const formatValue = (value: number | null, decimals = 2, isPercent = true) => {
@@ -376,117 +380,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
     }
   };
 
-  const renderRow = (stock: QuantAnalysisResult) => (
-    <div className="flex items-center border-b hover:bg-muted/50 transition-colors">
-      <div className="w-12 flex items-center justify-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleAnalyzeStock(stock)}>
-              <TrendingUp className="mr-2 h-4 w-4" />
-              In Buffett Analyzer analysieren
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Plus className="mr-2 h-4 w-4" />
-                Zu Watchlist hinzufügen
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {watchlists.map((watchlist) => (
-                  <DropdownMenuItem
-                    key={watchlist.id}
-                    onClick={() => handleAddToWatchlist(stock, watchlist.id)}
-                  >
-                    {watchlist.name}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleAddToWatchlist(stock)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Neue Watchlist erstellen
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <div className="min-w-[100px] px-4 py-2 font-medium">{stock.symbol}</div>
-      <div className="min-w-[200px] px-4 py-2">{stock.name}</div>
-      <div className="min-w-[150px] px-4 py-2">{stock.sector}</div>
-      <div className="min-w-[150px] px-4 py-2">
-        <div className="flex items-center">
-          <span className="mr-2">{stock.buffettScore}/9</span>
-          <BuffettScoreBadge score={stock.buffettScore} />
-        </div>
-      </div>
-      <div className="min-w-[120px] px-4 py-2">
-        {stock.price?.toFixed(2)} {stock.currency}
-      </div>
-      <div className="min-w-[120px] px-4 py-2">
-        <span>{stock.intrinsicValue ? stock.intrinsicValue.toFixed(2) : 'N/A'}</span>
-      </div>
-      <div className="min-w-[100px] px-4 py-2">
-        <div className="flex items-center space-x-1">
-          <StatusIcon passed={stock.criteria.yearsOfProfitability.pass} value={stock.criteria.yearsOfProfitability.value} />
-          <span>{stock.criteria.yearsOfProfitability.value || 'N/A'}/10</span>
-        </div>
-      </div>
-      <div className="min-w-[100px] px-4 py-2">
-        <div className="flex items-center space-x-1">
-          <StatusIcon passed={stock.criteria.pe.pass} value={stock.criteria.pe.value} />
-          <span>{formatValue(stock.criteria.pe.value, 1, false)}</span>
-        </div>
-      </div>
-      <div className="min-w-[100px] px-4 py-2">
-        <div className="flex items-center space-x-1">
-          <StatusIcon passed={stock.criteria.roic.pass} value={stock.criteria.roic.value} />
-          <span>{formatValue(stock.criteria.roic.value)}</span>
-        </div>
-      </div>
-      <div className="min-w-[100px] px-4 py-2">
-        <div className="flex items-center space-x-1">
-          <StatusIcon passed={stock.criteria.roe.pass} value={stock.criteria.roe.value} />
-          <span>{formatValue(stock.criteria.roe.value)}</span>
-        </div>
-      </div>
-      <div className="min-w-[100px] px-4 py-2">
-        <div className="flex items-center space-x-1">
-          <StatusIcon passed={stock.criteria.dividendYield.pass} value={stock.criteria.dividendYield.value} />
-          <span>{formatValue(stock.criteria.dividendYield.value)}</span>
-        </div>
-      </div>
-      <div className="min-w-[100px] px-4 py-2">
-        <div className="flex items-center space-x-1">
-          <StatusIcon passed={stock.criteria.epsGrowth.pass} value={stock.criteria.epsGrowth.value} />
-          <span>{formatValue(stock.criteria.epsGrowth.value)}</span>
-        </div>
-      </div>
-      <div className="min-w-[120px] px-4 py-2">
-        <div className="flex items-center space-x-1">
-          <StatusIcon passed={stock.criteria.revenueGrowth.pass} value={stock.criteria.revenueGrowth.value} />
-          <span>{formatValue(stock.criteria.revenueGrowth.value)}</span>
-        </div>
-      </div>
-      <div className="min-w-[100px] px-4 py-2">
-        <div className="flex items-center space-x-1">
-          <StatusIcon passed={stock.criteria.netDebtToEbitda.pass} value={stock.criteria.netDebtToEbitda.value} />
-          <span>{formatValue(stock.criteria.netDebtToEbitda.value, 2, false)}</span>
-        </div>
-      </div>
-      <div className="min-w-[100px] px-4 py-2">
-        <div className="flex items-center space-x-1">
-          <StatusIcon passed={stock.criteria.netMargin.pass} value={stock.criteria.netMargin.value} />
-          <span>{formatValue(stock.criteria.netMargin.value)}</span>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <Card className="w-full overflow-hidden">
       <div className="p-4 bg-white border-b">
@@ -507,8 +400,9 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           </div>
         </div>
         
-        <div className="text-sm text-gray-500 mb-2">
-          {sortedResults.length} Aktien gefunden
+        <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
+          <span>{sortedResults.length} Aktien gefunden</span>
+          <span>Seite {currentPage} von {totalPages}</span>
         </div>
       </div>
       
@@ -681,47 +575,329 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           </div>
         </div>
 
-        {/* Virtualized Table Body */}
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
-            <span>Analyse läuft...</span>
-          </div>
-        ) : sortedResults.length === 0 ? (
-          <div className="text-center py-8">
-            Keine Ergebnisse gefunden
-          </div>
-        ) : (
-          <div
-            ref={parentRef}
-            className="h-[600px] overflow-auto"
-          >
-            <div
-              style={{
-                height: `${rowVirtualizer.getTotalSize()}px`,
-                width: '100%',
-                position: 'relative',
-              }}
-            >
-              {rowVirtualizer.getVirtualItems().map((virtualRow) => (
-                <div
-                  key={virtualRow.key}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: `${virtualRow.size}px`,
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                >
-                  {renderRow(sortedResults[virtualRow.index])}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12"></TableHead>
+              <div className="min-w-[100px] px-4 py-3">
+                <SortableHeader 
+                  field="symbol" 
+                  name="Symbol" 
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[200px] px-4 py-3">
+                <SortableHeader 
+                  field="name" 
+                  name="Unternehmen" 
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[150px] px-4 py-3">
+                <SortableHeader 
+                  field="sector" 
+                  name="Sektor" 
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[150px] px-4 py-3">
+                <SortableHeader 
+                  field="buffettScore" 
+                  name="Score" 
+                  tooltipText="Erfüllte Kriterien (max. 9)"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[120px] px-4 py-3">
+                <SortableHeader
+                  field="price" 
+                  name="Preis" 
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[120px] px-4 py-3">
+                <SortableHeader 
+                  field="intrinsicValue" 
+                  name="Innerer Wert" 
+                  tooltipText={metricsDefinitions.intrinsicValue.definition}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[100px] px-4 py-3">
+                <SortableHeader 
+                  field="yearsOfProfitability" 
+                  name="Jahre +" 
+                  tooltipText={`${metricsDefinitions.yearsOfProfitability.definition} Ziel: ${metricsDefinitions.yearsOfProfitability.target}`}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[100px] px-4 py-3">
+                <SortableHeader
+                  field="pe" 
+                  name="KGV" 
+                  tooltipText={`${metricsDefinitions.pe.definition} Ziel: ${metricsDefinitions.pe.target}`}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[100px] px-4 py-3">
+                <SortableHeader 
+                  field="roic" 
+                  name="ROIC" 
+                  tooltipText={`${metricsDefinitions.roic.definition} Ziel: ${metricsDefinitions.roic.target}`}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[100px] px-4 py-3">
+                <SortableHeader 
+                  field="roe" 
+                  name="ROE" 
+                  tooltipText={`${metricsDefinitions.roe.definition} Ziel: ${metricsDefinitions.roe.target}`}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[100px] px-4 py-3">
+                <SortableHeader 
+                  field="dividendYield" 
+                  name="Div %" 
+                  tooltipText={`${metricsDefinitions.dividendYield.definition} Ziel: ${metricsDefinitions.dividendYield.target}`}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[100px] px-4 py-3">
+                <SortableHeader 
+                  field="epsGrowth" 
+                  name="EPS ↑" 
+                  tooltipText={`${metricsDefinitions.epsGrowth.definition} Ziel: ${metricsDefinitions.epsGrowth.target}`}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[120px] px-4 py-3">
+                <SortableHeader 
+                  field="revenueGrowth" 
+                  name="Umsatz ↑" 
+                  tooltipText={`${metricsDefinitions.revenueGrowth.definition} Ziel: ${metricsDefinitions.revenueGrowth.target}`}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[100px] px-4 py-3">
+                <SortableHeader 
+                  field="netDebtToEbitda" 
+                  name="Schulden" 
+                  tooltipText={`${metricsDefinitions.netDebtToEbitda.definition} Ziel: ${metricsDefinitions.netDebtToEbitda.target}`}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+              <div className="min-w-[100px] px-4 py-3">
+                <SortableHeader 
+                  field="netMargin" 
+                  name="Marge" 
+                  tooltipText={`${metricsDefinitions.netMargin.definition} Ziel: ${metricsDefinitions.netMargin.target}`}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </div>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={15} className="text-center py-8">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
+                    <span>Analyse läuft...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : paginatedResults.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={15} className="text-center py-8">
+                  Keine Ergebnisse gefunden
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedResults.map((stock) => (
+                <TableRow key={stock.symbol}>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleAnalyzeStock(stock)}>
+                          <TrendingUp className="mr-2 h-4 w-4" />
+                          In Buffett Analyzer analysieren
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Zu Watchlist hinzufügen
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {watchlists.map((watchlist) => (
+                              <DropdownMenuItem
+                                key={watchlist.id}
+                                onClick={() => handleAddToWatchlist(stock, watchlist.id)}
+                              >
+                                {watchlist.name}
+                              </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleAddToWatchlist(stock)}>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Neue Watchlist erstellen
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                  <TableCell className="font-medium">{stock.symbol}</TableCell>
+                  <TableCell>{stock.name}</TableCell>
+                  <TableCell>{stock.sector}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <span className="mr-2">{stock.buffettScore}/9</span>
+                      <BuffettScoreBadge score={stock.buffettScore} />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {stock.price?.toFixed(2)} {stock.currency}
+                  </TableCell>
+                  <TableCell>
+                    <span>{stock.intrinsicValue ? stock.intrinsicValue.toFixed(2) : 'N/A'}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.yearsOfProfitability.pass} value={stock.criteria.yearsOfProfitability.value} />
+                      <span>{stock.criteria.yearsOfProfitability.value || 'N/A'}/10</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.pe.pass} value={stock.criteria.pe.value} />
+                      <span>{formatValue(stock.criteria.pe.value, 1, false)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.roic.pass} value={stock.criteria.roic.value} />
+                      <span>{formatValue(stock.criteria.roic.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.roe.pass} value={stock.criteria.roe.value} />
+                      <span>{formatValue(stock.criteria.roe.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.dividendYield.pass} value={stock.criteria.dividendYield.value} />
+                      <span>{formatValue(stock.criteria.dividendYield.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.epsGrowth.pass} value={stock.criteria.epsGrowth.value} />
+                      <span>{formatValue(stock.criteria.epsGrowth.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.revenueGrowth.pass} value={stock.criteria.revenueGrowth.value} />
+                      <span>{formatValue(stock.criteria.revenueGrowth.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.netDebtToEbitda.pass} value={stock.criteria.netDebtToEbitda.value} />
+                      <span>{formatValue(stock.criteria.netDebtToEbitda.value, 2, false)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.netMargin.pass} value={stock.criteria.netMargin.value} />
+                      <span>{formatValue(stock.criteria.netMargin.value)}</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
+      
+      {/* Pagination Controls */}
+      {!isLoading && sortedResults.length > 0 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            Vorherige
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Seite {currentPage} von {totalPages} ({sortedResults.length} Aktien)
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Nächste
+          </Button>
+        </div>
+      )}
 
       {/* Dialog for creating new watchlist */}
       <Dialog open={showNewWatchlistDialog} onOpenChange={setShowNewWatchlistDialog}>
