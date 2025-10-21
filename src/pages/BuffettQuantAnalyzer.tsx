@@ -52,7 +52,8 @@ const stockLimitOptions = [
   { value: 200, label: '200 Aktien (ca. 3 Minuten)' },
   { value: 500, label: '500 Aktien (ca. 8 Minuten)' },
   { value: 1000, label: '1000 Aktien (ca. 15 Minuten)' },
-  { value: 2000, label: '2000 Aktien (ca. 30 Minuten)' }
+  { value: 2000, label: '2000 Aktien (ca. 30 Minuten)' },
+  { value: 999999, label: 'Alle Aktien' }
 ];
 
 const BuffettQuantAnalyzer = () => {

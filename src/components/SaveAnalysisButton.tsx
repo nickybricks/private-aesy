@@ -113,7 +113,7 @@ export const SaveAnalysisButton: React.FC = () => {
             <div className="text-sm text-muted-foreground space-y-1">
               <p><strong>Aktie:</strong> {stockInfo?.name} ({stockInfo?.ticker})</p>
               <p><strong>Preis:</strong> {stockInfo?.price?.toFixed(2)} {stockInfo?.currency}</p>
-              <p><strong>Buffett Score:</strong> {overallRating?.buffettScore}/10</p>
+              <p><strong>Aesy Score:</strong> {overallRating?.buffettScore}/10</p>
               <p><strong>Datum:</strong> {new Date().toLocaleString('de-DE')}</p>
             </div>
           </div>
