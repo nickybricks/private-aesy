@@ -19,11 +19,11 @@ export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: Screener
   const [filters, setFilters] = useState({
     minBuffettScore: 0,
     maxPE: 100,
-    minROIC: 0,
-    minROE: 0,
+    minROIC: -100,
+    minROE: -100,
     minDividendYield: 0,
     minRevenueGrowth: -100,
-    minNetMargin: 0,
+    minNetMargin: -100,
     sector: 'all',
     searchQuery: ''
   });
@@ -54,11 +54,11 @@ export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: Screener
     setFilters({
       minBuffettScore: 0,
       maxPE: 100,
-      minROIC: 0,
-      minROE: 0,
+      minROIC: -100,
+      minROE: -100,
       minDividendYield: 0,
       minRevenueGrowth: -100,
-      minNetMargin: 0,
+      minNetMargin: -100,
       sector: 'all',
       searchQuery: ''
     });
@@ -141,7 +141,7 @@ export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: Screener
             <Slider
               value={[filters.minROIC]}
               onValueChange={([value]) => setFilters({ ...filters, minROIC: value })}
-              min={0}
+              min={-100}
               max={50}
               step={1}
             />
@@ -153,7 +153,7 @@ export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: Screener
             <Slider
               value={[filters.minROE]}
               onValueChange={([value]) => setFilters({ ...filters, minROE: value })}
-              min={0}
+              min={-100}
               max={50}
               step={1}
             />
@@ -189,7 +189,7 @@ export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: Screener
             <Slider
               value={[filters.minNetMargin]}
               onValueChange={([value]) => setFilters({ ...filters, minNetMargin: value })}
-              min={0}
+              min={-100}
               max={50}
               step={1}
             />
