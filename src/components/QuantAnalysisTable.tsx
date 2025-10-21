@@ -69,32 +69,32 @@ const metricsDefinitions = {
     formula: "Preis ÷ EPS"
   },
   roic: {
-    name: "ROIC",
-    definition: "Return on Invested Capital",
+    name: "ROIC (TTM)",
+    definition: "Return on Invested Capital (Trailing Twelve Months) - Quick-Screening Metrik",
     target: "≥ 12%",
-    formula: "NOPAT ÷ Investiertes Kapital"
+    formula: "NOPAT ÷ Investiertes Kapital (TTM)"
   },
   roe: {
-    name: "ROE",
-    definition: "Eigenkapitalrendite",
+    name: "ROE (TTM)",
+    definition: "Eigenkapitalrendite (Trailing Twelve Months) - Quick-Screening Metrik",
     target: "≥ 15%",
-    formula: "Nettogewinn ÷ Eigenkapital"
+    formula: "Nettogewinn ÷ Eigenkapital (TTM)"
   },
   dividendYield: {
     name: "Dividende",
-    definition: "Dividendenrendite",
+    definition: "Dividendenrendite (aktuell)",
     target: "> 2%",
     formula: "Jährliche Dividende ÷ Preis"
   },
   epsGrowth: {
-    name: "EPS-Wachstum",
-    definition: "5-Jahres EPS CAGR mit Stabilitäts-Check",
+    name: "EPS-Wachstum (5J)",
+    definition: "5-Jahres EPS CAGR (Standard-EPS, nicht bereinigt) - Quick-Screening Metrik",
     target: "5-J CAGR ≥ 5% & 3-J Median nicht negativ",
-    formula: "EPS CAGR über 5 Jahre"
+    formula: "Standard-EPS CAGR über 5 Jahre"
   },
   revenueGrowth: {
-    name: "Umsatz-Wachstum",
-    definition: "5-Jahres Umsatz CAGR",
+    name: "Umsatz-Wachstum (5J)",
+    definition: "5-Jahres Umsatz CAGR - Quick-Screening Metrik",
     target: "≥ 5%",
     formula: "Umsatz CAGR über 5 Jahre"
   },
@@ -507,7 +507,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="roic" 
-                  name="ROIC" 
+                  name="ROIC (TTM)" 
                   tooltipText={`${metricsDefinitions.roic.definition} Ziel: ${metricsDefinitions.roic.target}`}
                   sortField={sortField}
                   sortDirection={sortDirection}
@@ -518,7 +518,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="roe" 
-                  name="ROE" 
+                  name="ROE (TTM)" 
                   tooltipText={`${metricsDefinitions.roe.definition} Ziel: ${metricsDefinitions.roe.target}`}
                   sortField={sortField}
                   sortDirection={sortDirection}
@@ -537,10 +537,10 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortDirection={setSortDirection}
                 />
               </TableHead>
-              <TableHead className="min-w-[100px] px-4 py-2 h-10">
+              <TableHead className="min-w-[120px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="epsGrowth" 
-                  name="EPS ↑" 
+                  name="EPS (5J)" 
                   tooltipText={`${metricsDefinitions.epsGrowth.definition} Ziel: ${metricsDefinitions.epsGrowth.target}`}
                   sortField={sortField}
                   sortDirection={sortDirection}
@@ -551,7 +551,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               <TableHead className="min-w-[120px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="revenueGrowth" 
-                  name="Umsatz ↑" 
+                  name="Umsatz (5J)" 
                   tooltipText={`${metricsDefinitions.revenueGrowth.definition} Ziel: ${metricsDefinitions.revenueGrowth.target}`}
                   sortField={sortField}
                   sortDirection={sortDirection}

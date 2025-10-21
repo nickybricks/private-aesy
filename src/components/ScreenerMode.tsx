@@ -5,9 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
 import { QuantAnalysisResult } from '@/api/quantAnalyzerApi';
-import { Filter, X, ChevronDown } from 'lucide-react';
+import { Filter, X, ChevronDown, Info } from 'lucide-react';
 
 interface ScreenerModeProps {
   cachedStocks: QuantAnalysisResult[];
@@ -298,6 +299,15 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
           </CollapsibleContent>
         </Card>
       </Collapsible>
+
+      {/* Info-Box */}
+      <Alert className="bg-blue-50 border-blue-200">
+        <Info className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-sm text-muted-foreground ml-2">
+          <strong>Screener vs. Analyzer:</strong> Der Screener verwendet Quick-Screening-Metriken (TTM-Werte und 5-Jahres-CAGRs mit Standard-EPS) für schnelles Filtern. 
+          Der Buffett Analyzer bietet detailliertere, bereinigte Metriken (z.B. EPS ohne NRI, 10-Jahres-Mediane) für tiefgehende Analysen.
+        </AlertDescription>
+      </Alert>
 
       {/* Results Table */}
       {filteredStocks.length > 0 ? (
