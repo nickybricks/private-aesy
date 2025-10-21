@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FixedSizeList } from 'react-window';
 import { Card } from '@/components/ui/card';
 import {
   Table,
@@ -173,9 +174,9 @@ const SortableHeader = ({ field, name, tooltipText, sortField, sortDirection, se
   };
   
   return (
-    <TableHead className="cursor-pointer select-none" onClick={handleHeaderClick}>
+    <div className="cursor-pointer select-none" onClick={handleHeaderClick}>
       <div className="flex items-center space-x-1">
-        <span>{name}</span>
+        <span className="font-medium text-muted-foreground text-left">{name}</span>
         {isCurrentSort && <SortIcon className="h-4 w-4" />}
         {tooltipText && (
           <Popover>
@@ -191,7 +192,7 @@ const SortableHeader = ({ field, name, tooltipText, sortField, sortDirection, se
           </Popover>
         )}
       </div>
-    </TableHead>
+    </div>
   );
 };
 
@@ -202,30 +203,17 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { watchlists, createWatchlist } = useWatchlists();
-  const [filteredResults, setFilteredResults] = useState<QuantAnalysisResult[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('buffettScore');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [showNewWatchlistDialog, setShowNewWatchlistDialog] = useState(false);
   const [selectedStock, setSelectedStock] = useState<QuantAnalysisResult | null>(null);
   const [newWatchlistName, setNewWatchlistName] = useState('');
 
-  // Filter and sort the results when they change
-  useEffect(() => {
-    let filtered = [...results];
+  // Sort the results using useMemo for performance
+  const sortedResults = useMemo(() => {
+    const sorted = [...results];
     
-    // Apply search filter
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(stock => 
-        stock.symbol.toLowerCase().includes(term) || 
-        stock.name.toLowerCase().includes(term) ||
-        stock.sector.toLowerCase().includes(term)
-      );
-    }
-    
-    // Apply sorting
-    filtered.sort((a, b) => {
+    sorted.sort((a, b) => {
       let valueA, valueB;
       
       // Handle different fields for sorting
@@ -308,8 +296,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
         : (valueB as number) - (valueA as number);
     });
     
-    setFilteredResults(filtered);
-  }, [results, searchTerm, sortField, sortDirection]);
+    return sorted;
+  }, [results, sortField, sortDirection]);
 
   // Format a numeric value with optional percentage and decimal places
   const formatValue = (value: number | null, decimals = 2, isPercent = true) => {
@@ -377,6 +365,122 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
     }
   };
 
+  // Row renderer for virtualization
+  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const stock = sortedResults[index];
+    
+    return (
+      <div style={style} className="flex items-center border-b hover:bg-muted/50 transition-colors">
+        <div className="w-12 flex items-center justify-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleAnalyzeStock(stock)}>
+                <TrendingUp className="mr-2 h-4 w-4" />
+                In Buffett Analyzer analysieren
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Zu Watchlist hinzufügen
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {watchlists.map((watchlist) => (
+                    <DropdownMenuItem
+                      key={watchlist.id}
+                      onClick={() => handleAddToWatchlist(stock, watchlist.id)}
+                    >
+                      {watchlist.name}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleAddToWatchlist(stock)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Neue Watchlist erstellen
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <div className="min-w-[100px] px-4 py-2 font-medium">{stock.symbol}</div>
+        <div className="min-w-[200px] px-4 py-2">{stock.name}</div>
+        <div className="min-w-[150px] px-4 py-2">{stock.sector}</div>
+        <div className="min-w-[150px] px-4 py-2">
+          <div className="flex items-center">
+            <span className="mr-2">{stock.buffettScore}/9</span>
+            <BuffettScoreBadge score={stock.buffettScore} />
+          </div>
+        </div>
+        <div className="min-w-[120px] px-4 py-2">
+          {stock.price?.toFixed(2)} {stock.currency}
+        </div>
+        <div className="min-w-[120px] px-4 py-2">
+          <span>{stock.intrinsicValue ? stock.intrinsicValue.toFixed(2) : 'N/A'}</span>
+        </div>
+        <div className="min-w-[100px] px-4 py-2">
+          <div className="flex items-center space-x-1">
+            <StatusIcon passed={stock.criteria.yearsOfProfitability.pass} value={stock.criteria.yearsOfProfitability.value} />
+            <span>{stock.criteria.yearsOfProfitability.value || 'N/A'}/10</span>
+          </div>
+        </div>
+        <div className="min-w-[100px] px-4 py-2">
+          <div className="flex items-center space-x-1">
+            <StatusIcon passed={stock.criteria.pe.pass} value={stock.criteria.pe.value} />
+            <span>{formatValue(stock.criteria.pe.value, 1, false)}</span>
+          </div>
+        </div>
+        <div className="min-w-[100px] px-4 py-2">
+          <div className="flex items-center space-x-1">
+            <StatusIcon passed={stock.criteria.roic.pass} value={stock.criteria.roic.value} />
+            <span>{formatValue(stock.criteria.roic.value)}</span>
+          </div>
+        </div>
+        <div className="min-w-[100px] px-4 py-2">
+          <div className="flex items-center space-x-1">
+            <StatusIcon passed={stock.criteria.roe.pass} value={stock.criteria.roe.value} />
+            <span>{formatValue(stock.criteria.roe.value)}</span>
+          </div>
+        </div>
+        <div className="min-w-[100px] px-4 py-2">
+          <div className="flex items-center space-x-1">
+            <StatusIcon passed={stock.criteria.dividendYield.pass} value={stock.criteria.dividendYield.value} />
+            <span>{formatValue(stock.criteria.dividendYield.value)}</span>
+          </div>
+        </div>
+        <div className="min-w-[100px] px-4 py-2">
+          <div className="flex items-center space-x-1">
+            <StatusIcon passed={stock.criteria.epsGrowth.pass} value={stock.criteria.epsGrowth.value} />
+            <span>{formatValue(stock.criteria.epsGrowth.value)}</span>
+          </div>
+        </div>
+        <div className="min-w-[120px] px-4 py-2">
+          <div className="flex items-center space-x-1">
+            <StatusIcon passed={stock.criteria.revenueGrowth.pass} value={stock.criteria.revenueGrowth.value} />
+            <span>{formatValue(stock.criteria.revenueGrowth.value)}</span>
+          </div>
+        </div>
+        <div className="min-w-[100px] px-4 py-2">
+          <div className="flex items-center space-x-1">
+            <StatusIcon passed={stock.criteria.netDebtToEbitda.pass} value={stock.criteria.netDebtToEbitda.value} />
+            <span>{formatValue(stock.criteria.netDebtToEbitda.value, 2, false)}</span>
+          </div>
+        </div>
+        <div className="min-w-[100px] px-4 py-2">
+          <div className="flex items-center space-x-1">
+            <StatusIcon passed={stock.criteria.netMargin.pass} value={stock.criteria.netMargin.value} />
+            <span>{formatValue(stock.criteria.netMargin.value)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Card className="w-full overflow-hidden">
       <div className="p-4 bg-white border-b">
@@ -385,38 +489,29 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           
           <div className="flex items-center gap-3">
             <Button 
-              onClick={() => exportToExcel(filteredResults)}
+              onClick={() => exportToExcel(sortedResults)}
               variant="outline"
               size="sm"
-              disabled={filteredResults.length === 0}
+              disabled={sortedResults.length === 0}
               className="flex items-center gap-2"
             >
               <Download className="h-4 w-4" />
               Excel Export
             </Button>
-            
-            <div className="w-64">
-              <Input
-                type="text"
-                placeholder="Suche nach Aktie oder Sektor..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
-            </div>
           </div>
         </div>
         
         <div className="text-sm text-gray-500 mb-2">
-          {filteredResults.length} Aktien gefunden
+          {sortedResults.length} Aktien gefunden
         </div>
       </div>
       
       <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12"></TableHead>
+        {/* Table Header */}
+        <div className="border-b">
+          <div className="flex items-center bg-muted/50">
+            <div className="w-12"></div>
+            <div className="min-w-[100px] px-4 py-3">
               <SortableHeader 
                 field="symbol" 
                 name="Symbol" 
@@ -425,6 +520,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[200px] px-4 py-3">
               <SortableHeader 
                 field="name" 
                 name="Unternehmen" 
@@ -433,6 +530,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[150px] px-4 py-3">
               <SortableHeader 
                 field="sector" 
                 name="Sektor" 
@@ -441,6 +540,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[150px] px-4 py-3">
               <SortableHeader 
                 field="buffettScore" 
                 name="Score" 
@@ -450,6 +551,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[120px] px-4 py-3">
               <SortableHeader
                 field="price" 
                 name="Preis" 
@@ -458,6 +561,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[120px] px-4 py-3">
               <SortableHeader 
                 field="intrinsicValue" 
                 name="Innerer Wert" 
@@ -467,6 +572,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[100px] px-4 py-3">
               <SortableHeader 
                 field="yearsOfProfitability" 
                 name="Jahre +" 
@@ -476,6 +583,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[100px] px-4 py-3">
               <SortableHeader
                 field="pe" 
                 name="KGV" 
@@ -485,6 +594,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[100px] px-4 py-3">
               <SortableHeader 
                 field="roic" 
                 name="ROIC" 
@@ -494,6 +605,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[100px] px-4 py-3">
               <SortableHeader 
                 field="roe" 
                 name="ROE" 
@@ -503,6 +616,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[100px] px-4 py-3">
               <SortableHeader 
                 field="dividendYield" 
                 name="Div %" 
@@ -512,6 +627,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[100px] px-4 py-3">
               <SortableHeader 
                 field="epsGrowth" 
                 name="EPS ↑" 
@@ -521,6 +638,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[120px] px-4 py-3">
               <SortableHeader 
                 field="revenueGrowth" 
                 name="Umsatz ↑" 
@@ -530,6 +649,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[100px] px-4 py-3">
               <SortableHeader 
                 field="netDebtToEbitda" 
                 name="Schulden" 
@@ -539,6 +660,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
+            </div>
+            <div className="min-w-[100px] px-4 py-3">
               <SortableHeader 
                 field="netMargin" 
                 name="Marge" 
@@ -548,138 +671,31 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 setSortField={setSortField}
                 setSortDirection={setSortDirection}
               />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={15} className="text-center py-8">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
-                    <span>Analyse läuft...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : filteredResults.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={15} className="text-center py-8">
-                  Keine Ergebnisse gefunden
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredResults.map((stock) => (
-                <TableRow key={stock.symbol}>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleAnalyzeStock(stock)}>
-                          <TrendingUp className="mr-2 h-4 w-4" />
-                          In Buffett Analyzer analysieren
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Zu Watchlist hinzufügen
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            {watchlists.map((watchlist) => (
-                              <DropdownMenuItem
-                                key={watchlist.id}
-                                onClick={() => handleAddToWatchlist(stock, watchlist.id)}
-                              >
-                                {watchlist.name}
-                              </DropdownMenuItem>
-                            ))}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleAddToWatchlist(stock)}>
-                              <Plus className="mr-2 h-4 w-4" />
-                              Neue Watchlist erstellen
-                            </DropdownMenuItem>
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                  <TableCell className="font-medium">{stock.symbol}</TableCell>
-                  <TableCell>{stock.name}</TableCell>
-                  <TableCell>{stock.sector}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <span className="mr-2">{stock.buffettScore}/9</span>
-                      <BuffettScoreBadge score={stock.buffettScore} />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {stock.price?.toFixed(2)} {stock.currency}
-                  </TableCell>
-                  <TableCell>
-                    <span>{stock.intrinsicValue ? stock.intrinsicValue.toFixed(2) : 'N/A'}</span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.yearsOfProfitability.pass} value={stock.criteria.yearsOfProfitability.value} />
-                      <span>{stock.criteria.yearsOfProfitability.value || 'N/A'}/10</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.pe.pass} value={stock.criteria.pe.value} />
-                      <span>{formatValue(stock.criteria.pe.value, 1, false)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.roic.pass} value={stock.criteria.roic.value} />
-                      <span>{formatValue(stock.criteria.roic.value)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.roe.pass} value={stock.criteria.roe.value} />
-                      <span>{formatValue(stock.criteria.roe.value)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.dividendYield.pass} value={stock.criteria.dividendYield.value} />
-                      <span>{formatValue(stock.criteria.dividendYield.value)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.epsGrowth.pass} value={stock.criteria.epsGrowth.value} />
-                      <span>{formatValue(stock.criteria.epsGrowth.value)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.revenueGrowth.pass} value={stock.criteria.revenueGrowth.value} />
-                      <span>{formatValue(stock.criteria.revenueGrowth.value)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.netDebtToEbitda.pass} value={stock.criteria.netDebtToEbitda.value} />
-                      <span>{formatValue(stock.criteria.netDebtToEbitda.value, 2, false)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.netMargin.pass} value={stock.criteria.netMargin.value} />
-                      <span>{formatValue(stock.criteria.netMargin.value)}</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+            </div>
+          </div>
+        </div>
+
+        {/* Virtualized Table Body */}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
+            <span>Analyse läuft...</span>
+          </div>
+        ) : sortedResults.length === 0 ? (
+          <div className="text-center py-8">
+            Keine Ergebnisse gefunden
+          </div>
+        ) : (
+          <FixedSizeList
+            height={600}
+            itemCount={sortedResults.length}
+            itemSize={60}
+            width="100%"
+            className="scrollbar-thin"
+          >
+            {Row}
+          </FixedSizeList>
+        )}
       </div>
 
       {/* Dialog for creating new watchlist */}
