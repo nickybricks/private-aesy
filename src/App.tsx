@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import BuffettAnalyzer from "./pages/BuffettAnalyzer";
 import BuffettQuantAnalyzer from "./pages/BuffettQuantAnalyzer";
+import LiveAnalysis from "./pages/LiveAnalysis";
 import Watchlists from "./pages/Watchlists";
 import WatchlistDetail from "./pages/WatchlistDetail";
 import SavedAnalyses from "./pages/SavedAnalyses";
@@ -49,6 +50,7 @@ const App = () => {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/analyzer" element={<BuffettAnalyzer />} />
             <Route path="/quant" element={<BuffettQuantAnalyzer />} />
+            <Route path="/live-analysis" element={<LiveAnalysis />} />
             <Route path="/watchlists" element={<Watchlists />} />
             <Route path="/watchlists/:id" element={<WatchlistDetail />} /> 
             <Route path="/saved-analyses" element={<SavedAnalyses />} />
