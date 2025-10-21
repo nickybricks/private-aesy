@@ -11,11 +11,9 @@ import { Filter, X, ChevronDown } from 'lucide-react';
 
 interface ScreenerModeProps {
   cachedStocks: QuantAnalysisResult[];
-  onRefresh: () => void;
-  isRefreshing: boolean;
 }
 
-export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: ScreenerModeProps) => {
+export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [filters, setFilters] = useState({
     minAesyScore: '',
@@ -307,8 +305,6 @@ export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: Screener
           results={filteredStocks} 
           isLoading={false}
           onReset={resetFilters}
-          onRefresh={onRefresh}
-          isRefreshing={isRefreshing}
         />
       ) : (
         <Card className="p-8 text-center">

@@ -155,11 +155,16 @@ export const analyzeMarketWithCache = async (
         stocksNeedingPriceUpdate.push(stock);
         results.push(cached); // Use cached temporarily
       } else {
-        results.push(cached); // Fresh cache
+        results.push(cached); // Fresh cache - skip analysis
       }
     }
 
-    console.log(`Cache status: ${results.length - stocksNeedingPriceUpdate.length} fresh, ${stocksNeedingPriceUpdate.length} need price update, ${stocksNeedingFullAnalysis.length} need full analysis`);
+    console.log(`Cache status: ${results.length - stocksNeedingPriceUpdate.length} frisch (übersprungen), ${stocksNeedingPriceUpdate.length} Preisaktualisierung, ${stocksNeedingFullAnalysis.length} Vollanalyse benötigt`);
+
+    if (onProgress) {
+      const freshCount = results.length - stocksNeedingPriceUpdate.length;
+      onProgress(10, `${freshCount} Aktien aus Cache geladen, ${stocksNeedingFullAnalysis.length} werden analysiert...`);
+    }
 
     // Process stocks needing full analysis in batches
     const batchSize = 100;

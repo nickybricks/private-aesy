@@ -53,8 +53,6 @@ interface QuantAnalysisTableProps {
   results: QuantAnalysisResult[];
   isLoading: boolean;
   onReset?: () => void;
-  onRefresh?: () => void;
-  isRefreshing?: boolean;
 }
 
 const metricsDefinitions = {
@@ -201,9 +199,7 @@ const SortableHeader = ({ field, name, tooltipText, sortField, sortDirection, se
 const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({ 
   results, 
   isLoading,
-  onReset,
-  onRefresh,
-  isRefreshing = false
+  onReset
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -412,11 +408,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
             {onReset && (
               <Button variant="outline" size="sm" onClick={onReset}>
                 Zurücksetzen
-              </Button>
-            )}
-            {onRefresh && (
-              <Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
-                Preise aktualisieren
               </Button>
             )}
           </div>
