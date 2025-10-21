@@ -1,11 +1,18 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { BarChart3, Calculator, AlertCircle, Clock } from 'lucide-react';
+import { BarChart3, Calculator, AlertCircle, Clock, Database, RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/hooks/use-toast';
 import MarketSelector from '@/components/MarketSelector';
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
 import { analyzeMarket, QuantAnalysisResult, marketOptions } from '@/api/quantAnalyzerApi';
+import { 
+  analyzeMarketWithCache, 
+  getCacheStats, 
+  clearMarketCache,
+  CachedAnalysisResult,
+  CacheStats 
+} from '@/api/cachedQuantAnalyzerApi';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -64,6 +71,9 @@ const BuffettQuantAnalyzer = () => {
   const [progress, setProgress] = useState(0);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [currentOperation, setCurrentOperation] = useState('');
+  const [useCache, setUseCache] = useState(true);
+  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
   
   // Load persisted data from sessionStorage on mount
   useEffect(() => {
@@ -136,8 +146,15 @@ const BuffettQuantAnalyzer = () => {
     return `ca. ${Math.round(totalMinutes / 60)} Stunden`;
   }, [stockLimit]);
   
-  const handleMarketChange = (value: string) => {
+  const handleMarketChange = async (value: string) => {
     setSelectedMarket(value);
+    // Load cache stats for the new market
+    if (useCache) {
+      setIsLoadingStats(true);
+      const stats = await getCacheStats(value);
+      setCacheStats(stats);
+      setIsLoadingStats(false);
+    }
   };
   
   const handleSectorChange = (value: string) => {
@@ -170,27 +187,46 @@ const BuffettQuantAnalyzer = () => {
     setCurrentOperation("Starte Analyse...");
     
     try {
-      // Analyse mit dem eingestellten Limit und Progress-Callback
-      const analysisResults = await analyzeMarket(
-        selectedMarket, 
-        stockLimit,
-        (progressValue: number, operation: string) => {
-          setProgress(progressValue);
-          setCurrentOperation(operation);
-        }
-      );
+      let analysisResults: (QuantAnalysisResult | CachedAnalysisResult)[];
       
-      // Filter nach Sektor, falls nicht "Alle" ausgewählt
-      const filteredResults = selectedSector === 'all' 
-        ? analysisResults 
-        : analysisResults.filter(result => {
-            return result.sector === selectedSector;
-          });
+      if (useCache) {
+        // Use cached analysis with intelligent updates
+        analysisResults = await analyzeMarketWithCache(
+          selectedMarket,
+          stockLimit,
+          selectedSector !== 'all' ? selectedSector : undefined,
+          (progressValue: number, operation: string) => {
+            setProgress(progressValue);
+            setCurrentOperation(operation);
+          }
+        );
+      } else {
+        // Traditional full analysis
+        analysisResults = await analyzeMarket(
+          selectedMarket, 
+          stockLimit,
+          (progressValue: number, operation: string) => {
+            setProgress(progressValue);
+            setCurrentOperation(operation);
+          }
+        );
+      }
       
-      setResults(filteredResults);
+      // Filter nach Sektor, falls nicht "Alle" ausgewählt (nur bei non-cache Mode)
+      const filteredResults = (!useCache && selectedSector !== 'all')
+        ? analysisResults.filter(result => result.sector === selectedSector)
+        : analysisResults;
+      
+      setResults(filteredResults as QuantAnalysisResult[]);
       setHasAnalyzed(true);
       setProgress(100);
       setCurrentOperation("Analyse abgeschlossen");
+      
+      // Update cache stats
+      if (useCache) {
+        const stats = await getCacheStats(selectedMarket);
+        setCacheStats(stats);
+      }
       
       const selectedMarketOption = marketOptions.find(option => option.id === selectedMarket);
       const marketName = selectedMarketOption ? selectedMarketOption.name : selectedMarket;
@@ -211,6 +247,36 @@ const BuffettQuantAnalyzer = () => {
       setIsLoading(false);
     }
   };
+
+  const handleClearCache = async () => {
+    try {
+      await clearMarketCache(selectedMarket);
+      setCacheStats(null);
+      toast({
+        title: "Cache gelöscht",
+        description: "Der Cache für diesen Markt wurde erfolgreich gelöscht.",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Fehler beim Löschen des Cache:', error);
+      toast({
+        title: "Fehler",
+        description: "Der Cache konnte nicht gelöscht werden.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Load cache stats when market changes or component mounts
+  useEffect(() => {
+    if (useCache && selectedMarket) {
+      setIsLoadingStats(true);
+      getCacheStats(selectedMarket).then(stats => {
+        setCacheStats(stats);
+        setIsLoadingStats(false);
+      });
+    }
+  }, [selectedMarket, useCache]);
 
   return (
     <main className="flex-1 overflow-auto bg-background">
@@ -273,6 +339,92 @@ const BuffettQuantAnalyzer = () => {
           <p className="text-xs text-gray-400 mt-1">
               Die Analyse läuft in Batches mit Wartezeiten, um API-Limits zu umgehen.
           </p>
+          </div>
+          
+          {/* Cache-Einstellungen */}
+          <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-border">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center">
+                <Database className="h-5 w-5 text-primary mr-2" />
+                <div>
+                  <h3 className="text-sm font-semibold">Intelligenter Cache</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Speichert Daten lokal für schnellere wiederholte Analysen
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="useCache"
+                  checked={useCache}
+                  onChange={(e) => setUseCache(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="useCache" className="text-sm cursor-pointer">
+                  Cache aktivieren
+                </Label>
+              </div>
+            </div>
+            
+            {useCache && cacheStats && !isLoadingStats && (
+              <div className="mt-3 p-3 bg-background rounded border border-border">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div>
+                    <p className="text-muted-foreground text-xs">Gecachte Aktien</p>
+                    <p className="font-semibold text-foreground">{cacheStats.cachedStocks}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Aktuelle Daten</p>
+                    <p className="font-semibold text-foreground">{cacheStats.freshStocks}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Cache-Trefferquote</p>
+                    <p className="font-semibold text-foreground">{cacheStats.cacheHitRate.toFixed(1)}%</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Letzte Aktualisierung</p>
+                    <p className="font-semibold text-foreground">
+                      {cacheStats.lastUpdated 
+                        ? new Date(cacheStats.lastUpdated).toLocaleDateString('de-DE')
+                        : 'Nie'}
+                    </p>
+                  </div>
+                </div>
+                
+                {cacheStats.cachedStocks > 0 && (
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearCache}
+                      className="text-xs"
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Cache löschen
+                    </Button>
+                    <Badge variant="secondary" className="text-xs">
+                      {cacheStats.freshStocks < cacheStats.cachedStocks 
+                        ? '⚠️ Einige Daten sind älter als 24h'
+                        : '✓ Alle Daten aktuell'}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {useCache && isLoadingStats && (
+              <div className="mt-3 text-sm text-muted-foreground">
+                Lade Cache-Statistiken...
+              </div>
+            )}
+            
+            {useCache && cacheStats && cacheStats.cachedStocks === 0 && (
+              <div className="mt-3 text-sm text-muted-foreground flex items-center">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Noch keine Daten im Cache. Erste Analyse baut den Cache auf.
+              </div>
+            )}
           </div>
           
           <div>
