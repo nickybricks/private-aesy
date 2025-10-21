@@ -17,11 +17,11 @@ interface ScreenerModeProps {
 
 export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: ScreenerModeProps) => {
   const [filters, setFilters] = useState({
-    minBuffettScore: -10,
+    minBuffettScore: 0,
     maxPE: 100,
     minROIC: -100,
     minROE: -100,
-    minDividendYield: -10,
+    minDividendYield: 0,
     minRevenueGrowth: -100,
     minNetMargin: -100,
     sector: 'all',
@@ -52,11 +52,11 @@ export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: Screener
 
   const resetFilters = () => {
     setFilters({
-      minBuffettScore: -10,
+      minBuffettScore: 0,
       maxPE: 100,
       minROIC: -100,
       minROE: -100,
-      minDividendYield: -10,
+      minDividendYield: 0,
       minRevenueGrowth: -100,
       minNetMargin: -100,
       sector: 'all',
@@ -117,7 +117,7 @@ export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: Screener
             <Slider
               value={[filters.minBuffettScore]}
               onValueChange={([value]) => setFilters({ ...filters, minBuffettScore: value })}
-              min={-10}
+              min={0}
               max={9}
               step={1}
             />
@@ -165,7 +165,7 @@ export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: Screener
             <Slider
               value={[filters.minDividendYield]}
               onValueChange={([value]) => setFilters({ ...filters, minDividendYield: value })}
-              min={-10}
+              min={0}
               max={10}
               step={0.5}
             />
