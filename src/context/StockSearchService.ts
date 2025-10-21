@@ -124,13 +124,15 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
         
         if (metricsData) {
           if (metricsData.metrics) {
-            if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
+            if (shouldConvertCurrency(reportedCurrency, priceCurrency)) {
+              console.log(`Converting metrics from ${reportedCurrency} to ${priceCurrency}`);
               metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
             }
           }
           
           if (metricsData.historicalData) {
-            if (shouldConvertCurrency(priceCurrency, reportedCurrency)) {
+            if (shouldConvertCurrency(reportedCurrency, priceCurrency)) {
+              console.log(`Converting historical data from ${reportedCurrency} to ${priceCurrency}`);
               metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
             }
           }
