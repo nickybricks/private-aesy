@@ -646,16 +646,16 @@ export const exportToExcel = (results: QuantAnalysisResult[]) => {
     const headers = [
       'Symbol', 'Name', 'Sektor', 'Börse', 'Preis', 'Währung',
       'Buffett Score (max 9)',
-      'Innerer Wert (Info)',
+      'Abweichung zum inneren Wert (Intrinsic Value Discount)',
       'Jahre Profitabel (von 10)', 'Pass',
-      'KGV', 'Pass',
+      'Kurs-Gewinn-Verhältnis (KGV / P/E Ratio)', 'Pass',
       'ROIC (%)', 'Pass',
       'ROE (%)', 'Pass',
-      'Dividende (%)', 'Pass',
-      'EPS Wachstum 5J CAGR (%)', 'Pass',
-      'Umsatz Wachstum 5J CAGR (%)', 'Pass',
+      'Dividendenrendite (Dividend Yield)', 'Pass',
+      'EPS w/o NRI-Wachstum (EPS without NRI Growth)', 'Pass',
+      'Umsatzwachstum (Revenue Growth)', 'Pass',
       'NetDebt/EBITDA', 'Pass',
-      'Nettomarge (%)', 'Pass'
+      'Nettomarge (Net Margin)', 'Pass'
     ];
     
     const rows = results.map(result => [
