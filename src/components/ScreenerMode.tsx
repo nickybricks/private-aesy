@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
 import { QuantAnalysisResult } from '@/api/quantAnalyzerApi';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, ChevronDown } from 'lucide-react';
 
 interface ScreenerModeProps {
   cachedStocks: QuantAnalysisResult[];
@@ -15,6 +16,7 @@ interface ScreenerModeProps {
 }
 
 export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: ScreenerModeProps) => {
+  const [filtersOpen, setFiltersOpen] = useState(true);
   const [filters, setFilters] = useState({
     minAesyScore: '',
     maxAesyScore: '',
@@ -104,206 +106,210 @@ export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: Screener
   return (
     <div className="space-y-6">
       {/* Filter Panel */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-muted-foreground" />
-            <h3 className="text-lg font-semibold">Filter</h3>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={resetFilters}>
-              <X className="h-4 w-4 mr-1" />
-              Zurücksetzen
-            </Button>
-            <Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
-              Preise aktualisieren
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Search */}
-          <div className="space-y-2">
-            <Label>Suche (Symbol/Name)</Label>
-            <Input
-              placeholder="z.B. AAPL"
-              value={filters.searchQuery}
-              onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-            />
+      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2 p-0 hover:bg-transparent">
+                <Filter className="h-5 w-5 text-muted-foreground" />
+                <h3 className="text-lg font-semibold">Filter</h3>
+                <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
           </div>
 
-          {/* Sector */}
-          <div className="space-y-2">
-            <Label>Sektor</Label>
-            <Select value={filters.sector} onValueChange={(value) => setFilters({ ...filters, sector: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle Sektoren</SelectItem>
-                {sectors.map(sector => (
-                  <SelectItem key={sector} value={sector}>{sector}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <CollapsibleContent className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Search */}
+              <div className="space-y-2">
+                <Label>Suche (Symbol/Name)</Label>
+                <Input
+                  placeholder="z.B. AAPL"
+                  value={filters.searchQuery}
+                  onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
+                />
+              </div>
 
-          {/* Aesy Score */}
-          <div className="space-y-2">
-            <Label>Aesy Score</Label>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder="Min"
-                value={filters.minAesyScore}
-                onChange={(e) => setFilters({ ...filters, minAesyScore: e.target.value })}
-                className="w-full"
-              />
-              <Input
-                type="number"
-                placeholder="Max"
-                value={filters.maxAesyScore}
-                onChange={(e) => setFilters({ ...filters, maxAesyScore: e.target.value })}
-                className="w-full"
-              />
+              {/* Sector */}
+              <div className="space-y-2">
+                <Label>Sektor</Label>
+                <Select value={filters.sector} onValueChange={(value) => setFilters({ ...filters, sector: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Sektoren</SelectItem>
+                    {sectors.map(sector => (
+                      <SelectItem key={sector} value={sector}>{sector}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Aesy Score */}
+              <div className="space-y-2">
+                <Label>Aesy Score</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minAesyScore}
+                    onChange={(e) => setFilters({ ...filters, minAesyScore: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxAesyScore}
+                    onChange={(e) => setFilters({ ...filters, maxAesyScore: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* P/E Ratio */}
+              <div className="space-y-2">
+                <Label>KGV</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minPE}
+                    onChange={(e) => setFilters({ ...filters, minPE: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxPE}
+                    onChange={(e) => setFilters({ ...filters, maxPE: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* ROIC */}
+              <div className="space-y-2">
+                <Label>ROIC (%)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minROIC}
+                    onChange={(e) => setFilters({ ...filters, minROIC: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxROIC}
+                    onChange={(e) => setFilters({ ...filters, maxROIC: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* ROE */}
+              <div className="space-y-2">
+                <Label>ROE (%)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minROE}
+                    onChange={(e) => setFilters({ ...filters, minROE: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxROE}
+                    onChange={(e) => setFilters({ ...filters, maxROE: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Dividend Yield */}
+              <div className="space-y-2">
+                <Label>Dividende (%)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minDividendYield}
+                    onChange={(e) => setFilters({ ...filters, minDividendYield: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxDividendYield}
+                    onChange={(e) => setFilters({ ...filters, maxDividendYield: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Revenue Growth */}
+              <div className="space-y-2">
+                <Label>Umsatz-Wachstum (%)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minRevenueGrowth}
+                    onChange={(e) => setFilters({ ...filters, minRevenueGrowth: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxRevenueGrowth}
+                    onChange={(e) => setFilters({ ...filters, maxRevenueGrowth: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Net Margin */}
+              <div className="space-y-2">
+                <Label>Nettomarge (%)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minNetMargin}
+                    onChange={(e) => setFilters({ ...filters, minNetMargin: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxNetMargin}
+                    onChange={(e) => setFilters({ ...filters, maxNetMargin: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* P/E Ratio */}
-          <div className="space-y-2">
-            <Label>KGV</Label>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder="Min"
-                value={filters.minPE}
-                onChange={(e) => setFilters({ ...filters, minPE: e.target.value })}
-                className="w-full"
-              />
-              <Input
-                type="number"
-                placeholder="Max"
-                value={filters.maxPE}
-                onChange={(e) => setFilters({ ...filters, maxPE: e.target.value })}
-                className="w-full"
-              />
+            <div className="mt-4 text-sm text-muted-foreground">
+              {filteredStocks.length} von {cachedStocks.length} Aktien
             </div>
-          </div>
-
-          {/* ROIC */}
-          <div className="space-y-2">
-            <Label>ROIC (%)</Label>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder="Min"
-                value={filters.minROIC}
-                onChange={(e) => setFilters({ ...filters, minROIC: e.target.value })}
-                className="w-full"
-              />
-              <Input
-                type="number"
-                placeholder="Max"
-                value={filters.maxROIC}
-                onChange={(e) => setFilters({ ...filters, maxROIC: e.target.value })}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          {/* ROE */}
-          <div className="space-y-2">
-            <Label>ROE (%)</Label>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder="Min"
-                value={filters.minROE}
-                onChange={(e) => setFilters({ ...filters, minROE: e.target.value })}
-                className="w-full"
-              />
-              <Input
-                type="number"
-                placeholder="Max"
-                value={filters.maxROE}
-                onChange={(e) => setFilters({ ...filters, maxROE: e.target.value })}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          {/* Dividend Yield */}
-          <div className="space-y-2">
-            <Label>Dividendenrendite (%)</Label>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder="Min"
-                value={filters.minDividendYield}
-                onChange={(e) => setFilters({ ...filters, minDividendYield: e.target.value })}
-                className="w-full"
-              />
-              <Input
-                type="number"
-                placeholder="Max"
-                value={filters.maxDividendYield}
-                onChange={(e) => setFilters({ ...filters, maxDividendYield: e.target.value })}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          {/* Revenue Growth */}
-          <div className="space-y-2">
-            <Label>Umsatzwachstum (%)</Label>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder="Min"
-                value={filters.minRevenueGrowth}
-                onChange={(e) => setFilters({ ...filters, minRevenueGrowth: e.target.value })}
-                className="w-full"
-              />
-              <Input
-                type="number"
-                placeholder="Max"
-                value={filters.maxRevenueGrowth}
-                onChange={(e) => setFilters({ ...filters, maxRevenueGrowth: e.target.value })}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          {/* Net Margin */}
-          <div className="space-y-2">
-            <Label>Nettomarge (%)</Label>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder="Min"
-                value={filters.minNetMargin}
-                onChange={(e) => setFilters({ ...filters, minNetMargin: e.target.value })}
-                className="w-full"
-              />
-              <Input
-                type="number"
-                placeholder="Max"
-                value={filters.maxNetMargin}
-                onChange={(e) => setFilters({ ...filters, maxNetMargin: e.target.value })}
-                className="w-full"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 text-sm text-muted-foreground">
-          {filteredStocks.length} von {cachedStocks.length} Aktien
-        </div>
-      </Card>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Results Table */}
       {filteredStocks.length > 0 ? (
-        <QuantAnalysisTable results={filteredStocks} isLoading={false} />
+        <QuantAnalysisTable 
+          results={filteredStocks} 
+          isLoading={false}
+          onReset={resetFilters}
+          onRefresh={onRefresh}
+          isRefreshing={isRefreshing}
+        />
       ) : (
         <Card className="p-8 text-center">
           <p className="text-muted-foreground">

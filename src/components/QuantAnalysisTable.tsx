@@ -52,6 +52,9 @@ import { addStockToWatchlist } from '@/utils/watchlistService';
 interface QuantAnalysisTableProps {
   results: QuantAnalysisResult[];
   isLoading: boolean;
+  onReset?: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 const metricsDefinitions = {
@@ -197,7 +200,10 @@ const SortableHeader = ({ field, name, tooltipText, sortField, sortDirection, se
 
 const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({ 
   results, 
-  isLoading 
+  isLoading,
+  onReset,
+  onRefresh,
+  isRefreshing = false
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -383,8 +389,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
   return (
     <Card className="w-full overflow-hidden">
       <div className="p-4 bg-white border-b">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Buffett Aktienbewertung</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xl font-semibold">Aesy Aktienbewertung</h2>
           
           <div className="flex items-center gap-3">
             <Button 
@@ -400,8 +406,20 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           </div>
         </div>
         
-        <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-          <span>{sortedResults.length} Aktien gefunden</span>
+        <div className="flex items-center justify-between text-sm text-gray-500">
+          <div className="flex items-center gap-2">
+            <span>Gesamt: {sortedResults.length}</span>
+            {onReset && (
+              <Button variant="outline" size="sm" onClick={onReset}>
+                Zurücksetzen
+              </Button>
+            )}
+            {onRefresh && (
+              <Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
+                Preise aktualisieren
+              </Button>
+            )}
+          </div>
           <span>Seite {currentPage} von {totalPages}</span>
         </div>
       </div>
