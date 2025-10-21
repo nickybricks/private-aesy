@@ -203,7 +203,7 @@ export const ScreenerMode = ({ cachedStocks, onRefresh, isRefreshing }: Screener
 
       {/* Results Table */}
       {filteredStocks.length > 0 ? (
-        <QuantAnalysisTable results={filteredStocks} />
+        <QuantAnalysisTable results={filteredStocks} isLoading={false} />
       ) : (
         <Card className="p-8 text-center">
           <p className="text-muted-foreground">

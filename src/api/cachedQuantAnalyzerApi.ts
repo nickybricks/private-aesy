@@ -28,9 +28,9 @@ const isCacheFresh = (lastUpdated: string): boolean => {
 export const getCachedAnalysis = async (marketId: string): Promise<QuantAnalysisResult[]> => {
   try {
     const { data, error } = await supabase
-      .from('stock_analysis_cache')
+      .from('stock_analysis_cache' as any)
       .select('*')
-      .eq('market_id', marketId) as any;
+      .eq('market_id', marketId);
 
     if (error) {
       console.error('Error fetching cached analysis:', error);
@@ -63,16 +63,16 @@ const updateCachedPrice = async (symbol: string, marketId: string): Promise<Quan
 
     // Get existing cache entry
     const { data: existing } = await supabase
-      .from('stock_analysis_cache')
+      .from('stock_analysis_cache' as any)
       .select('*')
       .eq('symbol', symbol)
       .eq('market_id', marketId)
-      .single() as any;
+      .single();
 
     if (!existing) return null;
 
     const updatedAnalysis = {
-      ...existing.analysis_result,
+      ...(existing as any).analysis_result,
       price: quoteData.price,
       change: quoteData.change,
       changesPercentage: quoteData.changesPercentage
@@ -86,11 +86,11 @@ const updateCachedPrice = async (symbol: string, marketId: string): Promise<Quan
 
     // Update cache
     await supabase
-      .from('stock_analysis_cache')
+      .from('stock_analysis_cache' as any)
       .update({
         analysis_result: updatedAnalysis,
         last_updated: new Date().toISOString()
-      } as any)
+      })
       .eq('symbol', symbol)
       .eq('market_id', marketId);
 
@@ -109,14 +109,14 @@ const saveToCache = async (
 ): Promise<void> => {
   try {
     await supabase
-      .from('stock_analysis_cache')
+      .from('stock_analysis_cache' as any)
       .upsert({
         symbol,
         market_id: marketId,
         buffett_score: analysis.buffettScore,
         analysis_result: analysis,
         last_updated: new Date().toISOString()
-      } as any);
+      });
   } catch (error) {
     console.error(`Error saving to cache for ${symbol}:`, error);
   }
@@ -242,9 +242,9 @@ export const analyzeMarketWithCache = async (
 export const getAllCachedStocks = async (): Promise<QuantAnalysisResult[]> => {
   try {
     const { data, error } = await supabase
-      .from('stock_analysis_cache')
+      .from('stock_analysis_cache' as any)
       .select('*')
-      .order('buffett_score', { ascending: false }) as any;
+      .order('buffett_score', { ascending: false });
 
     if (error) {
       console.error('Error fetching all cached stocks:', error);
@@ -262,8 +262,8 @@ export const getAllCachedStocks = async (): Promise<QuantAnalysisResult[]> => {
 export const getCacheStats = async () => {
   try {
     const { data, error } = await supabase
-      .from('stock_analysis_cache')
-      .select('market_id, last_updated') as any;
+      .from('stock_analysis_cache' as any)
+      .select('market_id, last_updated');
 
     if (error) return null;
 
@@ -294,9 +294,9 @@ export const getCacheStats = async () => {
 export const clearMarketCache = async (marketId: string): Promise<void> => {
   try {
     await supabase
-      .from('stock_analysis_cache')
+      .from('stock_analysis_cache' as any)
       .delete()
-      .eq('market_id', marketId) as any;
+      .eq('market_id', marketId);
     
     console.log(`Cache cleared for market: ${marketId}`);
   } catch (error) {
