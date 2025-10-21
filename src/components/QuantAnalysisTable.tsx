@@ -175,18 +175,18 @@ const SortableHeader = ({ field, name, tooltipText, sortField, sortDirection, se
   return (
     <div className="cursor-pointer select-none" onClick={handleHeaderClick}>
       <div className="flex items-center space-x-1">
-        <span className="font-medium text-muted-foreground text-left">{name}</span>
-        {isCurrentSort && <SortIcon className="h-4 w-4" />}
+        <span className="font-medium text-muted-foreground text-left text-xs whitespace-nowrap">{name}</span>
+        {isCurrentSort && <SortIcon className="h-3 w-3" />}
         {tooltipText && (
           <Popover>
             <PopoverTrigger asChild>
               <Info 
-                className="h-4 w-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600" 
+                className="h-3 w-3 text-gray-400 ml-1 cursor-pointer hover:text-gray-600" 
                 onClick={handleTooltipClick}
               />
             </PopoverTrigger>
             <PopoverContent className="max-w-sm">
-              <p className="text-sm">{tooltipText}</p>
+              <p className="text-xs">{tooltipText}</p>
             </PopoverContent>
           </Popover>
         )}
@@ -407,179 +407,11 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
       </div>
       
       <div className="overflow-x-auto">
-        {/* Table Header */}
-        <div className="border-b">
-          <div className="flex items-center bg-muted/50">
-            <div className="w-12"></div>
-            <div className="min-w-[100px] px-4 py-3">
-              <SortableHeader 
-                field="symbol" 
-                name="Symbol" 
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[200px] px-4 py-3">
-              <SortableHeader 
-                field="name" 
-                name="Unternehmen" 
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[150px] px-4 py-3">
-              <SortableHeader 
-                field="sector" 
-                name="Sektor" 
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[150px] px-4 py-3">
-              <SortableHeader 
-                field="buffettScore" 
-                name="Score" 
-                tooltipText="Erfüllte Kriterien (max. 9)"
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[120px] px-4 py-3">
-              <SortableHeader
-                field="price" 
-                name="Preis" 
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[120px] px-4 py-3">
-              <SortableHeader 
-                field="intrinsicValue" 
-                name="Innerer Wert" 
-                tooltipText={metricsDefinitions.intrinsicValue.definition}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[100px] px-4 py-3">
-              <SortableHeader 
-                field="yearsOfProfitability" 
-                name="Jahre +" 
-                tooltipText={`${metricsDefinitions.yearsOfProfitability.definition} Ziel: ${metricsDefinitions.yearsOfProfitability.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[100px] px-4 py-3">
-              <SortableHeader
-                field="pe" 
-                name="KGV" 
-                tooltipText={`${metricsDefinitions.pe.definition} Ziel: ${metricsDefinitions.pe.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[100px] px-4 py-3">
-              <SortableHeader 
-                field="roic" 
-                name="ROIC" 
-                tooltipText={`${metricsDefinitions.roic.definition} Ziel: ${metricsDefinitions.roic.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[100px] px-4 py-3">
-              <SortableHeader 
-                field="roe" 
-                name="ROE" 
-                tooltipText={`${metricsDefinitions.roe.definition} Ziel: ${metricsDefinitions.roe.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[100px] px-4 py-3">
-              <SortableHeader 
-                field="dividendYield" 
-                name="Div %" 
-                tooltipText={`${metricsDefinitions.dividendYield.definition} Ziel: ${metricsDefinitions.dividendYield.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[100px] px-4 py-3">
-              <SortableHeader 
-                field="epsGrowth" 
-                name="EPS ↑" 
-                tooltipText={`${metricsDefinitions.epsGrowth.definition} Ziel: ${metricsDefinitions.epsGrowth.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[120px] px-4 py-3">
-              <SortableHeader 
-                field="revenueGrowth" 
-                name="Umsatz ↑" 
-                tooltipText={`${metricsDefinitions.revenueGrowth.definition} Ziel: ${metricsDefinitions.revenueGrowth.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[100px] px-4 py-3">
-              <SortableHeader 
-                field="netDebtToEbitda" 
-                name="Schulden" 
-                tooltipText={`${metricsDefinitions.netDebtToEbitda.definition} Ziel: ${metricsDefinitions.netDebtToEbitda.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-            <div className="min-w-[100px] px-4 py-3">
-              <SortableHeader 
-                field="netMargin" 
-                name="Marge" 
-                tooltipText={`${metricsDefinitions.netMargin.definition} Ziel: ${metricsDefinitions.netMargin.target}`}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                setSortField={setSortField}
-                setSortDirection={setSortDirection}
-              />
-            </div>
-          </div>
-        </div>
-
-        <Table>
+        <Table className="text-xs">
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-12"></TableHead>
-              <div className="min-w-[100px] px-4 py-3">
+            <TableRow className="h-10">
+              <TableHead className="w-12 h-10 py-2"></TableHead>
+              <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="symbol" 
                   name="Symbol" 
@@ -588,8 +420,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[200px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[200px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="name" 
                   name="Unternehmen" 
@@ -598,8 +430,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[150px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[150px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="sector" 
                   name="Sektor" 
@@ -608,8 +440,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[150px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[150px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="buffettScore" 
                   name="Score" 
@@ -619,8 +451,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[120px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[120px] px-4 py-2 h-10">
                 <SortableHeader
                   field="price" 
                   name="Preis" 
@@ -629,8 +461,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[120px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[120px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="intrinsicValue" 
                   name="Innerer Wert" 
@@ -640,8 +472,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[100px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="yearsOfProfitability" 
                   name="Jahre +" 
@@ -651,8 +483,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[100px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader
                   field="pe" 
                   name="KGV" 
@@ -662,8 +494,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[100px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="roic" 
                   name="ROIC" 
@@ -673,8 +505,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[100px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="roe" 
                   name="ROE" 
@@ -684,8 +516,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[100px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="dividendYield" 
                   name="Div %" 
@@ -695,8 +527,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[100px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="epsGrowth" 
                   name="EPS ↑" 
@@ -706,8 +538,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[120px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[120px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="revenueGrowth" 
                   name="Umsatz ↑" 
@@ -717,8 +549,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[100px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="netDebtToEbitda" 
                   name="Schulden" 
@@ -728,8 +560,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
-              <div className="min-w-[100px] px-4 py-3">
+              </TableHead>
+              <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="netMargin" 
                   name="Marge" 
@@ -739,7 +571,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortField={setSortField}
                   setSortDirection={setSortDirection}
                 />
-              </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -760,8 +592,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableRow>
             ) : (
               paginatedResults.map((stock) => (
-                <TableRow key={stock.symbol}>
-                  <TableCell>
+                <TableRow key={stock.symbol} className="h-10">
+                  <TableCell className="py-1">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -798,70 +630,70 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
-                  <TableCell className="font-medium">{stock.symbol}</TableCell>
-                  <TableCell>{stock.name}</TableCell>
-                  <TableCell>{stock.sector}</TableCell>
-                  <TableCell>
+                  <TableCell className="font-medium py-1">{stock.symbol}</TableCell>
+                  <TableCell className="py-1">{stock.name}</TableCell>
+                  <TableCell className="py-1">{stock.sector}</TableCell>
+                  <TableCell className="py-1">
                     <div className="flex items-center">
                       <span className="mr-2">{stock.buffettScore}/9</span>
                       <BuffettScoreBadge score={stock.buffettScore} />
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                     {stock.price?.toFixed(2)} {stock.currency}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                     <span>{stock.intrinsicValue ? stock.intrinsicValue.toFixed(2) : 'N/A'}</span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.yearsOfProfitability.pass} value={stock.criteria.yearsOfProfitability.value} />
                       <span>{stock.criteria.yearsOfProfitability.value || 'N/A'}/10</span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.pe.pass} value={stock.criteria.pe.value} />
                       <span>{formatValue(stock.criteria.pe.value, 1, false)}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.roic.pass} value={stock.criteria.roic.value} />
                       <span>{formatValue(stock.criteria.roic.value)}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.roe.pass} value={stock.criteria.roe.value} />
                       <span>{formatValue(stock.criteria.roe.value)}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.dividendYield.pass} value={stock.criteria.dividendYield.value} />
                       <span>{formatValue(stock.criteria.dividendYield.value)}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.epsGrowth.pass} value={stock.criteria.epsGrowth.value} />
                       <span>{formatValue(stock.criteria.epsGrowth.value)}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.revenueGrowth.pass} value={stock.criteria.revenueGrowth.value} />
                       <span>{formatValue(stock.criteria.revenueGrowth.value)}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.netDebtToEbitda.pass} value={stock.criteria.netDebtToEbitda.value} />
                       <span>{formatValue(stock.criteria.netDebtToEbitda.value, 2, false)}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.netMargin.pass} value={stock.criteria.netMargin.value} />
                       <span>{formatValue(stock.criteria.netMargin.value)}</span>
