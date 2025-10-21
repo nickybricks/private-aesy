@@ -5,9 +5,3 @@ verify_jwt = false
 
 [functions.fetch-news]
 verify_jwt = false
-
-[functions.cache-stock-data]
-verify_jwt = false
-
-[functions.batch-analyze-stocks]
-verify_jwt = false
