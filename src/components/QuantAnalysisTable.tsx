@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { FixedSizeList } from 'react-window';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card } from '@/components/ui/card';
 import {
   Table,
@@ -208,6 +208,9 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
   const [showNewWatchlistDialog, setShowNewWatchlistDialog] = useState(false);
   const [selectedStock, setSelectedStock] = useState<QuantAnalysisResult | null>(null);
   const [newWatchlistName, setNewWatchlistName] = useState('');
+  
+  // Ref for virtualization
+  const parentRef = useRef<HTMLDivElement>(null);
 
   // Sort the results using useMemo for performance
   const sortedResults = useMemo(() => {
@@ -299,6 +302,14 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
     return sorted;
   }, [results, sortField, sortDirection]);
 
+  // Setup virtualizer
+  const rowVirtualizer = useVirtualizer({
+    count: sortedResults.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 60,
+    overscan: 5,
+  });
+
   // Format a numeric value with optional percentage and decimal places
   const formatValue = (value: number | null, decimals = 2, isPercent = true) => {
     if (value === null) return 'N/A';
@@ -365,121 +376,116 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
     }
   };
 
-  // Row renderer for virtualization
-  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
-    const stock = sortedResults[index];
-    
-    return (
-      <div style={style} className="flex items-center border-b hover:bg-muted/50 transition-colors">
-        <div className="w-12 flex items-center justify-center">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleAnalyzeStock(stock)}>
-                <TrendingUp className="mr-2 h-4 w-4" />
-                In Buffett Analyzer analysieren
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Zu Watchlist hinzufügen
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  {watchlists.map((watchlist) => (
-                    <DropdownMenuItem
-                      key={watchlist.id}
-                      onClick={() => handleAddToWatchlist(stock, watchlist.id)}
-                    >
-                      {watchlist.name}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleAddToWatchlist(stock)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Neue Watchlist erstellen
+  const renderRow = (stock: QuantAnalysisResult) => (
+    <div className="flex items-center border-b hover:bg-muted/50 transition-colors">
+      <div className="w-12 flex items-center justify-center">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleAnalyzeStock(stock)}>
+              <TrendingUp className="mr-2 h-4 w-4" />
+              In Buffett Analyzer analysieren
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Plus className="mr-2 h-4 w-4" />
+                Zu Watchlist hinzufügen
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {watchlists.map((watchlist) => (
+                  <DropdownMenuItem
+                    key={watchlist.id}
+                    onClick={() => handleAddToWatchlist(stock, watchlist.id)}
+                  >
+                    {watchlist.name}
                   </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className="min-w-[100px] px-4 py-2 font-medium">{stock.symbol}</div>
-        <div className="min-w-[200px] px-4 py-2">{stock.name}</div>
-        <div className="min-w-[150px] px-4 py-2">{stock.sector}</div>
-        <div className="min-w-[150px] px-4 py-2">
-          <div className="flex items-center">
-            <span className="mr-2">{stock.buffettScore}/9</span>
-            <BuffettScoreBadge score={stock.buffettScore} />
-          </div>
-        </div>
-        <div className="min-w-[120px] px-4 py-2">
-          {stock.price?.toFixed(2)} {stock.currency}
-        </div>
-        <div className="min-w-[120px] px-4 py-2">
-          <span>{stock.intrinsicValue ? stock.intrinsicValue.toFixed(2) : 'N/A'}</span>
-        </div>
-        <div className="min-w-[100px] px-4 py-2">
-          <div className="flex items-center space-x-1">
-            <StatusIcon passed={stock.criteria.yearsOfProfitability.pass} value={stock.criteria.yearsOfProfitability.value} />
-            <span>{stock.criteria.yearsOfProfitability.value || 'N/A'}/10</span>
-          </div>
-        </div>
-        <div className="min-w-[100px] px-4 py-2">
-          <div className="flex items-center space-x-1">
-            <StatusIcon passed={stock.criteria.pe.pass} value={stock.criteria.pe.value} />
-            <span>{formatValue(stock.criteria.pe.value, 1, false)}</span>
-          </div>
-        </div>
-        <div className="min-w-[100px] px-4 py-2">
-          <div className="flex items-center space-x-1">
-            <StatusIcon passed={stock.criteria.roic.pass} value={stock.criteria.roic.value} />
-            <span>{formatValue(stock.criteria.roic.value)}</span>
-          </div>
-        </div>
-        <div className="min-w-[100px] px-4 py-2">
-          <div className="flex items-center space-x-1">
-            <StatusIcon passed={stock.criteria.roe.pass} value={stock.criteria.roe.value} />
-            <span>{formatValue(stock.criteria.roe.value)}</span>
-          </div>
-        </div>
-        <div className="min-w-[100px] px-4 py-2">
-          <div className="flex items-center space-x-1">
-            <StatusIcon passed={stock.criteria.dividendYield.pass} value={stock.criteria.dividendYield.value} />
-            <span>{formatValue(stock.criteria.dividendYield.value)}</span>
-          </div>
-        </div>
-        <div className="min-w-[100px] px-4 py-2">
-          <div className="flex items-center space-x-1">
-            <StatusIcon passed={stock.criteria.epsGrowth.pass} value={stock.criteria.epsGrowth.value} />
-            <span>{formatValue(stock.criteria.epsGrowth.value)}</span>
-          </div>
-        </div>
-        <div className="min-w-[120px] px-4 py-2">
-          <div className="flex items-center space-x-1">
-            <StatusIcon passed={stock.criteria.revenueGrowth.pass} value={stock.criteria.revenueGrowth.value} />
-            <span>{formatValue(stock.criteria.revenueGrowth.value)}</span>
-          </div>
-        </div>
-        <div className="min-w-[100px] px-4 py-2">
-          <div className="flex items-center space-x-1">
-            <StatusIcon passed={stock.criteria.netDebtToEbitda.pass} value={stock.criteria.netDebtToEbitda.value} />
-            <span>{formatValue(stock.criteria.netDebtToEbitda.value, 2, false)}</span>
-          </div>
-        </div>
-        <div className="min-w-[100px] px-4 py-2">
-          <div className="flex items-center space-x-1">
-            <StatusIcon passed={stock.criteria.netMargin.pass} value={stock.criteria.netMargin.value} />
-            <span>{formatValue(stock.criteria.netMargin.value)}</span>
-          </div>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleAddToWatchlist(stock)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Neue Watchlist erstellen
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <div className="min-w-[100px] px-4 py-2 font-medium">{stock.symbol}</div>
+      <div className="min-w-[200px] px-4 py-2">{stock.name}</div>
+      <div className="min-w-[150px] px-4 py-2">{stock.sector}</div>
+      <div className="min-w-[150px] px-4 py-2">
+        <div className="flex items-center">
+          <span className="mr-2">{stock.buffettScore}/9</span>
+          <BuffettScoreBadge score={stock.buffettScore} />
         </div>
       </div>
-    );
-  };
+      <div className="min-w-[120px] px-4 py-2">
+        {stock.price?.toFixed(2)} {stock.currency}
+      </div>
+      <div className="min-w-[120px] px-4 py-2">
+        <span>{stock.intrinsicValue ? stock.intrinsicValue.toFixed(2) : 'N/A'}</span>
+      </div>
+      <div className="min-w-[100px] px-4 py-2">
+        <div className="flex items-center space-x-1">
+          <StatusIcon passed={stock.criteria.yearsOfProfitability.pass} value={stock.criteria.yearsOfProfitability.value} />
+          <span>{stock.criteria.yearsOfProfitability.value || 'N/A'}/10</span>
+        </div>
+      </div>
+      <div className="min-w-[100px] px-4 py-2">
+        <div className="flex items-center space-x-1">
+          <StatusIcon passed={stock.criteria.pe.pass} value={stock.criteria.pe.value} />
+          <span>{formatValue(stock.criteria.pe.value, 1, false)}</span>
+        </div>
+      </div>
+      <div className="min-w-[100px] px-4 py-2">
+        <div className="flex items-center space-x-1">
+          <StatusIcon passed={stock.criteria.roic.pass} value={stock.criteria.roic.value} />
+          <span>{formatValue(stock.criteria.roic.value)}</span>
+        </div>
+      </div>
+      <div className="min-w-[100px] px-4 py-2">
+        <div className="flex items-center space-x-1">
+          <StatusIcon passed={stock.criteria.roe.pass} value={stock.criteria.roe.value} />
+          <span>{formatValue(stock.criteria.roe.value)}</span>
+        </div>
+      </div>
+      <div className="min-w-[100px] px-4 py-2">
+        <div className="flex items-center space-x-1">
+          <StatusIcon passed={stock.criteria.dividendYield.pass} value={stock.criteria.dividendYield.value} />
+          <span>{formatValue(stock.criteria.dividendYield.value)}</span>
+        </div>
+      </div>
+      <div className="min-w-[100px] px-4 py-2">
+        <div className="flex items-center space-x-1">
+          <StatusIcon passed={stock.criteria.epsGrowth.pass} value={stock.criteria.epsGrowth.value} />
+          <span>{formatValue(stock.criteria.epsGrowth.value)}</span>
+        </div>
+      </div>
+      <div className="min-w-[120px] px-4 py-2">
+        <div className="flex items-center space-x-1">
+          <StatusIcon passed={stock.criteria.revenueGrowth.pass} value={stock.criteria.revenueGrowth.value} />
+          <span>{formatValue(stock.criteria.revenueGrowth.value)}</span>
+        </div>
+      </div>
+      <div className="min-w-[100px] px-4 py-2">
+        <div className="flex items-center space-x-1">
+          <StatusIcon passed={stock.criteria.netDebtToEbitda.pass} value={stock.criteria.netDebtToEbitda.value} />
+          <span>{formatValue(stock.criteria.netDebtToEbitda.value, 2, false)}</span>
+        </div>
+      </div>
+      <div className="min-w-[100px] px-4 py-2">
+        <div className="flex items-center space-x-1">
+          <StatusIcon passed={stock.criteria.netMargin.pass} value={stock.criteria.netMargin.value} />
+          <span>{formatValue(stock.criteria.netMargin.value)}</span>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <Card className="w-full overflow-hidden">
@@ -686,15 +692,34 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
             Keine Ergebnisse gefunden
           </div>
         ) : (
-          <FixedSizeList
-            height={600}
-            itemCount={sortedResults.length}
-            itemSize={60}
-            width="100%"
-            className="scrollbar-thin"
+          <div
+            ref={parentRef}
+            className="h-[600px] overflow-auto"
           >
-            {Row}
-          </FixedSizeList>
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+                <div
+                  key={virtualRow.key}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  {renderRow(sortedResults[virtualRow.index])}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
