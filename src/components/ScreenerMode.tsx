@@ -47,6 +47,7 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
     minFcfMargin: '',
     maxFcfMargin: '',
     sector: 'all',
+    exchange: 'all',
     searchQuery: ''
   });
 
@@ -115,6 +116,9 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
       // Sector filter
       if (filters.sector !== 'all' && stock.sector !== filters.sector) return false;
       
+      // Exchange filter
+      if (filters.exchange !== 'all' && stock.exchange !== filters.exchange) return false;
+      
       // Search filter
       if (filters.searchQuery && !stock.symbol.toLowerCase().includes(filters.searchQuery.toLowerCase()) &&
           !stock.name.toLowerCase().includes(filters.searchQuery.toLowerCase())) return false;
@@ -126,6 +130,11 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
   const sectors = useMemo(() => {
     const uniqueSectors = new Set(cachedStocks.map(s => s.sector));
     return Array.from(uniqueSectors).sort();
+  }, [cachedStocks]);
+
+  const exchanges = useMemo(() => {
+    const uniqueExchanges = new Set(cachedStocks.map(s => s.exchange));
+    return Array.from(uniqueExchanges).sort();
   }, [cachedStocks]);
 
 
@@ -145,7 +154,7 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
           </CollapsibleTrigger>
 
           <CollapsibleContent className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
               {/* Search */}
               <div className="space-y-2">
                 <Label>Suche (Symbol/Name)</Label>
@@ -167,6 +176,22 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
                     <SelectItem value="all">Alle Sektoren</SelectItem>
                     {sectors.map(sector => (
                       <SelectItem key={sector} value={sector}>{sector}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Exchange */}
+              <div className="space-y-2">
+                <Label>Börse</Label>
+                <Select value={filters.exchange} onValueChange={(value) => setFilters({ ...filters, exchange: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Börsen</SelectItem>
+                    {exchanges.map(exchange => (
+                      <SelectItem key={exchange} value={exchange}>{exchange}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

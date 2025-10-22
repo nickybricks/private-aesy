@@ -65,34 +65,9 @@ const BuffettQuantAnalyzer = () => {
               <p className="text-muted-foreground">Lade Cache-Daten...</p>
             </Card>
           ) : (
-            <>
-              {cacheStats && (
-                <Card className="p-4">
-                  <div className="flex items-center gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Gesamt: </span>
-                      <span className="font-semibold">{cacheStats.total}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Aktuell: </span>
-                      <span className="font-semibold text-green-600">{cacheStats.fresh}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Veraltet: </span>
-                      <span className="font-semibold text-yellow-600">{cacheStats.stale}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Hit-Rate: </span>
-                      <span className="font-semibold">{cacheStats.hitRate.toFixed(1)}%</span>
-                    </div>
-                  </div>
-                </Card>
-              )}
-              
-              <ScreenerMode 
-                cachedStocks={cachedStocks}
-              />
-            </>
+            <ScreenerMode
+              cachedStocks={cachedStocks}
+            />
           )}
         </div>
       </div>

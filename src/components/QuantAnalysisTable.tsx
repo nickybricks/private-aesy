@@ -266,6 +266,10 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           valueA = a.name;
           valueB = b.name;
           break;
+        case 'exchange':
+          valueA = a.exchange;
+          valueB = b.exchange;
+          break;
         case 'sector':
           valueA = a.sector;
           valueB = b.sector;
@@ -461,13 +465,23 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
       
       <div className="overflow-x-auto">
         <Table className="text-xs">
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-20 bg-background shadow-sm">
             <TableRow className="h-10">
-              <TableHead className="w-12 h-10 py-2"></TableHead>
-              <TableHead className="min-w-[250px] px-4 py-2 h-10">
+              <TableHead className="w-12 h-10 py-2 sticky left-0 z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"></TableHead>
+              <TableHead className="min-w-[250px] px-4 py-2 h-10 sticky left-12 z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                 <SortableHeader 
                   field="name" 
                   name="Unternehmen" 
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </TableHead>
+              <TableHead className="min-w-[120px] px-4 py-2 h-10">
+                <SortableHeader 
+                  field="exchange" 
+                  name="Börse" 
                   sortField={sortField}
                   sortDirection={sortDirection}
                   setSortField={setSortField}
@@ -664,7 +678,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={18} className="text-center py-8">
+                <TableCell colSpan={19} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
                     <span>Analyse läuft...</span>
@@ -673,56 +687,25 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableRow>
             ) : paginatedResults.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={18} className="text-center py-8">
+                <TableCell colSpan={19} className="text-center py-8">
                   Keine Ergebnisse gefunden
                 </TableCell>
               </TableRow>
             ) : (
               paginatedResults.map((stock) => (
                 <TableRow key={stock.symbol} className="h-10">
-                  <TableCell className="py-1">
+                  <TableCell className="py-1 sticky left-0 z-10 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleAnalyzeStock(stock)}>
-                          <TrendingUp className="mr-2 h-4 w-4" />
-                          In Buffett Analyzer analysieren
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Zu Watchlist hinzufügen
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            {watchlists.map((watchlist) => (
-                              <DropdownMenuItem
-                                key={watchlist.id}
-                                onClick={() => handleAddToWatchlist(stock, watchlist.id)}
-                              >
-                                {watchlist.name}
-                              </DropdownMenuItem>
-                            ))}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleAddToWatchlist(stock)}>
-                              <Plus className="mr-2 h-4 w-4" />
-                              Neue Watchlist erstellen
-                            </DropdownMenuItem>
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                      </DropdownMenuContent>
+...
                     </DropdownMenu>
                   </TableCell>
-                  <TableCell className="py-1">
+                  <TableCell className="py-1 sticky left-12 z-10 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{getCountryFlag(stock.country)}</span>
                       <span>{stock.name} ({stock.symbol})</span>
                     </div>
                   </TableCell>
+                  <TableCell className="py-1">{stock.exchange}</TableCell>
                   <TableCell className="py-1">{stock.sector}</TableCell>
                   <TableCell className="py-1">
                     <div className="flex items-center">
