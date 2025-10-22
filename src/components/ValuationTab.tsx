@@ -154,7 +154,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
             <div className="grid gap-2">
               <div className="flex justify-between items-center py-2 border-b">
                 <span className="text-muted-foreground text-sm">Startwert (per Share)</span>
-                <span className="font-semibold">${data.startValue.toFixed(2)}</span>
+                <span className="font-semibold">{data.startValue.toFixed(2)} {valuationData.currency || 'USD'}</span>
               </div>
               
               <div className="bg-muted/50 p-3 rounded-lg space-y-2">
@@ -179,7 +179,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
 
               <div className="flex justify-between items-center py-3 border-t-2 border-primary mt-4">
                 <span className="font-bold">Fair Value</span>
-                <span className="text-xl font-bold text-primary">${data.fairValue.toFixed(2)}</span>
+                <span className="text-xl font-bold text-primary">{data.fairValue.toFixed(2)} {valuationData.currency || 'USD'}</span>
               </div>
             </div>
           </div>
@@ -191,11 +191,11 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
           <div className="space-y-6">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Aktueller Preis</p>
-              <p className="text-2xl font-bold">${currentPrice.toFixed(2)}</p>
+              <p className="text-2xl font-bold">{currentPrice.toFixed(2)} {valuationData.currency || 'USD'}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground mb-1">Fair Value pro Aktie</p>
-              <p className="text-2xl font-bold text-primary">${data.fairValue.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-primary">{data.fairValue.toFixed(2)} {valuationData.currency || 'USD'}</p>
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">

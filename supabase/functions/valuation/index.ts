@@ -19,6 +19,8 @@ interface ValuationResponse {
   mode: BasisMode;
   fairValuePerShare: number;
   marginOfSafetyPct: number;
+  currency?: string;
+  reportedCurrency?: string;
   assumptions: {
     discountRatePct: number;
     growthYears: number;
@@ -56,6 +58,31 @@ function median(values: number[]): number {
   return sorted.length % 2 === 0
     ? (sorted[mid - 1] + sorted[mid]) / 2
     : sorted[mid];
+}
+
+// Get exchange rate from FMP
+async function getExchangeRate(fromCurrency: string, toCurrency: string): Promise<number | null> {
+  if (fromCurrency === toCurrency) return 1;
+  
+  const FMP_API_KEY = Deno.env.get('FMP_API_KEY');
+  if (!FMP_API_KEY) return null;
+  
+  try {
+    const res = await fetch(
+      `https://financialmodelingprep.com/api/v3/fx/${fromCurrency}${toCurrency}?apikey=${FMP_API_KEY}`
+    );
+    
+    if (!res.ok) return null;
+    
+    const rates = await res.json();
+    const rate = rates?.[0]?.price || null;
+    
+    console.log(`Exchange rate ${fromCurrency}→${toCurrency}: ${rate}`);
+    return rate;
+  } catch (error) {
+    console.error(`Error fetching exchange rate: ${error}`);
+    return null;
+  }
 }
 
 // Fetch financial data from FMP
@@ -459,6 +486,10 @@ serve(async (req) => {
     // Fetch financial data
     const data = await fetchFinancialData(ticker);
     
+    // Extract reported currency
+    const reportedCurrency = data.income?.[0]?.reportedCurrency || 'USD';
+    console.log(`Reported currency: ${reportedCurrency}`);
+    
     // Calculate WACC
     const wacc = await calculateWACC(ticker, data);
     console.log(`Calculated WACC: ${wacc.toFixed(2)}%`);
@@ -472,18 +503,34 @@ serve(async (req) => {
       console.log(`EPS w/o NRI (TTM): ${startValue.toFixed(2)}`);
     }
     
-    console.log(`Start value for mode ${mode}: ${startValue.toFixed(2)}`);
+    console.log(`Start value for mode ${mode}: ${startValue.toFixed(2)} ${reportedCurrency}`);
+    
+    // Convert start value to target currency if needed
+    let convertedStartValue = startValue;
+    let targetCurrency = reportedCurrency;
     
     // Warnings array for data quality issues
     const warnings: string[] = [];
     
-    if (startValue <= 0) {
+    if (reportedCurrency !== 'USD') {
+      const exchangeRate = await getExchangeRate(reportedCurrency, 'USD');
+      
+      if (exchangeRate && exchangeRate > 0) {
+        convertedStartValue = startValue * exchangeRate;
+        targetCurrency = 'USD';
+        console.log(`Start value converted: ${startValue.toFixed(2)} ${reportedCurrency} → ${convertedStartValue.toFixed(2)} USD (rate: ${exchangeRate})`);
+      } else {
+        warnings.push(`Währungsumrechnung fehlgeschlagen: ${reportedCurrency} → USD. Werte in ${reportedCurrency}.`);
+      }
+    }
+    
+    if (convertedStartValue <= 0) {
       warnings.push(`Keine ausreichenden Daten für Modus ${mode}. Berechnung mit konservativen Annahmen.`);
       // Don't throw error, continue with warning
     }
     
     // Use a minimum start value if needed
-    const effectiveStartValue = Math.max(startValue, 0.01);
+    const effectiveStartValue = Math.max(convertedStartValue, 0.01);
     
     // Calculate growth rate
     let growthRate = calculateGrowthRate(mode, data);
@@ -536,6 +583,8 @@ serve(async (req) => {
       mode,
       fairValuePerShare: parseFloat(result.fairValue.toFixed(2)),
       marginOfSafetyPct: parseFloat(marginOfSafety.toFixed(2)),
+      currency: targetCurrency,
+      reportedCurrency: reportedCurrency,
       assumptions: {
         discountRatePct: parseFloat(wacc.toFixed(2)),
         growthYears,
