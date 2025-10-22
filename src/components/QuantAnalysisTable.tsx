@@ -105,27 +105,64 @@ const metricsDefinitions = {
     formula: "(Total Debt - Cash) ÷ EBITDA"
   },
   netMargin: {
-    name: "Nettomarge",
-    definition: "Gewinnmarge",
+    name: "Gewinnmarge",
+    definition: "Gewinnmarge (Nettomarge)",
     target: "≥ 10%",
     formula: "Nettogewinn ÷ Umsatz"
   },
-  intrinsicValue: {
-    name: "Innerer Wert",
-    definition: "Geschätzter fairer Wert (nur Info, keine Bewertung)",
-    target: "-",
-    formula: "Graham + DCF vereinfacht"
+  fcfMargin: {
+    name: "FCF-Marge",
+    definition: "Free Cash Flow Marge",
+    target: "≥ 8%",
+    formula: "FCF ÷ Umsatz"
   }
 };
 
 const BuffettScoreBadge = ({ score }: { score: number }) => {
-  if (score >= 7) { // 7-9
+  if (score >= 8) { // 8-10
     return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Kandidat</Badge>;
-  } else if (score >= 5) { // 5-6
+  } else if (score >= 6) { // 6-7
     return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Beobachten</Badge>;
-  } else { // 0-4
+  } else { // 0-5
     return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Vermeiden</Badge>;
   }
+};
+
+// Helper to get country flag emoji
+const getCountryFlag = (countryCode: string): string => {
+  const countryMap: { [key: string]: string } = {
+    'US': '🇺🇸', 'United States': '🇺🇸', 'USA': '🇺🇸',
+    'DE': '🇩🇪', 'Germany': '🇩🇪', 'Deutschland': '🇩🇪',
+    'GB': '🇬🇧', 'United Kingdom': '🇬🇧', 'UK': '🇬🇧',
+    'FR': '🇫🇷', 'France': '🇫🇷',
+    'JP': '🇯🇵', 'Japan': '🇯🇵',
+    'CN': '🇨🇳', 'China': '🇨🇳',
+    'CA': '🇨🇦', 'Canada': '🇨🇦',
+    'CH': '🇨🇭', 'Switzerland': '🇨🇭',
+    'NL': '🇳🇱', 'Netherlands': '🇳🇱',
+    'IT': '🇮🇹', 'Italy': '🇮🇹',
+    'ES': '🇪🇸', 'Spain': '🇪🇸',
+    'SE': '🇸🇪', 'Sweden': '🇸🇪',
+    'DK': '🇩🇰', 'Denmark': '🇩🇰',
+    'NO': '🇳🇴', 'Norway': '🇳🇴',
+    'FI': '🇫🇮', 'Finland': '🇫🇮',
+    'AU': '🇦🇺', 'Australia': '🇦🇺',
+    'IN': '🇮🇳', 'India': '🇮🇳',
+    'BR': '🇧🇷', 'Brazil': '🇧🇷',
+    'MX': '🇲🇽', 'Mexico': '🇲🇽',
+    'KR': '🇰🇷', 'South Korea': '🇰🇷',
+    'HK': '🇭🇰', 'Hong Kong': '🇭🇰',
+    'SG': '🇸🇬', 'Singapore': '🇸🇬',
+    'AT': '🇦🇹', 'Austria': '🇦🇹',
+    'BE': '🇧🇪', 'Belgium': '🇧🇪',
+    'IE': '🇮🇪', 'Ireland': '🇮🇪',
+    'PT': '🇵🇹', 'Portugal': '🇵🇹',
+    'PL': '🇵🇱', 'Poland': '🇵🇱',
+    'IL': '🇮🇱', 'Israel': '🇮🇱',
+    'ZA': '🇿🇦', 'South Africa': '🇿🇦',
+  };
+  
+  return countryMap[countryCode] || '🌐';
 };
 
 const StatusIcon = ({ passed, value }: { passed: boolean, value: number | null }) => {
@@ -229,10 +266,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           valueA = a.name;
           valueB = b.name;
           break;
-        case 'symbol':
-          valueA = a.symbol;
-          valueB = b.symbol;
-          break;
         case 'sector':
           valueA = a.sector;
           valueB = b.sector;
@@ -240,10 +273,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
         case 'price':
           valueA = a.price;
           valueB = b.price;
-          break;
-        case 'intrinsicValue':
-          valueA = a.intrinsicValue || -9999;
-          valueB = b.intrinsicValue || -9999;
           break;
         case 'yearsOfProfitability':
           valueA = a.criteria.yearsOfProfitability.value || -1;
@@ -280,6 +309,10 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
         case 'netMargin':
           valueA = a.criteria.netMargin.value || -9999;
           valueB = b.criteria.netMargin.value || -9999;
+          break;
+        case 'fcfMargin':
+          valueA = a.criteria.fcfMargin.value || -9999;
+          valueB = b.criteria.fcfMargin.value || -9999;
           break;
         default:
           valueA = a.buffettScore;
@@ -420,17 +453,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           <TableHeader>
             <TableRow className="h-10">
               <TableHead className="w-12 h-10 py-2"></TableHead>
-              <TableHead className="min-w-[100px] px-4 py-2 h-10">
-                <SortableHeader 
-                  field="symbol" 
-                  name="Symbol" 
-                  sortField={sortField}
-                  sortDirection={sortDirection}
-                  setSortField={setSortField}
-                  setSortDirection={setSortDirection}
-                />
-              </TableHead>
-              <TableHead className="min-w-[200px] px-4 py-2 h-10">
+              <TableHead className="min-w-[250px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="name" 
                   name="Unternehmen" 
@@ -454,7 +477,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 <SortableHeader 
                   field="buffettScore" 
                   name="Score" 
-                  tooltipText="Erfüllte Kriterien (max. 9)"
+                  tooltipText="Erfüllte Kriterien (max. 10)"
                   sortField={sortField}
                   sortDirection={sortDirection}
                   setSortField={setSortField}
@@ -465,17 +488,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 <SortableHeader
                   field="price" 
                   name="Preis" 
-                  sortField={sortField}
-                  sortDirection={sortDirection}
-                  setSortField={setSortField}
-                  setSortDirection={setSortDirection}
-                />
-              </TableHead>
-              <TableHead className="min-w-[120px] px-4 py-2 h-10">
-                <SortableHeader 
-                  field="intrinsicValue" 
-                  name="Innerer Wert" 
-                  tooltipText={metricsDefinitions.intrinsicValue.definition}
                   sortField={sortField}
                   sortDirection={sortDirection}
                   setSortField={setSortField}
@@ -573,8 +585,19 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               <TableHead className="min-w-[100px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="netMargin" 
-                  name="Marge" 
+                  name="Gewinnmarge" 
                   tooltipText={`${metricsDefinitions.netMargin.definition} Ziel: ${metricsDefinitions.netMargin.target}`}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </TableHead>
+              <TableHead className="min-w-[100px] px-4 py-2 h-10">
+                <SortableHeader 
+                  field="fcfMargin" 
+                  name="FCF-Marge" 
+                  tooltipText={`${metricsDefinitions.fcfMargin.definition} Ziel: ${metricsDefinitions.fcfMargin.target}`}
                   sortField={sortField}
                   sortDirection={sortDirection}
                   setSortField={setSortField}
@@ -586,7 +609,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={15} className="text-center py-8">
+                <TableCell colSpan={14} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
                     <span>Analyse läuft...</span>
@@ -595,7 +618,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableRow>
             ) : paginatedResults.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={15} className="text-center py-8">
+                <TableCell colSpan={14} className="text-center py-8">
                   Keine Ergebnisse gefunden
                 </TableCell>
               </TableRow>
@@ -639,20 +662,21 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
-                  <TableCell className="font-medium py-1">{stock.symbol}</TableCell>
-                  <TableCell className="py-1">{stock.name}</TableCell>
+                  <TableCell className="py-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{getCountryFlag(stock.country)}</span>
+                      <span>{stock.name} ({stock.symbol})</span>
+                    </div>
+                  </TableCell>
                   <TableCell className="py-1">{stock.sector}</TableCell>
                   <TableCell className="py-1">
                     <div className="flex items-center">
-                      <span className="mr-2">{stock.buffettScore}/9</span>
+                      <span className="mr-2">{stock.buffettScore}/10</span>
                       <BuffettScoreBadge score={stock.buffettScore} />
                     </div>
                   </TableCell>
                   <TableCell className="py-1">
                     {stock.price?.toFixed(2)} {stock.currency}
-                  </TableCell>
-                  <TableCell className="py-1">
-                    <span>{stock.intrinsicValue ? stock.intrinsicValue.toFixed(2) : 'N/A'}</span>
                   </TableCell>
                   <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
@@ -706,6 +730,12 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.netMargin.pass} value={stock.criteria.netMargin.value} />
                       <span>{formatValue(stock.criteria.netMargin.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.fcfMargin.pass} value={stock.criteria.fcfMargin.value} />
+                      <span>{formatValue(stock.criteria.fcfMargin.value)}</span>
                     </div>
                   </TableCell>
                 </TableRow>

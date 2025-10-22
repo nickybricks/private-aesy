@@ -132,7 +132,8 @@ export interface QuantAnalysisResult {
   name: string;
   exchange: string;
   sector: string;
-  buffettScore: number; // Max 9 points
+  country: string;
+  buffettScore: number; // Max 10 points
   criteria: {
     yearsOfProfitability: { 
       value: number | null; // Years profitable of 10
@@ -160,7 +161,8 @@ export interface QuantAnalysisResult {
       pass: boolean 
     },
     netDebtToEbitda: { value: number | null; pass: boolean },
-    netMargin: { value: number | null; pass: boolean }
+    netMargin: { value: number | null; pass: boolean },
+    fcfMargin: { value: number | null; pass: boolean }
   };
   price: number;
   currency: string;
@@ -481,6 +483,12 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     const netMargin = safeValue(ratios.netProfitMarginTTM) * 100;
     const netMarginPass = netMargin !== null && netMargin >= 10;
 
+    // 10. FCF Margin ≥ 8%
+    const latestFcf = cashFlowStatements && cashFlowStatements.length > 0 ? safeValue(cashFlowStatements[0].freeCashFlow) : null;
+    const latestRevenue = incomeStatements && incomeStatements.length > 0 ? safeValue(incomeStatements[0].revenue) : null;
+    const fcfMargin = calculateFCFMargin(latestFcf, latestRevenue);
+    const fcfMarginPass = fcfMargin !== null && fcfMargin >= 8;
+
     // Calculate Intrinsic Value (display only, NOT evaluated)
     const currentEps = incomeStatements && incomeStatements.length > 0 ? safeValue(incomeStatements[0].eps) : null;
     const bookValuePerShare = balanceSheets && balanceSheets.length > 0 ? 
@@ -508,7 +516,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       intrinsicValue: intrinsicValueCalc
     };
 
-    // Calculate Buffett Score (max 9 points)
+    // Calculate Buffett Score (max 10 points)
     const buffettScore = [
       profitYearsPass,
       pePass,
@@ -518,16 +526,18 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       epsGrowthPass,
       revenueGrowthPass,
       netDebtToEbitdaPass,
-      netMarginPass
+      netMarginPass,
+      fcfMarginPass
     ].filter(Boolean).length;
 
-    console.log(`${ticker} Score: ${buffettScore}/9 - Profitable years: ${profitabilityYears?.total}/10, P/E: ${pe}, ROIC: ${roic}%, ROE: ${roe}%`);
+    console.log(`${ticker} Score: ${buffettScore}/10 - Profitable years: ${profitabilityYears?.total}/10, P/E: ${pe}, ROIC: ${roic}%, ROE: ${roe}%, FCF Margin: ${fcfMargin}%`);
 
     return {
       symbol: ticker,
       name: companyProfile.companyName,
       exchange: companyProfile.exchangeShortName,
       sector: companyProfile.sector || 'Unknown',
+      country: companyProfile.country || 'Unknown',
       buffettScore,
       criteria: {
         yearsOfProfitability: { 
@@ -556,7 +566,8 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
           pass: revenueGrowthPass 
         },
         netDebtToEbitda: { value: netDebtToEbitda, pass: netDebtToEbitdaPass },
-        netMargin: { value: netMargin, pass: netMarginPass }
+        netMargin: { value: netMargin, pass: netMarginPass },
+        fcfMargin: { value: fcfMargin, pass: fcfMarginPass }
       },
       price: currentPrice,
       currency: stockCurrency,
