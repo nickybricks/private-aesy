@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Users, Activity, TrendingUp } from 'lucide-react';
 import ImpersonationBanner from '@/components/ImpersonationBanner';
 import { Shell, ShellHeader, ShellTitle, ShellDescription, ShellContent } from '@/components/layout/Shell';
+import { updateUserRoleSchema, type UserRole } from '@/lib/validation';
 
 interface Customer {
   id: string;
@@ -114,13 +115,24 @@ const AdminDashboard: React.FC = () => {
     await startImpersonation(customer.id, customer.email);
   };
 
-  const handleRoleChange = async (userId: string, newRole: 'customer' | 'admin' | 'super_admin') => {
+  const handleRoleChange = async (userId: string, newRole: string) => {
     try {
+      const validation = updateUserRoleSchema.safeParse({ userId, role: newRole });
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        toast({
+          variant: "destructive",
+          title: "Validierungsfehler",
+          description: firstError.message
+        });
+        return;
+      }
+      
       const { error } = await supabase
         .from('user_roles')
         .upsert({
           user_id: userId,
-          role: newRole
+          role: newRole as UserRole
         } as any);
 
       if (error) throw error;

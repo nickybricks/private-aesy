@@ -1,13 +1,7 @@
 project_id = "slpruxtkowlxawssqyup"
 
-[functions.valuation]
-verify_jwt = false
-
 [functions.daily-price-update]
 verify_jwt = false
 
 [functions.bulk-populate-cache]
-verify_jwt = false
-
-[functions.fetch-news]
 verify_jwt = false

@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
-import { supabase } from '@/integrations/supabase/client';
+import { stockSymbolSchema } from '@/lib/validation';
 
 interface StockSearchProps {
   onSearch: (ticker: string, enableDeepResearch?: boolean) => void;
@@ -443,17 +443,6 @@ const StockSearch: React.FC<StockSearchProps> = ({
   };
 
 
-  const getFMPApiKey = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('get-fmp-key');
-      if (error) throw error;
-      return data.apiKey;
-    } catch (error) {
-      console.warn('Failed to get FMP API key from Supabase, using default:', error);
-      return DEFAULT_FMP_API_KEY;
-    }
-  };
-
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (!searchQuery || searchQuery.length < 2) {
@@ -464,10 +453,9 @@ const StockSearch: React.FC<StockSearchProps> = ({
       setIsSearching(true);
       
       try {
-        const apiKey = await getFMPApiKey();
-        console.log('Searching for:', searchQuery, 'with API key length:', apiKey?.length);
+        console.log('Searching for:', searchQuery);
         
-        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=25&apikey=${apiKey}`);
+        const response = await axios.get(`https://financialmodelingprep.com/api/v3/search?query=${searchQuery}&limit=25&apikey=${DEFAULT_FMP_API_KEY}`);
         console.log('API Response:', response.status, 'Results count:', response.data?.length);
         
         if (response.data && Array.isArray(response.data)) {
@@ -531,17 +519,29 @@ const StockSearch: React.FC<StockSearchProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (ticker.trim()) {
-      if (ticker.trim().toUpperCase() === 'APPL') {
-        setShowAppleCorrection(true);
-        return;
-      }
-      
-      setShowAppleCorrection(false);
-      onSearch(ticker.trim().toUpperCase(), enableDeepResearch);
-      setOpen(false);
-      setForceKeepOpen(false);
+    
+    const trimmedTicker = ticker.trim();
+    if (!trimmedTicker) return;
+    
+    const validation = stockSymbolSchema.safeParse(trimmedTicker);
+    if (!validation.success) {
+      toast({
+        variant: "destructive",
+        title: "Ungültiges Aktiensymbol",
+        description: validation.error.errors[0].message
+      });
+      return;
     }
+    
+    if (trimmedTicker.toUpperCase() === 'APPL') {
+      setShowAppleCorrection(true);
+      return;
+    }
+    
+    setShowAppleCorrection(false);
+    onSearch(trimmedTicker.toUpperCase(), enableDeepResearch);
+    setOpen(false);
+    setForceKeepOpen(false);
   };
 
   const correctSymbol = (correctTicker: string) => {

@@ -9,6 +9,7 @@ import { TrendingUp, Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { signInSchema, resetPasswordSchema, updatePasswordSchema } from '@/lib/validation';
 
 const AuthPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('signin');
@@ -77,6 +78,18 @@ const AuthPage: React.FC = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const validation = signInSchema.safeParse({ email, password });
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast({
+        variant: "destructive",
+        title: "Validierungsfehler",
+        description: firstError.message
+      });
+      return;
+    }
+    
     const { error } = await signIn(email, password);
     if (!error) {
       navigate('/analyzer');
@@ -85,6 +98,18 @@ const AuthPage: React.FC = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const validation = signInSchema.safeParse({ email, password });
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast({
+        variant: "destructive",
+        title: "Validierungsfehler",
+        description: firstError.message
+      });
+      return;
+    }
+    
     const { error } = await signUp(email, password);
     if (!error) {
       setActiveTab('signin');
@@ -94,9 +119,18 @@ const AuthPage: React.FC = () => {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
+    
+    const validation = resetPasswordSchema.safeParse({ email });
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast({
+        variant: "destructive",
+        title: "Validierungsfehler",
+        description: firstError.message
+      });
       return;
     }
+    
     const { error } = await resetPassword(email);
     if (!error) {
       setShowForgotPassword(false);
@@ -105,6 +139,18 @@ const AuthPage: React.FC = () => {
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const validation = updatePasswordSchema.safeParse({ password: newPassword });
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast({
+        variant: "destructive",
+        title: "Validierungsfehler",
+        description: firstError.message
+      });
+      return;
+    }
+    
     if (newPassword !== confirmPassword) {
       toast({
         variant: "destructive",
@@ -113,14 +159,7 @@ const AuthPage: React.FC = () => {
       });
       return;
     }
-    if (newPassword.length < 6) {
-      toast({
-        variant: "destructive", 
-        title: "Passwort zu kurz",
-        description: "Das Passwort muss mindestens 6 Zeichen lang sein."
-      });
-      return;
-    }
+    
     const { error } = await updatePassword(newPassword);
     if (!error) {
       setShowUpdatePassword(false);
