@@ -481,9 +481,9 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     
     try {
       const epsWoNriResult = await calculateEpsWithoutNri(ticker, currentPrice);
-      epsCagr3y = epsWoNriResult.growth.cagr3y;
-      epsCagr5y = epsWoNriResult.growth.cagr5y;
-      epsCagr10y = epsWoNriResult.growth.cagr10y;
+      epsCagr3y = epsWoNriResult.growth.cagr3y !== null ? epsWoNriResult.growth.cagr3y * 100 : null;
+      epsCagr5y = epsWoNriResult.growth.cagr5y !== null ? epsWoNriResult.growth.cagr5y * 100 : null;
+      epsCagr10y = epsWoNriResult.growth.cagr10y !== null ? epsWoNriResult.growth.cagr10y * 100 : null;
       
       // Calculate 3Y median from annual data
       if (epsWoNriResult.annual.length >= 3) {
