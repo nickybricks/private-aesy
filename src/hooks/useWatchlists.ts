@@ -42,7 +42,14 @@ export const useWatchlists = () => {
 
   // Create watchlist
   const createWatchlist = async (name: string, description?: string) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Nicht angemeldet",
+        description: "Bitte melden Sie sich an, um Watchlists zu erstellen."
+      });
+      throw new Error('User not authenticated');
+    }
 
     try {
       const { data, error } = await supabase
