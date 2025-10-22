@@ -359,7 +359,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       fetchFromFMP(`/ratios-ttm/${ticker}`),
       fetchFromFMP(`/ratios/${ticker}?limit=3`),
       fetchFromFMP(`/profile/${ticker}`),
-      fetchFromFMP(`/income-statement/${ticker}?limit=10`), // 10 years for profitability
+      fetchFromFMP(`/income-statement/${ticker}?limit=15`), // 15 years to ensure 10-year CAGR
       fetchFromFMP(`/balance-sheet-statement/${ticker}?limit=5`),
       fetchFromFMP(`/key-metrics-ttm/${ticker}`),
       fetchFromFMP(`/key-metrics/${ticker}?limit=5`), // For ROIC trend
@@ -474,16 +474,19 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       .map(s => safeValue(s.eps))
       .filter(v => v !== null && v > 0) as number[];
     const epsCagr5y = calculate5YearCAGR(epsValues5y);
+    console.log(`${ticker} EPS 5Y: ${epsValues5y.length} values available, CAGR: ${epsCagr5y?.toFixed(2)}%`);
     
     const epsValues3y = incomeStatements.slice(0, 4) // Need 4 for 3-year CAGR (0 to 3)
       .map(s => safeValue(s.eps))
       .filter(v => v !== null && v > 0) as number[];
     const epsCagr3y = calculate3YearCAGR(epsValues3y);
+    console.log(`${ticker} EPS 3Y: ${epsValues3y.length} values available, CAGR: ${epsCagr3y?.toFixed(2)}%`);
     
     const epsValues10y = incomeStatements.slice(0, 11) // Need 11 for 10-year CAGR (0 to 10)
       .map(s => safeValue(s.eps))
       .filter(v => v !== null && v > 0) as number[];
     const epsCagr10y = calculate10YearCAGR(epsValues10y);
+    console.log(`${ticker} EPS 10Y: ${epsValues10y.length} values available (need 11), CAGR: ${epsCagr10y?.toFixed(2)}%`);
     
     const eps3yValues = incomeStatements.slice(0, 3)
       .map(s => safeValue(s.eps))
@@ -498,16 +501,19 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       .map(s => safeValue(s.revenue))
       .filter(v => v !== null && v > 0) as number[];
     const revenueGrowthCagr = calculate5YearCAGR(revenueValues5y);
+    console.log(`${ticker} Revenue 5Y: ${revenueValues5y.length} values available, CAGR: ${revenueGrowthCagr?.toFixed(2)}%`);
     
     const revenueValues3y = incomeStatements.slice(0, 4)
       .map(s => safeValue(s.revenue))
       .filter(v => v !== null && v > 0) as number[];
     const revenueCagr3y = calculate3YearCAGR(revenueValues3y);
+    console.log(`${ticker} Revenue 3Y: ${revenueValues3y.length} values available, CAGR: ${revenueCagr3y?.toFixed(2)}%`);
     
     const revenueValues10y = incomeStatements.slice(0, 11)
       .map(s => safeValue(s.revenue))
       .filter(v => v !== null && v > 0) as number[];
     const revenueCagr10y = calculate10YearCAGR(revenueValues10y);
+    console.log(`${ticker} Revenue 10Y: ${revenueValues10y.length} values available (need 11), CAGR: ${revenueCagr10y?.toFixed(2)}%`);
     
     const revenueGrowthPass = revenueGrowthCagr !== null && revenueGrowthCagr >= 5;
 
