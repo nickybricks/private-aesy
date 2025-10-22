@@ -732,10 +732,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                       <span>{stock.name} ({stock.symbol})</span>
                     </div>
                   </TableCell>
-                      <span className="text-lg">{getCountryFlag(stock.country)}</span>
-                      <span>{stock.name} ({stock.symbol})</span>
-                    </div>
-                  </TableCell>
                   <TableCell className="py-1">{stock.exchange}</TableCell>
                   <TableCell className="py-1">{stock.sector}</TableCell>
                   <TableCell className="py-1">
