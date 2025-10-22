@@ -366,10 +366,10 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
   }, [sortField, sortDirection]);
 
   // Format a numeric value with optional percentage and decimal places
-  const formatValue = (value: number | null, decimals = 2, isPercent = true) => {
-    if (value === null) return 'N/A';
+  const formatValue = (value: number | null | undefined, decimals = 2, isPercent = true) => {
+    if (value === null || value === undefined || Number.isNaN(value)) return 'N/A';
     return isPercent 
-      ? `${value.toFixed(decimals)}%`  // Values are already in percentage form from API
+      ? `${value.toFixed(decimals)}%`
       : value.toFixed(decimals);
   };
 

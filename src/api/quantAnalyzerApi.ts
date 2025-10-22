@@ -273,16 +273,14 @@ const calculateYearsOfProfitability = (
 };
 
 // Helper: Calculate CAGR for specific periods
-const calculateCAGR = (values: number[], years: number): number | null => {
-  if (values.length < years + 1) return null;
-  
+const calculateCAGR = (values: (number | null)[], years: number): number | null => {
+  if (!values || values.length < years + 1) return null;
   const startValue = values[years]; // n years ago
   const endValue = values[0]; // Current
-  
+  if (startValue === null || endValue === null) return null;
   if (startValue <= 0 || endValue <= 0) return null;
-  
-  const cagr = (Math.pow(endValue / startValue, 1/years) - 1) * 100;
-  return cagr;
+  const cagr = (Math.pow(endValue / startValue, 1 / years) - 1) * 100;
+  return isFinite(cagr) ? cagr : null;
 };
 
 // Helper: Calculate 3-Year CAGR
@@ -415,9 +413,8 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     // Alternative for Growth: P/E > 20 allowed if all 4 conditions met
     if (pe !== null && pe >= 20) {
       // Revenue 5-Y CAGR
-      const revenueValues = incomeStatements.slice(0, 5)
-        .map(s => safeValue(s.revenue))
-        .filter(v => v !== null && v > 0) as number[];
+      const revenueValues = incomeStatements.slice(0, 6)
+        .map(s => safeValue(s.revenue));
       revenueCagr5y = calculate5YearCAGR(revenueValues);
       
       // FCF Margin Trend
@@ -471,20 +468,17 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
 
     // 6. Stable EPS Growth (5-Y CAGR ≥ 5% + no negative 3-Y median)
     const epsValues5y = incomeStatements.slice(0, 6) // Need 6 for 5-year CAGR (0 to 5)
-      .map(s => safeValue(s.eps))
-      .filter(v => v !== null && v > 0) as number[];
+      .map(s => safeValue(s.eps));
     const epsCagr5y = calculate5YearCAGR(epsValues5y);
     console.log(`${ticker} EPS 5Y: ${epsValues5y.length} values available, CAGR: ${epsCagr5y?.toFixed(2)}%`);
     
     const epsValues3y = incomeStatements.slice(0, 4) // Need 4 for 3-year CAGR (0 to 3)
-      .map(s => safeValue(s.eps))
-      .filter(v => v !== null && v > 0) as number[];
+      .map(s => safeValue(s.eps));
     const epsCagr3y = calculate3YearCAGR(epsValues3y);
     console.log(`${ticker} EPS 3Y: ${epsValues3y.length} values available, CAGR: ${epsCagr3y?.toFixed(2)}%`);
     
     const epsValues10y = incomeStatements.slice(0, 11) // Need 11 for 10-year CAGR (0 to 10)
-      .map(s => safeValue(s.eps))
-      .filter(v => v !== null && v > 0) as number[];
+      .map(s => safeValue(s.eps));
     const epsCagr10y = calculate10YearCAGR(epsValues10y);
     console.log(`${ticker} EPS 10Y: ${epsValues10y.length} values available (need 11), CAGR: ${epsCagr10y?.toFixed(2)}%`);
     
@@ -498,20 +492,17 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
 
     // 7. Stable Revenue Growth (5-Y CAGR ≥ 5%)
     const revenueValues5y = incomeStatements.slice(0, 6)
-      .map(s => safeValue(s.revenue))
-      .filter(v => v !== null && v > 0) as number[];
+      .map(s => safeValue(s.revenue));
     const revenueGrowthCagr = calculate5YearCAGR(revenueValues5y);
     console.log(`${ticker} Revenue 5Y: ${revenueValues5y.length} values available, CAGR: ${revenueGrowthCagr?.toFixed(2)}%`);
     
     const revenueValues3y = incomeStatements.slice(0, 4)
-      .map(s => safeValue(s.revenue))
-      .filter(v => v !== null && v > 0) as number[];
+      .map(s => safeValue(s.revenue));
     const revenueCagr3y = calculate3YearCAGR(revenueValues3y);
     console.log(`${ticker} Revenue 3Y: ${revenueValues3y.length} values available, CAGR: ${revenueCagr3y?.toFixed(2)}%`);
     
     const revenueValues10y = incomeStatements.slice(0, 11)
-      .map(s => safeValue(s.revenue))
-      .filter(v => v !== null && v > 0) as number[];
+      .map(s => safeValue(s.revenue));
     const revenueCagr10y = calculate10YearCAGR(revenueValues10y);
     console.log(`${ticker} Revenue 10Y: ${revenueValues10y.length} values available (need 11), CAGR: ${revenueCagr10y?.toFixed(2)}%`);
     
