@@ -179,11 +179,33 @@ export function StockProvider({ children }: StockProviderProps) {
       // Fetch valuation data in background (non-blocking)
       if (info && info.price) {
         fetchValuation(ticker, 'EPS_WO_NRI', info.price)
-          .then((valuation) => {
+          .then(async (valuation) => {
             console.log('✅ Valuation fetched:', valuation);
             
-            // No need to convert - the edge function now handles currency conversion
-            setValuationData(valuation);
+            // Convert valuation data if needed
+            let convertedValuation = valuation;
+            if (metricsData?.reportedCurrency && info.currency && 
+                shouldConvertCurrency(metricsData.reportedCurrency, info.currency)) {
+              console.log(`🔄 Converting valuation data from ${metricsData.reportedCurrency} to ${info.currency}`);
+              
+              const rate = await getExchangeRate(metricsData.reportedCurrency, info.currency);
+              
+              if (rate) {
+                convertedValuation = {
+                  ...valuation,
+                  fairValuePerShare: valuation.fairValuePerShare * rate,
+                  assumptions: valuation.assumptions ? {
+                    ...valuation.assumptions,
+                    tangibleBookPerShare: valuation.assumptions.tangibleBookPerShare 
+                      ? valuation.assumptions.tangibleBookPerShare * rate 
+                      : valuation.assumptions.tangibleBookPerShare
+                  } : valuation.assumptions
+                };
+                console.log(`✅ Valuation data converted. New fairValue: ${convertedValuation.fairValuePerShare}`);
+              }
+            }
+            
+            setValuationData(convertedValuation);
             
             // Calculate valuation scores after valuation data is loaded
             if (metricsData && !criticalDataMissing) {

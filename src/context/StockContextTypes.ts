@@ -134,8 +134,6 @@ export interface ValuationData {
   mode: 'EPS_WO_NRI' | 'FCF_PER_SHARE' | 'ADJUSTED_DIVIDEND';
   fairValuePerShare: number;
   marginOfSafetyPct: number;
-  currency?: string;
-  reportedCurrency?: string;
   assumptions: {
     discountRatePct: number;
     growthYears: number;
