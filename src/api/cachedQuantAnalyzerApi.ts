@@ -249,7 +249,8 @@ export const getAllCachedStocks = async (): Promise<QuantAnalysisResult[]> => {
     const { data, error } = await supabase
       .from('stock_analysis_cache' as any)
       .select('*')
-      .order('buffett_score', { ascending: false });
+      .order('buffett_score', { ascending: false })
+      .limit(50000);
 
     if (error) {
       console.error('Error fetching all cached stocks:', error);
