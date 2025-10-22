@@ -301,20 +301,11 @@ const IndexContent: React.FC = () => {
                   <TabsContent value="valuation" className="mt-4 sm:mt-6">
                     <div className="space-y-4">
               {/* Intrinsic Value Discount Card - positioned before P/E Ratio */}
-              {valuationData?.fairValuePerShare && financialMetrics?.historicalData?.peRatioWeekly && (
+              {valuationData?.fairValuePerShare && (
                 <IntrinsicValueDiscountCard
+                  ticker={stockInfo.ticker}
                   currentPrice={stockInfo.price}
                   fairValue={valuationData.fairValuePerShare}
-                  historicalPrices={financialMetrics.historicalData.peRatioWeekly.map(pe => {
-                    // Reconstruct stock price from P/E and EPS
-                    // Since we have weekly P/E, we need to get corresponding EPS
-                    const eps = financialMetrics.eps || 1;
-                    const price = pe.stockPE * (typeof eps === 'number' ? eps : 1);
-                    return {
-                      date: pe.date,
-                      value: price > 0 ? price : stockInfo.price
-                    };
-                  })}
                   sector={stockInfo.sector}
                   currency={stockInfo.currency}
                 />

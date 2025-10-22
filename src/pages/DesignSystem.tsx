@@ -508,24 +508,11 @@ const DesignSystem = () => {
                 mit historischem Chart, Zeitraumauswahl und Scoring-System basierend auf Sektor.
               </p>
               <IntrinsicValueDiscountCard
+                ticker="AAPL"
                 currentPrice={42.5}
                 fairValue={55.0}
                 sector="Technology"
                 currency="USD"
-                historicalPrices={[
-                  { date: '2023-01-01', value: 45.2 },
-                  { date: '2023-02-01', value: 47.8 },
-                  { date: '2023-03-01', value: 46.5 },
-                  { date: '2023-04-01', value: 49.3 },
-                  { date: '2023-05-01', value: 51.2 },
-                  { date: '2023-06-01', value: 48.9 },
-                  { date: '2023-07-01', value: 50.1 },
-                  { date: '2023-08-01', value: 47.6 },
-                  { date: '2023-09-01', value: 45.8 },
-                  { date: '2023-10-01', value: 44.2 },
-                  { date: '2023-11-01', value: 43.5 },
-                  { date: '2023-12-01', value: 42.5 },
-                ]}
               />
               <div className="mt-4 p-4 bg-muted/30 rounded-2xl space-y-2">
                 <h5 className="font-semibold text-sm">Design-Features:</h5>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Info, TrendingUp, TrendingDown } from 'lucide-react';
@@ -9,25 +9,83 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import axios from 'axios';
+import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 
 interface IntrinsicValueDiscountCardProps {
+  ticker: string;
   currentPrice: number;
   fairValue: number;
-  historicalPrices?: Array<{ date: string; value: number }>;
   sector?: string;
   currency?: string;
 }
 
 type TimeRange = '1M' | '6M' | 'YTD' | '1Y' | '5Y' | '10Y' | '25Y' | 'MAX';
 
+interface PriceData {
+  date: string;
+  adjClose: number;
+}
+
+const fetchFromFMP = async (endpoint: string, params = {}) => {
+  try {
+    const response = await axios.get(`https://financialmodelingprep.com/api/v3${endpoint}`, {
+      params: {
+        apikey: DEFAULT_FMP_API_KEY,
+        ...params
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching data from FMP:', error);
+    throw error;
+  }
+};
+
 export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProps> = ({
+  ticker,
   currentPrice,
   fairValue,
-  historicalPrices,
   sector = 'Default',
   currency = 'USD'
 }) => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('1Y');
+  const [priceData, setPriceData] = useState<PriceData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch historical price data
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!ticker) return;
+      
+      setIsLoading(true);
+      
+      try {
+        // Fetch 30 years of historical data for maximum range
+        const thirtyYearsAgo = new Date();
+        thirtyYearsAgo.setFullYear(thirtyYearsAgo.getFullYear() - 30);
+        const fromDate = thirtyYearsAgo.toISOString().split('T')[0];
+        
+        const prices = await fetchFromFMP(`/historical-price-full/${ticker}`, { from: fromDate });
+        
+        const processedPrices: PriceData[] = prices.historical
+          ?.map((p: any) => ({
+            date: p.date,
+            adjClose: p.adjClose
+          }))
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) || [];
+        
+        setPriceData(processedPrices);
+      } catch (error) {
+        console.error('Error fetching historical prices:', error);
+        setPriceData([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [ticker]);
 
   // Calculate discount percentage
   const discount = fairValue > 0 ? ((fairValue - currentPrice) / fairValue) * 100 : 0;
@@ -110,7 +168,7 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
   };
 
   // Filter historical data by selected time range
-  const filterDataByRange = (data: Array<{ date: string; value: number }> | undefined, range: TimeRange) => {
+  const filterDataByRange = (data: PriceData[], range: TimeRange) => {
     if (!data || data.length === 0) return [];
     
     const now = new Date();
@@ -146,7 +204,10 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
     return data.filter(point => new Date(point.date) >= cutoffDate);
   };
 
-  const filteredData = filterDataByRange(historicalPrices, selectedRange);
+  const filteredData = filterDataByRange(priceData, selectedRange).map(p => ({
+    date: p.date,
+    value: p.adjClose
+  }));
 
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
@@ -327,7 +388,7 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
       </div>
 
       {/* Time Range Selector and Chart */}
-      {historicalPrices && historicalPrices.length > 0 && (
+      {!isLoading && priceData && priceData.length > 0 && (
         <>
           <div className="flex justify-end gap-1 mb-3 overflow-x-auto pb-1">
             {(['1M', '6M', 'YTD', '1Y', '5Y', '10Y', '25Y', 'MAX'] as TimeRange[]).map(range => (
