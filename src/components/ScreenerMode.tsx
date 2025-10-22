@@ -14,7 +14,7 @@ interface ScreenerModeProps {
 }
 
 export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
     minAesyScore: '',
     maxAesyScore: '',
@@ -134,15 +134,15 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
       {/* Filter Panel */}
       <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
         <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 p-0 hover:bg-transparent">
+          <CollapsibleTrigger asChild>
+            <div className="flex items-center justify-between cursor-pointer">
+              <div className="flex items-center gap-2">
                 <Filter className="h-5 w-5 text-muted-foreground" />
                 <h3 className="text-lg font-semibold">Filter</h3>
                 <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-          </div>
+              </div>
+            </div>
+          </CollapsibleTrigger>
 
           <CollapsibleContent className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
@@ -486,10 +486,6 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
                   />
                 </div>
               </div>
-            </div>
-
-            <div className="mt-4 text-sm text-muted-foreground">
-              {filteredStocks.length} von {cachedStocks.length} Aktien
             </div>
           </CollapsibleContent>
         </Card>
