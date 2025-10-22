@@ -246,18 +246,39 @@ export const analyzeMarketWithCache = async (
 // Get all cached stocks for screener (instant)
 export const getAllCachedStocks = async (): Promise<QuantAnalysisResult[]> => {
   try {
-    const { data, error } = await supabase
-      .from('stock_analysis_cache' as any)
-      .select('*')
-      .order('buffett_score', { ascending: false })
-      .limit(50000);
+    const allResults: QuantAnalysisResult[] = [];
+    const batchSize = 1000; // Supabase max per request
+    let hasMore = true;
+    let offset = 0;
 
-    if (error) {
-      console.error('Error fetching all cached stocks:', error);
-      return [];
+    console.log('🔍 Fetching all cached stocks with pagination...');
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('stock_analysis_cache' as any)
+        .select('*')
+        .order('buffett_score', { ascending: false })
+        .range(offset, offset + batchSize - 1);
+
+      if (error) {
+        console.error(`Error fetching batch at offset ${offset}:`, error);
+        break;
+      }
+
+      if (!data || data.length === 0) {
+        hasMore = false;
+      } else {
+        const batch = data.map((row: any) => row.analysis_result);
+        allResults.push(...batch);
+        console.log(`✓ Fetched batch: ${data.length} stocks (total: ${allResults.length})`);
+        
+        offset += batchSize;
+        hasMore = data.length === batchSize; // Continue if we got a full batch
+      }
     }
 
-    return (data || []).map((row: any) => row.analysis_result);
+    console.log(`✅ Total stocks loaded: ${allResults.length}`);
+    return allResults;
   } catch (error) {
     console.error('Error in getAllCachedStocks:', error);
     return [];
