@@ -112,96 +112,61 @@ export const getExchangeRate = async (fromCurrency: string, toCurrency: string):
   console.log(`Input: fromCurrency="${fromCurrency}", toCurrency="${toCurrency}"`);
   
   try {
-    // Normalize currency codes before making the API call
     const normalizedFromCurrency = normalizeCurrencyCode(fromCurrency);
     const normalizedToCurrency = normalizeCurrencyCode(toCurrency);
     
     console.log(`Nach Normalisierung: from="${normalizedFromCurrency}", to="${normalizedToCurrency}"`);
     
-    const apiUrl = `https://api.exchangerate.host/latest?base=${normalizedFromCurrency}&symbols=${normalizedToCurrency}`;
-    console.log(`🌐 API-Aufruf: ${apiUrl}`);
+    // Special case: same currency
+    if (normalizedFromCurrency === normalizedToCurrency) {
+      console.log(`✅ Gleiche Währung - Rate = 1.0`);
+      return 1.0;
+    }
     
-    // Using exchangerate.host API which is more reliable and CORS-friendly
+    // Use toCurrency (Kurswährung) as base for fxratesapi.com
+    const apiUrl = `https://api.fxratesapi.com/latest?base=${normalizedToCurrency}`;
+    console.log(`🌐 API-Aufruf mit base=${normalizedToCurrency}: ${apiUrl}`);
+    
     const response = await axios.get(apiUrl);
     
-    console.log('📥 API Rohdaten erhalten:');
-    console.log(JSON.stringify(response.data, null, 2));
-    
-    if (response.data && response.data.rates && response.data.rates[normalizedToCurrency]) {
-      const rate = response.data.rates[normalizedToCurrency];
-      console.log(`✅ Exchange Rate gefunden: ${rate}`);
-      
-      if (isNaN(rate)) {
-        console.warn(`❌ Exchange rate ist NaN!`);
-        return null;
+    console.log('📥 API Rohdaten erhalten (relevante Währungen):');
+    console.log(JSON.stringify({
+      success: response.data.success,
+      base: response.data.base,
+      date: response.data.date,
+      rates: {
+        [normalizedFromCurrency]: response.data.rates?.[normalizedFromCurrency]
       }
-      
-      console.log(`=== EXCHANGE RATE ABRUF ERFOLG: ${rate} ===`);
-      return rate;
+    }, null, 2));
+    
+    if (!response.data || !response.data.success || !response.data.rates) {
+      console.error('❌ API-Response ungültig oder nicht erfolgreich');
+      return null;
     }
     
-    console.warn(`⚠️ Kein Rate in response.data.rates gefunden. Verfügbare Keys:`, Object.keys(response.data.rates || {}));
+    const rates = response.data.rates;
+    const fromRate = rates[normalizedFromCurrency];
     
-    // Fallback to FMP API if exchangerate.host fails
-    console.log('🔄 Versuche FMP Fallback...');
-    const fmpUrl = `https://financialmodelingprep.com/api/v3/fx/${normalizedFromCurrency}${normalizedToCurrency}?apikey=${API_KEY}`;
-    console.log(`🌐 FMP API-Aufruf: ${fmpUrl}`);
-    const fmpResponse = await axios.get(fmpUrl);
-    
-    console.log('📥 FMP API Rohdaten erhalten:');
-    console.log(JSON.stringify(fmpResponse.data, null, 2));
-    
-    if (fmpResponse.data && fmpResponse.data[0] && fmpResponse.data[0].rate) {
-      const rate = fmpResponse.data[0].rate;
-      console.log(`✅ FMP Exchange Rate gefunden: ${rate}`);
-      
-      if (isNaN(rate)) {
-        console.warn(`❌ FMP exchange rate ist NaN!`);
-        return null;
-      }
-      
-      console.log(`=== FMP EXCHANGE RATE ABRUF ERFOLG: ${rate} ===`);
-      return rate;
+    if (!fromRate || isNaN(fromRate) || fromRate === 0) {
+      console.error(`❌ Kein gültiger Kurs für ${normalizedFromCurrency} in base=${normalizedToCurrency} gefunden`);
+      return null;
     }
     
-    console.warn(`❌ Exchange rate nicht in Response gefunden`);
-    return null;
+    // Da base=toCurrency: fromCurrency → toCurrency = 1 / rates[fromCurrency]
+    const finalRate = 1 / fromRate;
+    
+    console.log(`📊 Berechnung: 1 ${normalizedFromCurrency} = (1 / ${fromRate}) ${normalizedToCurrency} = ${finalRate}`);
+    console.log(`✅ FINALER EXCHANGE RATE: ${finalRate}`);
+    console.log(`Beispiel: 1,000,000 ${normalizedFromCurrency} = ${(1000000 * finalRate).toFixed(2)} ${normalizedToCurrency}`);
+    console.log('=== EXCHANGE RATE ABRUF ERFOLG ===');
+    
+    return finalRate;
+    
   } catch (error) {
     console.error('❌ FEHLER beim Exchange Rate Abruf:');
     console.error('Error Type:', error?.constructor?.name);
     console.error('Error Message:', error?.message);
     console.error('Full Error:', error);
-    
-    // Try fallback API if first one fails
-    try {
-      const normalizedFromCurrency = normalizeCurrencyCode(fromCurrency);
-      const normalizedToCurrency = normalizeCurrencyCode(toCurrency);
-      
-      console.log(`🔄 Versuche Fallback-API: ${normalizedFromCurrency} → ${normalizedToCurrency}`);
-      const fallbackResponse = await axios.get(`https://api.exchangerate.host/latest?base=${normalizedFromCurrency}&symbols=${normalizedToCurrency}`);
-      
-      console.log('📥 Fallback API Rohdaten erhalten:');
-      console.log(JSON.stringify(fallbackResponse.data, null, 2));
-      
-      if (fallbackResponse.data && fallbackResponse.data.rates && fallbackResponse.data.rates[normalizedToCurrency]) {
-        const rate = fallbackResponse.data.rates[normalizedToCurrency];
-        console.log(`✅ Fallback Exchange Rate gefunden: ${rate}`);
-        
-        if (isNaN(rate)) {
-          console.warn(`❌ Fallback exchange rate ist NaN!`);
-          return null;
-        }
-        
-        console.log(`=== FALLBACK EXCHANGE RATE ABRUF ERFOLG: ${rate} ===`);
-        return rate;
-      }
-    } catch (fallbackError) {
-      console.error('❌ Auch Fallback-API fehlgeschlagen:');
-      console.error('Fallback Error:', fallbackError);
-    }
-    
-    console.warn(`❌ ALLE EXCHANGE RATE APIs FEHLGESCHLAGEN für ${fromCurrency} zu ${toCurrency}`);
-    console.log('=== EXCHANGE RATE ABRUF ENDE (FEHLER) ===');
     return null;
   }
 };
