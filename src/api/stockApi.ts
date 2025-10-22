@@ -1714,6 +1714,20 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
       
       console.log('Final P/E ratio data:', peRatioData.length, 'records');
       historicalData.peRatio = peRatioData;
+      
+      // Store current stock P/E (TTM) for use in metrics section
+      historicalData.currentStockPE = null;
+      if (ttmRatios && ttmRatios[0]?.priceToEarningsRatioTTM) {
+        historicalData.currentStockPE = safeValue(ttmRatios[0].priceToEarningsRatioTTM);
+        console.log(`Stored TTM P/E for metrics: ${historicalData.currentStockPE}`);
+      } else if (quarterlyIncomeStatements && quoteData?.price) {
+        const ttmEPS = calculateTTM_EPS(quarterlyIncomeStatements);
+        const currentPrice = safeValue(quoteData.price);
+        if (ttmEPS && ttmEPS > 0 && currentPrice && currentPrice > 0) {
+          historicalData.currentStockPE = currentPrice / ttmEPS;
+          console.log(`Stored calculated TTM P/E for metrics: ${historicalData.currentStockPE}`);
+        }
+      }
     } catch (error) {
       console.error('Error fetching P/E ratio data:', error);
       historicalData.peRatio = [];
@@ -2714,14 +2728,17 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
       });
     }
 
-    // P/E Ratio (KGV) Metrik
-    const pe = safeValue(latestRatios?.priceEarningsRatio);
+    // P/E Ratio (KGV) Metrik - Use TTM value for consistency with PERatioCard
+    let pe = historicalData.currentStockPE; // Prefer TTM
+    if (pe === null || pe === undefined) {
+      pe = safeValue(latestRatios?.priceEarningsRatio); // Fallback to annual
+    }
     if (pe !== null && pe > 0) {
       metrics.push({
         name: 'P/E-Verhältnis (KGV)',
         value: pe,
-        formula: 'Aktienkurs ÷ Gewinn pro Aktie',
-        explanation: 'Verhältnis zwischen Aktienkurs und Gewinn pro Aktie',
+        formula: 'Aktienkurs ÷ Gewinn pro Aktie (TTM)',
+        explanation: 'Verhältnis zwischen Aktienkurs und Gewinn pro Aktie (Trailing 12 Monate)',
         threshold: 'Buffett bevorzugt < 25',
         status: pe < 15 ? 'pass' : pe < 25 ? 'warning' : 'fail' as const,
         isPercentage: false,
