@@ -155,10 +155,14 @@ export interface QuantAnalysisResult {
       value: number | null; // 5-Y CAGR
       pass: boolean;
       median3y?: number | null;
+      cagr3y?: number | null; // 3-Y CAGR
+      cagr10y?: number | null; // 10-Y CAGR
     },
     revenueGrowth: { 
       value: number | null; // 5-Y CAGR
-      pass: boolean 
+      pass: boolean;
+      cagr3y?: number | null; // 3-Y CAGR
+      cagr10y?: number | null; // 10-Y CAGR
     },
     netDebtToEbitda: { value: number | null; pass: boolean },
     netMargin: { value: number | null; pass: boolean },
@@ -268,17 +272,32 @@ const calculateYearsOfProfitability = (
   };
 };
 
-// Helper: Calculate 5-Year CAGR
-const calculate5YearCAGR = (values: number[]): number | null => {
-  if (values.length < 5) return null;
+// Helper: Calculate CAGR for specific periods
+const calculateCAGR = (values: number[], years: number): number | null => {
+  if (values.length < years + 1) return null;
   
-  const startValue = values[4]; // 5 years ago
+  const startValue = values[years]; // n years ago
   const endValue = values[0]; // Current
   
   if (startValue <= 0 || endValue <= 0) return null;
   
-  const cagr = (Math.pow(endValue / startValue, 1/5) - 1) * 100;
+  const cagr = (Math.pow(endValue / startValue, 1/years) - 1) * 100;
   return cagr;
+};
+
+// Helper: Calculate 3-Year CAGR
+const calculate3YearCAGR = (values: number[]): number | null => {
+  return calculateCAGR(values, 3);
+};
+
+// Helper: Calculate 5-Year CAGR
+const calculate5YearCAGR = (values: number[]): number | null => {
+  return calculateCAGR(values, 5);
+};
+
+// Helper: Calculate 10-Year CAGR
+const calculate10YearCAGR = (values: number[]): number | null => {
+  return calculateCAGR(values, 10);
 };
 
 // Helper: Calculate 3-Year Median
@@ -451,10 +470,20 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     const dividendYieldPass = dividendYield !== null && dividendYield > 2;
 
     // 6. Stable EPS Growth (5-Y CAGR ≥ 5% + no negative 3-Y median)
-    const epsValues = incomeStatements.slice(0, 5)
+    const epsValues5y = incomeStatements.slice(0, 6) // Need 6 for 5-year CAGR (0 to 5)
       .map(s => safeValue(s.eps))
       .filter(v => v !== null && v > 0) as number[];
-    const epsCagr5y = calculate5YearCAGR(epsValues);
+    const epsCagr5y = calculate5YearCAGR(epsValues5y);
+    
+    const epsValues3y = incomeStatements.slice(0, 4) // Need 4 for 3-year CAGR (0 to 3)
+      .map(s => safeValue(s.eps))
+      .filter(v => v !== null && v > 0) as number[];
+    const epsCagr3y = calculate3YearCAGR(epsValues3y);
+    
+    const epsValues10y = incomeStatements.slice(0, 11) // Need 11 for 10-year CAGR (0 to 10)
+      .map(s => safeValue(s.eps))
+      .filter(v => v !== null && v > 0) as number[];
+    const epsCagr10y = calculate10YearCAGR(epsValues10y);
     
     const eps3yValues = incomeStatements.slice(0, 3)
       .map(s => safeValue(s.eps))
@@ -465,10 +494,21 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
                           eps3yMedian !== null && eps3yMedian >= 0;
 
     // 7. Stable Revenue Growth (5-Y CAGR ≥ 5%)
-    const revenueValues = incomeStatements.slice(0, 5)
+    const revenueValues5y = incomeStatements.slice(0, 6)
       .map(s => safeValue(s.revenue))
       .filter(v => v !== null && v > 0) as number[];
-    const revenueGrowthCagr = calculate5YearCAGR(revenueValues);
+    const revenueGrowthCagr = calculate5YearCAGR(revenueValues5y);
+    
+    const revenueValues3y = incomeStatements.slice(0, 4)
+      .map(s => safeValue(s.revenue))
+      .filter(v => v !== null && v > 0) as number[];
+    const revenueCagr3y = calculate3YearCAGR(revenueValues3y);
+    
+    const revenueValues10y = incomeStatements.slice(0, 11)
+      .map(s => safeValue(s.revenue))
+      .filter(v => v !== null && v > 0) as number[];
+    const revenueCagr10y = calculate10YearCAGR(revenueValues10y);
+    
     const revenueGrowthPass = revenueGrowthCagr !== null && revenueGrowthCagr >= 5;
 
     // 8. NetDebt / EBITDA < 2.5
@@ -559,11 +599,15 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
         epsGrowth: { 
           value: epsCagr5y, 
           pass: epsGrowthPass,
-          median3y: eps3yMedian
+          median3y: eps3yMedian,
+          cagr3y: epsCagr3y,
+          cagr10y: epsCagr10y
         },
         revenueGrowth: { 
           value: revenueGrowthCagr, 
-          pass: revenueGrowthPass 
+          pass: revenueGrowthPass,
+          cagr3y: revenueCagr3y,
+          cagr10y: revenueCagr10y
         },
         netDebtToEbitda: { value: netDebtToEbitda, pass: netDebtToEbitdaPass },
         netMargin: { value: netMargin, pass: netMarginPass },

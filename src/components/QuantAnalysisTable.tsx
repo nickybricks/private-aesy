@@ -298,9 +298,25 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           valueA = a.criteria.epsGrowth.value || -9999;
           valueB = b.criteria.epsGrowth.value || -9999;
           break;
+        case 'epsGrowth3y':
+          valueA = a.criteria.epsGrowth.cagr3y || -9999;
+          valueB = b.criteria.epsGrowth.cagr3y || -9999;
+          break;
+        case 'epsGrowth10y':
+          valueA = a.criteria.epsGrowth.cagr10y || -9999;
+          valueB = b.criteria.epsGrowth.cagr10y || -9999;
+          break;
         case 'revenueGrowth':
           valueA = a.criteria.revenueGrowth.value || -9999;
           valueB = b.criteria.revenueGrowth.value || -9999;
+          break;
+        case 'revenueGrowth3y':
+          valueA = a.criteria.revenueGrowth.cagr3y || -9999;
+          valueB = b.criteria.revenueGrowth.cagr3y || -9999;
+          break;
+        case 'revenueGrowth10y':
+          valueA = a.criteria.revenueGrowth.cagr10y || -9999;
+          valueB = b.criteria.revenueGrowth.cagr10y || -9999;
           break;
         case 'netDebtToEbitda':
           valueA = a.criteria.netDebtToEbitda.value || 9999;
@@ -551,6 +567,17 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableHead>
               <TableHead className="min-w-[120px] px-4 py-2 h-10">
                 <SortableHeader 
+                  field="epsGrowth3y" 
+                  name="EPS (3J)" 
+                  tooltipText="3-Jahres EPS CAGR - Ziel: ≥ 5%"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </TableHead>
+              <TableHead className="min-w-[120px] px-4 py-2 h-10">
+                <SortableHeader 
                   field="epsGrowth" 
                   name="EPS (5J)" 
                   tooltipText={`${metricsDefinitions.epsGrowth.definition} Ziel: ${metricsDefinitions.epsGrowth.target}`}
@@ -562,9 +589,42 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableHead>
               <TableHead className="min-w-[120px] px-4 py-2 h-10">
                 <SortableHeader 
+                  field="epsGrowth10y" 
+                  name="EPS (10J)" 
+                  tooltipText="10-Jahres EPS CAGR - Ziel: ≥ 5%"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </TableHead>
+              <TableHead className="min-w-[120px] px-4 py-2 h-10">
+                <SortableHeader 
+                  field="revenueGrowth3y" 
+                  name="Umsatz (3J)" 
+                  tooltipText="3-Jahres Umsatz CAGR - Ziel: ≥ 5%"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </TableHead>
+              <TableHead className="min-w-[120px] px-4 py-2 h-10">
+                <SortableHeader 
                   field="revenueGrowth" 
                   name="Umsatz (5J)" 
                   tooltipText={`${metricsDefinitions.revenueGrowth.definition} Ziel: ${metricsDefinitions.revenueGrowth.target}`}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  setSortField={setSortField}
+                  setSortDirection={setSortDirection}
+                />
+              </TableHead>
+              <TableHead className="min-w-[120px] px-4 py-2 h-10">
+                <SortableHeader 
+                  field="revenueGrowth10y" 
+                  name="Umsatz (10J)" 
+                  tooltipText="10-Jahres Umsatz CAGR - Ziel: ≥ 5%"
                   sortField={sortField}
                   sortDirection={sortDirection}
                   setSortField={setSortField}
@@ -609,7 +669,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={14} className="text-center py-8">
+                <TableCell colSpan={18} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
                     <span>Analyse läuft...</span>
@@ -618,7 +678,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableRow>
             ) : paginatedResults.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={14} className="text-center py-8">
+                <TableCell colSpan={18} className="text-center py-8">
                   Keine Ergebnisse gefunden
                 </TableCell>
               </TableRow>
@@ -681,7 +741,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.yearsOfProfitability.pass} value={stock.criteria.yearsOfProfitability.value} />
-                      <span>{stock.criteria.yearsOfProfitability.value || 'N/A'}/10</span>
+                      <span>{stock.criteria.yearsOfProfitability.value !== null ? stock.criteria.yearsOfProfitability.value : 0}/10</span>
                     </div>
                   </TableCell>
                   <TableCell className="py-1">
@@ -710,14 +770,38 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   </TableCell>
                   <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.epsGrowth.cagr3y !== null && stock.criteria.epsGrowth.cagr3y >= 5} value={stock.criteria.epsGrowth.cagr3y} />
+                      <span>{formatValue(stock.criteria.epsGrowth.cagr3y)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.epsGrowth.pass} value={stock.criteria.epsGrowth.value} />
                       <span>{formatValue(stock.criteria.epsGrowth.value)}</span>
                     </div>
                   </TableCell>
                   <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.epsGrowth.cagr10y !== null && stock.criteria.epsGrowth.cagr10y >= 5} value={stock.criteria.epsGrowth.cagr10y} />
+                      <span>{formatValue(stock.criteria.epsGrowth.cagr10y)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.revenueGrowth.cagr3y !== null && stock.criteria.revenueGrowth.cagr3y >= 5} value={stock.criteria.revenueGrowth.cagr3y} />
+                      <span>{formatValue(stock.criteria.revenueGrowth.cagr3y)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <div className="flex items-center space-x-1">
                       <StatusIcon passed={stock.criteria.revenueGrowth.pass} value={stock.criteria.revenueGrowth.value} />
                       <span>{formatValue(stock.criteria.revenueGrowth.value)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <div className="flex items-center space-x-1">
+                      <StatusIcon passed={stock.criteria.revenueGrowth.cagr10y !== null && stock.criteria.revenueGrowth.cagr10y >= 5} value={stock.criteria.revenueGrowth.cagr10y} />
+                      <span>{formatValue(stock.criteria.revenueGrowth.cagr10y)}</span>
                     </div>
                   </TableCell>
                   <TableCell className="py-1">
