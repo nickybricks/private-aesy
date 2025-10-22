@@ -467,7 +467,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
         <Table className="text-xs">
           <TableHeader className="sticky top-0 z-20 bg-background shadow-sm">
             <TableRow className="h-10">
-              <TableHead className="w-12 h-10 py-2 sticky left-0 z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"></TableHead>
+              <TableHead className="w-12 h-10 py-2 sticky left-0 z-40 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"></TableHead>
               <TableHead className="min-w-[250px] px-4 py-2 h-10 sticky left-12 z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                 <SortableHeader 
                   field="name" 
@@ -694,7 +694,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
             ) : (
               paginatedResults.map((stock) => (
                 <TableRow key={stock.symbol} className="h-10">
-                  <TableCell className="py-1 sticky left-0 z-10 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                  <TableCell className="py-1 sticky left-0 z-20 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                     <DropdownMenu>
 ...
                     </DropdownMenu>
