@@ -463,7 +463,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
         </div>
       </div>
       
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" style={{ overscrollBehaviorX: 'contain', touchAction: 'pan-x pan-y' }}>
         <Table className="text-xs">
           <TableHeader className="sticky top-0 z-20 bg-background shadow-sm">
             <TableRow className="h-10">
