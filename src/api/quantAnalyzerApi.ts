@@ -1,6 +1,6 @@
-
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
+import { calculateEpsWithoutNri } from '@/services/EpsWithoutNriService';
 
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
@@ -186,6 +186,12 @@ const safeValue = (value: any) => {
   if (value === undefined || value === null) return null;
   const numValue = Number(value);
   return isNaN(numValue) ? null : numValue;
+};
+
+// Helper: Format CAGR for logging (prevents "undefined" in logs)
+const formatCAGR = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return 'N/A';
+  return `${value.toFixed(2)}%`;
 };
 
 // Calculate simplified intrinsic value using multiple methods
@@ -467,25 +473,33 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     const dividendYieldPass = dividendYield !== null && dividendYield > 2;
 
     // 6. Stable EPS Growth (5-Y CAGR ≥ 5% + no negative 3-Y median)
-    const epsValues5y = incomeStatements.slice(0, 6) // Need 6 for 5-year CAGR (0 to 5)
-      .map(s => safeValue(s.eps));
-    const epsCagr5y = calculate5YearCAGR(epsValues5y);
-    console.log(`${ticker} EPS 5Y: ${epsValues5y.length} values available, CAGR: ${epsCagr5y?.toFixed(2)}%`);
+    // Use EPS w/o NRI from quarterly data (more robust than annual GAAP EPS)
+    let epsCagr3y: number | null = null;
+    let epsCagr5y: number | null = null;
+    let epsCagr10y: number | null = null;
+    let eps3yMedian: number | null = null;
     
-    const epsValues3y = incomeStatements.slice(0, 4) // Need 4 for 3-year CAGR (0 to 3)
-      .map(s => safeValue(s.eps));
-    const epsCagr3y = calculate3YearCAGR(epsValues3y);
-    console.log(`${ticker} EPS 3Y: ${epsValues3y.length} values available, CAGR: ${epsCagr3y?.toFixed(2)}%`);
-    
-    const epsValues10y = incomeStatements.slice(0, 11) // Need 11 for 10-year CAGR (0 to 10)
-      .map(s => safeValue(s.eps));
-    const epsCagr10y = calculate10YearCAGR(epsValues10y);
-    console.log(`${ticker} EPS 10Y: ${epsValues10y.length} values available (need 11), CAGR: ${epsCagr10y?.toFixed(2)}%`);
-    
-    const eps3yValues = incomeStatements.slice(0, 3)
-      .map(s => safeValue(s.eps))
-      .filter(v => v !== null) as number[];
-    const eps3yMedian = calculate3YearMedian(eps3yValues);
+    try {
+      const epsWoNriResult = await calculateEpsWithoutNri(ticker, currentPrice);
+      epsCagr3y = epsWoNriResult.growth.cagr3y;
+      epsCagr5y = epsWoNriResult.growth.cagr5y;
+      epsCagr10y = epsWoNriResult.growth.cagr10y;
+      
+      // Calculate 3Y median from annual data
+      if (epsWoNriResult.annual.length >= 3) {
+        const last3Annual = epsWoNriResult.annual.slice(-3);
+        const validEps = last3Annual
+          .map(a => a.epsWoNri)
+          .filter((v): v is number => v !== null && isFinite(v))
+          .sort((a, b) => a - b);
+        eps3yMedian = validEps.length >= 2 ? validEps[Math.floor(validEps.length / 2)] : null;
+      }
+      
+      console.log(`${ticker} EPS w/o NRI - 3Y: ${formatCAGR(epsCagr3y)}, 5Y: ${formatCAGR(epsCagr5y)}, 10Y: ${formatCAGR(epsCagr10y)}, 3Y Median: ${eps3yMedian?.toFixed(2) || 'N/A'}`);
+    } catch (error) {
+      console.warn(`${ticker} EPS w/o NRI calculation failed, falling back to null:`, error);
+      // All values remain null
+    }
     
     const epsGrowthPass = epsCagr5y !== null && epsCagr5y >= 5 && 
                           eps3yMedian !== null && eps3yMedian >= 0;
@@ -494,17 +508,16 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
     const revenueValues5y = incomeStatements.slice(0, 6)
       .map(s => safeValue(s.revenue));
     const revenueGrowthCagr = calculate5YearCAGR(revenueValues5y);
-    console.log(`${ticker} Revenue 5Y: ${revenueValues5y.length} values available, CAGR: ${revenueGrowthCagr?.toFixed(2)}%`);
     
     const revenueValues3y = incomeStatements.slice(0, 4)
       .map(s => safeValue(s.revenue));
     const revenueCagr3y = calculate3YearCAGR(revenueValues3y);
-    console.log(`${ticker} Revenue 3Y: ${revenueValues3y.length} values available, CAGR: ${revenueCagr3y?.toFixed(2)}%`);
     
     const revenueValues10y = incomeStatements.slice(0, 11)
       .map(s => safeValue(s.revenue));
     const revenueCagr10y = calculate10YearCAGR(revenueValues10y);
-    console.log(`${ticker} Revenue 10Y: ${revenueValues10y.length} values available (need 11), CAGR: ${revenueCagr10y?.toFixed(2)}%`);
+    
+    console.log(`${ticker} Revenue - 3Y: ${formatCAGR(revenueCagr3y)}, 5Y: ${formatCAGR(revenueGrowthCagr)}, 10Y: ${formatCAGR(revenueCagr10y)}`);
     
     const revenueGrowthPass = revenueGrowthCagr !== null && revenueGrowthCagr >= 5;
 
@@ -707,8 +720,8 @@ export const exportToExcel = (results: QuantAnalysisResult[]) => {
       'ROIC (%)', 'Pass',
       'ROE (%)', 'Pass',
       'Dividendenrendite (Dividend Yield)', 'Pass',
-      'EPS w/o NRI-Wachstum (EPS without NRI Growth)', 'Pass',
-      'Umsatzwachstum (Revenue Growth)', 'Pass',
+      'EPS w/o NRI 3Y CAGR (%)', 'EPS w/o NRI 5Y CAGR (%)', 'EPS w/o NRI 10Y CAGR (%)', 'Pass',
+      'Umsatz 3Y CAGR (%)', 'Umsatz 5Y CAGR (%)', 'Umsatz 10Y CAGR (%)', 'Pass',
       'NetDebt/EBITDA', 'Pass',
       'Nettomarge (Net Margin)', 'Pass'
     ];
@@ -732,9 +745,13 @@ export const exportToExcel = (results: QuantAnalysisResult[]) => {
       result.criteria.roe.pass ? 'Ja' : 'Nein',
       result.criteria.dividendYield.value !== null ? parseFloat(result.criteria.dividendYield.value.toFixed(2)) : 'N/A',
       result.criteria.dividendYield.pass ? 'Ja' : 'Nein',
+      result.criteria.epsGrowth.cagr3y !== null ? parseFloat(result.criteria.epsGrowth.cagr3y.toFixed(2)) : 'N/A',
       result.criteria.epsGrowth.value !== null ? parseFloat(result.criteria.epsGrowth.value.toFixed(2)) : 'N/A',
+      result.criteria.epsGrowth.cagr10y !== null ? parseFloat(result.criteria.epsGrowth.cagr10y.toFixed(2)) : 'N/A',
       result.criteria.epsGrowth.pass ? 'Ja' : 'Nein',
+      result.criteria.revenueGrowth.cagr3y !== null ? parseFloat(result.criteria.revenueGrowth.cagr3y.toFixed(2)) : 'N/A',
       result.criteria.revenueGrowth.value !== null ? parseFloat(result.criteria.revenueGrowth.value.toFixed(2)) : 'N/A',
+      result.criteria.revenueGrowth.cagr10y !== null ? parseFloat(result.criteria.revenueGrowth.cagr10y.toFixed(2)) : 'N/A',
       result.criteria.revenueGrowth.pass ? 'Ja' : 'Nein',
       result.criteria.netDebtToEbitda.value !== null ? parseFloat(result.criteria.netDebtToEbitda.value.toFixed(2)) : 'N/A',
       result.criteria.netDebtToEbitda.pass ? 'Ja' : 'Nein',
