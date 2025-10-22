@@ -111,32 +111,44 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
         console.log('Custom DCF Data:', JSON.stringify(customDcfData, null, 2));
         console.log('Predictability Stars:', JSON.stringify(predictabilityStars, null, 2));
         
+        console.log('=== STOCK SEARCH SERVICE - CURRENCY LOGIC ===');
         const priceCurrency = info?.currency || 'USD';
         const reportedCurrency = (rawMetricsData as any)?.reportedCurrency;
         
+        console.log(`info.currency (priceCurrency): ${info?.currency}`);
+        console.log(`rawMetricsData.reportedCurrency: ${reportedCurrency}`);
+        console.log(`Finale Werte: priceCurrency="${priceCurrency}", reportedCurrency="${reportedCurrency}"`);
+        
         if (!reportedCurrency) {
+          console.error('❌ KRITISCH: reportedCurrency fehlt komplett!');
           throw new Error('Berichtswährung fehlt in den Finanzdaten');
         }
         
-        console.log(`Price currency: ${priceCurrency}, Reported financial data currency: ${reportedCurrency}`);
+        console.log(`Prüfe shouldConvertCurrency(${reportedCurrency}, ${priceCurrency}): ${shouldConvertCurrency(reportedCurrency, priceCurrency)}`);
         
         let metricsData = processFinancialMetrics(rawMetricsData, reportedCurrency, priceCurrency);
         
         if (metricsData) {
           if (metricsData.metrics) {
             if (shouldConvertCurrency(reportedCurrency, priceCurrency)) {
-              console.log(`Converting metrics from ${reportedCurrency} to ${priceCurrency}`);
+              console.log(`✅ Währungsumrechnung für Metrics wird eingeleitet: ${reportedCurrency} → ${priceCurrency}`);
               metricsData.metrics = await convertFinancialMetrics(metricsData.metrics, reportedCurrency, priceCurrency);
+            } else {
+              console.log('❌ Keine Umrechnung für Metrics nötig (Währungen identisch)');
             }
           }
           
           if (metricsData.historicalData) {
             if (shouldConvertCurrency(reportedCurrency, priceCurrency)) {
-              console.log(`Converting historical data from ${reportedCurrency} to ${priceCurrency}`);
+              console.log(`✅ Währungsumrechnung für Historical Data wird eingeleitet: ${reportedCurrency} → ${priceCurrency}`);
               metricsData.historicalData = await convertHistoricalData(metricsData.historicalData, reportedCurrency, priceCurrency);
+            } else {
+              console.log('❌ Keine Umrechnung für Historical Data nötig (Währungen identisch)');
             }
           }
         }
+        
+        console.log('=== STOCK SEARCH SERVICE - CURRENCY LOGIC ENDE ===');
         
         // Initialize the rating with required properties
         let updatedRating: OverallRatingData | null = null;

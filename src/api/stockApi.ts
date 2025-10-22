@@ -1439,15 +1439,26 @@ export const getFinancialMetrics = async (ticker: string) => {
     }
 
     // Determine the reported currency from the income statement or quote data
+    console.log('=== WÄHRUNGSERKENNUNG START ===');
+    console.log('latestIncomeStatement:', latestIncomeStatement ? 'vorhanden' : 'fehlt');
+    console.log('latestIncomeStatement.reportedCurrency:', latestIncomeStatement?.reportedCurrency);
+    console.log('quoteData:', quoteData ? 'vorhanden' : 'fehlt');
+    console.log('quoteData.currency:', quoteData?.currency);
+    
     let reportedCurrency = 'USD'; // Default to USD if no currency info available
     
     if (latestIncomeStatement && latestIncomeStatement.reportedCurrency) {
       reportedCurrency = latestIncomeStatement.reportedCurrency;
+      console.log(`✅ Reported Currency aus Income Statement: ${reportedCurrency}`);
     } else if (quoteData && quoteData.currency) {
       reportedCurrency = quoteData.currency;
+      console.log(`⚠️ Reported Currency aus Quote Data (Fallback): ${reportedCurrency}`);
+    } else {
+      console.warn(`❌ Keine Währungsinformation gefunden - Fallback auf USD!`);
     }
     
-    console.log(`Reported currency identified as: ${reportedCurrency}`);
+    console.log(`📊 FINALE reportedCurrency: ${reportedCurrency} | Original-Format: "${latestIncomeStatement?.reportedCurrency || quoteData?.currency}"`);
+    console.log('=== WÄHRUNGSERKENNUNG ENDE ===');
     
     // Calculate WACC using actual company data from FMP API
     let wacc = 10; // Default 10% as fallback

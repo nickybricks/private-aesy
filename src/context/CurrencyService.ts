@@ -54,27 +54,42 @@ export const convertFinancialMetrics = async (metrics: any[], fromCurrency: stri
  * Convert historical data from source currency to target currency
  */
 export const convertHistoricalData = async (historicalData: any, fromCurrency: string, toCurrency: string) => {
+  console.log('=== HISTORICAL DATA CONVERSION START ===');
+  console.log(`fromCurrency: ${fromCurrency}, toCurrency: ${toCurrency}`);
+  console.log(`shouldConvertCurrency: ${shouldConvertCurrency(fromCurrency, toCurrency)}`);
+  
   if (!shouldConvertCurrency(fromCurrency, toCurrency) || !historicalData) {
+    console.log('❌ Conversion übersprungen (shouldConvert=false oder keine Daten)');
     return historicalData;
   }
   
-  console.log(`Converting historical data from ${fromCurrency} to ${toCurrency}`);
+  console.log(`✅ Conversion wird durchgeführt...`);
   
   const rate = await getExchangeRate(fromCurrency, toCurrency);
   if (!rate) {
-    console.warn(`DCF ERROR: No exchange rate available for historical data conversion from ${fromCurrency} to ${toCurrency}`);
+    console.warn(`❌ Keine Exchange Rate verfügbar - Conversion abgebrochen!`);
     return historicalData;
   }
   
-  console.log(`Using exchange rate: ${rate} for historical data conversion`);
+  console.log(`✅ Exchange Rate erhalten: ${rate}`);
+  console.log(`Beispiel-Umrechnung: 1,000,000 ${fromCurrency} = ${(1000000 * rate).toFixed(2)} ${toCurrency}`);
   
   const convertItemValues = (items: HistoricalDataItem[]) => {
-    if (!items || !Array.isArray(items)) return [];
+    if (!items || !Array.isArray(items)) {
+      console.log('⚠️ Keine Items zum Konvertieren');
+      return [];
+    }
     
-    return items.map(item => {
+    console.log(`📊 Konvertiere ${items.length} Items...`);
+    
+    return items.map((item, index) => {
       if (item.value !== undefined && item.value !== null && !isNaN(Number(item.value))) {
         const originalValue = item.value;
         const convertedValue = originalValue * rate;
+        
+        if (index === 0) {
+          console.log(`Beispiel (erstes Item): ${originalValue} ${fromCurrency} → ${convertedValue} ${toCurrency}`);
+        }
         
         // Check for NaN result
         if (isNaN(convertedValue)) {
@@ -95,18 +110,38 @@ export const convertHistoricalData = async (historicalData: any, fromCurrency: s
   
   // Preserve all existing keys; only convert known currency-based series
   const result: any = { ...historicalData };
+  
+  console.log('Konvertiere Revenue-Serie...');
   result.revenue = historicalData.revenue ? convertItemValues(historicalData.revenue) : historicalData.revenue;
+  
+  console.log('Konvertiere Earnings-Serie...');
   result.earnings = historicalData.earnings ? convertItemValues(historicalData.earnings) : historicalData.earnings;
+  
+  console.log('Konvertiere EPS-Serie...');
   result.eps = historicalData.eps ? convertItemValues(historicalData.eps) : historicalData.eps;
+  
+  console.log('Konvertiere EBITDA-Serie...');
   result.ebitda = historicalData.ebitda ? convertItemValues(historicalData.ebitda) : historicalData.ebitda;
+  
+  console.log('Konvertiere EPS W/O NRI-Serie...');
   result.epsWoNri = historicalData.epsWoNri ? convertItemValues(historicalData.epsWoNri) : historicalData.epsWoNri;
+  
+  console.log('Konvertiere Free Cash Flow-Serie...');
   result.freeCashFlow = historicalData.freeCashFlow ? convertItemValues(historicalData.freeCashFlow) : historicalData.freeCashFlow;
+  
+  console.log('Konvertiere Dividend-Serie...');
   result.dividend = historicalData.dividend ? convertItemValues(historicalData.dividend) : historicalData.dividend;
+  
+  console.log('Konvertiere Net Income-Serie...');
   result.netIncome = historicalData.netIncome ? convertItemValues(historicalData.netIncome) : historicalData.netIncome;
+  
+  console.log('Konvertiere Operating Cash Flow-Serie...');
   result.operatingCashFlow = historicalData.operatingCashFlow ? convertItemValues(historicalData.operatingCashFlow) : historicalData.operatingCashFlow;
+  
   // Do NOT convert percentages like payoutRatio; leave other keys untouched
   
   console.log(`✅ Converted historical data series (netIncome and operatingCashFlow included)`);
+  console.log('=== HISTORICAL DATA CONVERSION ENDE ===');
   
   return result;
 };

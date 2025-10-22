@@ -82,6 +82,8 @@ export const debugDCFData = (dcfData: any): void => {
 
 // Normalize currency symbols to standard codes
 export const normalizeCurrencyCode = (currency: string): string => {
+  console.log(`🔄 normalizeCurrencyCode Input: "${currency}" (Type: ${typeof currency})`);
+  
   // Convert common currency symbols to their code equivalents
   const symbolToCode: Record<string, string> = {
     '€': 'EUR',
@@ -98,78 +100,108 @@ export const normalizeCurrencyCode = (currency: string): string => {
     'JPY': 'JPY', // Already a code
   };
   
-  return symbolToCode[currency] || currency;
+  const result = symbolToCode[currency] || currency;
+  console.log(`🔄 normalizeCurrencyCode Output: "${result}"`);
+  
+  return result;
 };
 
 // Function to get the exchange rate from API
 export const getExchangeRate = async (fromCurrency: string, toCurrency: string): Promise<number | null> => {
+  console.log('=== EXCHANGE RATE ABRUF START ===');
+  console.log(`Input: fromCurrency="${fromCurrency}", toCurrency="${toCurrency}"`);
+  
   try {
     // Normalize currency codes before making the API call
     const normalizedFromCurrency = normalizeCurrencyCode(fromCurrency);
     const normalizedToCurrency = normalizeCurrencyCode(toCurrency);
     
-    console.log(`Getting exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+    console.log(`Nach Normalisierung: from="${normalizedFromCurrency}", to="${normalizedToCurrency}"`);
+    
+    const apiUrl = `https://api.exchangerate.host/latest?base=${normalizedFromCurrency}&symbols=${normalizedToCurrency}`;
+    console.log(`🌐 API-Aufruf: ${apiUrl}`);
     
     // Using exchangerate.host API which is more reliable and CORS-friendly
-    const response = await axios.get(`https://api.exchangerate.host/latest?base=${normalizedFromCurrency}&symbols=${normalizedToCurrency}`);
+    const response = await axios.get(apiUrl);
+    
+    console.log('📥 API Rohdaten erhalten:');
+    console.log(JSON.stringify(response.data, null, 2));
     
     if (response.data && response.data.rates && response.data.rates[normalizedToCurrency]) {
       const rate = response.data.rates[normalizedToCurrency];
-      console.log(`Exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}: ${rate}`);
+      console.log(`✅ Exchange Rate gefunden: ${rate}`);
       
       if (isNaN(rate)) {
-        console.warn(`DCF ERROR: Exchange rate is NaN from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+        console.warn(`❌ Exchange rate ist NaN!`);
         return null;
       }
       
+      console.log(`=== EXCHANGE RATE ABRUF ERFOLG: ${rate} ===`);
       return rate;
     }
     
+    console.warn(`⚠️ Kein Rate in response.data.rates gefunden. Verfügbare Keys:`, Object.keys(response.data.rates || {}));
+    
     // Fallback to FMP API if exchangerate.host fails
-    console.log(`Fallback to FMP API for exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
-    const fmpResponse = await axios.get(`https://financialmodelingprep.com/api/v3/fx/${normalizedFromCurrency}${normalizedToCurrency}?apikey=${API_KEY}`);
+    console.log('🔄 Versuche FMP Fallback...');
+    const fmpUrl = `https://financialmodelingprep.com/api/v3/fx/${normalizedFromCurrency}${normalizedToCurrency}?apikey=${API_KEY}`;
+    console.log(`🌐 FMP API-Aufruf: ${fmpUrl}`);
+    const fmpResponse = await axios.get(fmpUrl);
+    
+    console.log('📥 FMP API Rohdaten erhalten:');
+    console.log(JSON.stringify(fmpResponse.data, null, 2));
     
     if (fmpResponse.data && fmpResponse.data[0] && fmpResponse.data[0].rate) {
       const rate = fmpResponse.data[0].rate;
-      console.log(`FMP exchange rate: ${rate}`);
+      console.log(`✅ FMP Exchange Rate gefunden: ${rate}`);
       
       if (isNaN(rate)) {
-        console.warn(`DCF ERROR: FMP exchange rate is NaN from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+        console.warn(`❌ FMP exchange rate ist NaN!`);
         return null;
       }
       
+      console.log(`=== FMP EXCHANGE RATE ABRUF ERFOLG: ${rate} ===`);
       return rate;
     }
     
-    console.warn(`DCF ERROR: Exchange rate not found in response for ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+    console.warn(`❌ Exchange rate nicht in Response gefunden`);
     return null;
   } catch (error) {
-    console.error('Error fetching exchange rate:', error);
+    console.error('❌ FEHLER beim Exchange Rate Abruf:');
+    console.error('Error Type:', error?.constructor?.name);
+    console.error('Error Message:', error?.message);
+    console.error('Full Error:', error);
     
     // Try fallback API if first one fails
     try {
       const normalizedFromCurrency = normalizeCurrencyCode(fromCurrency);
       const normalizedToCurrency = normalizeCurrencyCode(toCurrency);
       
-      console.log(`Trying fallback API for exchange rate from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+      console.log(`🔄 Versuche Fallback-API: ${normalizedFromCurrency} → ${normalizedToCurrency}`);
       const fallbackResponse = await axios.get(`https://api.exchangerate.host/latest?base=${normalizedFromCurrency}&symbols=${normalizedToCurrency}`);
+      
+      console.log('📥 Fallback API Rohdaten erhalten:');
+      console.log(JSON.stringify(fallbackResponse.data, null, 2));
       
       if (fallbackResponse.data && fallbackResponse.data.rates && fallbackResponse.data.rates[normalizedToCurrency]) {
         const rate = fallbackResponse.data.rates[normalizedToCurrency];
-        console.log(`Fallback exchange rate: ${rate}`);
+        console.log(`✅ Fallback Exchange Rate gefunden: ${rate}`);
         
         if (isNaN(rate)) {
-          console.warn(`DCF ERROR: Fallback exchange rate is NaN from ${normalizedFromCurrency} to ${normalizedToCurrency}`);
+          console.warn(`❌ Fallback exchange rate ist NaN!`);
           return null;
         }
         
+        console.log(`=== FALLBACK EXCHANGE RATE ABRUF ERFOLG: ${rate} ===`);
         return rate;
       }
     } catch (fallbackError) {
-      console.error('Fallback API also failed:', fallbackError);
+      console.error('❌ Auch Fallback-API fehlgeschlagen:');
+      console.error('Fallback Error:', fallbackError);
     }
     
-    console.warn(`DCF ERROR: All exchange rate APIs failed for ${fromCurrency} to ${toCurrency}`);
+    console.warn(`❌ ALLE EXCHANGE RATE APIs FEHLGESCHLAGEN für ${fromCurrency} zu ${toCurrency}`);
+    console.log('=== EXCHANGE RATE ABRUF ENDE (FEHLER) ===');
     return null;
   }
 };
