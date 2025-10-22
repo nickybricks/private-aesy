@@ -36,8 +36,6 @@ interface ValuationResponse {
     tangibleBookAdded: number;
   };
   asOf: string;
-  currency?: string;
-  reportedCurrency?: string;
 }
 
 // Helper functions
@@ -58,28 +56,6 @@ function median(values: number[]): number {
   return sorted.length % 2 === 0
     ? (sorted[mid - 1] + sorted[mid]) / 2
     : sorted[mid];
-}
-
-// Get exchange rate from FMP
-async function getExchangeRate(fromCurrency: string, toCurrency: string): Promise<number | null> {
-  if (fromCurrency === toCurrency) return 1;
-  
-  const FMP_API_KEY = Deno.env.get('FMP_API_KEY');
-  if (!FMP_API_KEY) return null;
-  
-  try {
-    const res = await fetch(
-      `https://financialmodelingprep.com/api/v3/fx/${fromCurrency}${toCurrency}?apikey=${FMP_API_KEY}`
-    );
-    
-    if (!res.ok) return null;
-    
-    const rates = await res.json();
-    return rates?.[0]?.price || null;
-  } catch (error) {
-    console.error(`Error fetching exchange rate: ${error}`);
-    return null;
-  }
 }
 
 // Fetch financial data from FMP
@@ -483,10 +459,6 @@ serve(async (req) => {
     // Fetch financial data
     const data = await fetchFinancialData(ticker);
     
-    // Extract reported currency
-    const reportedCurrency = data.income?.[0]?.reportedCurrency || 'USD';
-    console.log(`Reported currency: ${reportedCurrency}`);
-    
     // Calculate WACC
     const wacc = await calculateWACC(ticker, data);
     console.log(`Calculated WACC: ${wacc.toFixed(2)}%`);
@@ -502,28 +474,16 @@ serve(async (req) => {
     
     console.log(`Start value for mode ${mode}: ${startValue.toFixed(2)}`);
     
-    // Convert start value to USD if needed
-    let convertedStartValue = startValue;
-    if (reportedCurrency !== 'USD') {
-      const rate = await getExchangeRate(reportedCurrency, 'USD');
-      if (rate && rate > 0) {
-        convertedStartValue = startValue * rate;
-        console.log(`✓ Start value converted: ${startValue.toFixed(2)} ${reportedCurrency} → ${convertedStartValue.toFixed(2)} USD (rate: ${rate})`);
-      } else {
-        warnings.push(`Währungsumrechnung fehlgeschlagen: ${reportedCurrency} → USD`);
-      }
-    }
-    
     // Warnings array for data quality issues
     const warnings: string[] = [];
     
-    if (convertedStartValue <= 0) {
+    if (startValue <= 0) {
       warnings.push(`Keine ausreichenden Daten für Modus ${mode}. Berechnung mit konservativen Annahmen.`);
       // Don't throw error, continue with warning
     }
     
     // Use a minimum start value if needed
-    const effectiveStartValue = Math.max(convertedStartValue, 0.01);
+    const effectiveStartValue = Math.max(startValue, 0.01);
     
     // Calculate growth rate
     let growthRate = calculateGrowthRate(mode, data);
@@ -587,14 +547,12 @@ serve(async (req) => {
         predictability: 'medium'
       },
       components: {
-        startValuePerShare: parseFloat(convertedStartValue.toFixed(2)),
+        startValuePerShare: parseFloat(effectiveStartValue.toFixed(2)),
         pvPhase1: result.pvPhase1,
         pvPhase2: result.pvPhase2,
         tangibleBookAdded: result.tbvAdded
       },
-      asOf: new Date().toISOString().split('T')[0],
-      currency: 'USD',
-      reportedCurrency: reportedCurrency
+      asOf: new Date().toISOString().split('T')[0]
     };
     
     // Add warnings to response if any

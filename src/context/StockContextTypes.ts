@@ -19,12 +19,6 @@ export interface HistoricalDataItem {
   isProfitable?: boolean; // For netIncome: indicates if year was profitable
 }
 
-// Historical price data with date (not year)
-export interface HistoricalPriceItem {
-  date: string;
-  value: number;
-}
-
 // New interfaces for weekly P/E data
 export interface PEDataItem {
   date: string;        // ISO date format (YYYY-MM-DD)
@@ -86,7 +80,6 @@ export interface FinancialMetricsData {
     payoutRatioEPS?: HistoricalDataItem[];     // NEW: Payout ratio (Dividends/EPS)
     dividendGrowth?: HistoricalDataItem[];     // NEW: Annual dividend growth
     epsWoNri?: HistoricalDataItem[];           // NEW: EPS w/o NRI (Earnings Per Share without Non-Recurring Items)
-    historicalPrices?: HistoricalPriceItem[];  // NEW: Historical stock prices with dates
   };
   dividendMetrics?: {
     currentDividendPerShare: number;
@@ -159,8 +152,6 @@ export interface ValuationData {
   };
   asOf: string;
   warnings?: string[];
-  currency?: string;
-  reportedCurrency?: string;
 }
 
 export interface ScoreResult {

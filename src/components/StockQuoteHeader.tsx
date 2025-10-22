@@ -97,7 +97,7 @@ const StockQuoteHeader: React.FC = () => {
     return metric?.value ?? null;
   };
 
-  const peRatio = financialMetrics.historicalData?.peRatioWeekly?.slice(-1)[0]?.stockPE || null;
+  const peRatio = getMetricValue('P/E-Verhältnis (KGV)');
 
   // Render stars
   const renderStars = (stars: number | 'NR', clickable: boolean = false) => {
