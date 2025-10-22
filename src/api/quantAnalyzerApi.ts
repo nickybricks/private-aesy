@@ -380,7 +380,10 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       : false;
 
     // 2. KGV < 20 (or > 20 with growth conditions)
-    const pe = safeValue(ratios.priceEarningsRatioTTM);
+    // Use TTM P/E from quote data (most current), fallback to ratios
+    const pe = quoteData && safeValue(quoteData.pe) !== null 
+      ? safeValue(quoteData.pe) 
+      : safeValue(ratios.priceEarningsRatioTTM);
     let pePass = pe !== null && pe > 0 && pe < 20; // Base rule
     
     let revenueCagr5y: number | null = null;
