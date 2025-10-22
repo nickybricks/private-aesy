@@ -2952,6 +2952,8 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
       if (dividendData?.historical && Array.isArray(dividendData.historical) && dividendData.historical.length > 0) {
         // Aggregate dividends by year (sum all payments in a year)
         const yearlyDividends = new Map<number, number>();
+        const currentYear = new Date().getFullYear();
+        
         dividendData.historical.forEach((item: any) => {
           if (item.dividend && item.dividend > 0) {
             const year = new Date(item.date).getFullYear();
@@ -2959,8 +2961,9 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
           }
         });
         
-        // Convert to array and sort chronologically
+        // Convert to array and sort chronologically, excluding incomplete current year
         const dividendHistory = Array.from(yearlyDividends.entries())
+          .filter(([year]) => year < currentYear) // Only complete years
           .map(([year, value]) => ({ year: year.toString(), value }))
           .sort((a, b) => parseInt(a.year) - parseInt(b.year));
         
@@ -3044,7 +3047,7 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
             dividendCAGR10Y: calculateDividendCAGR(10)
           };
           
-          console.log(`✅ Dividend data fetched for ${standardizedTicker}:`, {
+          console.log(`✅ Dividend data fetched for ${standardizedTicker} (only complete years):`, {
             years: dividendHistory.length,
             currentDPS: dividendMetrics.currentDividendPerShare,
             streak: dividendStreak,
