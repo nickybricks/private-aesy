@@ -125,7 +125,7 @@ const saveToCache = async (
 // Main analysis function with transparent caching
 export const analyzeMarketWithCache = async (
   marketId: string,
-  limit: number = 1000,
+  limit: number = 10000,
   onProgress?: (progress: number, currentOperation: string) => void
 ): Promise<QuantAnalysisResult[]> => {
   try {

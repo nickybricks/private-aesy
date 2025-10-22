@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { marketId, limit = 1000 } = await req.json();
+    const { marketId, limit = 10000 } = await req.json();
 
     if (!marketId) {
       return new Response(
