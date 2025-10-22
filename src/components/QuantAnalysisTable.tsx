@@ -52,7 +52,6 @@ import { addStockToWatchlist } from '@/utils/watchlistService';
 interface QuantAnalysisTableProps {
   results: QuantAnalysisResult[];
   isLoading: boolean;
-  onReset?: () => void;
 }
 
 const metricsDefinitions = {
@@ -119,11 +118,13 @@ const metricsDefinitions = {
 };
 
 const BuffettScoreBadge = ({ score }: { score: number }) => {
-  if (score >= 8) { // 8-10
+  // Adjusted thresholds for 14-point scale
+  // 10-14 = Kandidat, 6-9 = Beobachten, 0-5 = Vermeiden
+  if (score >= 10) {
     return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Kandidat</Badge>;
-  } else if (score >= 6) { // 6-7
+  } else if (score >= 6) {
     return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Beobachten</Badge>;
-  } else { // 0-5
+  } else {
     return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Vermeiden</Badge>;
   }
 };
@@ -235,8 +236,7 @@ const SortableHeader = ({ field, name, tooltipText, sortField, sortDirection, se
 
 const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({ 
   results, 
-  isLoading,
-  onReset
+  isLoading
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -454,11 +454,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
         <div className="flex items-center justify-between text-sm text-gray-500">
           <div className="flex items-center gap-2">
             <span>Gesamt: {sortedResults.length}</span>
-            {onReset && (
-              <Button variant="outline" size="sm" onClick={onReset}>
-                Zurücksetzen
-              </Button>
-            )}
           </div>
           <span>Seite {currentPage} von {totalPages}</span>
         </div>
@@ -731,7 +726,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   <TableCell className="py-1">{stock.sector}</TableCell>
                   <TableCell className="py-1">
                     <div className="flex items-center">
-                      <span className="mr-2">{stock.buffettScore}/10</span>
+                      <span className="mr-2">{stock.buffettScore}/14</span>
                       <BuffettScoreBadge score={stock.buffettScore} />
                     </div>
                   </TableCell>

@@ -133,7 +133,7 @@ export interface QuantAnalysisResult {
   exchange: string;
   sector: string;
   country: string;
-  buffettScore: number; // Max 10 points
+  buffettScore: number; // Max 14 points
   criteria: {
     yearsOfProfitability: { 
       value: number | null; // Years profitable of 10
@@ -566,21 +566,30 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       intrinsicValue: intrinsicValueCalc
     };
 
-    // Calculate Buffett Score (max 10 points)
+    // Calculate Buffett Score (max 14 points - all displayed columns count)
+    const epsGrowth3yPass = epsCagr3y !== null && epsCagr3y >= 5;
+    const epsGrowth10yPass = epsCagr10y !== null && epsCagr10y >= 5;
+    const revenueGrowth3yPass = revenueCagr3y !== null && revenueCagr3y >= 5;
+    const revenueGrowth10yPass = revenueCagr10y !== null && revenueCagr10y >= 5;
+    
     const buffettScore = [
       profitYearsPass,
       pePass,
       roicPass,
       roePass,
       dividendYieldPass,
+      epsGrowth3yPass,
       epsGrowthPass,
+      epsGrowth10yPass,
+      revenueGrowth3yPass,
       revenueGrowthPass,
+      revenueGrowth10yPass,
       netDebtToEbitdaPass,
       netMarginPass,
       fcfMarginPass
     ].filter(Boolean).length;
 
-    console.log(`${ticker} Score: ${buffettScore}/10 - Profitable years: ${profitabilityYears?.total}/10, P/E: ${pe}, ROIC: ${roic}%, ROE: ${roe}%, FCF Margin: ${fcfMargin}%`);
+    console.log(`${ticker} Score: ${buffettScore}/14 - Profitable years: ${profitabilityYears?.total}/10, P/E: ${pe}, ROIC: ${roic}%, ROE: ${roe}%, FCF Margin: ${fcfMargin}%`);
 
     return {
       symbol: ticker,
@@ -713,17 +722,18 @@ export const exportToExcel = (results: QuantAnalysisResult[]) => {
   import('xlsx').then((XLSX) => {
     const headers = [
       'Symbol', 'Name', 'Sektor', 'Börse', 'Preis', 'Währung',
-      'Buffett Score (max 9)',
+      'Buffett Score (max 14)',
       'Abweichung zum inneren Wert (Intrinsic Value Discount)',
       'Jahre Profitabel (von 10)', 'Pass',
       'Kurs-Gewinn-Verhältnis (KGV / P/E Ratio)', 'Pass',
       'ROIC (%)', 'Pass',
       'ROE (%)', 'Pass',
       'Dividendenrendite (Dividend Yield)', 'Pass',
-      'EPS w/o NRI 3Y CAGR (%)', 'EPS w/o NRI 5Y CAGR (%)', 'EPS w/o NRI 10Y CAGR (%)', 'Pass',
-      'Umsatz 3Y CAGR (%)', 'Umsatz 5Y CAGR (%)', 'Umsatz 10Y CAGR (%)', 'Pass',
+      'EPS w/o NRI 3Y CAGR (%)', 'Pass', 'EPS w/o NRI 5Y CAGR (%)', 'Pass', 'EPS w/o NRI 10Y CAGR (%)', 'Pass',
+      'Umsatz 3Y CAGR (%)', 'Pass', 'Umsatz 5Y CAGR (%)', 'Pass', 'Umsatz 10Y CAGR (%)', 'Pass',
       'NetDebt/EBITDA', 'Pass',
-      'Nettomarge (Net Margin)', 'Pass'
+      'Nettomarge (Net Margin)', 'Pass',
+      'FCF-Marge (FCF Margin)', 'Pass'
     ];
     
     const rows = results.map(result => [
@@ -746,17 +756,23 @@ export const exportToExcel = (results: QuantAnalysisResult[]) => {
       result.criteria.dividendYield.value !== null ? parseFloat(result.criteria.dividendYield.value.toFixed(2)) : 'N/A',
       result.criteria.dividendYield.pass ? 'Ja' : 'Nein',
       result.criteria.epsGrowth.cagr3y !== null ? parseFloat(result.criteria.epsGrowth.cagr3y.toFixed(2)) : 'N/A',
+      result.criteria.epsGrowth.cagr3y !== null && result.criteria.epsGrowth.cagr3y >= 5 ? 'Ja' : 'Nein',
       result.criteria.epsGrowth.value !== null ? parseFloat(result.criteria.epsGrowth.value.toFixed(2)) : 'N/A',
-      result.criteria.epsGrowth.cagr10y !== null ? parseFloat(result.criteria.epsGrowth.cagr10y.toFixed(2)) : 'N/A',
       result.criteria.epsGrowth.pass ? 'Ja' : 'Nein',
+      result.criteria.epsGrowth.cagr10y !== null ? parseFloat(result.criteria.epsGrowth.cagr10y.toFixed(2)) : 'N/A',
+      result.criteria.epsGrowth.cagr10y !== null && result.criteria.epsGrowth.cagr10y >= 5 ? 'Ja' : 'Nein',
       result.criteria.revenueGrowth.cagr3y !== null ? parseFloat(result.criteria.revenueGrowth.cagr3y.toFixed(2)) : 'N/A',
+      result.criteria.revenueGrowth.cagr3y !== null && result.criteria.revenueGrowth.cagr3y >= 5 ? 'Ja' : 'Nein',
       result.criteria.revenueGrowth.value !== null ? parseFloat(result.criteria.revenueGrowth.value.toFixed(2)) : 'N/A',
-      result.criteria.revenueGrowth.cagr10y !== null ? parseFloat(result.criteria.revenueGrowth.cagr10y.toFixed(2)) : 'N/A',
       result.criteria.revenueGrowth.pass ? 'Ja' : 'Nein',
+      result.criteria.revenueGrowth.cagr10y !== null ? parseFloat(result.criteria.revenueGrowth.cagr10y.toFixed(2)) : 'N/A',
+      result.criteria.revenueGrowth.cagr10y !== null && result.criteria.revenueGrowth.cagr10y >= 5 ? 'Ja' : 'Nein',
       result.criteria.netDebtToEbitda.value !== null ? parseFloat(result.criteria.netDebtToEbitda.value.toFixed(2)) : 'N/A',
       result.criteria.netDebtToEbitda.pass ? 'Ja' : 'Nein',
       result.criteria.netMargin.value !== null ? parseFloat(result.criteria.netMargin.value.toFixed(2)) : 'N/A',
-      result.criteria.netMargin.pass ? 'Ja' : 'Nein'
+      result.criteria.netMargin.pass ? 'Ja' : 'Nein',
+      result.criteria.fcfMargin?.value !== null ? parseFloat(result.criteria.fcfMargin.value.toFixed(2)) : 'N/A',
+      result.criteria.fcfMargin?.pass ? 'Ja' : 'Nein'
     ]);
     
     // Create worksheet with headers and data

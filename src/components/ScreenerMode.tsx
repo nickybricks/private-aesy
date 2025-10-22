@@ -5,10 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
 import { QuantAnalysisResult } from '@/api/quantAnalyzerApi';
-import { Filter, X, ChevronDown, Info } from 'lucide-react';
+import { Filter, ChevronDown } from 'lucide-react';
 
 interface ScreenerModeProps {
   cachedStocks: QuantAnalysisResult[];
@@ -19,6 +18,8 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
   const [filters, setFilters] = useState({
     minAesyScore: '',
     maxAesyScore: '',
+    minYearsProfit: '',
+    maxYearsProfit: '',
     minPE: '',
     maxPE: '',
     minROIC: '',
@@ -27,10 +28,24 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
     maxROE: '',
     minDividendYield: '',
     maxDividendYield: '',
+    minEpsGrowth3y: '',
+    maxEpsGrowth3y: '',
+    minEpsGrowth: '',
+    maxEpsGrowth: '',
+    minEpsGrowth10y: '',
+    maxEpsGrowth10y: '',
+    minRevenueGrowth3y: '',
+    maxRevenueGrowth3y: '',
     minRevenueGrowth: '',
     maxRevenueGrowth: '',
+    minRevenueGrowth10y: '',
+    maxRevenueGrowth10y: '',
+    minNetDebtToEbitda: '',
+    maxNetDebtToEbitda: '',
     minNetMargin: '',
     maxNetMargin: '',
+    minFcfMargin: '',
+    maxFcfMargin: '',
     sector: 'all',
     searchQuery: ''
   });
@@ -40,6 +55,10 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
       // Aesy Score filter
       if (filters.minAesyScore !== '' && stock.buffettScore < parseFloat(filters.minAesyScore)) return false;
       if (filters.maxAesyScore !== '' && stock.buffettScore > parseFloat(filters.maxAesyScore)) return false;
+      
+      // Years of Profitability filter
+      if (filters.minYearsProfit !== '' && stock.criteria.yearsOfProfitability.value && stock.criteria.yearsOfProfitability.value < parseFloat(filters.minYearsProfit)) return false;
+      if (filters.maxYearsProfit !== '' && stock.criteria.yearsOfProfitability.value && stock.criteria.yearsOfProfitability.value > parseFloat(filters.maxYearsProfit)) return false;
       
       // PE filter
       if (filters.minPE !== '' && stock.criteria.pe.value && stock.criteria.pe.value < parseFloat(filters.minPE)) return false;
@@ -57,13 +76,41 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
       if (filters.minDividendYield !== '' && stock.criteria.dividendYield.value && stock.criteria.dividendYield.value < parseFloat(filters.minDividendYield)) return false;
       if (filters.maxDividendYield !== '' && stock.criteria.dividendYield.value && stock.criteria.dividendYield.value > parseFloat(filters.maxDividendYield)) return false;
       
-      // Revenue Growth filter
+      // EPS Growth 3Y filter
+      if (filters.minEpsGrowth3y !== '' && stock.criteria.epsGrowth.cagr3y && stock.criteria.epsGrowth.cagr3y < parseFloat(filters.minEpsGrowth3y)) return false;
+      if (filters.maxEpsGrowth3y !== '' && stock.criteria.epsGrowth.cagr3y && stock.criteria.epsGrowth.cagr3y > parseFloat(filters.maxEpsGrowth3y)) return false;
+      
+      // EPS Growth 5Y filter
+      if (filters.minEpsGrowth !== '' && stock.criteria.epsGrowth.value && stock.criteria.epsGrowth.value < parseFloat(filters.minEpsGrowth)) return false;
+      if (filters.maxEpsGrowth !== '' && stock.criteria.epsGrowth.value && stock.criteria.epsGrowth.value > parseFloat(filters.maxEpsGrowth)) return false;
+      
+      // EPS Growth 10Y filter
+      if (filters.minEpsGrowth10y !== '' && stock.criteria.epsGrowth.cagr10y && stock.criteria.epsGrowth.cagr10y < parseFloat(filters.minEpsGrowth10y)) return false;
+      if (filters.maxEpsGrowth10y !== '' && stock.criteria.epsGrowth.cagr10y && stock.criteria.epsGrowth.cagr10y > parseFloat(filters.maxEpsGrowth10y)) return false;
+      
+      // Revenue Growth 3Y filter
+      if (filters.minRevenueGrowth3y !== '' && stock.criteria.revenueGrowth.cagr3y && stock.criteria.revenueGrowth.cagr3y < parseFloat(filters.minRevenueGrowth3y)) return false;
+      if (filters.maxRevenueGrowth3y !== '' && stock.criteria.revenueGrowth.cagr3y && stock.criteria.revenueGrowth.cagr3y > parseFloat(filters.maxRevenueGrowth3y)) return false;
+      
+      // Revenue Growth 5Y filter
       if (filters.minRevenueGrowth !== '' && stock.criteria.revenueGrowth.value && stock.criteria.revenueGrowth.value < parseFloat(filters.minRevenueGrowth)) return false;
       if (filters.maxRevenueGrowth !== '' && stock.criteria.revenueGrowth.value && stock.criteria.revenueGrowth.value > parseFloat(filters.maxRevenueGrowth)) return false;
+      
+      // Revenue Growth 10Y filter
+      if (filters.minRevenueGrowth10y !== '' && stock.criteria.revenueGrowth.cagr10y && stock.criteria.revenueGrowth.cagr10y < parseFloat(filters.minRevenueGrowth10y)) return false;
+      if (filters.maxRevenueGrowth10y !== '' && stock.criteria.revenueGrowth.cagr10y && stock.criteria.revenueGrowth.cagr10y > parseFloat(filters.maxRevenueGrowth10y)) return false;
+      
+      // Net Debt to EBITDA filter
+      if (filters.minNetDebtToEbitda !== '' && stock.criteria.netDebtToEbitda.value && stock.criteria.netDebtToEbitda.value < parseFloat(filters.minNetDebtToEbitda)) return false;
+      if (filters.maxNetDebtToEbitda !== '' && stock.criteria.netDebtToEbitda.value && stock.criteria.netDebtToEbitda.value > parseFloat(filters.maxNetDebtToEbitda)) return false;
       
       // Net Margin filter
       if (filters.minNetMargin !== '' && stock.criteria.netMargin.value && stock.criteria.netMargin.value < parseFloat(filters.minNetMargin)) return false;
       if (filters.maxNetMargin !== '' && stock.criteria.netMargin.value && stock.criteria.netMargin.value > parseFloat(filters.maxNetMargin)) return false;
+      
+      // FCF Margin filter
+      if (filters.minFcfMargin !== '' && stock.criteria.fcfMargin.value && stock.criteria.fcfMargin.value < parseFloat(filters.minFcfMargin)) return false;
+      if (filters.maxFcfMargin !== '' && stock.criteria.fcfMargin.value && stock.criteria.fcfMargin.value > parseFloat(filters.maxFcfMargin)) return false;
       
       // Sector filter
       if (filters.sector !== 'all' && stock.sector !== filters.sector) return false;
@@ -81,26 +128,6 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
     return Array.from(uniqueSectors).sort();
   }, [cachedStocks]);
 
-  const resetFilters = () => {
-    setFilters({
-      minAesyScore: '',
-      maxAesyScore: '',
-      minPE: '',
-      maxPE: '',
-      minROIC: '',
-      maxROIC: '',
-      minROE: '',
-      maxROE: '',
-      minDividendYield: '',
-      maxDividendYield: '',
-      minRevenueGrowth: '',
-      maxRevenueGrowth: '',
-      minNetMargin: '',
-      maxNetMargin: '',
-      sector: 'all',
-      searchQuery: ''
-    });
-  };
 
   return (
     <div className="space-y-6">
@@ -118,7 +145,7 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
           </div>
 
           <CollapsibleContent className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
               {/* Search */}
               <div className="space-y-2">
                 <Label>Suche (Symbol/Name)</Label>
@@ -147,7 +174,7 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
 
               {/* Aesy Score */}
               <div className="space-y-2">
-                <Label>Aesy Score</Label>
+                <Label>Aesy Score (0-14)</Label>
                 <div className="flex gap-2">
                   <Input
                     type="number"
@@ -271,6 +298,153 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
                 </div>
               </div>
 
+              {/* Years of Profitability */}
+              <div className="space-y-2">
+                <Label>Jahre profitabel</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minYearsProfit}
+                    onChange={(e) => setFilters({ ...filters, minYearsProfit: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxYearsProfit}
+                    onChange={(e) => setFilters({ ...filters, maxYearsProfit: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* EPS Growth 3Y */}
+              <div className="space-y-2">
+                <Label>EPS-Wachstum 3J (%)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minEpsGrowth3y}
+                    onChange={(e) => setFilters({ ...filters, minEpsGrowth3y: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxEpsGrowth3y}
+                    onChange={(e) => setFilters({ ...filters, maxEpsGrowth3y: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* EPS Growth 5Y */}
+              <div className="space-y-2">
+                <Label>EPS-Wachstum 5J (%)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minEpsGrowth}
+                    onChange={(e) => setFilters({ ...filters, minEpsGrowth: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxEpsGrowth}
+                    onChange={(e) => setFilters({ ...filters, maxEpsGrowth: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* EPS Growth 10Y */}
+              <div className="space-y-2">
+                <Label>EPS-Wachstum 10J (%)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minEpsGrowth10y}
+                    onChange={(e) => setFilters({ ...filters, minEpsGrowth10y: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxEpsGrowth10y}
+                    onChange={(e) => setFilters({ ...filters, maxEpsGrowth10y: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Revenue Growth 3Y */}
+              <div className="space-y-2">
+                <Label>Umsatz-Wachstum 3J (%)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minRevenueGrowth3y}
+                    onChange={(e) => setFilters({ ...filters, minRevenueGrowth3y: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxRevenueGrowth3y}
+                    onChange={(e) => setFilters({ ...filters, maxRevenueGrowth3y: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Revenue Growth 10Y */}
+              <div className="space-y-2">
+                <Label>Umsatz-Wachstum 10J (%)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minRevenueGrowth10y}
+                    onChange={(e) => setFilters({ ...filters, minRevenueGrowth10y: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxRevenueGrowth10y}
+                    onChange={(e) => setFilters({ ...filters, maxRevenueGrowth10y: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Net Debt to EBITDA */}
+              <div className="space-y-2">
+                <Label>Verschuldung (NetDebt/EBITDA)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minNetDebtToEbitda}
+                    onChange={(e) => setFilters({ ...filters, minNetDebtToEbitda: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxNetDebtToEbitda}
+                    onChange={(e) => setFilters({ ...filters, maxNetDebtToEbitda: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
               {/* Net Margin */}
               <div className="space-y-2">
                 <Label>Nettomarge (%)</Label>
@@ -291,6 +465,27 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
                   />
                 </div>
               </div>
+
+              {/* FCF Margin */}
+              <div className="space-y-2">
+                <Label>FCF-Marge (%)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minFcfMargin}
+                    onChange={(e) => setFilters({ ...filters, minFcfMargin: e.target.value })}
+                    className="w-full"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxFcfMargin}
+                    onChange={(e) => setFilters({ ...filters, maxFcfMargin: e.target.value })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="mt-4 text-sm text-muted-foreground">
@@ -300,21 +495,11 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
         </Card>
       </Collapsible>
 
-      {/* Info-Box */}
-      <Alert className="bg-blue-50 border-blue-200">
-        <Info className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-sm text-muted-foreground ml-2">
-          <strong>Screener vs. Analyzer:</strong> Der Screener verwendet Quick-Screening-Metriken (TTM-Werte und 5-Jahres-CAGRs mit Standard-EPS) für schnelles Filtern. 
-          Der Buffett Analyzer bietet detailliertere, bereinigte Metriken (z.B. EPS ohne NRI, 10-Jahres-Mediane) für tiefgehende Analysen.
-        </AlertDescription>
-      </Alert>
-
       {/* Results Table */}
       {filteredStocks.length > 0 ? (
         <QuantAnalysisTable 
           results={filteredStocks} 
           isLoading={false}
-          onReset={resetFilters}
         />
       ) : (
         <Card className="p-8 text-center">
