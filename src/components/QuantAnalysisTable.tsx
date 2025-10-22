@@ -467,8 +467,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
         <Table className="text-xs">
           <TableHeader className="sticky top-0 z-20 bg-background shadow-sm">
             <TableRow className="h-10">
-              <TableHead className="w-12 h-10 py-2 sticky left-0 z-40 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"></TableHead>
-              <TableHead className="min-w-[250px] px-4 py-2 h-10 sticky left-12 z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+              <TableHead className="min-w-[250px] px-4 py-2 h-10 sticky left-0 z-40 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                 <SortableHeader 
                   field="name" 
                   name="Unternehmen" 
@@ -678,7 +677,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={19} className="text-center py-8">
+                <TableCell colSpan={18} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
                     <span>Analyse läuft...</span>
@@ -687,7 +686,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableRow>
             ) : paginatedResults.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={19} className="text-center py-8">
+                <TableCell colSpan={18} className="text-center py-8">
                   Keine Ergebnisse gefunden
                 </TableCell>
               </TableRow>
@@ -695,12 +694,44 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               paginatedResults.map((stock) => (
                 <TableRow key={stock.symbol} className="h-10">
                   <TableCell className="py-1 sticky left-0 z-20 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                    <DropdownMenu>
-...
-                    </DropdownMenu>
-                  </TableCell>
-                  <TableCell className="py-1 sticky left-12 z-10 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                     <div className="flex items-center gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="z-50" align="start">
+                          <DropdownMenuItem onClick={() => handleAnalyzeStock(stock)}>
+                            Im Analyzer öffnen
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              Zur Watchlist hinzufügen
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              {watchlists && watchlists.length > 0 ? (
+                                watchlists.map((w) => (
+                                  <DropdownMenuItem key={w.id} onClick={() => handleAddToWatchlist(stock, w.id)}>
+                                    {w.name}
+                                  </DropdownMenuItem>
+                                ))
+                              ) : (
+                                <DropdownMenuItem disabled>Keine Watchlists</DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleAddToWatchlist(stock)}>
+                                Neue Watchlist…
+                              </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <span className="text-lg">{getCountryFlag(stock.country)}</span>
+                      <span>{stock.name} ({stock.symbol})</span>
+                    </div>
+                  </TableCell>
                       <span className="text-lg">{getCountryFlag(stock.country)}</span>
                       <span>{stock.name} ({stock.symbol})</span>
                     </div>
