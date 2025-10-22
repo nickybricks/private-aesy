@@ -311,8 +311,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           valueB = b.criteria.netMargin.value || -9999;
           break;
         case 'fcfMargin':
-          valueA = a.criteria.fcfMargin.value || -9999;
-          valueB = b.criteria.fcfMargin.value || -9999;
+          valueA = a.criteria.fcfMargin?.value || -9999;
+          valueB = b.criteria.fcfMargin?.value || -9999;
           break;
         default:
           valueA = a.buffettScore;
@@ -734,8 +734,8 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   </TableCell>
                   <TableCell className="py-1">
                     <div className="flex items-center space-x-1">
-                      <StatusIcon passed={stock.criteria.fcfMargin.pass} value={stock.criteria.fcfMargin.value} />
-                      <span>{formatValue(stock.criteria.fcfMargin.value)}</span>
+                      <StatusIcon passed={stock.criteria.fcfMargin?.pass ?? false} value={stock.criteria.fcfMargin?.value ?? null} />
+                      <span>{formatValue(stock.criteria.fcfMargin?.value ?? null)}</span>
                     </div>
                   </TableCell>
                 </TableRow>
