@@ -225,7 +225,8 @@ export function StockProvider({ children }: StockProviderProps) {
                 ? (metricsData.dividendMetrics.currentDividendPerShare / info.price) * 100 
                 : null;
               
-              const payoutRatio = metricsData.dividendMetrics?.currentPayoutRatio || null;
+              const payoutRatioFCF = metricsData.dividendMetrics?.currentPayoutRatioFCF || null;
+              const payoutRatioEPS = metricsData.dividendMetrics?.currentPayoutRatioEPS || null;
               const dividendStreak = metricsData.dividendMetrics?.dividendStreak || 0;
               const dividendCAGR3Y = metricsData.dividendMetrics?.dividendCAGR3Y || null;
               const dividendCAGR5Y = metricsData.dividendMetrics?.dividendCAGR5Y || null;
@@ -244,7 +245,8 @@ export function StockProvider({ children }: StockProviderProps) {
                   currentPE,
                   industryPE,
                   dividendYield,
-                  payoutRatio,
+                  payoutRatioFCF,
+                  payoutRatioEPS,
                   dividendStreak,
                   dividendCAGR3Y,
                   dividendCAGR5Y,

@@ -20,7 +20,8 @@ interface ValuationInput {
   
   // Dividend Yield (max 4 points)
   dividendYield: number | null;
-  payoutRatio: number | null;
+  payoutRatioFCF: number | null;
+  payoutRatioEPS: number | null;
   dividendStreak: number;
   dividendCAGR3Y: number | null;
   dividendCAGR5Y: number | null;
@@ -132,10 +133,20 @@ function calculatePERatioScore(currentPE: number | null, industryPE: number | nu
   return { score: totalScore, maxScore: 3 };
 }
 
+// NEW Scoring function (applies to both EPS and FCF)
+function getPayoutRatioScore(ratio: number | null): number {
+  if (ratio === null || ratio < 0 || ratio > 80) return 0;
+  if (ratio >= 40 && ratio <= 65) return 1;
+  if (ratio < 40) return 0.5; // Conservative, growth room
+  if (ratio > 65 && ratio <= 80) return 0.5; // OK, less buffer
+  return 0;
+}
+
 // Calculate Dividend Yield Score (max 4 points)
 function calculateDividendScore(
   dividendYield: number | null,
-  payoutRatio: number | null,
+  payoutRatioFCF: number | null,
+  payoutRatioEPS: number | null,
   dividendStreak: number,
   cagr3y: number | null,
   cagr5y: number | null,
@@ -145,31 +156,30 @@ function calculateDividendScore(
     return { score: 0, maxScore: 4 };
   }
   
-  // Payout ratio score (0-2 points)
-  let payoutScore = 0;
-  if (payoutRatio !== null && payoutRatio >= 0) {
-    if (payoutRatio >= 30 && payoutRatio <= 70) payoutScore = 2;
-    else if (payoutRatio >= 20 && payoutRatio <= 80) payoutScore = 1.5;
-    else if (payoutRatio < 90) payoutScore = 1;
-  }
+  // Calculate scores for both payout ratios (max 1 point each)
+  const payoutScoreFCF = getPayoutRatioScore(payoutRatioFCF);
+  const payoutScoreEPS = getPayoutRatioScore(payoutRatioEPS);
+  const totalPayoutScore = payoutScoreFCF + payoutScoreEPS; // max 2 points
   
   // Growth score (0-2 points)
   const medianCAGR = [cagr3y, cagr5y, cagr10y]
     .filter((v): v is number => v !== null)
     .sort((a, b) => a - b)[1] || null;
   
-  let growthScore = 0;
-  if (dividendStreak >= 10 && medianCAGR !== null && medianCAGR >= 8) {
-    growthScore = 2;
-  } else if (dividendStreak >= 5 && medianCAGR !== null && medianCAGR >= 5) {
-    growthScore = 1.5;
-  } else if (dividendStreak >= 3 && medianCAGR !== null && medianCAGR >= 3) {
-    growthScore = 1;
-  } else if (dividendStreak >= 1) {
-    growthScore = 0.5;
+  let streakScore = 0;
+  if (dividendStreak >= 10) streakScore = 1;
+  else if (dividendStreak >= 5) streakScore = 0.66;
+  else if (dividendStreak >= 1) streakScore = 0.34;
+  
+  let cagrScore = 0;
+  if (medianCAGR !== null) {
+    if (medianCAGR >= 6) cagrScore = 1;
+    else if (medianCAGR >= 3) cagrScore = 0.66;
+    else if (medianCAGR >= 0) cagrScore = 0.34;
   }
   
-  const totalScore = payoutScore + growthScore;
+  const growthScore = streakScore + cagrScore;
+  const totalScore = totalPayoutScore + growthScore;
   return { score: totalScore, maxScore: 4 };
 }
 
@@ -247,7 +257,8 @@ serve(async (req) => {
     
     const dividendYield = calculateDividendScore(
       input.dividendYield,
-      input.payoutRatio,
+      input.payoutRatioFCF,
+      input.payoutRatioEPS,
       input.dividendStreak,
       input.dividendCAGR3Y,
       input.dividendCAGR5Y,
