@@ -154,7 +154,7 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
             presentTerminalValue: customData.terminalValuePv || 0,
             netDebt: customData.netDebt || 0,
             dilutedSharesOutstanding: customData.sharesOutstanding || 0,
-            currency: priceCurrency, // Verwende immer die Kurswährung
+            currency: reportedCurrency, // WICHTIG: DCF-Daten sind in reportedCurrency
             intrinsicValue: customData.intrinsicValue || 0,
             pvUfcfs: customData.projectedFcfPv || [],
             sumPvUfcfs: customData.sumPvProjectedFcf || 0,
@@ -163,7 +163,7 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
             debugOutput: customData.debugOutput || []
           };
 
-          console.log('Extracted DCF data from custom calculation:');
+          console.log(`Extracted DCF data from custom calculation (in ${reportedCurrency}):`);
           debugDCFData(extractedDcfData);
           
           // Speichere die Aktienanzahl in den Informationen, falls verfügbar
@@ -221,37 +221,43 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
             dcfData: extractedDcfData
           };
           
-          // WICHTIG: Setze den intrinsischen Wert aus den DCF-Daten, wenn verfügbar
+          // WICHTIG: Setze den intrinsischen Wert aus den DCF-Daten (noch in reportedCurrency)
           if (extractedDcfData && extractedDcfData.intrinsicValue !== undefined) {
-            console.log(`Setting rating.intrinsicValue directly from DCF data: ${extractedDcfData.intrinsicValue}`);
+            console.log(`Setting rating.intrinsicValue from DCF data (in ${reportedCurrency}): ${extractedDcfData.intrinsicValue}`);
             updatedRating.intrinsicValue = extractedDcfData.intrinsicValue;
             
-            // Berechne den bestBuyPrice basierend auf dem intrinsischen Wert
+            // Berechne den bestBuyPrice basierend auf dem intrinsischen Wert (noch in reportedCurrency)
             const targetMarginOfSafety = updatedRating.targetMarginOfSafety || 20;
             updatedRating.bestBuyPrice = calculateBuffettBuyPrice(extractedDcfData.intrinsicValue, targetMarginOfSafety);
-            console.log(`Calculated bestBuyPrice: ${updatedRating.bestBuyPrice} from intrinsicValue: ${extractedDcfData.intrinsicValue}`);
-            
-            // Create enhanced info object with intrinsicValue
-            const enhancedInfo = {
-              ...info,
-              intrinsicValue: extractedDcfData.intrinsicValue
-            };
-            
-            // Replace the info object with the enhanced version
-            info = enhancedInfo;
-            console.log(`Updated info with DCF intrinsicValue: ${extractedDcfData.intrinsicValue}`);
+            console.log(`Calculated bestBuyPrice (in ${reportedCurrency}): ${updatedRating.bestBuyPrice}`);
           } else {
             throw new Error('Kein intrinsischer Wert in den DCF-Daten vorhanden');
           }
           
-          // Stelle sicher, dass die Währung immer die Kurswährung ist
-          updatedRating.currency = priceCurrency;
+          // Stelle sicher, dass die Währung auf reportedCurrency gesetzt ist, bevor wir konvertieren
+          updatedRating.currency = reportedCurrency;
           
           if (info && info.price !== null && info.price !== undefined) {
             updatedRating.currentPrice = info.price;
             console.log(`Using stock price from info: ${updatedRating.currentPrice} ${priceCurrency}`);
           } else {
             throw new Error('Kein Aktienpreis in den Info-Daten vorhanden');
+          }
+          
+          // WICHTIG: Konvertiere die Rating-Werte von reportedCurrency zu priceCurrency
+          if (shouldConvertCurrency(reportedCurrency, priceCurrency)) {
+            console.log(`🔄 Converting rating values from ${reportedCurrency} to ${priceCurrency}`);
+            updatedRating = await convertRatingValues(updatedRating, reportedCurrency, priceCurrency);
+            console.log(`✅ Rating values converted. New intrinsicValue: ${updatedRating.intrinsicValue}, bestBuyPrice: ${updatedRating.bestBuyPrice}`);
+            
+            // Update info with converted intrinsicValue
+            if (updatedRating.intrinsicValue !== undefined) {
+              info = {
+                ...info,
+                intrinsicValue: updatedRating.intrinsicValue
+              };
+              console.log(`✅ Updated info.intrinsicValue to converted value: ${info.intrinsicValue}`);
+            }
           }
         } else {
           throw new Error('Keine Rating-Daten verfügbar');

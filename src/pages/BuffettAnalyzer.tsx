@@ -264,6 +264,7 @@ const IndexContent: React.FC = () => {
                         historicalNetIncome={financialMetrics?.historicalData?.netIncome}
                         preset={profitabilityScores?.preset}
                         scoreFromBackend={profitabilityScores?.scores?.years}
+                        displayCurrency={stockInfo.currency}
                       />
                     </div>
                   </TabsContent>

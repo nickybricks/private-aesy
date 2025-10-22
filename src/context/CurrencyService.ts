@@ -102,7 +102,11 @@ export const convertHistoricalData = async (historicalData: any, fromCurrency: s
   result.epsWoNri = historicalData.epsWoNri ? convertItemValues(historicalData.epsWoNri) : historicalData.epsWoNri;
   result.freeCashFlow = historicalData.freeCashFlow ? convertItemValues(historicalData.freeCashFlow) : historicalData.freeCashFlow;
   result.dividend = historicalData.dividend ? convertItemValues(historicalData.dividend) : historicalData.dividend;
+  result.netIncome = historicalData.netIncome ? convertItemValues(historicalData.netIncome) : historicalData.netIncome;
+  result.operatingCashFlow = historicalData.operatingCashFlow ? convertItemValues(historicalData.operatingCashFlow) : historicalData.operatingCashFlow;
   // Do NOT convert percentages like payoutRatio; leave other keys untouched
+  
+  console.log(`✅ Converted historical data series (netIncome and operatingCashFlow included)`);
   
   return result;
 };

@@ -11,7 +11,7 @@ import {
   hasOpenAiApiKey
 } from './openaiApi';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
-import { convertCurrency, shouldConvertCurrency } from '@/utils/currencyConverter';
+import { convertCurrency, shouldConvertCurrency, getExchangeRate } from '@/utils/currencyConverter';
 import { NewsItem } from '@/context/StockContextTypes';
 import { calculateEpsWithoutNri } from '@/services/EpsWithoutNriService';
 
@@ -1108,26 +1108,40 @@ const fetchIndustryPE = async (industry: string): Promise<Array<{ date: string; 
   return [];
 };
 
-// Helper function to calculate weekly stock P/E
-const calculateWeeklyStockPE = (
+// Helper function to calculate weekly stock P/E with currency conversion support
+const calculateWeeklyStockPE = async (
   historicalPrices: any[],
-  quarterlyIncomeStatements: any[]
-): Array<{ date: string; stockPE: number }> => {
+  quarterlyIncomeStatements: any[],
+  reportedCurrency: string,
+  priceCurrency: string
+): Promise<Array<{ date: string; stockPE: number }>> => {
   if (!historicalPrices || !quarterlyIncomeStatements) return [];
   
   const weeklyPE: Array<{ date: string; stockPE: number }> = [];
+  
+  // Check if we need to convert EPS from reported currency to price currency
+  let exchangeRate = 1;
+  if (shouldConvertCurrency(reportedCurrency, priceCurrency)) {
+    const rate = await getExchangeRate(reportedCurrency, priceCurrency);
+    if (rate) {
+      exchangeRate = rate;
+      console.log(`📊 Weekly P/E: Converting EPS from ${reportedCurrency} to ${priceCurrency} with rate ${rate}`);
+    } else {
+      console.warn(`⚠️ Could not get exchange rate for ${reportedCurrency} to ${priceCurrency}, using rate 1`);
+    }
+  }
   
   // Sort prices chronologically (newest first)
   const sortedPrices = [...historicalPrices].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
   
-  // Prepare quarterly EPS data
+  // Prepare quarterly EPS data with currency conversion
   const quarterlyEPS = quarterlyIncomeStatements
     .filter((s: any) => s.epsdiluted || s.eps)
     .map((s: any) => ({
       date: new Date(s.date),
-      eps: s.epsdiluted || s.eps
+      eps: (s.epsdiluted || s.eps) * exchangeRate  // Convert EPS to price currency
     }))
     .sort((a, b) => b.date.getTime() - a.date.getTime());
   
@@ -1602,10 +1616,12 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
           console.log(`✓ Industry P/E sample (first 3):`, industryPEData.slice(0, 3));
         }
         
-        // Calculate weekly stock P/E
-        const weeklyStockPE = calculateWeeklyStockPE(
+        // Calculate weekly stock P/E with currency conversion
+        const weeklyStockPE = await calculateWeeklyStockPE(
           historicalPrices.historical,
-          quarterlyIncomeStatements
+          quarterlyIncomeStatements,
+          reportedCurrency,
+          quoteData.currency || 'USD'
         );
         console.log(`✓ Weekly stock P/E data points: ${weeklyStockPE.length}`);
         if (weeklyStockPE.length > 0) {

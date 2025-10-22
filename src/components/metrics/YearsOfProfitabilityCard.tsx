@@ -9,12 +9,14 @@ interface YearsOfProfitabilityCardProps {
   historicalNetIncome?: HistoricalDataItem[];
   preset?: string;
   scoreFromBackend?: ScoreResult;
+  displayCurrency?: string;
 }
 
 export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> = ({
   historicalNetIncome = [],
   preset = 'Default',
-  scoreFromBackend
+  scoreFromBackend,
+  displayCurrency = 'USD'
 }) => {
   // Calculate profitable years count
   const profitableYears = historicalNetIncome.filter(item => item.isProfitable).length;
@@ -240,7 +242,12 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
                           {data.isProfitable ? '✓ Gewinn' : '✗ Verlust'}
                         </p>
                         <p className="text-sm text-primary">
-                          Net Income: <span className="font-bold">{formatValue(data.value)}</span> {data.originalCurrency}
+                          Net Income: <span className="font-bold">{formatValue(data.value)}</span> {displayCurrency}
+                          {data.originalCurrency && data.originalCurrency !== displayCurrency && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              (urspr.: {formatValue(data.originalValue || data.value)} {data.originalCurrency})
+                            </span>
+                          )}
                         </p>
                       </div>
                     );
