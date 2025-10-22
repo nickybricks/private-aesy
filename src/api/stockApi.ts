@@ -2970,45 +2970,98 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
         if (dividendHistory.length > 0) {
           historicalData.dividend = dividendHistory;
           
-          // Calculate payout ratio (Dividends Paid / FCF) - Historical + TTM
-          let currentPayoutRatio = 0;
-          if (cashFlows && cashFlows.length > 0) {
-            const payoutRatioData = [];
+          // Calculate payout ratios - Both FCF-based and EPS-based
+          let currentPayoutRatioFCF = 0;
+          let currentPayoutRatioEPS = 0;
+          
+          if (cashFlows && cashFlows.length > 0 && incomeStatements && incomeStatements.length > 0) {
+            const payoutRatioFCFData = [];
+            const payoutRatioEPSData = [];
             
             // Historical payout ratios (up to 30 years)
-            for (let i = 0; i < Math.min(30, cashFlows.length); i++) {
-              const year = new Date(cashFlows[i].date).getFullYear();
-              const fcf = safeValue(cashFlows[i].freeCashFlow);
-              const dividendsPaid = safeValue(cashFlows[i].dividendsPaid);
+            for (let i = 0; i < Math.min(30, Math.max(cashFlows.length, incomeStatements.length)); i++) {
+              const cashFlowYear = i < cashFlows.length ? new Date(cashFlows[i].date).getFullYear() : null;
+              const incomeYear = i < incomeStatements.length ? new Date(incomeStatements[i].date).getFullYear() : null;
               
-              if (fcf && fcf > 0 && dividendsPaid) {
-                // dividendsPaid is negative in FMP, represents total cash paid
-                const totalDividendsPaid = Math.abs(dividendsPaid);
-                const payoutRatio = (totalDividendsPaid / fcf) * 100;
+              // FCF-based payout ratio
+              if (cashFlowYear && i < cashFlows.length) {
+                const fcf = safeValue(cashFlows[i].freeCashFlow);
+                const dividendsPaid = safeValue(cashFlows[i].dividendsPaid);
                 
-                payoutRatioData.push({
-                  year: year.toString(),
-                  value: Math.round(payoutRatio * 10) / 10
-                });
+                if (fcf && fcf > 0 && dividendsPaid) {
+                  const totalDividendsPaid = Math.abs(dividendsPaid);
+                  const payoutRatio = (totalDividendsPaid / fcf) * 100;
+                  
+                  payoutRatioFCFData.push({
+                    year: cashFlowYear.toString(),
+                    value: Math.round(payoutRatio * 10) / 10
+                  });
+                }
+              }
+              
+              // EPS-based payout ratio
+              if (incomeYear && i < incomeStatements.length) {
+                const netIncome = safeValue(incomeStatements[i].netIncome);
+                const dividendsPaidIncome = safeValue(cashFlows.find((cf: any) => 
+                  new Date(cf.date).getFullYear() === incomeYear
+                )?.dividendsPaid);
+                const sharesOutstanding = safeValue(incomeStatements[i].weightedAverageShsOut);
+                
+                if (netIncome && netIncome > 0 && dividendsPaidIncome && sharesOutstanding && sharesOutstanding > 0) {
+                  const totalDividendsPaid = Math.abs(dividendsPaidIncome);
+                  const eps = netIncome / sharesOutstanding;
+                  const dps = totalDividendsPaid / sharesOutstanding;
+                  
+                  if (eps > 0) {
+                    const payoutRatio = (dps / eps) * 100;
+                    
+                    payoutRatioEPSData.push({
+                      year: incomeYear.toString(),
+                      value: Math.round(payoutRatio * 10) / 10
+                    });
+                  }
+                }
               }
             }
             
-            historicalData.payoutRatio = payoutRatioData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
+            historicalData.payoutRatioFCF = payoutRatioFCFData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
+            historicalData.payoutRatioEPS = payoutRatioEPSData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
             
-            // Calculate TTM-based current payout ratio
+            // Calculate TTM-based current payout ratios
             const ttmFCF = safeValue(cashFlows[0].freeCashFlow);
             const dividendsPaid = safeValue(cashFlows[0].dividendsPaid);
+            const ttmNetIncome = safeValue(incomeStatements[0].netIncome);
+            const ttmSharesOutstanding = safeValue(incomeStatements[0].weightedAverageShsOut);
             
+            // TTM FCF-based
             if (ttmFCF && ttmFCF > 0 && dividendsPaid) {
               const totalDividendsPaid = Math.abs(dividendsPaid);
-              currentPayoutRatio = Math.round((totalDividendsPaid / ttmFCF) * 1000) / 10;
-              
-              console.log('TTM Payout Ratio:', {
-                ttmFCF: ttmFCF.toLocaleString(),
-                dividendsPaid: totalDividendsPaid.toLocaleString(),
-                ratio: currentPayoutRatio + '%'
-              });
+              currentPayoutRatioFCF = Math.round((totalDividendsPaid / ttmFCF) * 1000) / 10;
             }
+            
+            // TTM EPS-based
+            if (ttmNetIncome && ttmNetIncome > 0 && dividendsPaid && ttmSharesOutstanding && ttmSharesOutstanding > 0) {
+              const totalDividendsPaid = Math.abs(dividendsPaid);
+              const ttmEPS = ttmNetIncome / ttmSharesOutstanding;
+              const ttmDPS = totalDividendsPaid / ttmSharesOutstanding;
+              
+              if (ttmEPS > 0) {
+                currentPayoutRatioEPS = Math.round((ttmDPS / ttmEPS) * 1000) / 10;
+              }
+            }
+            
+            console.log('TTM Payout Ratios:', {
+              FCF: {
+                ttmFCF: ttmFCF?.toLocaleString(),
+                dividendsPaid: Math.abs(dividendsPaid || 0).toLocaleString(),
+                ratio: currentPayoutRatioFCF + '%'
+              },
+              EPS: {
+                ttmNetIncome: ttmNetIncome?.toLocaleString(),
+                ttmEPS: ttmNetIncome && ttmSharesOutstanding ? (ttmNetIncome / ttmSharesOutstanding).toFixed(2) : 'N/A',
+                ratio: currentPayoutRatioEPS + '%'
+              }
+            });
           }
           
           // Calculate dividend streak (years without cuts)
@@ -3040,7 +3093,8 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
           // Store dividend metrics
           dividendMetrics = {
             currentDividendPerShare: dividendHistory[dividendHistory.length - 1]?.value || 0,
-            currentPayoutRatio, // Use TTM-based calculation
+            currentPayoutRatioFCF, // TTM FCF-based
+            currentPayoutRatioEPS, // TTM EPS-based
             dividendStreak,
             dividendCAGR3Y: calculateDividendCAGR(3),
             dividendCAGR5Y: calculateDividendCAGR(5),

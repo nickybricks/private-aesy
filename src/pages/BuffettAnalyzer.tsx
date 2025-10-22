@@ -350,7 +350,8 @@ const IndexContent: React.FC = () => {
                   currentPrice={stockInfo.price}
                   currentDividendPerShare={financialMetrics.dividendMetrics.currentDividendPerShare}
                   historicalDividends={financialMetrics.historicalData?.dividend || []}
-                  payoutRatioHistory={financialMetrics.historicalData?.payoutRatio || []}
+                  payoutRatioFCFHistory={financialMetrics.historicalData?.payoutRatioFCF || []}
+                  payoutRatioEPSHistory={financialMetrics.historicalData?.payoutRatioEPS || []}
                   dividendStreak={financialMetrics.dividendMetrics.dividendStreak}
                   dividendCAGR3Y={financialMetrics.dividendMetrics.dividendCAGR3Y}
                   dividendCAGR5Y={financialMetrics.dividendMetrics.dividendCAGR5Y}

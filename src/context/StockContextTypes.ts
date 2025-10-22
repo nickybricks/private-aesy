@@ -76,17 +76,19 @@ export interface FinancialMetricsData {
     currentRatio: HistoricalDataItem[];
     netDebtToEbitda: HistoricalDataItem[];
     dividend?: HistoricalDataItem[];           // NEW: Historical dividends per share
-    payoutRatio?: HistoricalDataItem[];        // NEW: Payout ratio (Dividends/FCF)
+    payoutRatioFCF?: HistoricalDataItem[];     // NEW: Payout ratio (Dividends/FCF)
+    payoutRatioEPS?: HistoricalDataItem[];     // NEW: Payout ratio (Dividends/EPS)
     dividendGrowth?: HistoricalDataItem[];     // NEW: Annual dividend growth
     epsWoNri?: HistoricalDataItem[];           // NEW: EPS w/o NRI (Earnings Per Share without Non-Recurring Items)
   };
   dividendMetrics?: {
     currentDividendPerShare: number;
-    currentPayoutRatio: number;
-    dividendStreak: number;                   // Years without cuts
-    dividendCAGR3Y: number | null;            // 3-year CAGR
-    dividendCAGR5Y: number | null;            // 5-year CAGR
-    dividendCAGR10Y: number | null;           // 10-year CAGR
+    currentPayoutRatioFCF: number;             // TTM FCF-based payout ratio
+    currentPayoutRatioEPS: number;             // TTM EPS-based payout ratio
+    dividendStreak: number;                    // Years without cuts
+    dividendCAGR3Y: number | null;             // 3-year CAGR
+    dividendCAGR5Y: number | null;             // 5-year CAGR
+    dividendCAGR10Y: number | null;            // 10-year CAGR
   };
   wacc?: number;
 }

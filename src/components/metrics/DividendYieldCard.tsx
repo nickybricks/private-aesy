@@ -8,7 +8,8 @@ interface DividendYieldCardProps {
   currentPrice: number;
   currentDividendPerShare?: number;
   historicalDividends?: Array<{ year: string; value: number }>;
-  payoutRatioHistory?: Array<{ year: string; value: number }>;
+  payoutRatioFCFHistory?: Array<{ year: string; value: number }>;
+  payoutRatioEPSHistory?: Array<{ year: string; value: number }>;
   dividendStreak?: number;
   dividendCAGR3Y?: number | null;
   dividendCAGR5Y?: number | null;
@@ -20,7 +21,8 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
   currentPrice,
   currentDividendPerShare = 0,
   historicalDividends = [],
-  payoutRatioHistory = [],
+  payoutRatioFCFHistory = [],
+  payoutRatioEPSHistory = [],
   dividendStreak = 0,
   dividendCAGR3Y = null,
   dividendCAGR5Y = null,
@@ -32,13 +34,13 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
     ? (currentDividendPerShare / currentPrice) * 100
     : 0;
 
-  // Scoring functions
+  // NEW Scoring function (applies to both EPS and FCF)
   const getPayoutRatioScore = (ratio: number | null): number => {
-    if (ratio === null || ratio < 0) return 0;
-    if (ratio >= 50 && ratio <= 65) return 2;
-    if (ratio < 50) return 1;
-    if (ratio > 65 && ratio <= 80) return 1;
-    return 0; // > 80%
+    if (ratio === null || ratio < 0 || ratio > 80) return 0;
+    if (ratio >= 40 && ratio <= 65) return 1;
+    if (ratio < 40) return 0.5; // Conservative, growth room
+    if (ratio > 65 && ratio <= 80) return 0.5; // OK, less buffer
+    return 0;
   };
 
   const getDividendGrowthScore = (streak: number, cagr: number | null): number => {
@@ -68,15 +70,21 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
 
   const medianCAGR = getMedianCAGR();
   
-  // Get latest payout ratio
-  const latestPayoutRatio = payoutRatioHistory.length > 0 
-    ? payoutRatioHistory[payoutRatioHistory.length - 1].value 
+  // Get latest payout ratios (both EPS and FCF)
+  const latestPayoutRatioFCF = payoutRatioFCFHistory.length > 0 
+    ? payoutRatioFCFHistory[payoutRatioFCFHistory.length - 1].value 
+    : null;
+  
+  const latestPayoutRatioEPS = payoutRatioEPSHistory.length > 0 
+    ? payoutRatioEPSHistory[payoutRatioEPSHistory.length - 1].value 
     : null;
 
-  // Calculate scores
-  const payoutScore = getPayoutRatioScore(latestPayoutRatio);
+  // Calculate scores (max 1 point each for EPS and FCF)
+  const payoutScoreFCF = getPayoutRatioScore(latestPayoutRatioFCF);
+  const payoutScoreEPS = getPayoutRatioScore(latestPayoutRatioEPS);
+  const totalPayoutScore = payoutScoreFCF + payoutScoreEPS; // max 2 points
   const growthScore = getDividendGrowthScore(dividendStreak, medianCAGR);
-  const totalScore = payoutScore + growthScore;
+  const totalScore = totalPayoutScore + growthScore;
   const maxScore = 4;
 
   // Get color based on score ratio
@@ -96,13 +104,15 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
     return 'bg-red-50 border-red-200';
   };
 
-  // Merge data for chart
+  // Merge data for chart (with both EPS and FCF payout ratios)
   const mergedChartData = historicalDividends.map(d => {
-    const payoutEntry = payoutRatioHistory.find(p => p.year === d.year);
+    const payoutFCFEntry = payoutRatioFCFHistory.find(p => p.year === d.year);
+    const payoutEPSEntry = payoutRatioEPSHistory.find(p => p.year === d.year);
     return {
       year: d.year,
       dividend: d.value,
-      payoutRatio: payoutEntry ? payoutEntry.value : null,
+      payoutRatioFCF: payoutFCFEntry ? payoutFCFEntry.value : null,
+      payoutRatioEPS: payoutEPSEntry ? payoutEPSEntry.value : null,
     };
   });
 
@@ -140,11 +150,11 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
       
       <div className="space-y-1">
         <p className="font-medium text-xs">Ausschüttungsquote (Payout Ratio) – 0-2 Punkte</p>
-        <p className="text-xs text-muted-foreground">Dividenden / FCF</p>
-        <p className="text-xs"><span className="text-green-600">●</span> 50-65% → 2 Punkte</p>
-        <p className="text-xs"><span className="text-yellow-600">●</span> ≤ 50% → 1 Punkt (konservativ, Wachstumsraum)</p>
-        <p className="text-xs"><span className="text-yellow-600">●</span> 65-80% → 1 Punkt (ok, weniger Puffer)</p>
-        <p className="text-xs"><span className="text-red-600">●</span> &gt; 80% oder negatives EPS → 0 Punkte</p>
+        <p className="text-xs text-muted-foreground">EPS-basiert (0-1 Punkt) + FCF-basiert (0-1 Punkt)</p>
+        <p className="text-xs"><span className="text-green-600">●</span> 40-65% → 1 Punkt</p>
+        <p className="text-xs"><span className="text-yellow-600">●</span> ≤ 40% → 0,5 Punkte (konservativ, Wachstumsraum)</p>
+        <p className="text-xs"><span className="text-yellow-600">●</span> 65-80% → 0,5 Punkte (ok, weniger Puffer)</p>
+        <p className="text-xs"><span className="text-red-600">●</span> &gt; 80% oder negativ → 0 Punkte</p>
       </div>
 
       <div className="space-y-1">
@@ -222,7 +232,7 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
           {totalScore.toFixed(2)}/{maxScore} Punkte
         </div>
         <div className="text-xs text-muted-foreground">
-          (Payout: {payoutScore} | Growth: {growthScore.toFixed(2)})
+          (EPS: {payoutScoreEPS} + FCF: {payoutScoreFCF} | Growth: {growthScore.toFixed(2)})
         </div>
         <TooltipProvider>
           <Tooltip>
@@ -237,11 +247,17 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
       </div>
 
       {/* Metrics summary */}
-      <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+      <div className="grid grid-cols-4 gap-3 mb-4 text-sm">
         <div>
-          <p className="text-xs text-muted-foreground">Ausschüttungsquote</p>
+          <p className="text-xs text-muted-foreground">Payout (EPS)</p>
           <p className="font-semibold">
-            {latestPayoutRatio !== null ? `${latestPayoutRatio.toFixed(1)}%` : 'N/A'}
+            {latestPayoutRatioEPS !== null ? `${latestPayoutRatioEPS.toFixed(1)}%` : 'N/A'}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Payout (FCF)</p>
+          <p className="font-semibold">
+            {latestPayoutRatioFCF !== null ? `${latestPayoutRatioFCF.toFixed(1)}%` : 'N/A'}
           </p>
         </div>
         <div>
@@ -290,8 +306,11 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
                         <p className="text-sm text-blue-600">
                           Dividende: <span className="font-bold">${payload[0].payload.dividend?.toFixed(2) || 'N/A'}</span>
                         </p>
+                        <p className="text-sm text-emerald-600">
+                          Payout (EPS): <span className="font-bold">{payload[0].payload.payoutRatioEPS?.toFixed(1) || 'N/A'}%</span>
+                        </p>
                         <p className="text-sm text-sky-600">
-                          Payout Ratio: <span className="font-bold">{payload[0].payload.payoutRatio?.toFixed(1) || 'N/A'}%</span>
+                          Payout (FCF): <span className="font-bold">{payload[0].payload.payoutRatioFCF?.toFixed(1) || 'N/A'}%</span>
                         </p>
                       </div>
                     );
@@ -301,12 +320,13 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
               />
               
               {/* Reference lines for Payout Ratio scoring */}
-              <ReferenceLine yAxisId="left" y={50} stroke="#16a34a" strokeDasharray="3 3" />
+              <ReferenceLine yAxisId="left" y={40} stroke="#10b981" strokeDasharray="3 3" />
               <ReferenceLine yAxisId="left" y={65} stroke="#ca8a04" strokeDasharray="3 3" />
               <ReferenceLine yAxisId="left" y={80} stroke="#ea580c" strokeDasharray="3 3" />
               
-              {/* Bars for Payout Ratio */}
-              <Bar yAxisId="left" dataKey="payoutRatio" fill="#93c5fd" name="Payout Ratio" />
+              {/* Bars for both Payout Ratios - side by side */}
+              <Bar yAxisId="left" dataKey="payoutRatioEPS" fill="#10b981" name="Payout (EPS)" />
+              <Bar yAxisId="left" dataKey="payoutRatioFCF" fill="#3b82f6" name="Payout (FCF)" />
               
               {/* Line for Dividend */}
               <Line 
@@ -321,9 +341,13 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
             </ComposedChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
-            <span><span className="text-green-600">---</span> 50% (Ideal Start)</span>
-            <span><span className="text-yellow-600">---</span> 65% (Grenze Gut)</span>
+            <span><span className="text-green-600">---</span> 40% (Min. Ideal)</span>
+            <span><span className="text-yellow-600">---</span> 65% (Max. Ideal)</span>
             <span><span className="text-orange-600">---</span> 80% (Risiko)</span>
+          </div>
+          <div className="flex justify-center gap-4 mt-1 text-xs text-muted-foreground">
+            <span><span className="inline-block w-3 h-3 bg-emerald-500 mr-1"></span>EPS-basiert</span>
+            <span><span className="inline-block w-3 h-3 bg-blue-500 mr-1"></span>FCF-basiert</span>
           </div>
         </div>
       )}
