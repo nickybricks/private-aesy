@@ -1702,13 +1702,24 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
         }
       } else if (quarterlyIncomeStatements && quoteData?.price) {
         // Fallback: Calculate TTM P/E ourselves
-        const ttmEPS = calculateTTM_EPS(quarterlyIncomeStatements);
+        let ttmEPS = calculateTTM_EPS(quarterlyIncomeStatements);
         const currentPrice = safeValue(quoteData.price);
+        
+        // Convert EPS from reported currency to price currency if needed
+        const priceCurrency = quoteData.currency || 'USD';
+        if (ttmEPS && shouldConvertCurrency(reportedCurrency, priceCurrency)) {
+          const rate = await getExchangeRate(reportedCurrency, priceCurrency);
+          if (rate && rate > 0) {
+            const originalEPS = ttmEPS;
+            ttmEPS = ttmEPS * rate;
+            console.log(`📊 TTM P/E: Converted EPS from ${reportedCurrency} to ${priceCurrency}: ${originalEPS.toFixed(4)} → ${ttmEPS.toFixed(4)} (rate: ${rate})`);
+          }
+        }
         
         if (ttmEPS && ttmEPS > 0 && currentPrice && currentPrice > 0) {
           const calculatedTTM_PE = currentPrice / ttmEPS;
           peRatioData.push({ year: 'TTM 2025', value: calculatedTTM_PE });
-          console.log(`Calculated TTM 2025 P/E: ${calculatedTTM_PE.toFixed(2)} (Price: ${currentPrice}, TTM EPS: ${ttmEPS})`);
+          console.log(`Calculated TTM 2025 P/E: ${calculatedTTM_PE.toFixed(2)} (Price: ${currentPrice}, TTM EPS: ${ttmEPS.toFixed(4)})`);
         }
       }
       
@@ -1721,11 +1732,22 @@ const getYearEndPrice = (historicalData: any[], year: number): number | null => 
         historicalData.currentStockPE = safeValue(ttmRatios[0].priceToEarningsRatioTTM);
         console.log(`Stored TTM P/E for metrics: ${historicalData.currentStockPE}`);
       } else if (quarterlyIncomeStatements && quoteData?.price) {
-        const ttmEPS = calculateTTM_EPS(quarterlyIncomeStatements);
+        let ttmEPS = calculateTTM_EPS(quarterlyIncomeStatements);
         const currentPrice = safeValue(quoteData.price);
+        
+        // Convert EPS from reported currency to price currency if needed
+        const priceCurrency = quoteData.currency || 'USD';
+        if (ttmEPS && shouldConvertCurrency(reportedCurrency, priceCurrency)) {
+          const rate = await getExchangeRate(reportedCurrency, priceCurrency);
+          if (rate && rate > 0) {
+            ttmEPS = ttmEPS * rate;
+            console.log(`📊 Current P/E: Converted EPS from ${reportedCurrency} to ${priceCurrency} (rate: ${rate})`);
+          }
+        }
+        
         if (ttmEPS && ttmEPS > 0 && currentPrice && currentPrice > 0) {
           historicalData.currentStockPE = currentPrice / ttmEPS;
-          console.log(`Stored calculated TTM P/E for metrics: ${historicalData.currentStockPE}`);
+          console.log(`Stored calculated TTM P/E for metrics: ${historicalData.currentStockPE.toFixed(2)}`);
         }
       }
     } catch (error) {
