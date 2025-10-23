@@ -54,11 +54,50 @@ export function StockProvider({ children }: StockProviderProps) {
   const [valuationScores, setValuationScores] = useState<ValuationScores | null>(null);
   const [growthScores, setGrowthScores] = useState<GrowthScores | null>(null);
   const [qualitativeScores, setQualitativeScores] = useState<QualitativeScores | null>(null);
+  const [valuationCardScores, setValuationCardScores] = useState<{
+    peRatio?: { score: number; maxScore: number };
+    dividendYield?: { score: number; maxScore: number };
+  }>({});
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
     setGptAvailable(hasGpt);
   }, []);
+
+  // Function to update card scores
+  const setValuationCardScore = (name: 'peRatio' | 'dividendYield', score: number, maxScore: number) => {
+    setValuationCardScores(prev => ({ ...prev, [name]: { score, maxScore } }));
+  };
+
+  // Update valuation scores when card scores change
+  useEffect(() => {
+    if (!valuationScores) return;
+    
+    const hasCardScores = valuationCardScores.peRatio || valuationCardScores.dividendYield;
+    if (!hasCardScores) return;
+    
+    const updated = JSON.parse(JSON.stringify(valuationScores)); // Deep clone
+    
+    if (valuationCardScores.peRatio) {
+      updated.scores.peRatio.score = valuationCardScores.peRatio.score;
+    }
+    if (valuationCardScores.dividendYield) {
+      updated.scores.dividendYield.score = valuationCardScores.dividendYield.score;
+    }
+    
+    // Recalculate total score
+    const sum = (Object.values(updated.scores) as Array<{ score: number; maxScore: number }>)
+      .reduce((acc, s) => acc + (typeof s.score === 'number' ? s.score : 0), 0);
+    updated.totalScore = Math.round(sum * 100) / 100;
+    
+    console.log('🔄 Updated valuation scores with card scores:', {
+      peRatio: valuationCardScores.peRatio?.score,
+      dividendYield: valuationCardScores.dividendYield?.score,
+      newTotal: updated.totalScore
+    });
+    
+    setValuationScores(updated);
+  }, [valuationCardScores]);
 
   // Calculate qualitative scores when buffettCriteria is available after deep research
   useEffect(() => {
@@ -523,7 +562,8 @@ export function StockProvider({ children }: StockProviderProps) {
       setLoadingProgress,
       handleSearch,
       loadSavedAnalysis,
-      triggerDeepResearch
+      triggerDeepResearch,
+      setValuationCardScore
     }}>
       {children}
     </StockContext.Provider>

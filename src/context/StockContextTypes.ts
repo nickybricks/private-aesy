@@ -259,6 +259,7 @@ export interface StockContextType {
   handleSearch: (ticker: string, enableDeepResearch?: boolean) => Promise<void>;
   loadSavedAnalysis: (analysisData: any) => void;
   triggerDeepResearch: (ticker: string) => Promise<void>;
+  setValuationCardScore: (name: 'peRatio' | 'dividendYield', score: number, maxScore: number) => void;
 }
 
 export interface StockProviderProps {

@@ -64,7 +64,8 @@ const IndexContent: React.FC = () => {
     growthScores,
     qualitativeScores,
     stockCurrency,
-    deepResearchPerformed
+    deepResearchPerformed,
+    setValuationCardScore
   } = useStock();
   const { toast } = useToast();
 
@@ -293,6 +294,7 @@ const IndexContent: React.FC = () => {
                   ]?.value
                 }
                 industry={stockInfo.industry}
+                onScoreChange={(score, max) => setValuationCardScore('peRatio', score, max)}
               />
               
               {/* Dividend Yield Card - positioned after P/E Ratio Chart */}
@@ -307,6 +309,7 @@ const IndexContent: React.FC = () => {
                   dividendCAGR3Y={financialMetrics.dividendMetrics.dividendCAGR3Y}
                   dividendCAGR5Y={financialMetrics.dividendMetrics.dividendCAGR5Y}
                   dividendCAGR10Y={financialMetrics.dividendMetrics.dividendCAGR10Y}
+                  onScoreChange={(score, max) => setValuationCardScore('dividendYield', score, max)}
                 />
               )}
               
