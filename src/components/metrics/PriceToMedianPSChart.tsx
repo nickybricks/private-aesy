@@ -57,6 +57,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
   const [selectedRange, setSelectedRange] = useState<TimeRange>('10Y');
   const [lookbackPeriod, setLookbackPeriod] = useState<LookbackPeriod>('10Y');
   const [quarterData, setQuarterData] = useState<QuarterData[]>([]);
+  const [dailyPrices, setDailyPrices] = useState<{date: string; price: number}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [medianPS, setMedianPS] = useState<number>(0);
   const [currentRPS, setCurrentRPS] = useState<number>(0);
@@ -79,7 +80,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
         
         const [prices, incomeStatements] = await Promise.all([
           fetchFromFMP(`/historical-price-full/${ticker}`, { from: fromDate }),
-          fetchFromFMP(`/income-statement/${ticker}`, { period: 'quarter', limit: 120 })
+          fetchFromFMP(`/income-statement/${ticker}`, { period: 'quarter', limit: 140 })
         ]);
 
         if (!incomeStatements || incomeStatements.length < 8) {
@@ -88,6 +89,13 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
           setIsLoading(false);
           return;
         }
+
+        // Store daily prices for the chart
+        const dailyPriceData = prices.historical?.map((p: any) => ({
+          date: p.date,
+          price: p.adjClose
+        })) || [];
+        setDailyPrices(dailyPriceData);
 
         // Create a price lookup map
         const priceMap = new Map<string, number>();
@@ -273,9 +281,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
   };
 
   // Filter data by selected time range for chart display
-  const filterDataByRange = (data: QuarterData[], range: TimeRange) => {
-    if (!data || data.length === 0) return [];
-    
+  const filterDataByRange = (range: TimeRange) => {
     const now = new Date();
     const cutoffDate = new Date();
     
@@ -293,19 +299,29 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
         cutoffDate.setFullYear(now.getFullYear() - 10);
         break;
       case 'MAX':
-        return data;
+        return { daily: dailyPrices, quarterly: quarterData };
     }
     
-    return data.filter(point => new Date(point.date) >= cutoffDate);
+    return {
+      daily: dailyPrices.filter(p => new Date(p.date) >= cutoffDate),
+      quarterly: quarterData.filter(q => new Date(q.date) >= cutoffDate)
+    };
   };
 
-  const filteredData = filterDataByRange(quarterData, selectedRange).map(q => ({
-    date: q.date,
-    price: q.price,
-    priceAtMedianPS: q.rps * medianPS,
-    rps: q.rps,
-    ps: q.ps
-  }));
+  const { daily: filteredDailyPrices, quarterly: filteredQuarterData } = filterDataByRange(selectedRange);
+
+  // Combine daily prices with quarterly P/S data
+  const chartData = filteredDailyPrices.map(dailyPoint => {
+    const quarterPoint = filteredQuarterData.find(q => q.date === dailyPoint.date);
+    return {
+      date: dailyPoint.date,
+      price: dailyPoint.price,
+      priceAtMedianPS: quarterPoint ? quarterPoint.rps * medianPS : undefined,
+      rps: quarterPoint?.rps,
+      ps: quarterPoint?.ps,
+      isQuarterEnd: !!quarterPoint
+    };
+  });
 
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
@@ -521,7 +537,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
       {/* Chart */}
       <div className="mt-4">
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={filteredData}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis 
               dataKey="date"
@@ -545,9 +561,6 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
-                  const discountAtPoint = data.priceAtMedianPS > 0 
-                    ? ((data.priceAtMedianPS - data.price) / data.priceAtMedianPS) * 100 
-                    : 0;
                   return (
                     <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
                       <p className="text-xs font-semibold mb-1">
@@ -556,23 +569,33 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
                       <p className="text-sm text-blue-600">
                         Kurs: <span className="font-bold">{data.price.toFixed(2)} {currency}</span>
                       </p>
-                      <p className="text-sm text-purple-600">
-                        Preis @ Median P/S: <span className="font-bold">{data.priceAtMedianPS.toFixed(2)} {currency}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        RPS (TTM): <span className="font-semibold">{data.rps.toFixed(2)}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        P/S: <span className="font-semibold">{data.ps.toFixed(2)}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Median P/S: <span className="font-semibold">{medianPS.toFixed(2)}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Discount: <span className={`font-bold ${discountAtPoint >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {discountAtPoint >= 0 ? '+' : ''}{discountAtPoint.toFixed(1)}%
-                        </span>
-                      </p>
+                      {data.isQuarterEnd && (
+                        <>
+                          <p className="text-sm text-purple-600">
+                            Preis @ Median P/S: <span className="font-bold">{data.priceAtMedianPS.toFixed(2)} {currency}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            RPS (TTM): <span className="font-semibold">{data.rps.toFixed(2)}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            P/S: <span className="font-semibold">{data.ps.toFixed(2)}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Median P/S: <span className="font-semibold">{medianPS.toFixed(2)}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Discount: <span className={`font-bold ${
+                              data.priceAtMedianPS > 0 && ((data.priceAtMedianPS - data.price) / data.priceAtMedianPS) * 100 >= 0 
+                                ? 'text-green-600' 
+                                : 'text-red-600'
+                            }`}>
+                              {data.priceAtMedianPS > 0 
+                                ? `${((data.priceAtMedianPS - data.price) / data.priceAtMedianPS) * 100 >= 0 ? '+' : ''}${(((data.priceAtMedianPS - data.price) / data.priceAtMedianPS) * 100).toFixed(1)}%`
+                                : 'N/A'}
+                            </span>
+                          </p>
+                        </>
+                      )}
                     </div>
                   );
                 }
@@ -590,14 +613,15 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
               name="Preis"
             />
             
-            {/* Price at Median P/S line (violet) */}
+            {/* Price at Median P/S line (violet) - only at quarter ends */}
             <Line 
               type="monotone" 
               dataKey="priceAtMedianPS" 
               stroke="#8b5cf6" 
               strokeWidth={2}
               strokeDasharray="5 5"
-              dot={false}
+              dot={{ fill: '#8b5cf6', r: 3 }}
+              connectNulls={true}
               name="Preis @ Median P/S"
             />
           </LineChart>
