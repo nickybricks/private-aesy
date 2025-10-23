@@ -262,7 +262,15 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="valuation" className="mt-4 sm:mt-6">
                     <div className="space-y-4">
-              {/* Intrinsic Value Discount Card - positioned before P/E Ratio */}
+              {/* Price to Median P/S Chart - positioned at the top */}
+              <PriceToMedianPSChart
+                ticker={stockInfo.ticker}
+                currentPrice={stockInfo.price}
+                sector={stockInfo.sector}
+                currency={stockInfo.currency}
+              />
+              
+              {/* Intrinsic Value Discount Card */}
               {valuationData?.fairValuePerShare && (
                 <IntrinsicValueDiscountCard
                   ticker={stockInfo.ticker}
@@ -273,7 +281,7 @@ const IndexContent: React.FC = () => {
                 />
               )}
               
-              {/* Peter Lynch Discount Card - positioned before P/E Ratio */}
+              {/* Peter Lynch Discount Card */}
               <PeterLynchDiscountCard
                 ticker={stockInfo.ticker}
                 currentPrice={stockInfo.price}

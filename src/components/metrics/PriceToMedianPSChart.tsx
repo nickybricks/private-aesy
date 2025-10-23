@@ -33,6 +33,20 @@ interface QuarterData {
   ps: number;
 }
 
+interface DailyPrice {
+  date: string;
+  price: number;
+}
+
+interface ChartDataPoint {
+  date: string;
+  price: number;
+  priceAtMedianPS?: number;
+  rps?: number;
+  ps?: number;
+  isQuarterEnd?: boolean;
+}
+
 const fetchFromFMP = async (endpoint: string, params = {}) => {
   try {
     const response = await axios.get(`https://financialmodelingprep.com/api/v3${endpoint}`, {
@@ -57,6 +71,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
   const [selectedRange, setSelectedRange] = useState<TimeRange>('10Y');
   const [lookbackPeriod, setLookbackPeriod] = useState<LookbackPeriod>('10Y');
   const [quarterData, setQuarterData] = useState<QuarterData[]>([]);
+  const [dailyPrices, setDailyPrices] = useState<DailyPrice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [medianPS, setMedianPS] = useState<number>(0);
   const [currentRPS, setCurrentRPS] = useState<number>(0);
@@ -79,7 +94,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
         
         const [prices, incomeStatements] = await Promise.all([
           fetchFromFMP(`/historical-price-full/${ticker}`, { from: fromDate }),
-          fetchFromFMP(`/income-statement/${ticker}`, { period: 'quarter', limit: 120 })
+          fetchFromFMP(`/income-statement/${ticker}`, { period: 'quarter', limit: 140 })
         ]);
 
         if (!incomeStatements || incomeStatements.length < 8) {
@@ -89,17 +104,29 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
           return;
         }
 
+        // Store daily prices
+        const daily: DailyPrice[] = (prices.historical || []).map((p: any) => ({
+          date: p.date,
+          price: p.adjClose
+        }));
+        setDailyPrices(daily);
+
         // Create a price lookup map
         const priceMap = new Map<string, number>();
         prices.historical?.forEach((p: any) => {
           priceMap.set(p.date, p.adjClose);
         });
 
-        // Process quarterly data
+        // Sort income statements chronologically (oldest first)
+        const sortedStatements = [...incomeStatements].sort((a, b) => 
+          new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+
+        // Process quarterly data - start from i=3 to include latest quarters
         const processed: QuarterData[] = [];
         
-        for (let i = 0; i < incomeStatements.length; i++) {
-          const statement = incomeStatements[i];
+        for (let i = 3; i < sortedStatements.length; i++) {
+          const statement = sortedStatements[i];
           const date = statement.date;
           const revenue = statement.revenue;
           const shares = statement.weightedAverageShsOutDil;
@@ -109,42 +136,40 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
             continue;
           }
 
-          // Get price at quarter end (or closest available)
-          const price = priceMap.get(date) || findClosestPrice(priceMap, date);
+          // Get price at quarter end (or closest available, preferring dates <= quarter end)
+          const price = findClosestPrice(priceMap, date);
           if (!price) continue;
 
-          // Calculate TTM revenue (sum of 4 quarters)
-          if (i >= 3) {
-            let revTTM = 0;
-            let sharesTTM = 0;
-            let validQuarters = 0;
+          // Calculate TTM revenue (sum of current + 3 previous quarters)
+          let revTTM = 0;
+          let sharesTTM = 0;
+          let validQuarters = 0;
 
-            for (let j = 0; j < 4; j++) {
-              const q = incomeStatements[i - j];
-              if (q.revenue > 0 && q.weightedAverageShsOutDil > 0) {
-                revTTM += q.revenue;
-                sharesTTM += q.weightedAverageShsOutDil;
-                validQuarters++;
-              }
+          for (let j = 0; j < 4; j++) {
+            const q = sortedStatements[i - j];
+            if (q && q.revenue > 0 && q.weightedAverageShsOutDil > 0) {
+              revTTM += q.revenue;
+              sharesTTM += q.weightedAverageShsOutDil;
+              validQuarters++;
             }
+          }
 
-            if (validQuarters === 4) {
-              sharesTTM = sharesTTM / 4; // Average shares
-              const rps = revTTM / sharesTTM;
-              const ps = price / rps;
+          if (validQuarters === 4) {
+            sharesTTM = sharesTTM / 4; // Average shares
+            const rps = revTTM / sharesTTM;
+            const ps = price / rps;
 
-              if (rps > 0 && ps > 0 && isFinite(ps)) {
-                processed.push({
-                  date,
-                  price,
-                  revenue,
-                  shares,
-                  revTTM,
-                  sharesTTM,
-                  rps,
-                  ps
-                });
-              }
+            if (rps > 0 && ps > 0 && isFinite(ps)) {
+              processed.push({
+                date,
+                price,
+                revenue,
+                shares,
+                revTTM,
+                sharesTTM,
+                rps,
+                ps
+              });
             }
           }
         }
@@ -219,7 +244,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
     setMedianPS(median);
   }, [quarterData, lookbackPeriod]);
 
-  // Helper function to find closest price
+  // Helper function to find closest price (preferring dates <= targetDate)
   const findClosestPrice = (priceMap: Map<string, number>, targetDate: string): number | null => {
     const target = new Date(targetDate);
     let closest: { date: Date; price: number } | null = null;
@@ -227,12 +252,27 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
 
     priceMap.forEach((price, dateStr) => {
       const date = new Date(dateStr);
-      const diff = Math.abs(target.getTime() - date.getTime());
-      if (diff < minDiff) {
-        minDiff = diff;
-        closest = { date, price };
+      // Prefer prices on or before the target date
+      if (date <= target) {
+        const diff = target.getTime() - date.getTime();
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = { date, price };
+        }
       }
     });
+
+    // If no price found before target, find closest after
+    if (!closest) {
+      priceMap.forEach((price, dateStr) => {
+        const date = new Date(dateStr);
+        const diff = date.getTime() - target.getTime();
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = { date, price };
+        }
+      });
+    }
 
     return closest?.price || null;
   };
@@ -272,14 +312,14 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
     return 'bg-red-50 border-red-200';
   };
 
-  // Filter data by selected time range for chart display
-  const filterDataByRange = (data: QuarterData[], range: TimeRange) => {
-    if (!data || data.length === 0) return [];
+  // Build chart data: merge daily prices with quarterly P/S data
+  const buildChartData = (): ChartDataPoint[] => {
+    if (dailyPrices.length === 0) return [];
     
     const now = new Date();
     const cutoffDate = new Date();
     
-    switch (range) {
+    switch (selectedRange) {
       case '1Y':
         cutoffDate.setFullYear(now.getFullYear() - 1);
         break;
@@ -293,19 +333,40 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
         cutoffDate.setFullYear(now.getFullYear() - 10);
         break;
       case 'MAX':
-        return data;
+        cutoffDate.setFullYear(now.getFullYear() - 30);
+        break;
     }
     
-    return data.filter(point => new Date(point.date) >= cutoffDate);
+    // Filter daily prices by range
+    const filteredDaily = dailyPrices.filter(d => new Date(d.date) >= cutoffDate);
+    
+    // Create a map of quarter-end data
+    const quarterMap = new Map<string, QuarterData>();
+    quarterData.forEach(q => {
+      quarterMap.set(q.date, q);
+    });
+    
+    // Merge daily prices with quarterly median P/S
+    return filteredDaily.map(daily => {
+      const quarter = quarterMap.get(daily.date);
+      if (quarter && medianPS > 0) {
+        return {
+          date: daily.date,
+          price: daily.price,
+          priceAtMedianPS: quarter.rps * medianPS,
+          rps: quarter.rps,
+          ps: quarter.ps,
+          isQuarterEnd: true
+        };
+      }
+      return {
+        date: daily.date,
+        price: daily.price
+      };
+    });
   };
 
-  const filteredData = filterDataByRange(quarterData, selectedRange).map(q => ({
-    date: q.date,
-    price: q.price,
-    priceAtMedianPS: q.rps * medianPS,
-    rps: q.rps,
-    ps: q.ps
-  }));
+  const chartData = buildChartData();
 
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">
@@ -482,46 +543,49 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
         </TooltipProvider>
       </div>
 
-      {/* Lookback Period Selector */}
-      <div className="mb-3">
-        <p className="text-xs text-muted-foreground mb-2">Lookback-Zeitraum für Median-Berechnung:</p>
-        <div className="flex gap-1">
-          {(['2Y', '5Y', '10Y', '15Y'] as LookbackPeriod[]).map(period => (
-            <Button
-              key={period}
-              variant={lookbackPeriod === period ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setLookbackPeriod(period)}
-              className="text-xs h-7 px-2.5"
-            >
-              {period}
-            </Button>
-          ))}
+      {/* Selectors: Side-by-side on desktop, stacked on mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+        {/* Lookback Period Selector */}
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">Lookback-Zeitraum für Median:</p>
+          <div className="flex gap-1">
+            {(['2Y', '5Y', '10Y', '15Y'] as LookbackPeriod[]).map(period => (
+              <Button
+                key={period}
+                variant={lookbackPeriod === period ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setLookbackPeriod(period)}
+                className="text-xs h-7 px-2.5"
+              >
+                {period}
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Time Range Selector for Chart */}
-      <div className="mb-3">
-        <p className="text-xs text-muted-foreground mb-2">Chart-Zeitraum:</p>
-        <div className="flex gap-1">
-          {(['1Y', '3Y', '5Y', '10Y', 'MAX'] as TimeRange[]).map(range => (
-            <Button
-              key={range}
-              variant={selectedRange === range ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedRange(range)}
-              className="text-xs h-7 px-2.5"
-            >
-              {range}
-            </Button>
-          ))}
+        {/* Time Range Selector for Chart */}
+        <div className="sm:text-right">
+          <p className="text-xs text-muted-foreground mb-2">Chart-Zeitraum:</p>
+          <div className="flex gap-1 sm:justify-end">
+            {(['1Y', '3Y', '5Y', '10Y', 'MAX'] as TimeRange[]).map(range => (
+              <Button
+                key={range}
+                variant={selectedRange === range ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedRange(range)}
+                className="text-xs h-7 px-2.5"
+              >
+                {range}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Chart */}
       <div className="mt-4">
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={filteredData}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis 
               dataKey="date"
@@ -544,10 +608,41 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
             <RechartsTooltip
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
-                  const data = payload[0].payload;
-                  const discountAtPoint = data.priceAtMedianPS > 0 
-                    ? ((data.priceAtMedianPS - data.price) / data.priceAtMedianPS) * 100 
-                    : 0;
+                  const data = payload[0].payload as ChartDataPoint;
+                  
+                  // Show full details only if this is a quarter-end
+                  if (data.isQuarterEnd && data.priceAtMedianPS && data.rps && data.ps) {
+                    const discountAtPoint = ((data.priceAtMedianPS - data.price) / data.priceAtMedianPS) * 100;
+                    return (
+                      <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
+                        <p className="text-xs font-semibold mb-1">
+                          {new Date(data.date).toLocaleDateString('de-DE')}
+                        </p>
+                        <p className="text-sm text-blue-600">
+                          Kurs: <span className="font-bold">{data.price.toFixed(2)} {currency}</span>
+                        </p>
+                        <p className="text-sm text-purple-600">
+                          Preis @ Median P/S: <span className="font-bold">{data.priceAtMedianPS.toFixed(2)} {currency}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          RPS (TTM): <span className="font-semibold">{data.rps.toFixed(2)}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          P/S: <span className="font-semibold">{data.ps.toFixed(2)}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Median P/S: <span className="font-semibold">{medianPS.toFixed(2)}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Discount: <span className={`font-bold ${discountAtPoint >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {discountAtPoint >= 0 ? '+' : ''}{discountAtPoint.toFixed(1)}%
+                          </span>
+                        </p>
+                      </div>
+                    );
+                  }
+                  
+                  // For non-quarter-end dates, only show date and price
                   return (
                     <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
                       <p className="text-xs font-semibold mb-1">
@@ -556,23 +651,6 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
                       <p className="text-sm text-blue-600">
                         Kurs: <span className="font-bold">{data.price.toFixed(2)} {currency}</span>
                       </p>
-                      <p className="text-sm text-purple-600">
-                        Preis @ Median P/S: <span className="font-bold">{data.priceAtMedianPS.toFixed(2)} {currency}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        RPS (TTM): <span className="font-semibold">{data.rps.toFixed(2)}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        P/S: <span className="font-semibold">{data.ps.toFixed(2)}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Median P/S: <span className="font-semibold">{medianPS.toFixed(2)}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Discount: <span className={`font-bold ${discountAtPoint >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {discountAtPoint >= 0 ? '+' : ''}{discountAtPoint.toFixed(1)}%
-                        </span>
-                      </p>
                     </div>
                   );
                 }
@@ -580,24 +658,26 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
               }}
             />
             
-            {/* Price line (blue) */}
+            {/* Price line (blue) - daily data */}
             <Line 
               type="monotone" 
               dataKey="price" 
               stroke="#3b82f6" 
               strokeWidth={2}
               dot={false}
+              connectNulls={false}
               name="Preis"
             />
             
-            {/* Price at Median P/S line (violet) */}
+            {/* Price at Median P/S line (violet) - quarterly data only */}
             <Line 
               type="monotone" 
               dataKey="priceAtMedianPS" 
               stroke="#8b5cf6" 
               strokeWidth={2}
               strokeDasharray="5 5"
-              dot={false}
+              dot={{ fill: '#8b5cf6', r: 3 }}
+              connectNulls={true}
               name="Preis @ Median P/S"
             />
           </LineChart>
