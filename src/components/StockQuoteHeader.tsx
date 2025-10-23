@@ -1,20 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStock } from '@/context/StockContext';
-import { Star, TrendingUp, TrendingDown, Info, Plus } from 'lucide-react';
+import { Star, TrendingUp, TrendingDown, Info, Plus, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { useWatchlists } from '@/hooks/useWatchlists';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { translateCompanyDescription } from '@/services/TranslationService';
+import { getCountryName } from '@/utils/countryMapping';
 
 const StockQuoteHeader: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [companyInfoOpen, setCompanyInfoOpen] = useState(false);
   const [watchlistDialogOpen, setWatchlistDialogOpen] = useState(false);
   const [selectedWatchlistId, setSelectedWatchlistId] = useState<string>('');
   const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
+  const [translatedDescription, setTranslatedDescription] = useState<string>('');
+  const [isTranslating, setIsTranslating] = useState(false);
   
   const { 
     stockInfo, 
@@ -29,6 +37,23 @@ const StockQuoteHeader: React.FC = () => {
   const { watchlists, createWatchlist } = useWatchlists();
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+
+  // Translate description when stockInfo changes
+  useEffect(() => {
+    if (stockInfo?.description && stockInfo.ticker) {
+      setIsTranslating(true);
+      translateCompanyDescription(stockInfo.description, stockInfo.ticker, 'de')
+        .then(translated => {
+          setTranslatedDescription(translated);
+          setIsTranslating(false);
+        })
+        .catch(() => {
+          setTranslatedDescription(stockInfo.description || '');
+          setIsTranslating(false);
+        });
+    }
+  }, [stockInfo?.description, stockInfo?.ticker]);
 
   if (isLoading || hasCriticalDataMissing || !stockInfo) {
     return null;
@@ -346,61 +371,22 @@ const StockQuoteHeader: React.FC = () => {
         </div>
       </div>
 
-      {/* Company Information Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-xs border-t pt-3">
-        {stockInfo.ceo && (
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">CEO:</div>
-            <div className="font-medium text-xs sm:text-sm">{stockInfo.ceo}</div>
+      {/* Company Description Section */}
+      {(translatedDescription || isTranslating) && (
+        <div className="border-t pt-3">
+          <div 
+            className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+            onClick={() => setCompanyInfoOpen(true)}
+          >
+            <p className="line-clamp-2">
+              {isTranslating ? 'Beschreibung wird übersetzt...' : translatedDescription}
+            </p>
+            <span className="text-primary font-medium text-xs mt-1 inline-block">
+              ...weiterlesen
+            </span>
           </div>
-        )}
-        
-        {stockInfo.employees && (
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">Angestellte:</div>
-            <div className="font-medium text-xs sm:text-sm">
-              {stockInfo.employees.toLocaleString('de-DE', { maximumFractionDigits: 0 })}
-            </div>
-          </div>
-        )}
-        
-        {stockInfo.website && (
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">Website:</div>
-            <div className="font-medium text-xs sm:text-sm">
-              <a 
-                href={stockInfo.website.startsWith('http') ? stockInfo.website : `https://${stockInfo.website}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                {stockInfo.website.replace(/^https?:\/\/(www\.)?/, '')}
-              </a>
-            </div>
-          </div>
-        )}
-        
-        {stockInfo.industry && (
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">Sektor:</div>
-            <div className="font-medium text-xs sm:text-sm">{stockInfo.industry}</div>
-          </div>
-        )}
-        
-        {stockInfo.country && (
-          <div>
-            <div className="text-muted-foreground text-[10px] sm:text-xs">Land:</div>
-            <div className="font-medium text-xs sm:text-sm">{stockInfo.country}</div>
-          </div>
-        )}
-        
-        {stockInfo.address && (
-          <div className="col-span-2 lg:col-span-3">
-            <div className="text-muted-foreground text-[10px] sm:text-xs">Adresse:</div>
-            <div className="font-medium text-xs sm:text-sm">{stockInfo.address}</div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Stars Explanation Dialog */}
       {predictabilityStars && (
@@ -556,6 +542,230 @@ const StockQuoteHeader: React.FC = () => {
               >
                 {isAddingToWatchlist ? "Wird hinzugefügt..." : "Hinzufügen"}
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Company Information Dialog/Drawer */}
+      {isMobile ? (
+        <Drawer open={companyInfoOpen} onOpenChange={setCompanyInfoOpen}>
+          <DrawerContent className="h-[90vh]">
+            <DrawerHeader className="relative border-b">
+              <DrawerTitle>Unternehmensinformationen</DrawerTitle>
+              <DrawerClose className="absolute right-4 top-4 rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground h-10 w-10 flex items-center justify-center bg-muted">
+                <X className="h-5 w-5" />
+                <span className="sr-only">Schließen</span>
+              </DrawerClose>
+            </DrawerHeader>
+            
+            <div className="overflow-y-auto p-6 space-y-6">
+              {/* Full Description */}
+              {translatedDescription && (
+                <div>
+                  <h4 className="font-semibold mb-2">Unternehmensbeschreibung</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {translatedDescription}
+                  </p>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Company Details */}
+              <div>
+                <h4 className="font-semibold mb-4">Unternehmensdetails</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {stockInfo.foundedYear && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">Gründungsjahr</div>
+                      <div className="font-medium">{stockInfo.foundedYear}</div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.ipoDate && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">IPO Datum</div>
+                      <div className="font-medium">{new Date(stockInfo.ipoDate).toLocaleDateString('de-DE')}</div>
+                    </div>
+                  )}
+                  
+                  {peRatio && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">KGV (P/E Ratio)</div>
+                      <div className="font-medium">{formatGermanNumber(peRatio)}</div>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <div className="text-muted-foreground text-xs mb-1">Marktkapitalisierung</div>
+                    <div className="font-medium">{formatNumber(marketCap)}</div>
+                  </div>
+                  
+                  {stockInfo.ceo && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">CEO</div>
+                      <div className="font-medium">{stockInfo.ceo}</div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.employees && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">Angestellte</div>
+                      <div className="font-medium">
+                        {stockInfo.employees.toLocaleString('de-DE', { maximumFractionDigits: 0 })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.website && (
+                    <div className="col-span-2">
+                      <div className="text-muted-foreground text-xs mb-1">Website</div>
+                      <div className="font-medium">
+                        <a 
+                          href={stockInfo.website.startsWith('http') ? stockInfo.website : `https://${stockInfo.website}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          {stockInfo.website.replace(/^https?:\/\/(www\.)?/, '')}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.industry && (
+                    <div className="col-span-2">
+                      <div className="text-muted-foreground text-xs mb-1">Sektor</div>
+                      <div className="font-medium">{stockInfo.industry}</div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.country && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">Land</div>
+                      <div className="font-medium">{getCountryName(stockInfo.country)}</div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.address && (
+                    <div className="col-span-2">
+                      <div className="text-muted-foreground text-xs mb-1">Adresse</div>
+                      <div className="font-medium">{stockInfo.address}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={companyInfoOpen} onOpenChange={setCompanyInfoOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Unternehmensinformationen</DialogTitle>
+              <DialogDescription>
+                Detaillierte Informationen über {stockInfo.name}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6 mt-4">
+              {/* Full Description */}
+              {translatedDescription && (
+                <div>
+                  <h4 className="font-semibold mb-2">Unternehmensbeschreibung</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {translatedDescription}
+                  </p>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Company Details */}
+              <div>
+                <h4 className="font-semibold mb-4">Unternehmensdetails</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {stockInfo.foundedYear && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">Gründungsjahr</div>
+                      <div className="font-medium">{stockInfo.foundedYear}</div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.ipoDate && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">IPO Datum</div>
+                      <div className="font-medium">{new Date(stockInfo.ipoDate).toLocaleDateString('de-DE')}</div>
+                    </div>
+                  )}
+                  
+                  {peRatio && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">KGV (P/E Ratio)</div>
+                      <div className="font-medium">{formatGermanNumber(peRatio)}</div>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <div className="text-muted-foreground text-xs mb-1">Marktkapitalisierung</div>
+                    <div className="font-medium">{formatNumber(marketCap)}</div>
+                  </div>
+                  
+                  {stockInfo.ceo && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">CEO</div>
+                      <div className="font-medium">{stockInfo.ceo}</div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.employees && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">Angestellte</div>
+                      <div className="font-medium">
+                        {stockInfo.employees.toLocaleString('de-DE', { maximumFractionDigits: 0 })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.website && (
+                    <div className="col-span-2">
+                      <div className="text-muted-foreground text-xs mb-1">Website</div>
+                      <div className="font-medium">
+                        <a 
+                          href={stockInfo.website.startsWith('http') ? stockInfo.website : `https://${stockInfo.website}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          {stockInfo.website.replace(/^https?:\/\/(www\.)?/, '')}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.industry && (
+                    <div className="col-span-2">
+                      <div className="text-muted-foreground text-xs mb-1">Sektor</div>
+                      <div className="font-medium">{stockInfo.industry}</div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.country && (
+                    <div>
+                      <div className="text-muted-foreground text-xs mb-1">Land</div>
+                      <div className="font-medium">{getCountryName(stockInfo.country)}</div>
+                    </div>
+                  )}
+                  
+                  {stockInfo.address && (
+                    <div className="col-span-2">
+                      <div className="text-muted-foreground text-xs mb-1">Adresse</div>
+                      <div className="font-medium">{stockInfo.address}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

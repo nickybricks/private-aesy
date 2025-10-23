@@ -14,6 +14,7 @@ export interface StockInfo {
   originalCurrency?: string;
   reportedCurrency?: string;
   // Additional company information
+  description?: string;
   ceo?: string;
   employees?: number;
   foundedYear?: string;

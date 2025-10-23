@@ -254,6 +254,7 @@ export const fetchStockInfo = async (ticker: string) => {
     marketCap: profile.mktCap,
     image: profile.image,
     // Additional company information
+    description: profile.description,
     ceo: profile.ceo,
     employees: profile.fullTimeEmployees,
     foundedYear: profile.ipoDate ? new Date(profile.ipoDate).getFullYear().toString() : undefined,
