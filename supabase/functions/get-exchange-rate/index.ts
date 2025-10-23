@@ -13,8 +13,24 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url)
-    const fromCurrency = url.searchParams.get('from')
-    const toCurrency = url.searchParams.get('to')
+    let fromCurrency = url.searchParams.get('from') || undefined
+    let toCurrency = url.searchParams.get('to') || undefined
+
+    // Support JSON body for POST/PUT (supabase.functions.invoke sends JSON)
+    if ((!fromCurrency || !toCurrency) && (req.method === 'POST' || req.method === 'PUT')) {
+      const contentType = req.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        try {
+          const body = await req.json()
+          if (body && typeof body === 'object') {
+            if (!fromCurrency && (body as any).from) fromCurrency = String((body as any).from)
+            if (!toCurrency && (body as any).to) toCurrency = String((body as any).to)
+          }
+        } catch (_) {
+          // Ignore JSON parse error, will handle missing params below
+        }
+      }
+    }
 
     if (!fromCurrency || !toCurrency) {
       return new Response(
