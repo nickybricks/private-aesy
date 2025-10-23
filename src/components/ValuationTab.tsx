@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useStock } from '@/context/StockContext';
 import { fetchValuation } from '@/services/ValuationService';
 import { DividendYieldCard } from '@/components/metrics/DividendYieldCard';
+import { PriceToMedianPSChart } from '@/components/metrics/PriceToMedianPSChart';
+import { IntrinsicValueDiscountCard } from '@/components/metrics/IntrinsicValueDiscountCard';
 
 type BasisMode = 'EPS_WO_NRI' | 'FCF_PER_SHARE' | 'ADJUSTED_DIVIDEND';
 
@@ -276,6 +278,21 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
           </div>
         </Card>
       </div>
+
+      {/* Intrinsic Value Discount Chart */}
+      <IntrinsicValueDiscountCard
+        ticker={ticker}
+        currentPrice={currentPrice}
+        fairValue={data.fairValue}
+        currency="USD"
+      />
+
+      {/* Price vs. Median P/S Chart */}
+      <PriceToMedianPSChart
+        ticker={ticker}
+        currentPrice={currentPrice}
+        currency="USD"
+      />
 
     </div>
   );

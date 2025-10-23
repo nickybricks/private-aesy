@@ -121,18 +121,16 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
     return 30;
   };
 
-  // Get score based on discount and MoS target
-  const getScore = (discount: number, target: number): number => {
-    if (discount >= target) return 5;
-    if (discount >= 0.67 * target) return 3;
-    if (discount >= 0.33 * target) return 2;
-    if (discount >= 0) return 1;
-    return 0; // Overvalued
+  // Get score based on discount (NEW: 1-point system)
+  const getScore = (discount: number): number => {
+    if (discount >= 35) return 1;
+    if (discount >= 20) return 0.5;
+    return 0; // Overvalued or below threshold
   };
 
   const mosTarget = getMoSTarget(sector);
-  const score = getScore(discount, mosTarget);
-  const maxScore = 5;
+  const score = getScore(discount);
+  const maxScore = 1;
 
   // Get color based on score
   const getColorByScore = (score: number, maxScore: number): string => {
@@ -249,20 +247,10 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
 
   const scoringTooltip = (
     <div className="space-y-1">
-      {sector && (
-        <p className="text-xs text-muted-foreground mb-1">
-          Sektor: <strong>{sector}</strong> ({getSectorDescription()})
-        </p>
-      )}
-      <p className="font-medium text-sm">Bewertungssystem (0-5 Punkte):</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 5 Punkte: ≥ {mosTarget}%</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 3 Punkte: ≥ {(0.67 * mosTarget).toFixed(0)}%</p>
-      <p className="text-sm"><span className="text-orange-600">●</span> 2 Punkte: ≥ {(0.33 * mosTarget).toFixed(0)}%</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 1 Punkt: ≥ 0%</p>
-      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: &lt; 0% (überbewertet)</p>
-      <p className="text-xs text-muted-foreground mt-2">
-        M = MoS-Ziel (Sicherheitsmarge) basierend auf Sektor/Qualität
-      </p>
+      <p className="font-medium text-sm">Bewertungssystem (0-1 Punkt):</p>
+      <p className="text-sm"><span className="text-green-600">●</span> 1 Punkt: ≥ 35%</p>
+      <p className="text-sm"><span className="text-yellow-600">●</span> 0,5 Punkte: ≥ 20%</p>
+      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: &lt; 20% (überbewertet)</p>
     </div>
   );
 
