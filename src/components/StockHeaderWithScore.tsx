@@ -27,8 +27,8 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
     ? (financialStrengthScores.totalScore / financialStrengthScores.maxTotalScore) * 20 
     : 0;
 
-  const valuationScore = valuationScores 
-    ? (valuationScores.totalScore / valuationScores.maxTotalScore) * 20 
+  const valuationScore = valuationScores
+    ? Math.min(valuationScores.totalScore, 20)
     : 0;
 
   const growthScore = growthScores 

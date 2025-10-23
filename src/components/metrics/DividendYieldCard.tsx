@@ -238,7 +238,7 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
       <div className="flex items-center gap-2 mb-3">
         <div className="text-sm font-medium">Bewertung:</div>
         <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByRatio(totalScore, maxScore)}`}>
-          {totalScore.toFixed(2)}/{maxScore} Punkte
+          {Number.isInteger(totalScore) ? totalScore.toString() : totalScore.toFixed(2)}/{maxScore} Punkte
         </div>
         <div className="text-xs text-muted-foreground">
           (EPS: {payoutScoreEPS} + FCF: {payoutScoreFCF} | Growth: {growthScore.toFixed(2)})

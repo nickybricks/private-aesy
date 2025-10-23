@@ -61,6 +61,10 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
     return 'bg-red-50 border-red-200';
   };
 
+  // Formatting helper to hide trailing zeros (e.g., 3.0 -> 3)
+  const formatScore = (n: number, decimals = 1) =>
+    Number.isInteger(n) ? n.toString() : n.toFixed(decimals);
+
   // Absolute Score (0-1.5 points)
   const getAbsoluteScore = (pe: number | null | undefined): number => {
     if (pe === null || pe === undefined || pe <= 0) return 0;
@@ -283,7 +287,7 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
       <div className="flex items-center gap-2 mb-3">
         <div className="text-sm font-medium">Bewertung:</div>
         <div className={`px-2 py-1 rounded text-sm font-semibold ${getColorByScore(totalScore, maxScore)}`}>
-          {totalScore.toFixed(1)}/{maxScore} Punkte
+          {formatScore(totalScore, 1)}/{maxScore} Punkte
         </div>
         <TooltipProvider>
           <Tooltip>
