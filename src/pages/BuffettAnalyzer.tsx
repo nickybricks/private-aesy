@@ -38,6 +38,7 @@ import { IntrinsicValueDiscountCard } from '@/components/metrics/IntrinsicValueD
 import { PeterLynchDiscountCard } from '@/components/metrics/PeterLynchDiscountCard';
 import { PriceToBookCard } from '@/components/metrics/PriceToBookCard';
 import { PriceToCashFlowCard } from '@/components/metrics/PriceToCashFlowCard';
+import { PriceToMedianPSChart } from '@/components/metrics/PriceToMedianPSChart';
 import { RevenueGrowthCard } from '@/components/metrics/RevenueGrowthCard';
 import { EbitdaGrowthCard } from '@/components/metrics/EbitdaGrowthCard';
 import { EpsWoNriGrowthCard } from '@/components/metrics/EpsWoNriGrowthCard';
@@ -357,9 +358,17 @@ const IndexContent: React.FC = () => {
                   currency={stockInfo.currency}
                   sector={stockInfo.sector}
                 />
-              )}
-                    </div>
-                  </TabsContent>
+               )}
+               
+               {/* Price vs. Median P/S Chart - positioned below P/CF */}
+               <PriceToMedianPSChart
+                 ticker={stockInfo.ticker}
+                 currentPrice={stockInfo.price}
+                 sector={stockInfo.sector}
+                 currency={stockInfo.currency}
+               />
+                     </div>
+                   </TabsContent>
                   
                   <TabsContent value="growth-rank" className="mt-4 sm:mt-6">
                     <div className="space-y-6">
