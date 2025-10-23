@@ -153,7 +153,7 @@ const AppHeader: React.FC = () => {
             <Button 
               variant="default" 
               size="icon" 
-              className="w-10 h-10 rounded-full bg-primary shrink-0"
+              className="w-10 h-10 rounded-full bg-primary shrink-0 btn-no-mobile-full"
             >
               <User className="h-5 w-5 text-primary-foreground" />
             </Button>
