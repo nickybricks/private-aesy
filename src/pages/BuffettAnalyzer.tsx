@@ -19,7 +19,6 @@ import DataMissingAlert from '@/components/DataMissingAlert';
 import LoadingSection from '@/components/LoadingSection';
 import ErrorAlert from '@/components/ErrorAlert';
 import AppFooter from '@/components/AppFooter';
-import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
 import { useToast } from '@/hooks/use-toast';
 import { needsCurrencyConversion } from '@/utils/currencyConverter';
 import { ValuationTab } from '@/components/ValuationTab';
@@ -67,7 +66,6 @@ const IndexContent: React.FC = () => {
     stockCurrency,
     deepResearchPerformed
   } = useStock();
-  const { analyses, loading: analysesLoading } = useSavedAnalyses();
   const { toast } = useToast();
 
   // Track what has been processed to prevent duplicate actions
@@ -81,37 +79,17 @@ const IndexContent: React.FC = () => {
     // Create unique key for this request
     const requestKey = `${ticker}-${loadAnalysisId || 'new'}`;
     
-    // Don't proceed if analyses are still loading, already processing this request, or currently loading
-    if (analysesLoading || isLoading || processedRef.current === requestKey) {
+    // Don't proceed if already processing this request or currently loading
+    if (isLoading || processedRef.current === requestKey) {
       return;
     }
     
     if (ticker) {
       processedRef.current = requestKey;
-      
-      if (loadAnalysisId) {
-        // Load saved analysis instead of performing new search
-        console.log('Searching for saved analysis with ID:', loadAnalysisId);
-        console.log('Available analyses:', analyses.map(a => a.id));
-        
-        const savedAnalysis = analyses.find(analysis => analysis.id === loadAnalysisId);
-        if (savedAnalysis) {
-          console.log('Found saved analysis, loading:', savedAnalysis.title);
-          loadSavedAnalysis(savedAnalysis.analysis_data);
-          toast({
-            title: "Analyse geladen",
-            description: `${savedAnalysis.title} wurde erfolgreich geladen.`
-          });
-        } else {
-          console.log('Saved analysis not found, performing new search');
-          handleSearch(ticker);
-        }
-      } else {
-        console.log('No loadAnalysis parameter, performing new search');
-        handleSearch(ticker);
-      }
+      console.log('Performing search for ticker:', ticker);
+      handleSearch(ticker);
     }
-  }, [searchParams, isLoading, analysesLoading, analyses]);
+  }, [searchParams, isLoading]);
   
   return (
     <main className="flex-1 overflow-auto bg-background">

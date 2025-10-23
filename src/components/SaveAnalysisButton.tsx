@@ -12,8 +12,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useStock } from '@/context/StockContext';
-import { useSavedAnalyses } from '@/hooks/useSavedAnalyses';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export const SaveAnalysisButton: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,35 +21,23 @@ export const SaveAnalysisButton: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const { stockInfo, buffettCriteria, financialMetrics, overallRating, dcfData } = useStock();
-  const { saveAnalysis } = useSavedAnalyses();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleSave = async () => {
     if (!stockInfo || !title.trim()) return;
 
     setIsLoading(true);
     
-    const analysisData = {
-      stockInfo,
-      buffettCriteria,
-      financialMetrics,
-      overallRating,
-      dcfData,
-      timestamp: new Date().toISOString()
-    };
-
-    const result = await saveAnalysis(
-      title.trim(),
-      stockInfo.ticker,
-      stockInfo.name,
-      analysisData
-    );
-
-    if (result) {
-      setIsOpen(false);
-      setTitle('');
-    }
+    // Feature temporarily disabled
+    toast({
+      title: "Feature wird überarbeitet",
+      description: "Die Speicherfunktion wird gerade aktualisiert. Nutze bitte vorerst die Watchlist-Funktion.",
+      variant: "default"
+    });
     
+    setIsOpen(false);
+    setTitle('');
     setIsLoading(false);
   };
 
