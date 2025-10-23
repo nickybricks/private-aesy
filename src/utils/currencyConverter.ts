@@ -106,7 +106,7 @@ export const normalizeCurrencyCode = (currency: string): string => {
   return result;
 };
 
-// Function to get the exchange rate from API
+// Function to get the exchange rate from cached Supabase database
 export const getExchangeRate = async (fromCurrency: string, toCurrency: string): Promise<number | null> => {
   console.log('=== EXCHANGE RATE ABRUF START ===');
   console.log(`Input: fromCurrency="${fromCurrency}", toCurrency="${toCurrency}"`);
@@ -123,50 +123,43 @@ export const getExchangeRate = async (fromCurrency: string, toCurrency: string):
       return 1.0;
     }
     
-    // Use toCurrency (Kurswährung) as base for fxratesapi.com
-    const apiUrl = `https://api.fxratesapi.com/latest?base=${normalizedToCurrency}`;
-    console.log(`🌐 API-Aufruf mit base=${normalizedToCurrency}: ${apiUrl}`);
+    // NEW: Call Supabase Edge Function instead of fxratesapi directly
+    console.log(`📞 Calling Edge Function: get-exchange-rate`);
     
-    const response = await axios.get(apiUrl);
+    // Using full URL for edge function call
+    const edgeFunctionUrl = `https://slpruxtkowlxawssqyup.supabase.co/functions/v1/get-exchange-rate?from=${normalizedFromCurrency}&to=${normalizedToCurrency}`;
     
-    console.log('📥 API Rohdaten erhalten (relevante Währungen):');
-    console.log(JSON.stringify({
-      success: response.data.success,
-      base: response.data.base,
-      date: response.data.date,
-      rates: {
-        [normalizedFromCurrency]: response.data.rates?.[normalizedFromCurrency]
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
       }
-    }, null, 2));
+    });
     
-    if (!response.data || !response.data.success || !response.data.rates) {
-      console.error('❌ API-Response ungültig oder nicht erfolgreich');
+    if (!response.ok) {
+      console.error(`❌ Edge Function Error: Status ${response.status}`);
       return null;
     }
     
-    const rates = response.data.rates;
-    const fromRate = rates[normalizedFromCurrency];
+    const data = await response.json();
+    console.log(`📦 Edge Function Response:`, data);
     
-    if (!fromRate || isNaN(fromRate) || fromRate === 0) {
-      console.error(`❌ Kein gültiger Kurs für ${normalizedFromCurrency} in base=${normalizedToCurrency} gefunden`);
+    if (!data || !data.rate) {
+      console.error('❌ Keine gültige Rate vom Backend erhalten');
       return null;
     }
     
-    // Da base=toCurrency: fromCurrency → toCurrency = 1 / rates[fromCurrency]
-    const finalRate = 1 / fromRate;
+    const rate = Number(data.rate);
+    const source = data.source || 'unknown';
     
-    console.log(`📊 Berechnung: 1 ${normalizedFromCurrency} = (1 / ${fromRate}) ${normalizedToCurrency} = ${finalRate}`);
-    console.log(`✅ FINALER EXCHANGE RATE: ${finalRate}`);
-    console.log(`Beispiel: 1,000,000 ${normalizedFromCurrency} = ${(1000000 * finalRate).toFixed(2)} ${normalizedToCurrency}`);
+    console.log(`✅ Exchange Rate erhalten: ${rate} (Quelle: ${source})`);
+    console.log(`Beispiel: 1,000,000 ${normalizedFromCurrency} = ${(1000000 * rate).toFixed(2)} ${normalizedToCurrency}`);
     console.log('=== EXCHANGE RATE ABRUF ERFOLG ===');
     
-    return finalRate;
+    return rate;
     
   } catch (error) {
-    console.error('❌ FEHLER beim Exchange Rate Abruf:');
-    console.error('Error Type:', error?.constructor?.name);
-    console.error('Error Message:', error?.message);
-    console.error('Full Error:', error);
+    console.error('❌ FEHLER beim Exchange Rate Abruf:', error);
     return null;
   }
 };

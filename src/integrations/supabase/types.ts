@@ -50,6 +50,39 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rates: {
+        Row: {
+          base_currency: string
+          created_at: string | null
+          fetched_at: string
+          id: string
+          is_fallback: boolean | null
+          rate: number
+          target_currency: string
+          updated_at: string | null
+        }
+        Insert: {
+          base_currency?: string
+          created_at?: string | null
+          fetched_at?: string
+          id?: string
+          is_fallback?: boolean | null
+          rate: number
+          target_currency: string
+          updated_at?: string | null
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string | null
+          fetched_at?: string
+          id?: string
+          is_fallback?: boolean | null
+          rate?: number
+          target_currency?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -286,7 +319,7 @@ export type Database = {
     }
     Functions: {
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
       has_role: {
