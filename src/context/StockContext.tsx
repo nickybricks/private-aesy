@@ -54,10 +54,6 @@ export function StockProvider({ children }: StockProviderProps) {
   const [valuationScores, setValuationScores] = useState<ValuationScores | null>(null);
   const [growthScores, setGrowthScores] = useState<GrowthScores | null>(null);
   const [qualitativeScores, setQualitativeScores] = useState<QualitativeScores | null>(null);
-  const [valuationCardScores, setValuationCardScores] = useState<{ 
-    peRatio?: { score: number; maxScore: number }; 
-    dividendYield?: { score: number; maxScore: number } 
-  }>({});
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
@@ -81,40 +77,6 @@ export function StockProvider({ children }: StockProviderProps) {
       setQualitativeScores(null);
     }
   }, [buffettCriteria, deepResearchPerformed]);
-
-  // Update valuation scores when card scores change
-  useEffect(() => {
-    if (!valuationScores) return;
-    
-    const updated = structuredClone(valuationScores);
-    let hasChanges = false;
-    
-    if (valuationCardScores.peRatio) {
-      updated.scores.peRatio.score = valuationCardScores.peRatio.score;
-      hasChanges = true;
-    }
-    
-    if (valuationCardScores.dividendYield) {
-      updated.scores.dividendYield.score = valuationCardScores.dividendYield.score;
-      hasChanges = true;
-    }
-    
-    if (hasChanges) {
-      // Recalculate total score
-      const sum = Object.values(updated.scores).reduce((acc, s) => 
-        acc + (typeof s.score === 'number' ? s.score : 0), 0
-      );
-      updated.totalScore = Math.round(sum * 100) / 100;
-      
-      console.log('🔄 Valuation scores updated with card scores:', {
-        peRatio: valuationCardScores.peRatio?.score,
-        dividendYield: valuationCardScores.dividendYield?.score,
-        newTotalScore: updated.totalScore
-      });
-      
-      setValuationScores(updated);
-    }
-  }, [valuationCardScores]);
 
   const handleSearch = async (ticker: string, enableDeepResearch = false) => {
     console.log('🔍 handleSearch called with:', { ticker, enableDeepResearch });
@@ -532,10 +494,6 @@ export function StockProvider({ children }: StockProviderProps) {
     await handleSearch(ticker, true);
   };
 
-  const setValuationCardScore = (name: 'peRatio' | 'dividendYield', score: number, maxScore: number) => {
-    setValuationCardScores(prev => ({ ...prev, [name]: { score, maxScore } }));
-  };
-
   return (
     <StockContext.Provider value={{
       isLoading,
@@ -565,8 +523,7 @@ export function StockProvider({ children }: StockProviderProps) {
       setLoadingProgress,
       handleSearch,
       loadSavedAnalysis,
-      triggerDeepResearch,
-      setValuationCardScore
+      triggerDeepResearch
     }}>
       {children}
     </StockContext.Provider>

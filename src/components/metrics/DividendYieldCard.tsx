@@ -15,7 +15,6 @@ interface DividendYieldCardProps {
   dividendCAGR5Y?: number | null;
   dividendCAGR10Y?: number | null;
   preset?: string;
-  onScoreChange?: (score: number, maxScore: number) => void;
 }
 
 export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
@@ -29,7 +28,6 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
   dividendCAGR5Y = null,
   dividendCAGR10Y = null,
   preset = 'Standard (Nicht-Finanz)',
-  onScoreChange
 }) => {
   // Calculate current dividend yield
   const dividendYield = currentPrice > 0 && currentDividendPerShare > 0
@@ -88,13 +86,6 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
   const growthScore = getDividendGrowthScore(dividendStreak, medianCAGR);
   const totalScore = totalPayoutScore + growthScore;
   const maxScore = 4;
-
-  // Report score changes
-  React.useEffect(() => {
-    if (currentDividendPerShare > 0 && historicalDividends.length > 0) {
-      onScoreChange?.(totalScore, maxScore);
-    }
-  }, [totalScore, maxScore, currentDividendPerShare, historicalDividends.length, onScoreChange]);
 
   // Get color based on score ratio
   const getColorByRatio = (score: number, maxScore: number): string => {

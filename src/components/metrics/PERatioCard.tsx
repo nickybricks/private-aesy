@@ -17,7 +17,6 @@ interface PERatioCardProps {
   currentStockPE?: number;    // Current TTM P/E
   currentIndustryPE?: number; // Current industry P/E
   industry?: string;          // Industry name for display
-  onScoreChange?: (score: number, maxScore: number) => void;
 }
 
 type TimeRange = '1M' | '6M' | 'YTD' | '1Y' | '5Y' | '10Y' | '25Y' | 'MAX';
@@ -28,8 +27,7 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
   weeklyPE,
   currentStockPE,
   currentIndustryPE,
-  industry,
-  onScoreChange
+  industry
 }) => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('1Y');
 
@@ -87,11 +85,6 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
   const relativeScore = getRelativeScore(currentStockPE, currentIndustryPE);
   const totalScore = absoluteScore + relativeScore;
   const maxScore = 3.0;
-
-  // Report score changes
-  React.useEffect(() => {
-    onScoreChange?.(totalScore, maxScore);
-  }, [totalScore, maxScore, onScoreChange]);
 
   // Filter data by range
   const filterDataByRange = (
