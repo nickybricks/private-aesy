@@ -337,8 +337,10 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
         break;
     }
     
-    // Filter daily prices by range
-    const filteredDaily = dailyPrices.filter(d => new Date(d.date) >= cutoffDate);
+    // Filter daily prices by range and sort ascending (oldest to newest)
+    const filteredDaily = dailyPrices
+      .filter(d => new Date(d.date) >= cutoffDate)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     // Create a map of quarter-end data
     const quarterMap = new Map<string, QuarterData>();
@@ -610,8 +612,8 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
                 if (active && payload && payload.length) {
                   const data = payload[0].payload as ChartDataPoint;
                   
-                  // Show full details only if this is a quarter-end
-                  if (data.isQuarterEnd && data.priceAtMedianPS && data.rps && data.ps) {
+                  // Show full details for all data points like before
+                  if (data.priceAtMedianPS && data.rps && data.ps) {
                     const discountAtPoint = ((data.priceAtMedianPS - data.price) / data.priceAtMedianPS) * 100;
                     return (
                       <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
@@ -642,7 +644,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
                     );
                   }
                   
-                  // For non-quarter-end dates, only show date and price
+                  // For daily price points without P/S data
                   return (
                     <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
                       <p className="text-xs font-semibold mb-1">
@@ -676,7 +678,23 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
               stroke="#8b5cf6" 
               strokeWidth={2}
               strokeDasharray="5 5"
-              dot={{ fill: '#8b5cf6', r: 3 }}
+              dot={(props: any) => {
+                const { cx, cy, payload } = props;
+                // Only show dot if this point has priceAtMedianPS data
+                if (payload.priceAtMedianPS !== undefined) {
+                  return (
+                    <circle 
+                      cx={cx} 
+                      cy={cy} 
+                      r={3} 
+                      fill="#8b5cf6" 
+                      stroke="#8b5cf6" 
+                      strokeWidth={1}
+                    />
+                  );
+                }
+                return null;
+              }}
               connectNulls={true}
               name="Preis @ Median P/S"
             />
