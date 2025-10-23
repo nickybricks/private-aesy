@@ -365,16 +365,8 @@ const IndexContent: React.FC = () => {
                   sharesOutstanding={stockInfo.sharesOutstanding}
                   currency={stockInfo.currency}
                   sector={stockInfo.sector}
-                />
+                 />
                )}
-               
-               {/* Price vs. Median P/S Chart - positioned below P/CF */}
-               <PriceToMedianPSChart
-                 ticker={stockInfo.ticker}
-                 currentPrice={stockInfo.price}
-                 sector={stockInfo.sector}
-                 currency={stockInfo.currency}
-               />
                      </div>
                    </TabsContent>
                   

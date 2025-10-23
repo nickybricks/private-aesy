@@ -122,6 +122,9 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
           new Date(a.date).getTime() - new Date(b.date).getTime()
         );
 
+        console.log(`Processing ${sortedStatements.length} quarterly statements for ${ticker}`);
+        console.log(`Latest quarter date: ${sortedStatements[sortedStatements.length - 1]?.date}`);
+
         // Process quarterly data - start from i=3 to include latest quarters
         const processed: QuarterData[] = [];
         
@@ -181,9 +184,10 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
           return;
         }
 
-        // Sort by date ascending
-        processed.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        
+        console.log(`Successfully processed ${processed.length} quarters for ${ticker}`);
+        console.log(`Date range: ${processed[0]?.date} to ${processed[processed.length - 1]?.date}`);
+
+        // Already sorted chronologically (oldest to newest)
         setQuarterData(processed);
         
         // Set current RPS and PS from most recent data
@@ -229,6 +233,8 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
 
     const filteredForMedian = quarterData.filter(q => new Date(q.date) >= cutoffDate);
     
+    console.log(`Calculating median P/S with ${filteredForMedian.length} quarters (lookback: ${lookbackPeriod})`);
+    
     if (filteredForMedian.length === 0) {
       setMedianPS(0);
       return;
@@ -241,6 +247,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
       ? (psValues[mid - 1] + psValues[mid]) / 2 
       : psValues[mid];
     
+    console.log(`Median P/S (${lookbackPeriod}): ${median.toFixed(2)}`);
     setMedianPS(median);
   }, [quarterData, lookbackPeriod]);
 
@@ -349,7 +356,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
     });
     
     // Merge daily prices with quarterly median P/S
-    return filteredDaily.map(daily => {
+    const result = filteredDaily.map(daily => {
       const quarter = quarterMap.get(daily.date);
       if (quarter && medianPS > 0) {
         return {
@@ -366,6 +373,14 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
         price: daily.price
       };
     });
+    
+    const quarterPoints = result.filter(r => r.isQuarterEnd);
+    console.log(`Chart data: ${result.length} daily points, ${quarterPoints.length} quarter points with P/S data`);
+    if (quarterPoints.length > 0) {
+      console.log(`Quarter data range: ${quarterPoints[0]?.date} to ${quarterPoints[quarterPoints.length - 1]?.date}`);
+    }
+    
+    return result;
   };
 
   const chartData = buildChartData();
