@@ -94,7 +94,7 @@ const IndexContent: React.FC = () => {
   return (
     <main className="flex-1 overflow-auto bg-background">
         <div className="h-full">
-          <div className="p-3 sm:p-4 md:p-6 w-full">
+          <div className="p-3 sm:p-4 md:p-6 w-full max-w-screen-xl mx-auto">
             
             <KiAvailabilityAlert gptAvailable={gptAvailable} />
             

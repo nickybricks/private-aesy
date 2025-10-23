@@ -184,7 +184,7 @@ const LiveAnalysis = () => {
   return (
     <main className="flex-1 overflow-auto bg-background">
       <div className="h-full">
-        <div className="p-6 w-full space-y-6">
+        <div className="p-6 w-full max-w-screen-xl mx-auto space-y-6">
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="h-6 w-6 text-buffett-blue" />
             <h1 className="text-2xl font-semibold">Live-Analyse</h1>

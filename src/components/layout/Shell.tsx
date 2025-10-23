@@ -19,7 +19,7 @@ const maxWidthClasses = {
 export const Shell: React.FC<ShellProps> = ({ 
   children, 
   className,
-  maxWidth = '2xl' 
+  maxWidth = 'xl'
 }) => {
   return (
     <div className={cn(
