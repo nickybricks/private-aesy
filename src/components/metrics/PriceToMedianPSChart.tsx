@@ -319,6 +319,31 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
     return 'bg-red-50 border-red-200';
   };
 
+  // Helper function to find quarter data with fuzzy date matching
+  const findQuarterForDate = (
+    dailyDate: string, 
+    quarterMap: Map<string, QuarterData>
+  ): QuarterData | undefined => {
+    // 1. Try exact match first
+    if (quarterMap.has(dailyDate)) {
+      return quarterMap.get(dailyDate);
+    }
+    
+    // 2. Try ±3 days tolerance (for trading days vs. quarter-end dates)
+    const target = new Date(dailyDate);
+    for (let offset = -3; offset <= 3; offset++) {
+      if (offset === 0) continue; // Already tested
+      const testDate = new Date(target);
+      testDate.setDate(testDate.getDate() + offset);
+      const testDateStr = testDate.toISOString().split('T')[0];
+      if (quarterMap.has(testDateStr)) {
+        return quarterMap.get(testDateStr);
+      }
+    }
+    
+    return undefined;
+  };
+
   // Build chart data: merge daily prices with quarterly P/S data
   const buildChartData = (): ChartDataPoint[] => {
     if (dailyPrices.length === 0) return [];
@@ -355,9 +380,13 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
       quarterMap.set(q.date, q);
     });
     
-    // Merge daily prices with quarterly median P/S
+    console.log(`Quarter map contains ${quarterMap.size} quarters:`, 
+      Array.from(quarterMap.keys()).slice(-5));
+    console.log(`Sample daily dates:`, filteredDaily.slice(0, 5).map(d => d.date));
+    
+    // Merge daily prices with quarterly median P/S using fuzzy matching
     const result = filteredDaily.map(daily => {
-      const quarter = quarterMap.get(daily.date);
+      const quarter = findQuarterForDate(daily.date, quarterMap);
       if (quarter && medianPS > 0) {
         return {
           date: daily.date,
