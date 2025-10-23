@@ -48,7 +48,7 @@ const AppHeader: React.FC = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-18 bg-background border-b border-border">
       {/* Desktop Layout */}
-      <div className="hidden md:flex h-full items-center px-6 gap-6">
+      <div className="hidden md:flex h-full items-center px-6 gap-6 max-w-screen-xl mx-auto">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3 shrink-0">
           <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-sm">
@@ -127,7 +127,7 @@ const AppHeader: React.FC = () => {
       </div>
       
       {/* Mobile Layout */}
-      <div className="md:hidden h-full flex items-center justify-between px-4 gap-3">
+      <div className="md:hidden h-full flex items-center justify-between px-4 gap-3 max-w-screen-xl mx-auto">
         {/* Logo - Links */}
         <Link to="/" className="shrink-0">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
