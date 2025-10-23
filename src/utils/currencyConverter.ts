@@ -1,5 +1,5 @@
-
 import axios from 'axios';
+import { supabase } from '@/integrations/supabase/client';
 
 // Use import.meta.env instead of process.env for Vite projects
 const API_KEY = import.meta.env.VITE_FMP_API_KEY || '';
@@ -123,25 +123,21 @@ export const getExchangeRate = async (fromCurrency: string, toCurrency: string):
       return 1.0;
     }
     
-    // NEW: Call Supabase Edge Function instead of fxratesapi directly
+    // Call Supabase Edge Function using the Supabase client
     console.log(`📞 Calling Edge Function: get-exchange-rate`);
     
-    // Using full URL for edge function call
-    const edgeFunctionUrl = `https://slpruxtkowlxawssqyup.supabase.co/functions/v1/get-exchange-rate?from=${normalizedFromCurrency}&to=${normalizedToCurrency}`;
-    
-    const response = await fetch(edgeFunctionUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+    const { data, error } = await supabase.functions.invoke('get-exchange-rate', {
+      body: {
+        from: normalizedFromCurrency,
+        to: normalizedToCurrency
       }
     });
     
-    if (!response.ok) {
-      console.error(`❌ Edge Function Error: Status ${response.status}`);
+    if (error) {
+      console.error(`❌ Edge Function Error:`, error);
       return null;
     }
     
-    const data = await response.json();
     console.log(`📦 Edge Function Response:`, data);
     
     if (!data || !data.rate) {
