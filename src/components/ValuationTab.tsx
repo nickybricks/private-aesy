@@ -24,7 +24,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   const [loading, setLoading] = useState(false);
   const [valuationData, setValuationData] = useState<any>(null);
   const { toast } = useToast();
-  const { valuationData: contextValuationData } = useStock();
+  const { valuationData: contextValuationData, setValuationCardScore } = useStock();
   const hasLoggedRef = useRef<string | null>(null);
 
   // Use context data if available and matches current mode
@@ -310,6 +310,9 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
         ticker={ticker}
         currentPrice={currentPrice}
         currency="USD"
+        onDiscountCalculated={(discount, score) => {
+          setValuationCardScore('priceToMedianPS', score, 4);
+        }}
       />
 
     </div>

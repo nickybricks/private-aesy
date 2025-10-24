@@ -17,6 +17,7 @@ interface PriceToMedianPSChartProps {
   currentPrice: number;
   sector?: string;
   currency?: string;
+  onDiscountCalculated?: (discount: number, score: number) => void;
 }
 
 type TimeRange = '1Y' | '3Y' | '5Y' | '10Y' | 'MAX';
@@ -66,7 +67,8 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
   ticker,
   currentPrice,
   sector = 'Default',
-  currency = 'USD'
+  currency = 'USD',
+  onDiscountCalculated
 }) => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('10Y');
   const [lookbackPeriod, setLookbackPeriod] = useState<LookbackPeriod>('5Y');
@@ -312,6 +314,13 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
 
   const score = getScore(discount);
   const maxScore = 4;
+
+  // Notify parent component when discount/score changes
+  useEffect(() => {
+    if (onDiscountCalculated && !isLoading && !hasInsufficientData) {
+      onDiscountCalculated(discount, score);
+    }
+  }, [discount, score, isLoading, hasInsufficientData, onDiscountCalculated]);
 
   // Get color based on score
   const getColorByScore = (score: number, maxScore: number): string => {

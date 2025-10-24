@@ -57,6 +57,7 @@ export function StockProvider({ children }: StockProviderProps) {
   const [valuationCardScores, setValuationCardScores] = useState<{
     peRatio?: { score: number; maxScore: number };
     dividendYield?: { score: number; maxScore: number };
+    priceToMedianPS?: { score: number; maxScore: number };
   }>({});
 
   useEffect(() => {
@@ -65,7 +66,7 @@ export function StockProvider({ children }: StockProviderProps) {
   }, []);
 
   // Function to update card scores
-  const setValuationCardScore = (name: 'peRatio' | 'dividendYield', score: number, maxScore: number) => {
+  const setValuationCardScore = (name: 'peRatio' | 'dividendYield' | 'priceToMedianPS', score: number, maxScore: number) => {
     setValuationCardScores(prev => ({ ...prev, [name]: { score, maxScore } }));
   };
 
@@ -73,7 +74,7 @@ export function StockProvider({ children }: StockProviderProps) {
   useEffect(() => {
     if (!valuationScores) return;
     
-    const hasCardScores = valuationCardScores.peRatio || valuationCardScores.dividendYield;
+    const hasCardScores = valuationCardScores.peRatio || valuationCardScores.dividendYield || valuationCardScores.priceToMedianPS;
     if (!hasCardScores) return;
     
     const updated = JSON.parse(JSON.stringify(valuationScores)); // Deep clone
@@ -98,6 +99,10 @@ export function StockProvider({ children }: StockProviderProps) {
     if (valuationCardScores.dividendYield) {
       console.log('📝 Updating Dividend from', updated.scores.dividendYield.score, 'to', valuationCardScores.dividendYield.score);
       updated.scores.dividendYield.score = valuationCardScores.dividendYield.score;
+    }
+    if (valuationCardScores.priceToMedianPS) {
+      console.log('📝 Updating Price to Median P/S from', updated.scores.priceToMedianPS.score, 'to', valuationCardScores.priceToMedianPS.score);
+      updated.scores.priceToMedianPS.score = valuationCardScores.priceToMedianPS.score;
     }
     
     // Recalculate total score

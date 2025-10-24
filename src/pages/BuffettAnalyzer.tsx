@@ -268,6 +268,9 @@ const IndexContent: React.FC = () => {
                 currentPrice={stockInfo.price}
                 sector={stockInfo.sector}
                 currency={stockInfo.currency}
+                onDiscountCalculated={(discount, score) => {
+                  setValuationCardScore('priceToMedianPS', score, 4);
+                }}
               />
               
               {/* Intrinsic Value Discount Card */}

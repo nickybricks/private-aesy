@@ -3,6 +3,11 @@ import { Card } from '@/components/ui/card';
 import StockQuoteHeader from '@/components/StockQuoteHeader';
 import BuffettScoreSpiderChart from '@/components/BuffettScoreSpiderChart';
 import { useStock } from '@/context/StockContext';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface StockHeaderWithScoreProps {
   onTabChange?: (tab: string) => void;
@@ -102,15 +107,50 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
         
         {/* Right: Spider Chart with Score */}
         <div className="flex flex-col items-center justify-start lg:w-[320px]">
-          {/* Aesy Score zentriert über dem Chart */}
+          {/* Aesy Score zentriert über dem Chart mit Hover */}
           <div className="text-center mb-3">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-lg font-semibold">Aesy Score:</span>
-              <div className="text-lg font-bold">
-                <span className={getScoreColor(totalScore)}>{totalScore.toFixed(0)}</span>
-                <span className="text-foreground"> /100</span>
-              </div>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <div className="flex items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+                  <span className="text-lg font-semibold">Aesy Score:</span>
+                  <div className="text-lg font-bold">
+                    <span className={getScoreColor(totalScore)}>{totalScore.toFixed(1)}</span>
+                    <span className="text-foreground"> /100</span>
+                  </div>
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-72">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm mb-3">Score-Aufschlüsselung</h4>
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span>Rentabilität:</span>
+                      <span className="font-medium">{profitabilityScore.toFixed(1)}/20</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Finanzstärke:</span>
+                      <span className="font-medium">{financialStrengthScore.toFixed(1)}/20</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Bewertung:</span>
+                      <span className="font-medium">{valuationScore.toFixed(1)}/20</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Wachstum:</span>
+                      <span className="font-medium">{growthScore.toFixed(1)}/20</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>KI-Analyse:</span>
+                      <span className="font-medium">{aiAnalysisScore.toFixed(1)}/20</span>
+                    </div>
+                    <div className="border-t pt-1.5 mt-2 flex justify-between items-center font-semibold">
+                      <span>Gesamt:</span>
+                      <span className={getScoreColor(totalScore)}>{totalScore.toFixed(1)}/100</span>
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           
           {/* Spider Chart ohne Card-Wrapper */}
