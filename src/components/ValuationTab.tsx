@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -108,6 +108,11 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   };
 
   const mosStatus = getMoSStatus(marginOfSafety);
+
+  // Memoize callback to prevent re-renders
+  const handleDiscountCalculated = useCallback((discount: number, score: number) => {
+    setValuationCardScore('priceToMedianPS', score, 4);
+  }, [setValuationCardScore]);
 
   const modeConfig = {
     EPS_WO_NRI: {
@@ -310,9 +315,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
         ticker={ticker}
         currentPrice={currentPrice}
         currency="USD"
-        onDiscountCalculated={(discount, score) => {
-          setValuationCardScore('priceToMedianPS', score, 4);
-        }}
+        onDiscountCalculated={handleDiscountCalculated}
       />
 
     </div>

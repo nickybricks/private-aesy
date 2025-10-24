@@ -32,16 +32,21 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
   onScoreChange
 }) => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('1Y');
+  const hasLoggedRef = React.useRef(false);
 
-  // Debug logging
-  console.log('📊 PERatioCard received:', {
-    weeklyPELength: weeklyPE?.length || 0,
-    currentStockPE,
-    currentIndustryPE,
-    industry,
-    hasIndustryData: weeklyPE?.some(d => typeof d.industryPE === 'number'),
-    weeklyPESample: weeklyPE?.slice(-3) // Last 3 entries
-  });
+  // Debug logging (only once)
+  React.useEffect(() => {
+    if (!hasLoggedRef.current && weeklyPE && weeklyPE.length > 0) {
+      hasLoggedRef.current = true;
+      console.log('📊 PERatioCard loaded:', {
+        weeklyPELength: weeklyPE.length,
+        currentStockPE,
+        currentIndustryPE,
+        industry,
+        hasIndustryData: weeklyPE.some(d => typeof d.industryPE === 'number')
+      });
+    }
+  }, [weeklyPE, currentStockPE, currentIndustryPE, industry]);
 
   // Helper function to get color based on score
   const getColorByScore = (score: number, maxScore: number): string => {
@@ -92,9 +97,13 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
   const totalScore = absoluteScore + relativeScore;
   const maxScore = 3.0;
 
-  // Report score changes
+  // Report score changes (only when actually changed)
+  const lastReportedScoreRef = React.useRef<number | null>(null);
   React.useEffect(() => {
-    onScoreChange?.(totalScore, maxScore);
+    if (lastReportedScoreRef.current !== totalScore) {
+      lastReportedScoreRef.current = totalScore;
+      onScoreChange?.(totalScore, maxScore);
+    }
   }, [totalScore, maxScore, onScoreChange]);
 
   // Filter data by range

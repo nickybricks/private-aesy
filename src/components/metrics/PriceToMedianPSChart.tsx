@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Info, TrendingUp, TrendingDown } from 'lucide-react';
@@ -315,10 +315,17 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
   const score = getScore(discount);
   const maxScore = 4;
 
-  // Notify parent component when discount/score changes
+  // Notify parent component when discount/score changes (with ref to prevent loops)
+  const lastReportedScoreRef = useRef<{ discount: number; score: number } | null>(null);
   useEffect(() => {
     if (onDiscountCalculated && !isLoading && !hasInsufficientData) {
-      onDiscountCalculated(discount, score);
+      // Only call if values actually changed
+      if (!lastReportedScoreRef.current || 
+          lastReportedScoreRef.current.discount !== discount || 
+          lastReportedScoreRef.current.score !== score) {
+        lastReportedScoreRef.current = { discount, score };
+        onDiscountCalculated(discount, score);
+      }
     }
   }, [discount, score, isLoading, hasInsufficientData, onDiscountCalculated]);
 
@@ -366,8 +373,8 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
     return undefined;
   };
 
-  // Build chart data: merge daily prices with quarterly P/S data
-  const buildChartData = (): ChartDataPoint[] => {
+  // Build chart data: merge daily prices with quarterly P/S data (memoized)
+  const chartData = useMemo(() => {
     if (dailyPrices.length === 0) return [];
     
     const now = new Date();
@@ -402,10 +409,6 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
       quarterMap.set(q.date, q);
     });
     
-    console.log(`Quarter map contains ${quarterMap.size} quarters:`, 
-      Array.from(quarterMap.keys()).slice(-5));
-    console.log(`Sample daily dates:`, filteredDaily.slice(0, 5).map(d => d.date));
-    
     // Merge daily prices with quarterly median P/S using fuzzy matching
     const result = filteredDaily.map(daily => {
       const quarter = findQuarterForDate(daily.date, quarterMap);
@@ -425,16 +428,8 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
       };
     });
     
-    const quarterPoints = result.filter(r => r.isQuarterEnd);
-    console.log(`Chart data: ${result.length} daily points, ${quarterPoints.length} quarter points with P/S data`);
-    if (quarterPoints.length > 0) {
-      console.log(`Quarter data range: ${quarterPoints[0]?.date} to ${quarterPoints[quarterPoints.length - 1]?.date}`);
-    }
-    
     return result;
-  };
-
-  const chartData = buildChartData();
+  }, [dailyPrices, quarterData, selectedRange, medianPS]);
 
   const mainTooltipContent = (
     <div className="space-y-3 max-w-md">

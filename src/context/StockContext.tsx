@@ -77,31 +77,23 @@ export function StockProvider({ children }: StockProviderProps) {
     const hasCardScores = valuationCardScores.peRatio || valuationCardScores.dividendYield || valuationCardScores.priceToMedianPS;
     if (!hasCardScores) return;
     
+    // Check if any values actually changed
+    let hasChanges = false;
+    if (valuationCardScores.peRatio && valuationCardScores.peRatio.score !== valuationScores.scores.peRatio.score) hasChanges = true;
+    if (valuationCardScores.dividendYield && valuationCardScores.dividendYield.score !== valuationScores.scores.dividendYield.score) hasChanges = true;
+    if (valuationCardScores.priceToMedianPS && valuationCardScores.priceToMedianPS.score !== valuationScores.scores.priceToMedianPS.score) hasChanges = true;
+    
+    if (!hasChanges) return; // No changes, skip update
+    
     const updated = JSON.parse(JSON.stringify(valuationScores)); // Deep clone
     
-    console.log('🔍 BEFORE update - Valuation Scores:', {
-      originalTotal: valuationScores.totalScore,
-      originalScores: {
-        intrinsicValue: valuationScores.scores.intrinsicValueDiscount.score,
-        peterLynch: valuationScores.scores.peterLynchDiscount.score,
-        peRatio: valuationScores.scores.peRatio.score,
-        dividend: valuationScores.scores.dividendYield.score,
-        priceToBook: valuationScores.scores.priceToBook.score,
-        priceToCashFlow: valuationScores.scores.priceToCashFlow.score,
-        priceToMedianPS: valuationScores.scores.priceToMedianPS.score,
-      }
-    });
-    
     if (valuationCardScores.peRatio) {
-      console.log('📝 Updating PE Ratio from', updated.scores.peRatio.score, 'to', valuationCardScores.peRatio.score);
       updated.scores.peRatio.score = valuationCardScores.peRatio.score;
     }
     if (valuationCardScores.dividendYield) {
-      console.log('📝 Updating Dividend from', updated.scores.dividendYield.score, 'to', valuationCardScores.dividendYield.score);
       updated.scores.dividendYield.score = valuationCardScores.dividendYield.score;
     }
     if (valuationCardScores.priceToMedianPS) {
-      console.log('📝 Updating Price to Median P/S from', updated.scores.priceToMedianPS.score, 'to', valuationCardScores.priceToMedianPS.score);
       updated.scores.priceToMedianPS.score = valuationCardScores.priceToMedianPS.score;
     }
     
@@ -110,23 +102,17 @@ export function StockProvider({ children }: StockProviderProps) {
     const sum = allScores.reduce((acc, s) => acc + (typeof s.score === 'number' ? s.score : 0), 0);
     updated.totalScore = Math.round(sum * 100) / 100;
     
-    console.log('✅ AFTER update - Valuation Scores:', {
+    console.log('✅ Valuation Scores updated:', {
       newTotal: updated.totalScore,
-      updatedScores: {
-        intrinsicValue: updated.scores.intrinsicValueDiscount.score,
-        peterLynch: updated.scores.peterLynchDiscount.score,
-        peRatio: updated.scores.peRatio.score,
-        dividend: updated.scores.dividendYield.score,
-        priceToBook: updated.scores.priceToBook.score,
-        priceToCashFlow: updated.scores.priceToCashFlow.score,
-        priceToMedianPS: updated.scores.priceToMedianPS.score,
-      },
-      calculatedSum: sum,
-      individualScores: allScores.map(s => s.score)
+      changes: {
+        peRatio: valuationCardScores.peRatio?.score,
+        dividend: valuationCardScores.dividendYield?.score,
+        priceToMedianPS: valuationCardScores.priceToMedianPS?.score,
+      }
     });
     
     setValuationScores(updated);
-  }, [valuationCardScores]);
+  }, [valuationCardScores, valuationScores]);
 
   // Calculate qualitative scores when buffettCriteria is available after deep research
   useEffect(() => {

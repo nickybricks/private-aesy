@@ -89,10 +89,14 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
   const totalScore = totalPayoutScore + growthScore;
   const maxScore = 4;
 
-  // Report score changes
+  // Report score changes (only when actually changed)
+  const lastReportedScoreRef = React.useRef<number | null>(null);
   React.useEffect(() => {
     if (currentDividendPerShare > 0 && historicalDividends.length > 0) {
-      onScoreChange?.(totalScore, maxScore);
+      if (lastReportedScoreRef.current !== totalScore) {
+        lastReportedScoreRef.current = totalScore;
+        onScoreChange?.(totalScore, maxScore);
+      }
     }
   }, [totalScore, maxScore, currentDividendPerShare, historicalDividends.length, onScoreChange]);
 
