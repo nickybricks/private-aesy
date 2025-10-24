@@ -78,6 +78,17 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
     tangibleBook: valuationData.assumptions.tangibleBookPerShare,
     fairValue: valuationData.fairValuePerShare,
   };
+
+  console.log('💰 ValuationTab received data:', {
+    ticker,
+    mode: selectedMode,
+    fairValue: data.fairValue,
+    currentPrice,
+    startValue: data.startValue,
+    currency: 'USD (hardcoded)',
+    reportedCurrency: valuationData.reportedCurrency || 'UNKNOWN - needs to be added to edge function response',
+    warnings: valuationData.warnings
+  });
   
   const marginOfSafety = valuationData.marginOfSafetyPct;
   const warnings = valuationData.warnings || [];

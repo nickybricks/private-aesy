@@ -58,6 +58,15 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
     const fetchData = async () => {
       if (!ticker) return;
       
+      console.log('💰 IntrinsicValueDiscountCard:', {
+        ticker,
+        currentPrice,
+        fairValue,
+        currency,
+        reportedCurrency: 'UNKNOWN - needs to be passed as prop',
+        conversionApplied: false
+      });
+      
       setIsLoading(true);
       
       try {

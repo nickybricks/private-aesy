@@ -34,6 +34,14 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
 }) => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('5Y');
 
+  console.log('💰 PriceToCashFlowCard:', {
+    currentPrice,
+    fcfPerShare,
+    currency,
+    reportedCurrency: 'UNKNOWN - needs to be passed as prop',
+    conversionApplied: false
+  });
+
   // Calculate P/FCF ratio
   const priceToCashFlow = useMemo(() => {
     if (!fcfPerShare || fcfPerShare <= 0) return null;

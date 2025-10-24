@@ -83,6 +83,15 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
     const fetchData = async () => {
       if (!ticker) return;
       
+      console.log('💰 PriceToMedianPSChart:', {
+        ticker,
+        currentPrice,
+        currency,
+        sector,
+        reportedCurrency: 'UNKNOWN - needs to be passed as prop',
+        conversionApplied: false
+      });
+      
       setIsLoading(true);
       setHasInsufficientData(false);
       

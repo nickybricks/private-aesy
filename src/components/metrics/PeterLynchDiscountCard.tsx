@@ -89,6 +89,14 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
     const fetchData = async () => {
       if (!ticker) return;
       
+      console.log('💰 PeterLynchDiscountCard:', {
+        ticker,
+        currentPrice,
+        currency,
+        reportedCurrency: 'UNKNOWN - needs to be passed as prop',
+        conversionApplied: false
+      });
+      
       setIsLoading(true);
       setError(null);
       
