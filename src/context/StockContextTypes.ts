@@ -42,6 +42,7 @@ export interface FinancialMetricsData {
   interestCoverage?: any;
   netDebtToEbitda?: any;
   currentRatio?: any;
+  bookValuePerShare?: number | null;
   reportedCurrency?: string;
   metrics?: Array<{
     name: string;
