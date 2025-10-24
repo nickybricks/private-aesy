@@ -42,7 +42,6 @@ export interface FinancialMetricsData {
   interestCoverage?: any;
   netDebtToEbitda?: any;
   currentRatio?: any;
-  bookValuePerShare?: number | null; // Normal book value (total equity per share)
   reportedCurrency?: string;
   metrics?: Array<{
     name: string;
