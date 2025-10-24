@@ -134,6 +134,7 @@ export interface QuantAnalysisResult {
   sector: string;
   country: string;
   buffettScore: number; // Max 14 points
+  bookValuePerShare: number | null; // Normal book value (total equity per share)
   criteria: {
     yearsOfProfitability: { 
       value: number | null; // Years profitable of 10
@@ -598,6 +599,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       sector: companyProfile.sector || 'Unknown',
       country: companyProfile.country || 'Unknown',
       buffettScore,
+      bookValuePerShare,
       criteria: {
         yearsOfProfitability: { 
           value: profitabilityYears?.total || null, 

@@ -58,6 +58,7 @@ export const processFinancialMetrics = (rawData: any, reportedCurrency: string, 
     netDebtToEbitda: rawData.netDebtToEbitda ?? null,
     currentRatio: rawData.currentRatio ?? null,
     wacc: rawData.wacc, // already in % from API layer
+    bookValuePerShare: rawData.bookValuePerShare ?? null, // Normal book value (total equity / shares)
 
     metrics: processedMetrics,
     historicalData: rawData.historicalData || [],
