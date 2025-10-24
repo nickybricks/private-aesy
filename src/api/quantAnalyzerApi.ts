@@ -542,8 +542,19 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
 
     // Calculate Intrinsic Value (display only, NOT evaluated)
     const currentEps = incomeStatements && incomeStatements.length > 0 ? safeValue(incomeStatements[0].eps) : null;
-    const bookValuePerShare = balanceSheets && balanceSheets.length > 0 ? 
-      safeValue(balanceSheets[0].totalStockholdersEquity) / safeValue(companyProfile.mktCap / currentPrice) : null;
+    
+    // Get bookValuePerShare - first try from keyMetrics, then calculate manually
+    let bookValuePerShare: number | null = null;
+    if (keyMetricsHistorical && keyMetricsHistorical.length > 0 && keyMetricsHistorical[0].bookValuePerShare) {
+      bookValuePerShare = safeValue(keyMetricsHistorical[0].bookValuePerShare);
+    } else if (balanceSheets && balanceSheets.length > 0 && companyProfile.mktCap && currentPrice) {
+      const sharesOutstanding = companyProfile.mktCap / currentPrice;
+      if (sharesOutstanding > 0 && balanceSheets[0].totalStockholdersEquity) {
+        bookValuePerShare = balanceSheets[0].totalStockholdersEquity / sharesOutstanding;
+      }
+    }
+    console.log(`📚 Book Value Per Share for ${ticker}: ${bookValuePerShare}`);
+    
     const currentRevenue = incomeStatements && incomeStatements.length > 0 ? safeValue(incomeStatements[0].revenue) : null;
     const sharesOutstanding = safeValue(companyProfile.mktCap / currentPrice);
 
