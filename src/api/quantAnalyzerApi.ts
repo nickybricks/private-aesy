@@ -172,6 +172,7 @@ export interface QuantAnalysisResult {
   currency: string;
   intrinsicValue?: number | null; // Display only, not evaluated
   marginOfSafety?: number | null;
+  bookValuePerShare?: number | null; // Book value per share
   originalValues?: {
     roe?: number | null;
     roic?: number | null;
@@ -636,6 +637,7 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
       currency: stockCurrency,
       intrinsicValue: intrinsicValueCalc,
       marginOfSafety: marginOfSafety,
+      bookValuePerShare: bookValuePerShare,
       originalValues: updatedOriginalValues
     };
   } catch (error) {
