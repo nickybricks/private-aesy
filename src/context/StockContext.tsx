@@ -78,22 +78,44 @@ export function StockProvider({ children }: StockProviderProps) {
     
     const updated = JSON.parse(JSON.stringify(valuationScores)); // Deep clone
     
+    console.log('🔍 BEFORE update - Valuation Scores:', {
+      originalTotal: valuationScores.totalScore,
+      originalScores: {
+        intrinsicValue: valuationScores.scores.intrinsicValueDiscount.score,
+        peterLynch: valuationScores.scores.peterLynchDiscount.score,
+        peRatio: valuationScores.scores.peRatio.score,
+        dividend: valuationScores.scores.dividendYield.score,
+        priceToBook: valuationScores.scores.priceToBook.score,
+        priceToCashFlow: valuationScores.scores.priceToCashFlow.score,
+      }
+    });
+    
     if (valuationCardScores.peRatio) {
+      console.log('📝 Updating PE Ratio from', updated.scores.peRatio.score, 'to', valuationCardScores.peRatio.score);
       updated.scores.peRatio.score = valuationCardScores.peRatio.score;
     }
     if (valuationCardScores.dividendYield) {
+      console.log('📝 Updating Dividend from', updated.scores.dividendYield.score, 'to', valuationCardScores.dividendYield.score);
       updated.scores.dividendYield.score = valuationCardScores.dividendYield.score;
     }
     
     // Recalculate total score
-    const sum = (Object.values(updated.scores) as Array<{ score: number; maxScore: number }>)
-      .reduce((acc, s) => acc + (typeof s.score === 'number' ? s.score : 0), 0);
+    const allScores = Object.values(updated.scores) as Array<{ score: number; maxScore: number }>;
+    const sum = allScores.reduce((acc, s) => acc + (typeof s.score === 'number' ? s.score : 0), 0);
     updated.totalScore = Math.round(sum * 100) / 100;
     
-    console.log('🔄 Updated valuation scores with card scores:', {
-      peRatio: valuationCardScores.peRatio?.score,
-      dividendYield: valuationCardScores.dividendYield?.score,
-      newTotal: updated.totalScore
+    console.log('✅ AFTER update - Valuation Scores:', {
+      newTotal: updated.totalScore,
+      updatedScores: {
+        intrinsicValue: updated.scores.intrinsicValueDiscount.score,
+        peterLynch: updated.scores.peterLynchDiscount.score,
+        peRatio: updated.scores.peRatio.score,
+        dividend: updated.scores.dividendYield.score,
+        priceToBook: updated.scores.priceToBook.score,
+        priceToCashFlow: updated.scores.priceToCashFlow.score,
+      },
+      calculatedSum: sum,
+      individualScores: allScores.map(s => s.score)
     });
     
     setValuationScores(updated);
@@ -300,7 +322,19 @@ export function StockProvider({ children }: StockProviderProps) {
                     console.error('Error calculating valuation scores:', error);
                     return;
                   }
-                  console.log('✅ Valuation scores calculated:', data);
+                  console.log('✅ Valuation scores calculated (INITIAL from Edge Function):', {
+                    totalScore: data.totalScore,
+                    maxTotalScore: data.maxTotalScore,
+                    individualScores: {
+                      intrinsicValue: data.scores.intrinsicValueDiscount,
+                      peterLynch: data.scores.peterLynchDiscount,
+                      peRatio: data.scores.peRatio,
+                      dividend: data.scores.dividendYield,
+                      priceToBook: data.scores.priceToBook,
+                      priceToCashFlow: data.scores.priceToCashFlow,
+                    },
+                    calculatedSum: Object.values(data.scores).reduce((sum: number, s: any) => sum + s.score, 0)
+                  });
                   setValuationScores(data);
                 })
                 .catch((err) => {

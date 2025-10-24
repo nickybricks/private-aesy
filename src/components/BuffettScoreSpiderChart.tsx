@@ -1,5 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+interface CardScore {
+  name: string;
+  score: number;
+  maxScore: number;
+}
 
 interface BuffettScoreSpiderChartProps {
   onTabChange?: (tab: string) => void;
@@ -8,6 +15,12 @@ interface BuffettScoreSpiderChartProps {
   valuationScore?: number; // 0-20
   growthScore?: number; // 0-20
   aiAnalysisScore?: number; // 0-20
+  // Detailed card scores for each category
+  profitabilityCards?: CardScore[];
+  financialStrengthCards?: CardScore[];
+  valuationCards?: CardScore[];
+  growthCards?: CardScore[];
+  aiAnalysisCards?: CardScore[];
 }
 
 // Helper function to create smooth curved path using Catmull-Rom splines
@@ -50,15 +63,21 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
   financialStrengthScore = 0,
   valuationScore = 0,
   growthScore = 0,
-  aiAnalysisScore = 0
+  aiAnalysisScore = 0,
+  profitabilityCards = [],
+  financialStrengthCards = [],
+  valuationCards = [],
+  growthCards = [],
+  aiAnalysisCards = []
 }) => {
+  const [hoveredSlice, setHoveredSlice] = useState<number | null>(null);
   // Real data for all criteria including KI Analysis
   const data = [
-    { criterion: 'Profitabilität', score: profitabilityScore, tabValue: 'profitability' },
-    { criterion: 'Fin. Stärke', score: financialStrengthScore, tabValue: 'financial-strength' },
-    { criterion: 'Bewertung', score: valuationScore, tabValue: 'valuation' },
-    { criterion: 'Growth', score: growthScore, tabValue: 'growth-rank' },
-    { criterion: 'KI Analyse', score: aiAnalysisScore, tabValue: 'ai-analysis' },
+    { criterion: 'Profitabilität', score: profitabilityScore, tabValue: 'profitability', cards: profitabilityCards },
+    { criterion: 'Fin. Stärke', score: financialStrengthScore, tabValue: 'financial-strength', cards: financialStrengthCards },
+    { criterion: 'Bewertung', score: valuationScore, tabValue: 'valuation', cards: valuationCards },
+    { criterion: 'Growth', score: growthScore, tabValue: 'growth-rank', cards: growthCards },
+    { criterion: 'KI Analyse', score: aiAnalysisScore, tabValue: 'ai-analysis', cards: aiAnalysisCards },
   ];
 
   const handleLabelClick = (tabValue: string) => {
@@ -195,7 +214,9 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
                         Z
                       `;
                       
-                      return (
+                      const hasCards = item.cards && item.cards.length > 0;
+                      
+                      const sliceElement = (
                         <path
                           key={`slice-${index}`}
                           d={pathData}
@@ -205,8 +226,48 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
                             e.stopPropagation();
                             handleLabelClick(item.tabValue);
                           }}
+                          onMouseEnter={() => setHoveredSlice(index)}
+                          onMouseLeave={() => setHoveredSlice(null)}
                         />
                       );
+                      
+                      if (hasCards) {
+                        return (
+                          <Popover key={`slice-${index}`} open={hoveredSlice === index}>
+                            <PopoverTrigger asChild>
+                              {sliceElement}
+                            </PopoverTrigger>
+                            <PopoverContent 
+                              className="w-72 p-3"
+                              side="right"
+                              align="center"
+                              onOpenAutoFocus={(e) => e.preventDefault()}
+                            >
+                              <div className="space-y-2">
+                                <h4 className="font-semibold text-sm border-b pb-1">{item.criterion}</h4>
+                                <div className="text-xs text-muted-foreground mb-2">
+                                  Gesamt: <span className="font-bold text-foreground">{item.score.toFixed(1)}/20</span>
+                                </div>
+                                <div className="space-y-1.5">
+                                  {item.cards.map((card, cardIdx) => (
+                                    <div key={cardIdx} className="flex justify-between items-center py-1 border-b last:border-b-0">
+                                      <span className="text-xs">{card.name}</span>
+                                      <span className="text-xs font-semibold">
+                                        {card.score.toFixed(1)}/{card.maxScore}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground mt-2 pt-2 border-t">
+                                  Klicken für Details
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        );
+                      }
+                      
+                      return sliceElement;
                     })}
                     
                     {/* The actual radar shape on top */}

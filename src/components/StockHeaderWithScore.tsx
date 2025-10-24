@@ -43,6 +43,46 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
   // Total score (max 100 = 5 × 20)
   const totalScore = profitabilityScore + financialStrengthScore + valuationScore + growthScore + aiAnalysisScore;
 
+  // Prepare detailed card scores for tooltips
+  const profitabilityCards = profitabilityScores?.scores ? [
+    { name: 'ROIC', score: profitabilityScores.scores.roic.score, maxScore: profitabilityScores.scores.roic.maxScore },
+    { name: 'Operating Margin', score: profitabilityScores.scores.operatingMargin.score, maxScore: profitabilityScores.scores.operatingMargin.maxScore },
+    { name: 'Net Margin', score: profitabilityScores.scores.netMargin.score, maxScore: profitabilityScores.scores.netMargin.maxScore },
+    { name: 'Jahre Profitabel', score: profitabilityScores.scores.years.score, maxScore: profitabilityScores.scores.years.maxScore },
+    { name: 'ROE', score: profitabilityScores.scores.roe.score, maxScore: profitabilityScores.scores.roe.maxScore },
+    { name: 'ROA', score: profitabilityScores.scores.roa.score, maxScore: profitabilityScores.scores.roa.maxScore },
+  ] : [];
+
+  const financialStrengthCards = financialStrengthScores?.scores ? [
+    { name: 'Net Debt/EBITDA', score: financialStrengthScores.scores.netDebtToEbitda.score, maxScore: financialStrengthScores.scores.netDebtToEbitda.maxScore },
+    { name: 'Interest Coverage', score: financialStrengthScores.scores.interestCoverage.score, maxScore: financialStrengthScores.scores.interestCoverage.maxScore },
+    { name: 'Debt/Assets', score: financialStrengthScores.scores.debtToAssets.score, maxScore: financialStrengthScores.scores.debtToAssets.maxScore },
+    { name: 'Current Ratio', score: financialStrengthScores.scores.currentRatio.score, maxScore: financialStrengthScores.scores.currentRatio.maxScore },
+  ] : [];
+
+  const valuationCards = valuationScores?.scores ? [
+    { name: 'Intrinsic Value', score: valuationScores.scores.intrinsicValueDiscount.score, maxScore: valuationScores.scores.intrinsicValueDiscount.maxScore },
+    { name: 'Peter Lynch', score: valuationScores.scores.peterLynchDiscount.score, maxScore: valuationScores.scores.peterLynchDiscount.maxScore },
+    { name: 'KGV (P/E)', score: valuationScores.scores.peRatio.score, maxScore: valuationScores.scores.peRatio.maxScore },
+    { name: 'Dividende', score: valuationScores.scores.dividendYield.score, maxScore: valuationScores.scores.dividendYield.maxScore },
+    { name: 'Price/Book', score: valuationScores.scores.priceToBook.score, maxScore: valuationScores.scores.priceToBook.maxScore },
+    { name: 'Price/FCF', score: valuationScores.scores.priceToCashFlow.score, maxScore: valuationScores.scores.priceToCashFlow.maxScore },
+  ] : [];
+
+  const growthCards = growthScores?.scores ? [
+    { name: 'Revenue Growth', score: growthScores.scores.revenue.score, maxScore: growthScores.scores.revenue.maxScore },
+    { name: 'EBITDA Growth', score: growthScores.scores.ebitda.score, maxScore: growthScores.scores.ebitda.maxScore },
+    { name: 'EPS w/o NRI Growth', score: growthScores.scores.epsWoNri.score, maxScore: growthScores.scores.epsWoNri.maxScore },
+    { name: 'FCF Growth', score: growthScores.scores.fcf.score, maxScore: growthScores.scores.fcf.maxScore },
+  ] : [];
+
+  const aiAnalysisCards = qualitativeScores?.criteria ? 
+    qualitativeScores.criteria.map(c => ({ 
+      name: c.title, 
+      score: c.score, 
+      maxScore: c.maxScore 
+    })) : [];
+
   const getScoreColor = (score: number) => {
     if (score >= 95) return 'text-green-700';
     if (score >= 85) return 'text-green-600';
@@ -80,6 +120,11 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
             valuationScore={valuationScore}
             growthScore={growthScore}
             aiAnalysisScore={aiAnalysisScore}
+            profitabilityCards={profitabilityCards}
+            financialStrengthCards={financialStrengthCards}
+            valuationCards={valuationCards}
+            growthCards={growthCards}
+            aiAnalysisCards={aiAnalysisCards}
           />
         </div>
       </div>
