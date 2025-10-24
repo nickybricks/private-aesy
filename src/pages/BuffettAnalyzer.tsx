@@ -129,6 +129,22 @@ const IndexContent: React.FC = () => {
               </div>
             )}
             
+            {/* Hidden Score Pre-Loaders - Calculate scores immediately */}
+            {stockInfo && financialMetrics && (
+              <div className="hidden" aria-hidden="true">
+                <PriceToMedianPSChart
+                  ticker={stockInfo.ticker}
+                  currentPrice={stockInfo.price}
+                  sector={stockInfo.sector}
+                  currency={stockInfo.currency}
+                  onDiscountCalculated={(discount, score) => {
+                    console.log('🎯 Pre-loader: P/S Score berechnet', { discount, score });
+                    setValuationCardScore('priceToMedianPS', score, 4);
+                  }}
+                />
+              </div>
+            )}
+            
             {/* Tab Navigation */}
             {stockInfo && (
               <div className="mb-6 sm:mb-8 -mx-3 sm:mx-0">

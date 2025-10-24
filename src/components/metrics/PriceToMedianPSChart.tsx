@@ -18,6 +18,7 @@ interface PriceToMedianPSChartProps {
   sector?: string;
   currency?: string;
   onDiscountCalculated?: (discount: number, score: number) => void;
+  skipScoreUpdate?: boolean;
 }
 
 type TimeRange = '1Y' | '3Y' | '5Y' | '10Y' | 'MAX';
@@ -68,7 +69,8 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
   currentPrice,
   sector = 'Default',
   currency = 'USD',
-  onDiscountCalculated
+  onDiscountCalculated,
+  skipScoreUpdate = false
 }) => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('10Y');
   const [lookbackPeriod, setLookbackPeriod] = useState<LookbackPeriod>('5Y');
@@ -318,16 +320,19 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
   // Notify parent component when discount/score changes (with ref to prevent loops)
   const lastReportedScoreRef = useRef<{ discount: number; score: number } | null>(null);
   useEffect(() => {
-    if (onDiscountCalculated && !isLoading && !hasInsufficientData) {
-      // Only call if values actually changed
-      if (!lastReportedScoreRef.current || 
-          lastReportedScoreRef.current.discount !== discount || 
-          lastReportedScoreRef.current.score !== score) {
-        lastReportedScoreRef.current = { discount, score };
-        onDiscountCalculated(discount, score);
-      }
+    // Skip score update if explicitly disabled (e.g., in ValuationTab where pre-loader already calculated)
+    if (skipScoreUpdate || !onDiscountCalculated || isLoading || hasInsufficientData) {
+      return;
     }
-  }, [discount, score, isLoading, hasInsufficientData, onDiscountCalculated]);
+    
+    // Only call if values actually changed
+    if (!lastReportedScoreRef.current || 
+        lastReportedScoreRef.current.discount !== discount || 
+        lastReportedScoreRef.current.score !== score) {
+      lastReportedScoreRef.current = { discount, score };
+      onDiscountCalculated(discount, score);
+    }
+  }, [discount, score, isLoading, hasInsufficientData, onDiscountCalculated, skipScoreUpdate]);
 
   // Get color based on score
   const getColorByScore = (score: number, maxScore: number): string => {

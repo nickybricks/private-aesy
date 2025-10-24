@@ -316,6 +316,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
         currentPrice={currentPrice}
         currency="USD"
         onDiscountCalculated={handleDiscountCalculated}
+        skipScoreUpdate={true}
       />
 
     </div>
