@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface ValuationInput {
-  // Intrinsic Value Discount (max 5 points)
+  // Intrinsic Value Discount (max 1 point)
   fairValuePerShare: number | null;
   currentPrice: number;
   sector: string;
@@ -33,6 +33,9 @@ interface ValuationInput {
   // Price to Cash Flow (max 4 points)
   fcfPerShare: number | null;
   historicalFCF: Array<{ year: string; value: number }>;
+  
+  // Price to Median P/S (max 4 points)
+  priceToMedianPSDiscount: number | null;
 }
 
 interface ScoreResult {
@@ -48,6 +51,7 @@ interface ValuationScoresResult {
     dividendYield: ScoreResult;
     priceToBook: ScoreResult;
     priceToCashFlow: ScoreResult;
+    priceToMedianPS: ScoreResult;
   };
   totalScore: number;
   maxTotalScore: number;
@@ -73,22 +77,19 @@ function getMoSTarget(sector: string): number {
   return 20; // Default
 }
 
-// Calculate Intrinsic Value Discount Score (max 5 points)
+// Calculate Intrinsic Value Discount Score (max 1 point)
 function calculateIntrinsicValueScore(fairValue: number | null, currentPrice: number, sector: string): ScoreResult {
   if (!fairValue || fairValue <= 0) {
-    return { score: 0, maxScore: 5 };
+    return { score: 0, maxScore: 1 };
   }
   
-  const discount = ((fairValue - currentPrice) / currentPrice) * 100;
-  const target = getMoSTarget(sector);
+  const discount = ((fairValue - currentPrice) / fairValue) * 100;
   
   let score = 0;
-  if (discount >= target) score = 5;
-  else if (discount >= 0.67 * target) score = 3;
-  else if (discount >= 0.33 * target) score = 2;
-  else if (discount >= 0) score = 1;
+  if (discount >= 35) score = 1;
+  else if (discount >= 20) score = 0.5;
   
-  return { score, maxScore: 5 };
+  return { score, maxScore: 1 };
 }
 
 // Calculate Peter Lynch Discount Score (max 3 points)
@@ -229,6 +230,21 @@ function calculatePriceToCashFlowScore(
   return { score, maxScore: 4 };
 }
 
+// Calculate Price to Median P/S Score (max 4 points)
+function calculatePriceToMedianPSScore(discount: number | null): ScoreResult {
+  if (discount === null) {
+    return { score: 0, maxScore: 4 };
+  }
+  
+  let score = 0;
+  if (discount >= 35) score = 4;
+  else if (discount >= 23) score = 3;
+  else if (discount >= 12) score = 2;
+  else if (discount >= 0) score = 1;
+  
+  return { score, maxScore: 4 };
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -276,15 +292,20 @@ serve(async (req) => {
       input.historicalFCF || []
     );
     
+    const priceToMedianPS = calculatePriceToMedianPSScore(
+      input.priceToMedianPSDiscount
+    );
+    
     // Calculate total score
-    const maxTotalScore = 22; // Sum of all max scores
+    const maxTotalScore = 22; // Sum of all max scores (1+3+3+4+3+4+4)
     const totalScore = 
       intrinsicValueDiscount.score +
       peterLynchDiscount.score +
       peRatio.score +
       dividendYield.score +
       priceToBook.score +
-      priceToCashFlow.score;
+      priceToCashFlow.score +
+      priceToMedianPS.score;
     
     const result: ValuationScoresResult = {
       scores: {
@@ -294,6 +315,7 @@ serve(async (req) => {
         dividendYield,
         priceToBook,
         priceToCashFlow,
+        priceToMedianPS,
       },
       totalScore,
       maxTotalScore,

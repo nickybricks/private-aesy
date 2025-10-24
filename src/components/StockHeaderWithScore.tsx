@@ -67,6 +67,7 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
     { name: 'Dividende', score: valuationScores.scores.dividendYield.score, maxScore: valuationScores.scores.dividendYield.maxScore },
     { name: 'Price/Book', score: valuationScores.scores.priceToBook.score, maxScore: valuationScores.scores.priceToBook.maxScore },
     { name: 'Price/FCF', score: valuationScores.scores.priceToCashFlow.score, maxScore: valuationScores.scores.priceToCashFlow.maxScore },
+    { name: 'Median KUV', score: valuationScores.scores.priceToMedianPS.score, maxScore: valuationScores.scores.priceToMedianPS.maxScore },
   ] : [];
 
   const growthCards = growthScores?.scores ? [

@@ -24,10 +24,10 @@ const calculateCAGR = (startValue: number, endValue: number, years: number): num
 };
 
 const getScoreFromCAGR = (cagr: number): number => {
-  if (cagr >= 12) return 4;
-  if (cagr >= 8) return 3;
+  if (cagr >= 10) return 4;
+  if (cagr >= 7) return 3;
   if (cagr >= 5) return 2;
-  if (cagr >= 2) return 1;
+  if (cagr >= 3) return 1;
   return 0;
 };
 

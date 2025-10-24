@@ -87,6 +87,7 @@ export function StockProvider({ children }: StockProviderProps) {
         dividend: valuationScores.scores.dividendYield.score,
         priceToBook: valuationScores.scores.priceToBook.score,
         priceToCashFlow: valuationScores.scores.priceToCashFlow.score,
+        priceToMedianPS: valuationScores.scores.priceToMedianPS.score,
       }
     });
     
@@ -113,6 +114,7 @@ export function StockProvider({ children }: StockProviderProps) {
         dividend: updated.scores.dividendYield.score,
         priceToBook: updated.scores.priceToBook.score,
         priceToCashFlow: updated.scores.priceToCashFlow.score,
+        priceToMedianPS: updated.scores.priceToMedianPS.score,
       },
       calculatedSum: sum,
       individualScores: allScores.map(s => s.score)
@@ -297,6 +299,9 @@ export function StockProvider({ children }: StockProviderProps) {
               const currentPE = metricsData.historicalData?.peRatioWeekly?.[metricsData.historicalData.peRatioWeekly.length - 1]?.stockPE || null;
               const industryPE = metricsData.historicalData?.peRatioWeekly?.[metricsData.historicalData.peRatioWeekly.length - 1]?.industryPE || null;
               
+              // Price to Median P/S discount - TODO: Calculate or retrieve from PriceToMedianPSChart
+              const priceToMedianPSDiscount = null;
+              
               supabase.functions.invoke('calculate-valuation-scores', {
                 body: {
                   fairValuePerShare: valuation.fairValuePerShare,
@@ -315,6 +320,7 @@ export function StockProvider({ children }: StockProviderProps) {
                   bookValuePerShare: valuation.assumptions?.tangibleBookPerShare || null,
                   fcfPerShare,
                   historicalFCF: metricsData.historicalData?.freeCashFlow || [],
+                  priceToMedianPSDiscount,
                 }
               })
                 .then(({ data, error }) => {
@@ -332,6 +338,7 @@ export function StockProvider({ children }: StockProviderProps) {
                       dividend: data.scores.dividendYield,
                       priceToBook: data.scores.priceToBook,
                       priceToCashFlow: data.scores.priceToCashFlow,
+                      priceToMedianPS: data.scores.priceToMedianPS,
                     },
                     calculatedSum: Object.values(data.scores).reduce((sum: number, s: any) => sum + s.score, 0)
                   });

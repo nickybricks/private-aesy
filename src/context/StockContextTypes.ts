@@ -193,6 +193,7 @@ export interface ValuationScores {
     dividendYield: ScoreResult;
     priceToBook: ScoreResult;
     priceToCashFlow: ScoreResult;
+    priceToMedianPS: ScoreResult;
   };
   totalScore: number;
   maxTotalScore: number;
