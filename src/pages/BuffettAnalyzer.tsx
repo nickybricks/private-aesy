@@ -326,10 +326,10 @@ const IndexContent: React.FC = () => {
               )}
               
               {/* Price to Book Card */}
-              {valuationData?.assumptions?.tangibleBookPerShare && (
+              {financialMetrics?.bookValuePerShare && (
                 <PriceToBookCard
                   currentPrice={stockInfo.price}
-                  bookValuePerShare={valuationData.assumptions.tangibleBookPerShare}
+                  bookValuePerShare={financialMetrics.bookValuePerShare}
                   historicalPrices={financialMetrics?.historicalData?.peRatioWeekly?.map(pe => {
                     const eps = financialMetrics.eps || 1;
                     const price = pe.stockPE * (typeof eps === 'number' ? eps : 1);
