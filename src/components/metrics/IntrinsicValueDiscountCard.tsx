@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Info, TrendingUp, TrendingDown } from 'lucide-react';
@@ -52,20 +52,24 @@ export const IntrinsicValueDiscountCard: React.FC<IntrinsicValueDiscountCardProp
   const [selectedRange, setSelectedRange] = useState<TimeRange>('1Y');
   const [priceData, setPriceData] = useState<PriceData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const hasLoggedRef = useRef<string | null>(null);
 
   // Fetch historical price data
   useEffect(() => {
     const fetchData = async () => {
       if (!ticker) return;
       
-      console.log('💰 IntrinsicValueDiscountCard:', {
-        ticker,
-        currentPrice,
-        fairValue,
-        currency,
-        reportedCurrency: 'UNKNOWN - needs to be passed as prop',
-        conversionApplied: false
-      });
+      if (hasLoggedRef.current !== ticker) {
+        hasLoggedRef.current = ticker;
+        console.log('💰 IntrinsicValueDiscountCard:', {
+          ticker,
+          currentPrice,
+          fairValue,
+          currency,
+          reportedCurrency: 'UNKNOWN - needs to be passed as prop',
+          conversionApplied: false
+        });
+      }
       
       setIsLoading(true);
       

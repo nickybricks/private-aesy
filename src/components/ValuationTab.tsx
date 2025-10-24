@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
   const [valuationData, setValuationData] = useState<any>(null);
   const { toast } = useToast();
   const { valuationData: contextValuationData } = useStock();
+  const hasLoggedRef = useRef<string | null>(null);
 
   // Use context data if available and matches current mode
   useEffect(() => {
@@ -79,16 +80,22 @@ export const ValuationTab = ({ ticker, currentPrice }: ValuationTabProps) => {
     fairValue: valuationData.fairValuePerShare,
   };
 
-  console.log('💰 ValuationTab received data:', {
-    ticker,
-    mode: selectedMode,
-    fairValue: data.fairValue,
-    currentPrice,
-    startValue: data.startValue,
-    currency: 'USD (hardcoded)',
-    reportedCurrency: valuationData.reportedCurrency || 'UNKNOWN - needs to be added to edge function response',
-    warnings: valuationData.warnings
-  });
+  useEffect(() => {
+    const logKey = `${ticker}-${selectedMode}`;
+    if (hasLoggedRef.current === logKey) return;
+    hasLoggedRef.current = logKey;
+    
+    console.log('💰 ValuationTab received data:', {
+      ticker,
+      mode: selectedMode,
+      fairValue: data.fairValue,
+      currentPrice,
+      startValue: data.startValue,
+      currency: 'USD (hardcoded)',
+      reportedCurrency: valuationData.reportedCurrency || 'UNKNOWN - needs to be added to edge function response',
+      warnings: valuationData.warnings
+    });
+  }, [ticker, selectedMode, data.fairValue, currentPrice, data.startValue, valuationData.reportedCurrency, valuationData.warnings]);
   
   const marginOfSafety = valuationData.marginOfSafetyPct;
   const warnings = valuationData.warnings || [];

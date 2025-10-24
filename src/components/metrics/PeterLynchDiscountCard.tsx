@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -79,6 +79,7 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
   const [selectedRange, setSelectedRange] = useState<TimeRange>('1Y');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasLoggedRef = useRef<string | null>(null);
   
   const [quarterlyData, setQuarterlyData] = useState<QuarterlyData[]>([]);
   const [annualData, setAnnualData] = useState<AnnualData[]>([]);
@@ -89,13 +90,16 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
     const fetchData = async () => {
       if (!ticker) return;
       
-      console.log('💰 PeterLynchDiscountCard:', {
-        ticker,
-        currentPrice,
-        currency,
-        reportedCurrency: 'UNKNOWN - needs to be passed as prop',
-        conversionApplied: false
-      });
+      if (hasLoggedRef.current !== ticker) {
+        hasLoggedRef.current = ticker;
+        console.log('💰 PeterLynchDiscountCard:', {
+          ticker,
+          currentPrice,
+          currency,
+          reportedCurrency: 'UNKNOWN - needs to be passed as prop',
+          conversionApplied: false
+        });
+      }
       
       setIsLoading(true);
       setError(null);

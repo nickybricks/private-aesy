@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Info, TrendingUp, TrendingDown } from 'lucide-react';
@@ -77,20 +77,24 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
   const [currentRPS, setCurrentRPS] = useState<number>(0);
   const [currentPS, setCurrentPS] = useState<number>(0);
   const [hasInsufficientData, setHasInsufficientData] = useState(false);
+  const hasLoggedRef = useRef<string | null>(null);
 
   // Fetch and calculate P/S data
   useEffect(() => {
     const fetchData = async () => {
       if (!ticker) return;
       
-      console.log('💰 PriceToMedianPSChart:', {
-        ticker,
-        currentPrice,
-        currency,
-        sector,
-        reportedCurrency: 'UNKNOWN - needs to be passed as prop',
-        conversionApplied: false
-      });
+      if (hasLoggedRef.current !== ticker) {
+        hasLoggedRef.current = ticker;
+        console.log('💰 PriceToMedianPSChart:', {
+          ticker,
+          currentPrice,
+          currency,
+          sector,
+          reportedCurrency: 'UNKNOWN - needs to be passed as prop',
+          conversionApplied: false
+        });
+      }
       
       setIsLoading(true);
       setHasInsufficientData(false);

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Info, TrendingUp, TrendingDown } from 'lucide-react';
@@ -33,14 +33,21 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
   sector = 'Default'
 }) => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>('5Y');
+  const hasLoggedRef = useRef<string | null>(null);
 
-  console.log('💰 PriceToCashFlowCard:', {
-    currentPrice,
-    fcfPerShare,
-    currency,
-    reportedCurrency: 'UNKNOWN - needs to be passed as prop',
-    conversionApplied: false
-  });
+  useEffect(() => {
+    const logKey = `${currentPrice}-${fcfPerShare}`;
+    if (hasLoggedRef.current === logKey) return;
+    hasLoggedRef.current = logKey;
+    
+    console.log('💰 PriceToCashFlowCard:', {
+      currentPrice,
+      fcfPerShare,
+      currency,
+      reportedCurrency: 'UNKNOWN - needs to be passed as prop',
+      conversionApplied: false
+    });
+  }, [currentPrice, fcfPerShare, currency]);
 
   // Calculate P/FCF ratio
   const priceToCashFlow = useMemo(() => {
