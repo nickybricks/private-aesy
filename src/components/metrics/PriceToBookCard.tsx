@@ -38,6 +38,17 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
     return currentPrice / bookValuePerShare;
   }, [currentPrice, bookValuePerShare]);
 
+  // Logging for debugging
+  console.info('📊 PriceToBookCard:', {
+    currentPrice,
+    bookValuePerShare,
+    priceToBook,
+    currency,
+    sector,
+    hasHistoricalPrices: historicalPrices.length > 0,
+    hasHistoricalBookValue: historicalBookValue.length > 0
+  });
+
   // Calculate score based on P/B ratio
   const getScore = (pb: number | null): number => {
     if (pb === null || !bookValuePerShare || bookValuePerShare <= 0) return 0;
