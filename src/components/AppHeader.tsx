@@ -101,29 +101,35 @@ const AppHeader: React.FC = () => {
         </div>
 
         {/* Profile Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <User className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={() => navigate('/watchlists')}>
-              <List className="h-4 w-4 mr-2" />
-              Watchlists
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled className="opacity-50">
-              <Briefcase className="h-4 w-4 mr-2" />
-              Portfolios
-              <Badge variant="secondary" className="ml-auto text-[10px]">Soon</Badge>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Abmelden
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="default" size="icon" className="w-10 h-10 rounded-full bg-primary shrink-0">
+                <User className="h-5 w-5 text-primary-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => navigate('/watchlists')}>
+                <List className="h-4 w-4 mr-2" />
+                Watchlists
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled className="opacity-50">
+                <Briefcase className="h-4 w-4 mr-2" />
+                Portfolios
+                <Badge variant="secondary" className="ml-auto text-[10px]">Soon</Badge>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => signOut()}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Abmelden
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button variant="default" onClick={() => navigate('/auth')}>
+            Anmelden
+          </Button>
+        )}
       </div>
       
       {/* Mobile Layout */}
@@ -148,16 +154,17 @@ const AppHeader: React.FC = () => {
         </div>
         
         {/* Profile Button - Rechts (blauer Hintergrund!) */}
-        <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-          <DrawerTrigger asChild>
-            <Button 
-              variant="default" 
-              size="icon" 
-              className="w-10 h-10 rounded-full bg-primary shrink-0 btn-no-mobile-full"
-            >
-              <User className="h-5 w-5 text-primary-foreground" />
-            </Button>
-          </DrawerTrigger>
+        {user ? (
+          <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <DrawerTrigger asChild>
+              <Button 
+                variant="default" 
+                size="icon" 
+                className="w-10 h-10 rounded-full bg-primary shrink-0 btn-no-mobile-full"
+              >
+                <User className="h-5 w-5 text-primary-foreground" />
+              </Button>
+            </DrawerTrigger>
           
           <DrawerContent className="h-[90vh]">
             {/* Fullscreen Menü mit Wischgeste */}
@@ -228,6 +235,16 @@ const AppHeader: React.FC = () => {
             </div>
           </DrawerContent>
         </Drawer>
+        ) : (
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={() => navigate('/auth')}
+            className="shrink-0"
+          >
+            Anmelden
+          </Button>
+        )}
       </div>
     </header>
   );
