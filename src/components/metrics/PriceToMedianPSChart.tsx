@@ -626,7 +626,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
                 onClick={() => setLookbackPeriod(period)}
                 className="text-xs h-7 px-2.5"
               >
-                {period}
+                {period.replace('Y', 'J')}
               </Button>
             ))}
           </div>
@@ -644,7 +644,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
                 onClick={() => setSelectedRange(range)}
                 className="text-xs h-7 px-2.5"
               >
-                {range}
+                {range === 'MAX' ? 'MAX' : range.replace('Y', 'J')}
               </Button>
             ))}
           </div>
