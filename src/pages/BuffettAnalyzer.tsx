@@ -390,8 +390,6 @@ const IndexContent: React.FC = () => {
                   
                   <TabsContent value="growth-rank" className="mt-4 sm:mt-6">
                     <div className="space-y-6">
-                      <h2 className="text-2xl font-semibold">Growth Rank</h2>
-                      
                       {financialMetrics?.historicalData?.revenue && (
                         <RevenueGrowthCard 
                           historicalRevenue={financialMetrics.historicalData.revenue}
