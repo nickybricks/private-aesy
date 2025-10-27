@@ -313,7 +313,7 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
             onClick={() => setTimeRange(range)}
             className="text-xs h-7 px-2.5 whitespace-nowrap"
           >
-            {range}
+            {range === 'MAX' ? 'MAX' : range.replace('Y', 'J')}
           </Button>
         ))}
       </div>

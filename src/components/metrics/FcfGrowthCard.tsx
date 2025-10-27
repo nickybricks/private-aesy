@@ -301,7 +301,7 @@ export const FcfGrowthCard: React.FC<FcfGrowthCardProps> = ({ historicalFcf }) =
             onClick={() => setTimeRange(range)}
             className="text-xs h-7 px-2.5 whitespace-nowrap"
           >
-            {range}
+            {range === 'MAX' ? 'MAX' : range.replace('Y', 'J')}
           </Button>
         ))}
       </div>
