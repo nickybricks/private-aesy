@@ -27,6 +27,8 @@ interface QuarterData {
   eps?: number;
   epsdiluted?: number;
   interestExpense?: number;
+  interestIncome?: number;
+  netInterestIncome?: number;
   incomeBeforeTax?: number;
   incomeTaxExpense?: number;
   unusualItems?: number;
@@ -34,6 +36,24 @@ interface QuarterData {
   impairmentOfAssets?: number;
   restructuringCharges?: number;
   depreciationAndAmortization?: number;
+  grossProfit?: number;
+  costOfRevenue?: number;
+  researchAndDevelopmentExpenses?: number;
+  generalAndAdministrativeExpenses?: number;
+  sellingAndMarketingExpenses?: number;
+  sellingGeneralAndAdministrativeExpenses?: number;
+  otherExpenses?: number;
+  operatingExpenses?: number;
+  costAndExpenses?: number;
+  nonOperatingIncomeExcludingInterest?: number;
+  netIncomeFromContinuingOperations?: number;
+  netIncomeFromDiscontinuedOperations?: number;
+  otherAdjustmentsToNetIncome?: number;
+  netIncomeDeductions?: number;
+  bottomLineNetIncome?: number;
+  fiscalYear?: string;
+  filingDate?: string;
+  acceptedDate?: string;
   
   // Balance Sheet
   totalEquity?: number;
@@ -44,6 +64,25 @@ interface QuarterData {
   longTermDebt?: number;
   totalCurrentLiabilities?: number;
   cashAndCashEquivalents?: number;
+  totalStockholdersEquity?: number;
+  retainedEarnings?: number;
+  accumulatedOtherComprehensiveIncomeLoss?: number;
+  totalLiabilities?: number;
+  totalNonCurrentLiabilities?: number;
+  totalNonCurrentAssets?: number;
+  propertyPlantEquipmentNet?: number;
+  goodwill?: number;
+  intangibleAssets?: number;
+  inventory?: number;
+  accountsReceivable?: number;
+  accountsPayable?: number;
+  shortTermInvestments?: number;
+  longTermInvestments?: number;
+  netDebt?: number;
+  commonStock?: number;
+  preferredStock?: number;
+  treasuryStock?: number;
+  minorityInterest?: number;
   
   // Cash Flow
   operatingCashFlow?: number;
@@ -52,6 +91,20 @@ interface QuarterData {
   commonStockRepurchased?: number;
   commonStockIssued?: number;
   dividendsPaid?: number;
+  netCashProvidedByOperatingActivities?: number;
+  netCashUsedForInvestingActivities?: number;
+  netCashUsedProvidedByFinancingActivities?: number;
+  netChangeInCash?: number;
+  stockBasedCompensation?: number;
+  deferredIncomeTax?: number;
+  changeInWorkingCapital?: number;
+  accountsReceivablesChange?: number;
+  inventoryChange?: number;
+  accountsPayablesChange?: number;
+  otherWorkingCapitalChange?: number;
+  otherNonCashItems?: number;
+  debtRepayment?: number;
+  proceedsFromIssuanceOfDebt?: number;
   
   // Shares
   weightedAverageShsOutDil?: number;
@@ -71,6 +124,24 @@ interface QuarterData {
   roce?: number;
   netDebtToEBITDA?: number;
   dividendYield?: number;
+  revenuePerShare?: number;
+  netIncomePerShare?: number;
+  operatingCashFlowPerShare?: number;
+  freeCashFlowPerShare?: number;
+  cashPerShare?: number;
+  tangibleBookValuePerShare?: number;
+  shareholdersEquityPerShare?: number;
+  capexToOperatingCashFlow?: number;
+  capexToRevenue?: number;
+  grahamNumber?: number;
+  workingCapital?: number;
+  tangibleAssetValue?: number;
+  investedCapitalMetric?: number;
+  earningsYield?: number;
+  fcfYield?: number;
+  debtToMarketCap?: number;
+  salesGeneralAndAdministrativeToRevenue?: number;
+  researchAndDevelopmentToRevenue?: number;
   
   // Ratios
   grossProfitMargin?: number;
@@ -92,6 +163,20 @@ interface QuarterData {
   daysOfPayablesOutstanding?: number;
   cashConversionCycle?: number;
   payoutRatio?: number;
+  longTermDebtToCapitalization?: number;
+  totalDebtToCapitalization?: number;
+  cashFlowToDebtRatio?: number;
+  companyEquityMultiplier?: number;
+  priceToFreeCashFlowsRatio?: number;
+  priceToOperatingCashFlowsRatio?: number;
+  operatingCashFlowSalesRatio?: number;
+  freeCashFlowOperatingCashFlowRatio?: number;
+  effectiveTaxRate?: number;
+  pretaxProfitMargin?: number;
+  ebitdaMargin?: number;
+  ebitPerRevenue?: number;
+  operatingCycle?: number;
+  fixedAssetTurnover?: number;
   
   // Raw data
   rawIncome?: any;
@@ -261,17 +346,38 @@ function mergeByFiscalDate(
       });
     }
     const q = quarterMap.get(date)!;
+    // Income Statement - All Fields
     q.netIncome = i.netIncome;
     q.revenue = i.revenue;
-    q.ebit = i.operatingIncome;
+    q.ebit = i.ebit;
     q.ebitda = i.ebitda;
     q.eps = i.eps;
     q.epsdiluted = i.epsdiluted;
     q.interestExpense = i.interestExpense;
+    q.interestIncome = i.interestIncome;
+    q.netInterestIncome = i.netInterestIncome;
     q.incomeBeforeTax = i.incomeBeforeTax;
     q.incomeTaxExpense = i.incomeTaxExpense;
     q.weightedAverageShsOutDil = i.weightedAverageShsOutDil;
     q.depreciationAndAmortization = i.depreciationAndAmortization;
+    q.grossProfit = i.grossProfit;
+    q.costOfRevenue = i.costOfRevenue;
+    q.researchAndDevelopmentExpenses = i.researchAndDevelopmentExpenses;
+    q.generalAndAdministrativeExpenses = i.generalAndAdministrativeExpenses;
+    q.sellingAndMarketingExpenses = i.sellingAndMarketingExpenses;
+    q.sellingGeneralAndAdministrativeExpenses = i.sellingGeneralAndAdministrativeExpenses;
+    q.otherExpenses = i.otherExpenses;
+    q.operatingExpenses = i.operatingExpenses;
+    q.costAndExpenses = i.costAndExpenses;
+    q.nonOperatingIncomeExcludingInterest = i.nonOperatingIncomeExcludingInterest;
+    q.netIncomeFromContinuingOperations = i.netIncomeFromContinuingOperations;
+    q.netIncomeFromDiscontinuedOperations = i.netIncomeFromDiscontinuedOperations;
+    q.otherAdjustmentsToNetIncome = i.otherAdjustmentsToNetIncome;
+    q.netIncomeDeductions = i.netIncomeDeductions;
+    q.bottomLineNetIncome = i.bottomLineNetIncome;
+    q.fiscalYear = i.fiscalYear;
+    q.filingDate = i.filingDate;
+    q.acceptedDate = i.acceptedDate;
     
     // Non-recurring items
     q.unusualItems = i.otherNonOperatingIncomeExpenses;
@@ -285,7 +391,9 @@ function mergeByFiscalDate(
     const date = b.date;
     if (!quarterMap.has(date)) continue;
     const q = quarterMap.get(date)!;
+    // Balance Sheet - All Fields
     q.totalEquity = b.totalStockholdersEquity;
+    q.totalStockholdersEquity = b.totalStockholdersEquity;
     q.totalAssets = b.totalAssets;
     q.totalCurrentAssets = b.totalCurrentAssets;
     q.totalDebt = b.totalDebt;
@@ -293,6 +401,25 @@ function mergeByFiscalDate(
     q.longTermDebt = b.longTermDebt;
     q.totalCurrentLiabilities = b.totalCurrentLiabilities;
     q.cashAndCashEquivalents = b.cashAndCashEquivalents;
+    q.retainedEarnings = b.retainedEarnings;
+    q.accumulatedOtherComprehensiveIncomeLoss = b.accumulatedOtherComprehensiveIncomeLoss;
+    q.totalLiabilities = b.totalLiabilities;
+    q.totalNonCurrentLiabilities = b.totalNonCurrentLiabilities;
+    q.totalNonCurrentAssets = b.totalNonCurrentAssets;
+    q.propertyPlantEquipmentNet = b.propertyPlantEquipmentNet;
+    q.goodwill = b.goodwill;
+    q.intangibleAssets = b.intangibleAssets;
+    q.inventory = b.inventory;
+    q.accountsReceivable = b.netReceivables;
+    q.accountsPayable = b.accountPayables;
+    q.shortTermInvestments = b.shortTermInvestments;
+    q.longTermInvestments = b.longTermInvestments;
+    q.commonStock = b.commonStock;
+    q.preferredStock = b.preferredStock;
+    q.treasuryStock = b.treasuryStock;
+    q.minorityInterest = b.minorityInterest;
+    // Calculate net debt
+    q.netDebt = (b.totalDebt || 0) - (b.cashAndCashEquivalents || 0);
     q.rawBalance = b;
   }
   
@@ -301,12 +428,27 @@ function mergeByFiscalDate(
     const date = c.date;
     if (!quarterMap.has(date)) continue;
     const q = quarterMap.get(date)!;
+    // Cash Flow - All Fields
     q.operatingCashFlow = c.operatingCashFlow;
+    q.netCashProvidedByOperatingActivities = c.netCashProvidedByOperatingActivities;
     q.freeCashFlow = c.freeCashFlow;
     q.capitalExpenditure = c.capitalExpenditure;
     q.commonStockRepurchased = c.commonStockRepurchased;
     q.commonStockIssued = c.commonStockIssued;
     q.dividendsPaid = c.dividendsPaid;
+    q.netCashUsedForInvestingActivities = c.netCashUsedForInvestingActivites;
+    q.netCashUsedProvidedByFinancingActivities = c.netCashUsedProvidedByFinancingActivities;
+    q.netChangeInCash = c.netChangeInCash;
+    q.stockBasedCompensation = c.stockBasedCompensation;
+    q.deferredIncomeTax = c.deferredIncomeTax;
+    q.changeInWorkingCapital = c.changeInWorkingCapital;
+    q.accountsReceivablesChange = c.accountsReceivables;
+    q.inventoryChange = c.inventory;
+    q.accountsPayablesChange = c.accountsPayables;
+    q.otherWorkingCapitalChange = c.otherWorkingCapital;
+    q.otherNonCashItems = c.otherNonCashItems;
+    q.debtRepayment = c.debtRepayment;
+    q.proceedsFromIssuanceOfDebt = c.proceedsFromIssuanceOfDebt;
     q.rawCashflow = c;
   }
   
@@ -315,6 +457,7 @@ function mergeByFiscalDate(
     const date = k.date;
     if (!quarterMap.has(date)) continue;
     const q = quarterMap.get(date)!;
+    // Key Metrics - All Fields
     q.marketCap = k.marketCap;
     q.enterpriseValue = k.enterpriseValue;
     q.peRatio = k.peRatio;
@@ -329,6 +472,24 @@ function mergeByFiscalDate(
     q.roce = k.roce;
     q.netDebtToEBITDA = k.netDebtToEBITDA;
     q.dividendYield = k.dividendYield;
+    q.revenuePerShare = k.revenuePerShare;
+    q.netIncomePerShare = k.netIncomePerShare;
+    q.operatingCashFlowPerShare = k.operatingCashFlowPerShare;
+    q.freeCashFlowPerShare = k.freeCashFlowPerShare;
+    q.cashPerShare = k.cashPerShare;
+    q.tangibleBookValuePerShare = k.tangibleBookValuePerShare;
+    q.shareholdersEquityPerShare = k.shareholdersEquityPerShare;
+    q.capexToOperatingCashFlow = k.capexToOperatingCashFlow;
+    q.capexToRevenue = k.capexToRevenue;
+    q.grahamNumber = k.grahamNumber;
+    q.workingCapital = k.workingCapital;
+    q.tangibleAssetValue = k.tangibleAssetValue;
+    q.investedCapitalMetric = k.investedCapital;
+    q.earningsYield = k.earningsYield;
+    q.fcfYield = k.freeCashFlowYield;
+    q.debtToMarketCap = k.debtToMarketCap;
+    q.salesGeneralAndAdministrativeToRevenue = k.salesGeneralAndAdministrativeToRevenue;
+    q.researchAndDevelopmentToRevenue = k.researchAndDevelopementToRevenue;
     q.rawKeyMetrics = k;
   }
   
@@ -337,6 +498,7 @@ function mergeByFiscalDate(
     const date = r.date;
     if (!quarterMap.has(date)) continue;
     const q = quarterMap.get(date)!;
+    // Ratios - All Fields
     q.grossProfitMargin = r.grossProfitMargin;
     q.operatingProfitMargin = r.operatingProfitMargin;
     q.netProfitMargin = r.netProfitMargin;
@@ -356,6 +518,20 @@ function mergeByFiscalDate(
     q.daysOfPayablesOutstanding = r.daysOfPayablesOutstanding;
     q.cashConversionCycle = r.cashConversionCycle;
     q.payoutRatio = r.payoutRatio;
+    q.longTermDebtToCapitalization = r.longTermDebtToCapitalization;
+    q.totalDebtToCapitalization = r.totalDebtToCapitalization;
+    q.cashFlowToDebtRatio = r.cashFlowToDebtRatio;
+    q.companyEquityMultiplier = r.companyEquityMultiplier;
+    q.priceToFreeCashFlowsRatio = r.priceToFreeCashFlowsRatio;
+    q.priceToOperatingCashFlowsRatio = r.priceToOperatingCashFlowsRatio;
+    q.operatingCashFlowSalesRatio = r.operatingCashFlowSalesRatio;
+    q.freeCashFlowOperatingCashFlowRatio = r.freeCashFlowOperatingCashFlowRatio;
+    q.effectiveTaxRate = r.effectiveTaxRate;
+    q.pretaxProfitMargin = r.pretaxProfitMargin;
+    q.ebitdaMargin = r.ebitdaMargin;
+    q.ebitPerRevenue = r.ebitPerRevenue;
+    q.operatingCycle = r.operatingCycle;
+    q.fixedAssetTurnover = r.fixedAssetTurnover;
     q.rawRatios = r;
   }
   
@@ -498,8 +674,11 @@ serve(async (req) => {
         is_ttm: false,
         reported_currency: q.reportedCurrency,
         fx_rate_to_usd: fxRate,
+        fiscal_year: q.fiscalYear,
+        filing_date: q.filingDate,
+        accepted_date: q.acceptedDate,
         
-        // Income Statement
+        // Income Statement - ALL FIELDS
         net_income: q.netIncome,
         revenue: q.revenue,
         ebit: q.ebit,
@@ -508,15 +687,33 @@ serve(async (req) => {
         eps_diluted: q.epsdiluted,
         eps_wo_nri: epsWoNri,
         interest_expense: q.interestExpense,
+        interest_income: q.interestIncome,
+        net_interest_income: q.netInterestIncome,
         income_before_tax: q.incomeBeforeTax,
         income_tax_expense: q.incomeTaxExpense,
         unusual_items: q.unusualItems,
         goodwill_impairment: q.goodwillImpairment,
         impairment_of_assets: q.impairmentOfAssets,
         restructuring_charges: q.restructuringCharges,
+        gross_profit: q.grossProfit,
+        cost_of_revenue: q.costOfRevenue,
+        research_and_development_expenses: q.researchAndDevelopmentExpenses,
+        general_and_administrative_expenses: q.generalAndAdministrativeExpenses,
+        selling_and_marketing_expenses: q.sellingAndMarketingExpenses,
+        selling_general_and_administrative_expenses: q.sellingGeneralAndAdministrativeExpenses,
+        other_expenses: q.otherExpenses,
+        operating_expenses: q.operatingExpenses,
+        cost_and_expenses: q.costAndExpenses,
+        non_operating_income_excluding_interest: q.nonOperatingIncomeExcludingInterest,
+        net_income_from_continuing_operations: q.netIncomeFromContinuingOperations,
+        net_income_from_discontinued_operations: q.netIncomeFromDiscontinuedOperations,
+        other_adjustments_to_net_income: q.otherAdjustmentsToNetIncome,
+        net_income_deductions: q.netIncomeDeductions,
+        bottom_line_net_income: q.bottomLineNetIncome,
         
-        // Balance Sheet
+        // Balance Sheet - ALL FIELDS
         total_equity: q.totalEquity,
+        total_stockholders_equity: q.totalStockholdersEquity,
         total_assets: q.totalAssets,
         current_assets: q.totalCurrentAssets,
         total_debt: q.totalDebt,
@@ -525,11 +722,43 @@ serve(async (req) => {
         current_liabilities: q.totalCurrentLiabilities,
         cash_and_equivalents: q.cashAndCashEquivalents,
         book_value_per_share: bookValuePerShare,
+        retained_earnings: q.retainedEarnings,
+        accumulated_other_comprehensive_income_loss: q.accumulatedOtherComprehensiveIncomeLoss,
+        total_liabilities: q.totalLiabilities,
+        total_non_current_liabilities: q.totalNonCurrentLiabilities,
+        total_non_current_assets: q.totalNonCurrentAssets,
+        property_plant_equipment_net: q.propertyPlantEquipmentNet,
+        goodwill: q.goodwill,
+        intangible_assets: q.intangibleAssets,
+        inventory: q.inventory,
+        accounts_receivable: q.accountsReceivable,
+        accounts_payable: q.accountsPayable,
+        short_term_investments: q.shortTermInvestments,
+        long_term_investments: q.longTermInvestments,
+        net_debt: q.netDebt,
+        common_stock: q.commonStock,
+        preferred_stock: q.preferredStock,
+        treasury_stock: q.treasuryStock,
+        minority_interest: q.minorityInterest,
         
-        // Cash Flow
+        // Cash Flow - ALL FIELDS
         operating_cash_flow: q.operatingCashFlow,
+        net_cash_provided_by_operating_activities: q.netCashProvidedByOperatingActivities,
         free_cash_flow: q.freeCashFlow,
         capex: q.capitalExpenditure,
+        net_cash_used_for_investing_activities: q.netCashUsedForInvestingActivities,
+        net_cash_used_provided_by_financing_activities: q.netCashUsedProvidedByFinancingActivities,
+        net_change_in_cash: q.netChangeInCash,
+        stock_based_compensation: q.stockBasedCompensation,
+        deferred_income_tax: q.deferredIncomeTax,
+        change_in_working_capital: q.changeInWorkingCapital,
+        accounts_receivables_change: q.accountsReceivablesChange,
+        inventory_change: q.inventoryChange,
+        accounts_payables_change: q.accountsPayablesChange,
+        other_working_capital_change: q.otherWorkingCapitalChange,
+        other_non_cash_items: q.otherNonCashItems,
+        debt_repayment: q.debtRepayment,
+        proceeds_from_issuance_of_debt: q.proceedsFromIssuanceOfDebt,
         
         // Shares
         weighted_avg_shares_diluted: q.weightedAverageShsOutDil,
@@ -539,11 +768,11 @@ serve(async (req) => {
         stock_price_close: price,
         stock_price_date: priceDate,
         
-        // Market Metrics
+        // Market Metrics - ALL FIELDS
         market_cap: q.marketCap,
         enterprise_value: q.enterpriseValue,
         
-        // Valuation Ratios
+        // Valuation Ratios - ALL FIELDS
         pe_ratio: q.peRatio,
         pb_ratio: q.pbRatio,
         ps_ratio: q.psRatio,
@@ -553,29 +782,36 @@ serve(async (req) => {
         ev_to_sales: q.evToSales,
         ev_to_operating_cash_flow: q.evToOperatingCashFlow,
         
-        // Profitability Ratios
+        // Profitability Ratios - ALL FIELDS
         gross_profit_margin: q.grossProfitMargin,
         operating_profit_margin: q.operatingProfitMargin,
         net_profit_margin: q.netProfitMargin,
+        pretax_profit_margin: q.pretaxProfitMargin,
+        ebitda_margin: q.ebitdaMargin,
+        ebit_per_revenue: q.ebitPerRevenue,
         
-        // Return Ratios
+        // Return Ratios - ALL FIELDS
         return_on_assets: q.returnOnAssets,
         return_on_equity: q.returnOnEquity,
         return_on_invested_capital: q.roic,
         return_on_capital_employed: q.roce,
         
-        // Liquidity Ratios
+        // Liquidity Ratios - ALL FIELDS
         current_ratio: q.currentRatio,
         quick_ratio: q.quickRatio,
         cash_ratio: q.cashRatio,
         
-        // Leverage Ratios
+        // Leverage Ratios - ALL FIELDS
         debt_to_equity: q.debtEquityRatio,
         debt_to_assets: q.debtRatio,
         net_debt_to_ebitda: q.netDebtToEBITDA,
         interest_coverage: q.interestCoverage,
+        long_term_debt_to_capitalization: q.longTermDebtToCapitalization,
+        total_debt_to_capitalization: q.totalDebtToCapitalization,
+        cash_flow_to_debt_ratio: q.cashFlowToDebtRatio,
+        company_equity_multiplier: q.companyEquityMultiplier,
         
-        // Efficiency Ratios
+        // Efficiency Ratios - ALL FIELDS
         asset_turnover: q.assetTurnover,
         inventory_turnover: q.inventoryTurnover,
         receivables_turnover: q.receivablesTurnover,
@@ -583,10 +819,39 @@ serve(async (req) => {
         days_inventory_outstanding: q.daysOfInventoryOnHand,
         days_payables_outstanding: q.daysOfPayablesOutstanding,
         cash_conversion_cycle: q.cashConversionCycle,
+        operating_cycle: q.operatingCycle,
+        fixed_asset_turnover: q.fixedAssetTurnover,
         
-        // Shareholder Metrics
+        // Shareholder Metrics - ALL FIELDS
         payout_ratio: q.payoutRatio,
         dividend_yield: q.dividendYield,
+        
+        // Per Share Metrics - ALL FIELDS
+        revenue_per_share: q.revenuePerShare,
+        net_income_per_share: q.netIncomePerShare,
+        operating_cash_flow_per_share: q.operatingCashFlowPerShare,
+        free_cash_flow_per_share: q.freeCashFlowPerShare,
+        cash_per_share: q.cashPerShare,
+        tangible_book_value_per_share: q.tangibleBookValuePerShare,
+        shareholders_equity_per_share: q.shareholdersEquityPerShare,
+        
+        // Additional Metrics - ALL FIELDS
+        capex_to_operating_cash_flow: q.capexToOperatingCashFlow,
+        capex_to_revenue: q.capexToRevenue,
+        graham_number: q.grahamNumber,
+        working_capital: q.workingCapital,
+        tangible_asset_value: q.tangibleAssetValue,
+        invested_capital_metric: q.investedCapitalMetric,
+        earnings_yield: q.earningsYield,
+        fcf_yield: q.fcfYield,
+        debt_to_market_cap: q.debtToMarketCap,
+        sales_general_and_administrative_to_revenue: q.salesGeneralAndAdministrativeToRevenue,
+        research_and_development_to_revenue: q.researchAndDevelopmentToRevenue,
+        price_to_free_cash_flows_ratio: q.priceToFreeCashFlowsRatio,
+        price_to_operating_cash_flows_ratio: q.priceToOperatingCashFlowsRatio,
+        operating_cash_flow_sales_ratio: q.operatingCashFlowSalesRatio,
+        free_cash_flow_operating_cash_flow_ratio: q.freeCashFlowOperatingCashFlowRatio,
+        effective_tax_rate: q.effectiveTaxRate,
         
         // Calculated
         tax_rate: taxRate,
