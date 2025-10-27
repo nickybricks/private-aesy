@@ -62,16 +62,21 @@ serve(async (req) => {
       throw new Error('FMP_API_KEY not configured');
     }
     
-    // Fetch company profile from FMP
-    console.log(`Fetching profile data from FMP for ${ticker}...`);
-    const profileUrl = `https://financialmodelingprep.com/api/v3/profile/${ticker.toUpperCase()}?apikey=${fmpApiKey}`;
-    const profileResponse = await fetch(profileUrl);
+    // Fetch company profile and key metrics from FMP
+    console.log(`Fetching profile and key metrics data from FMP for ${ticker}...`);
+    const [profileResponse, keyMetricsResponse] = await Promise.all([
+      fetch(`https://financialmodelingprep.com/api/v3/profile/${ticker.toUpperCase()}?apikey=${fmpApiKey}`),
+      fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${ticker.toUpperCase()}?apikey=${fmpApiKey}`)
+    ]);
     
     if (!profileResponse.ok) {
       throw new Error(`FMP API error: ${profileResponse.status} ${profileResponse.statusText}`);
     }
     
-    const profileData = await profileResponse.json();
+    const [profileData, keyMetricsData] = await Promise.all([
+      profileResponse.json(),
+      keyMetricsResponse.ok ? keyMetricsResponse.json() : null
+    ]);
     
     if (!profileData || profileData.length === 0) {
       return new Response(
@@ -81,7 +86,16 @@ serve(async (req) => {
     }
     
     const profile = profileData[0];
+    const keyMetrics = keyMetricsData?.[0];
     console.log(`Fetched profile data for ${profile.companyName}`);
+    
+    // Get shares outstanding from key metrics if not in profile
+    const sharesOutstanding = profile.sharesOutstanding || keyMetrics?.numberOfShares || null;
+    
+    // Calculate float shares if we have shares outstanding and institutional holdings
+    // Note: FMP doesn't directly provide float, so we'll leave it null for now
+    // It can be calculated as: shares_outstanding * (1 - insider_ownership_percentage)
+    const floatShares = profile.floatShares || null;
     
     // Prepare company profile record
     const profileRecord = {
@@ -99,12 +113,12 @@ serve(async (req) => {
       ipo_date: profile.ipoDate || null,
       isin: profile.isin,
       cusip: profile.cusip,
-      shares_outstanding: profile.sharesOutstanding,
-      float_shares: profile.floatShares,
+      shares_outstanding: sharesOutstanding,
+      float_shares: floatShares,
       beta: profile.beta,
       market_cap: profile.mktCap,
       current_price: profile.price,
-      raw_profile_data: profile,
+      raw_profile_data: { profile, keyMetrics },
       last_updated: new Date().toISOString()
     };
     
@@ -130,7 +144,8 @@ serve(async (req) => {
         ticker: ticker.toUpperCase(),
         companyName: profile.companyName,
         employees: profile.fullTimeEmployees,
-        sharesOutstanding: profile.sharesOutstanding,
+        sharesOutstanding: sharesOutstanding,
+        floatShares: floatShares,
         marketCap: profile.mktCap
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
