@@ -357,7 +357,7 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
                 onClick={() => setSelectedRange(range)}
                 className="text-xs h-7 px-2.5 whitespace-nowrap"
               >
-                {range}
+                {range === 'YTD' ? range : range.replace('Y', 'J')}
               </Button>
             ))}
           </div>
