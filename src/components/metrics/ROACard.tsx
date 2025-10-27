@@ -29,7 +29,7 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
   };
 
   const getBgColor = (value: number | null): string => {
-    if (value === null) return 'bg-muted/20 border-muted';
+    if (value === null) return 'bg-gray-100 border-gray-300';
     if (value >= 8) return 'bg-green-50 border-green-200';
     if (value >= 4) return 'bg-yellow-50 border-yellow-200';
     return 'bg-red-50 border-red-200';

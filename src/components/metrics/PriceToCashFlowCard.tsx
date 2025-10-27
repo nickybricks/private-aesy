@@ -89,6 +89,7 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
   };
 
   const getBgColorByScore = (score: number): string => {
+    if (!fcfPerShare || fcfPerShare <= 0) return 'bg-gray-100 border-gray-300';
     if (score === 4) return 'bg-green-50 border-green-200';
     if (score === 3) return 'bg-yellow-50 border-yellow-200';
     if (score === 2) return 'bg-orange-50 border-orange-200';

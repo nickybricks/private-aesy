@@ -328,6 +328,7 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
   };
 
   const getBgColorByScore = (score: number, maxScore: number): string => {
+    if (maxScore === 0 || !latestData?.fairValue) return 'bg-gray-100 border-gray-300';
     if (score === 3) return 'bg-green-50 border-green-200';
     if (score === 2) return 'bg-yellow-50 border-yellow-200';
     if (score === 1) return 'bg-orange-50 border-orange-200';

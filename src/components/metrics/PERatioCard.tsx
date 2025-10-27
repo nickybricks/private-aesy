@@ -59,6 +59,7 @@ export const PERatioCard: React.FC<PERatioCardProps> = ({
 
   // Helper function to get background color based on score
   const getBgColorByScore = (score: number, maxScore: number): string => {
+    if (maxScore === 0) return 'bg-gray-100 border-gray-300';
     const percentage = (score / maxScore) * 100;
     if (percentage >= 80) return 'bg-green-50 border-green-200';
     if (percentage >= 60) return 'bg-yellow-50 border-yellow-200';

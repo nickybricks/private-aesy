@@ -159,6 +159,7 @@ export const NetDebtToEbitdaCard: React.FC<NetDebtToEbitdaCardProps> = ({ curren
   };
 
   const getBgColorByRatio = (score: number, maxScore: number): string => {
+    if (maxScore === 0) return 'bg-gray-100 border-gray-300';
     const ratio = score / maxScore;
     if (ratio >= 0.67) return 'bg-green-50 border-green-200';
     if (ratio >= 0.33) return 'bg-yellow-50 border-yellow-200';
