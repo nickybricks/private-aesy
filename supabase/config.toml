@@ -17,3 +17,12 @@ verify_jwt = false
 
 [functions.get-exchange-rate]
 verify_jwt = false
+
+[functions.populate-financial-data]
+verify_jwt = false
+
+[functions.get-financial-data]
+verify_jwt = false
+
+[functions.populate-company-profile]
+verify_jwt = false

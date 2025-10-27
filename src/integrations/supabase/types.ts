@@ -50,6 +50,84 @@ export type Database = {
         }
         Relationships: []
       }
+      company_profiles: {
+        Row: {
+          beta: number | null
+          ceo: string | null
+          company_name: string | null
+          country: string | null
+          created_at: string | null
+          currency: string | null
+          current_price: number | null
+          cusip: string | null
+          description: string | null
+          exchange: string | null
+          float_shares: number | null
+          full_time_employees: number | null
+          id: string
+          industry: string | null
+          ipo_date: string | null
+          isin: string | null
+          last_updated: string | null
+          market_cap: number | null
+          raw_profile_data: Json | null
+          sector: string | null
+          shares_outstanding: number | null
+          symbol: string
+          website: string | null
+        }
+        Insert: {
+          beta?: number | null
+          ceo?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          current_price?: number | null
+          cusip?: string | null
+          description?: string | null
+          exchange?: string | null
+          float_shares?: number | null
+          full_time_employees?: number | null
+          id?: string
+          industry?: string | null
+          ipo_date?: string | null
+          isin?: string | null
+          last_updated?: string | null
+          market_cap?: number | null
+          raw_profile_data?: Json | null
+          sector?: string | null
+          shares_outstanding?: number | null
+          symbol: string
+          website?: string | null
+        }
+        Update: {
+          beta?: number | null
+          ceo?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          current_price?: number | null
+          cusip?: string | null
+          description?: string | null
+          exchange?: string | null
+          float_shares?: number | null
+          full_time_employees?: number | null
+          id?: string
+          industry?: string | null
+          ipo_date?: string | null
+          isin?: string | null
+          last_updated?: string | null
+          market_cap?: number | null
+          raw_profile_data?: Json | null
+          sector?: string | null
+          shares_outstanding?: number | null
+          symbol?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       exchange_rates: {
         Row: {
           base_currency: string
@@ -85,45 +163,80 @@ export type Database = {
       }
       financial_data_quarterly: {
         Row: {
+          asset_turnover: number | null
           book_value_per_share: number | null
           calendar_year: number
           capex: number | null
           cash_and_equivalents: number | null
+          cash_conversion_cycle: number | null
+          cash_ratio: number | null
           created_at: string
           current_assets: number | null
           current_liabilities: number | null
+          current_ratio: number | null
           data_quality_score: number | null
           data_source: string
+          days_inventory_outstanding: number | null
+          days_payables_outstanding: number | null
+          days_sales_outstanding: number | null
+          debt_to_assets: number | null
+          debt_to_equity: number | null
           dividend_per_share: number | null
+          dividend_yield: number | null
           ebit: number | null
           ebitda: number | null
+          enterprise_value: number | null
           eps: number | null
           eps_diluted: number | null
           eps_wo_nri: number | null
+          ev_to_ebitda: number | null
+          ev_to_operating_cash_flow: number | null
+          ev_to_sales: number | null
           fiscal_date: string
           fmp_filing_date: string | null
           free_cash_flow: number | null
           fx_rate_to_usd: number | null
           goodwill_impairment: number | null
+          gross_profit_margin: number | null
           id: string
           impairment_of_assets: number | null
           income_before_tax: number | null
           income_tax_expense: number | null
+          interest_coverage: number | null
           interest_expense: number | null
+          inventory_turnover: number | null
           invested_capital: number | null
           is_ttm: boolean
           long_term_debt: number | null
+          market_cap: number | null
           missing_fields: string[] | null
+          net_debt_to_ebitda: number | null
           net_income: number | null
+          net_profit_margin: number | null
           nopat: number | null
           operating_cash_flow: number | null
+          operating_profit_margin: number | null
+          payout_ratio: number | null
+          pb_ratio: number | null
+          pe_ratio: number | null
+          peg_ratio: number | null
           period: string
+          pfcf_ratio: number | null
+          ps_ratio: number | null
+          quick_ratio: number | null
           raw_data_balance: Json | null
           raw_data_cashflow: Json | null
           raw_data_income: Json | null
           raw_data_profile: Json | null
+          raw_key_metrics: Json | null
+          raw_ratios: Json | null
+          receivables_turnover: number | null
           reported_currency: string
           restructuring_charges: number | null
+          return_on_assets: number | null
+          return_on_capital_employed: number | null
+          return_on_equity: number | null
+          return_on_invested_capital: number | null
           revenue: number | null
           short_term_debt: number | null
           stock_price_close: number | null
@@ -139,45 +252,80 @@ export type Database = {
           weighted_avg_shares_diluted: number | null
         }
         Insert: {
+          asset_turnover?: number | null
           book_value_per_share?: number | null
           calendar_year: number
           capex?: number | null
           cash_and_equivalents?: number | null
+          cash_conversion_cycle?: number | null
+          cash_ratio?: number | null
           created_at?: string
           current_assets?: number | null
           current_liabilities?: number | null
+          current_ratio?: number | null
           data_quality_score?: number | null
           data_source?: string
+          days_inventory_outstanding?: number | null
+          days_payables_outstanding?: number | null
+          days_sales_outstanding?: number | null
+          debt_to_assets?: number | null
+          debt_to_equity?: number | null
           dividend_per_share?: number | null
+          dividend_yield?: number | null
           ebit?: number | null
           ebitda?: number | null
+          enterprise_value?: number | null
           eps?: number | null
           eps_diluted?: number | null
           eps_wo_nri?: number | null
+          ev_to_ebitda?: number | null
+          ev_to_operating_cash_flow?: number | null
+          ev_to_sales?: number | null
           fiscal_date: string
           fmp_filing_date?: string | null
           free_cash_flow?: number | null
           fx_rate_to_usd?: number | null
           goodwill_impairment?: number | null
+          gross_profit_margin?: number | null
           id?: string
           impairment_of_assets?: number | null
           income_before_tax?: number | null
           income_tax_expense?: number | null
+          interest_coverage?: number | null
           interest_expense?: number | null
+          inventory_turnover?: number | null
           invested_capital?: number | null
           is_ttm?: boolean
           long_term_debt?: number | null
+          market_cap?: number | null
           missing_fields?: string[] | null
+          net_debt_to_ebitda?: number | null
           net_income?: number | null
+          net_profit_margin?: number | null
           nopat?: number | null
           operating_cash_flow?: number | null
+          operating_profit_margin?: number | null
+          payout_ratio?: number | null
+          pb_ratio?: number | null
+          pe_ratio?: number | null
+          peg_ratio?: number | null
           period: string
+          pfcf_ratio?: number | null
+          ps_ratio?: number | null
+          quick_ratio?: number | null
           raw_data_balance?: Json | null
           raw_data_cashflow?: Json | null
           raw_data_income?: Json | null
           raw_data_profile?: Json | null
+          raw_key_metrics?: Json | null
+          raw_ratios?: Json | null
+          receivables_turnover?: number | null
           reported_currency: string
           restructuring_charges?: number | null
+          return_on_assets?: number | null
+          return_on_capital_employed?: number | null
+          return_on_equity?: number | null
+          return_on_invested_capital?: number | null
           revenue?: number | null
           short_term_debt?: number | null
           stock_price_close?: number | null
@@ -193,45 +341,80 @@ export type Database = {
           weighted_avg_shares_diluted?: number | null
         }
         Update: {
+          asset_turnover?: number | null
           book_value_per_share?: number | null
           calendar_year?: number
           capex?: number | null
           cash_and_equivalents?: number | null
+          cash_conversion_cycle?: number | null
+          cash_ratio?: number | null
           created_at?: string
           current_assets?: number | null
           current_liabilities?: number | null
+          current_ratio?: number | null
           data_quality_score?: number | null
           data_source?: string
+          days_inventory_outstanding?: number | null
+          days_payables_outstanding?: number | null
+          days_sales_outstanding?: number | null
+          debt_to_assets?: number | null
+          debt_to_equity?: number | null
           dividend_per_share?: number | null
+          dividend_yield?: number | null
           ebit?: number | null
           ebitda?: number | null
+          enterprise_value?: number | null
           eps?: number | null
           eps_diluted?: number | null
           eps_wo_nri?: number | null
+          ev_to_ebitda?: number | null
+          ev_to_operating_cash_flow?: number | null
+          ev_to_sales?: number | null
           fiscal_date?: string
           fmp_filing_date?: string | null
           free_cash_flow?: number | null
           fx_rate_to_usd?: number | null
           goodwill_impairment?: number | null
+          gross_profit_margin?: number | null
           id?: string
           impairment_of_assets?: number | null
           income_before_tax?: number | null
           income_tax_expense?: number | null
+          interest_coverage?: number | null
           interest_expense?: number | null
+          inventory_turnover?: number | null
           invested_capital?: number | null
           is_ttm?: boolean
           long_term_debt?: number | null
+          market_cap?: number | null
           missing_fields?: string[] | null
+          net_debt_to_ebitda?: number | null
           net_income?: number | null
+          net_profit_margin?: number | null
           nopat?: number | null
           operating_cash_flow?: number | null
+          operating_profit_margin?: number | null
+          payout_ratio?: number | null
+          pb_ratio?: number | null
+          pe_ratio?: number | null
+          peg_ratio?: number | null
           period?: string
+          pfcf_ratio?: number | null
+          ps_ratio?: number | null
+          quick_ratio?: number | null
           raw_data_balance?: Json | null
           raw_data_cashflow?: Json | null
           raw_data_income?: Json | null
           raw_data_profile?: Json | null
+          raw_key_metrics?: Json | null
+          raw_ratios?: Json | null
+          receivables_turnover?: number | null
           reported_currency?: string
           restructuring_charges?: number | null
+          return_on_assets?: number | null
+          return_on_capital_employed?: number | null
+          return_on_equity?: number | null
+          return_on_invested_capital?: number | null
           revenue?: number | null
           short_term_debt?: number | null
           stock_price_close?: number | null

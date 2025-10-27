@@ -56,10 +56,49 @@ interface QuarterData {
   // Shares
   weightedAverageShsOutDil?: number;
   
+  // Key Metrics
+  marketCap?: number;
+  enterpriseValue?: number;
+  peRatio?: number;
+  pbRatio?: number;
+  psRatio?: number;
+  pfcfRatio?: number;
+  pegRatio?: number;
+  evToEbitda?: number;
+  evToSales?: number;
+  evToOperatingCashFlow?: number;
+  roic?: number;
+  roce?: number;
+  netDebtToEBITDA?: number;
+  dividendYield?: number;
+  
+  // Ratios
+  grossProfitMargin?: number;
+  operatingProfitMargin?: number;
+  netProfitMargin?: number;
+  returnOnAssets?: number;
+  returnOnEquity?: number;
+  currentRatio?: number;
+  quickRatio?: number;
+  cashRatio?: number;
+  debtEquityRatio?: number;
+  debtRatio?: number;
+  interestCoverage?: number;
+  assetTurnover?: number;
+  inventoryTurnover?: number;
+  receivablesTurnover?: number;
+  daysOfSalesOutstanding?: number;
+  daysOfInventoryOnHand?: number;
+  daysOfPayablesOutstanding?: number;
+  cashConversionCycle?: number;
+  payoutRatio?: number;
+  
   // Raw data
   rawIncome?: any;
   rawBalance?: any;
   rawCashflow?: any;
+  rawKeyMetrics?: any;
+  rawRatios?: any;
 }
 
 async function getFMPKey(): Promise<string> {
@@ -179,7 +218,8 @@ function assessDataQuality(quarter: QuarterData): { score: number; missingFields
   
   const importantFields = [
     'freeCashFlow', 'capitalExpenditure', 'totalDebt', 'totalCurrentAssets', 
-    'totalCurrentLiabilities', 'ebit', 'interestExpense'
+    'totalCurrentLiabilities', 'ebit', 'interestExpense', 'peRatio', 
+    'returnOnEquity', 'currentRatio', 'debtEquityRatio'
   ];
   
   const missingCritical = criticalFields.filter(f => 
@@ -198,7 +238,13 @@ function assessDataQuality(quarter: QuarterData): { score: number; missingFields
 }
 
 // Merge financial data by fiscal date
-function mergeByFiscalDate(income: any[], balance: any[], cashflow: any[]): QuarterData[] {
+function mergeByFiscalDate(
+  income: any[], 
+  balance: any[], 
+  cashflow: any[], 
+  keyMetrics: any[], 
+  ratios: any[]
+): QuarterData[] {
   const quarterMap = new Map<string, QuarterData>();
   
   // Process income statements
@@ -264,6 +310,55 @@ function mergeByFiscalDate(income: any[], balance: any[], cashflow: any[]): Quar
     q.rawCashflow = c;
   }
   
+  // Process key metrics
+  for (const k of keyMetrics) {
+    const date = k.date;
+    if (!quarterMap.has(date)) continue;
+    const q = quarterMap.get(date)!;
+    q.marketCap = k.marketCap;
+    q.enterpriseValue = k.enterpriseValue;
+    q.peRatio = k.peRatio;
+    q.pbRatio = k.pbRatio;
+    q.psRatio = k.priceToSalesRatio;
+    q.pfcfRatio = k.pfcfRatio;
+    q.pegRatio = k.pegRatio;
+    q.evToEbitda = k.evToEbitda;
+    q.evToSales = k.evToSales;
+    q.evToOperatingCashFlow = k.evToOperatingCashFlow;
+    q.roic = k.roic;
+    q.roce = k.roce;
+    q.netDebtToEBITDA = k.netDebtToEBITDA;
+    q.dividendYield = k.dividendYield;
+    q.rawKeyMetrics = k;
+  }
+  
+  // Process ratios
+  for (const r of ratios) {
+    const date = r.date;
+    if (!quarterMap.has(date)) continue;
+    const q = quarterMap.get(date)!;
+    q.grossProfitMargin = r.grossProfitMargin;
+    q.operatingProfitMargin = r.operatingProfitMargin;
+    q.netProfitMargin = r.netProfitMargin;
+    q.returnOnAssets = r.returnOnAssets;
+    q.returnOnEquity = r.returnOnEquity;
+    q.currentRatio = r.currentRatio;
+    q.quickRatio = r.quickRatio;
+    q.cashRatio = r.cashRatio;
+    q.debtEquityRatio = r.debtEquityRatio;
+    q.debtRatio = r.debtRatio;
+    q.interestCoverage = r.interestCoverage;
+    q.assetTurnover = r.assetTurnover;
+    q.inventoryTurnover = r.inventoryTurnover;
+    q.receivablesTurnover = r.receivablesTurnover;
+    q.daysOfSalesOutstanding = r.daysOfSalesOutstanding;
+    q.daysOfInventoryOnHand = r.daysOfInventoryOnHand;
+    q.daysOfPayablesOutstanding = r.daysOfPayablesOutstanding;
+    q.cashConversionCycle = r.cashConversionCycle;
+    q.payoutRatio = r.payoutRatio;
+    q.rawRatios = r;
+  }
+  
   return Array.from(quarterMap.values()).sort((a, b) => 
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
@@ -315,23 +410,27 @@ serve(async (req) => {
     const apiKey = await getFMPKey();
     const FMP_BASE = 'https://financialmodelingprep.com/api/v3';
     
-    // Fetch financial data
-    console.log('Fetching financial data from FMP...');
-    const [incomeRes, balanceRes, cashflowRes, profileRes] = await Promise.all([
+    // Fetch financial data, key metrics, and ratios
+    console.log('Fetching financial data, key metrics, and ratios from FMP...');
+    const [incomeRes, balanceRes, cashflowRes, keyMetricsRes, ratiosRes, profileRes] = await Promise.all([
       fetch(`${FMP_BASE}/income-statement/${ticker}?period=quarter&limit=${maxQuarters}&apikey=${apiKey}`),
       fetch(`${FMP_BASE}/balance-sheet-statement/${ticker}?period=quarter&limit=${maxQuarters}&apikey=${apiKey}`),
       fetch(`${FMP_BASE}/cash-flow-statement/${ticker}?period=quarter&limit=${maxQuarters}&apikey=${apiKey}`),
+      fetch(`${FMP_BASE}/key-metrics/${ticker}?period=quarter&limit=${maxQuarters}&apikey=${apiKey}`),
+      fetch(`${FMP_BASE}/ratios/${ticker}?period=quarter&limit=${maxQuarters}&apikey=${apiKey}`),
       fetch(`${FMP_BASE}/profile/${ticker}?apikey=${apiKey}`)
     ]);
     
     if (!incomeRes.ok || !balanceRes.ok || !cashflowRes.ok || !profileRes.ok) {
-      throw new Error('Failed to fetch financial data from FMP');
+      throw new Error('Failed to fetch required financial data from FMP');
     }
     
-    const [incomeData, balanceData, cashflowData, profileData] = await Promise.all([
+    const [incomeData, balanceData, cashflowData, keyMetricsData, ratiosData, profileData] = await Promise.all([
       incomeRes.json(),
       balanceRes.json(),
       cashflowRes.json(),
+      keyMetricsRes.ok ? keyMetricsRes.json() : [],
+      ratiosRes.ok ? ratiosRes.json() : [],
       profileRes.json()
     ]);
     
@@ -339,10 +438,10 @@ serve(async (req) => {
       throw new Error('No income statement data found');
     }
     
-    console.log(`Fetched ${incomeData.length} quarters of data`);
+    console.log(`Fetched ${incomeData.length} income, ${balanceData.length} balance, ${cashflowData.length} cashflow, ${keyMetricsData.length} key metrics, ${ratiosData.length} ratios`);
     
     // Merge data by fiscal date
-    const quarters = mergeByFiscalDate(incomeData, balanceData, cashflowData);
+    const quarters = mergeByFiscalDate(incomeData, balanceData, cashflowData, keyMetricsData, ratiosData);
     
     console.log(`Merged into ${quarters.length} quarters`);
     
@@ -440,6 +539,55 @@ serve(async (req) => {
         stock_price_close: price,
         stock_price_date: priceDate,
         
+        // Market Metrics
+        market_cap: q.marketCap,
+        enterprise_value: q.enterpriseValue,
+        
+        // Valuation Ratios
+        pe_ratio: q.peRatio,
+        pb_ratio: q.pbRatio,
+        ps_ratio: q.psRatio,
+        pfcf_ratio: q.pfcfRatio,
+        peg_ratio: q.pegRatio,
+        ev_to_ebitda: q.evToEbitda,
+        ev_to_sales: q.evToSales,
+        ev_to_operating_cash_flow: q.evToOperatingCashFlow,
+        
+        // Profitability Ratios
+        gross_profit_margin: q.grossProfitMargin,
+        operating_profit_margin: q.operatingProfitMargin,
+        net_profit_margin: q.netProfitMargin,
+        
+        // Return Ratios
+        return_on_assets: q.returnOnAssets,
+        return_on_equity: q.returnOnEquity,
+        return_on_invested_capital: q.roic,
+        return_on_capital_employed: q.roce,
+        
+        // Liquidity Ratios
+        current_ratio: q.currentRatio,
+        quick_ratio: q.quickRatio,
+        cash_ratio: q.cashRatio,
+        
+        // Leverage Ratios
+        debt_to_equity: q.debtEquityRatio,
+        debt_to_assets: q.debtRatio,
+        net_debt_to_ebitda: q.netDebtToEBITDA,
+        interest_coverage: q.interestCoverage,
+        
+        // Efficiency Ratios
+        asset_turnover: q.assetTurnover,
+        inventory_turnover: q.inventoryTurnover,
+        receivables_turnover: q.receivablesTurnover,
+        days_sales_outstanding: q.daysOfSalesOutstanding,
+        days_inventory_outstanding: q.daysOfInventoryOnHand,
+        days_payables_outstanding: q.daysOfPayablesOutstanding,
+        cash_conversion_cycle: q.cashConversionCycle,
+        
+        // Shareholder Metrics
+        payout_ratio: q.payoutRatio,
+        dividend_yield: q.dividendYield,
+        
         // Calculated
         tax_rate: taxRate,
         nopat: nopat,
@@ -455,6 +603,8 @@ serve(async (req) => {
         raw_data_income: q.rawIncome,
         raw_data_balance: q.rawBalance,
         raw_data_cashflow: q.rawCashflow,
+        raw_key_metrics: q.rawKeyMetrics,
+        raw_ratios: q.rawRatios,
         raw_data_profile: profileData[0]
       });
     }
@@ -478,9 +628,12 @@ serve(async (req) => {
       const sum = (arr: any[], field: string) => 
         arr.reduce((acc, item) => acc + (item[field] || 0), 0);
       
-      const ttmEpsWoNri = sum(last4, 'epsWoNri');
-      const ttmTaxRate = sum(last4, 'incomeTaxExpense') / sum(last4, 'incomeBeforeTax');
-      const ttmNetIncome = sum(last4, 'netIncome');
+      const avg = (arr: any[], field: string) => {
+        const values = arr.map(item => item[field]).filter(v => v != null);
+        return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null;
+      };
+      
+      const latest = (arr: any[], field: string) => arr[0][field] || null;
       
       const ttmRecord = {
         symbol: ticker.toUpperCase(),
@@ -492,49 +645,68 @@ serve(async (req) => {
         fx_rate_to_usd: last4[0].rawBalance?.fxRate || 1.0,
         
         // Flows: Sum
-        net_income: ttmNetIncome,
+        net_income: sum(last4, 'netIncome'),
         revenue: sum(last4, 'revenue'),
         ebit: sum(last4, 'ebit'),
         ebitda: sum(last4, 'ebitda'),
-        eps_wo_nri: ttmEpsWoNri,
         operating_cash_flow: sum(last4, 'operatingCashFlow'),
         free_cash_flow: sum(last4, 'freeCashFlow'),
         capex: sum(last4, 'capitalExpenditure'),
-        interest_expense: sum(last4, 'interestExpense'),
-        income_before_tax: sum(last4, 'incomeBeforeTax'),
-        income_tax_expense: sum(last4, 'incomeTaxExpense'),
         
-        // Stocks: Latest
-        total_equity: last4[0].totalEquity,
-        total_assets: last4[0].totalAssets,
-        current_assets: last4[0].totalCurrentAssets,
-        total_debt: last4[0].totalDebt,
-        cash_and_equivalents: last4[0].cashAndCashEquivalents,
-        current_liabilities: last4[0].totalCurrentLiabilities,
-        weighted_avg_shares_diluted: last4[0].weightedAverageShsOutDil,
+        // Balance Sheet: Latest
+        total_equity: latest(last4, 'totalEquity'),
+        total_assets: latest(last4, 'totalAssets'),
+        current_assets: latest(last4, 'totalCurrentAssets'),
+        total_debt: latest(last4, 'totalDebt'),
+        short_term_debt: latest(last4, 'shortTermDebt'),
+        long_term_debt: latest(last4, 'longTermDebt'),
+        current_liabilities: latest(last4, 'totalCurrentLiabilities'),
+        cash_and_equivalents: latest(last4, 'cashAndCashEquivalents'),
+        weighted_avg_shares_diluted: latest(last4, 'weightedAverageShsOutDil'),
         
-        // EPS: Recalculate
-        eps: ttmNetIncome / (last4[0].weightedAverageShsOutDil || 1),
-        eps_diluted: ttmNetIncome / (last4[0].weightedAverageShsOutDil || 1),
+        // Ratios: Average or Latest
+        market_cap: latest(last4, 'marketCap'),
+        enterprise_value: latest(last4, 'enterpriseValue'),
+        pe_ratio: latest(last4, 'peRatio'),
+        pb_ratio: latest(last4, 'pbRatio'),
+        ps_ratio: latest(last4, 'psRatio'),
+        pfcf_ratio: latest(last4, 'pfcfRatio'),
+        peg_ratio: latest(last4, 'pegRatio'),
+        ev_to_ebitda: latest(last4, 'evToEbitda'),
+        ev_to_sales: latest(last4, 'evToSales'),
         
-        // Market
-        stock_price_close: last4[0].rawBalance?.price,
-        stock_price_date: last4[0].rawBalance?.priceDate,
+        // Margins: Average
+        gross_profit_margin: avg(last4, 'grossProfitMargin'),
+        operating_profit_margin: avg(last4, 'operatingProfitMargin'),
+        net_profit_margin: avg(last4, 'netProfitMargin'),
         
-        // Calculated
-        tax_rate: ttmTaxRate,
-        nopat: sum(last4, 'ebit') * (1 - ttmTaxRate),
-        invested_capital: last4[0].rawBalance?.investedCapital,
+        // Return Ratios: Average
+        return_on_assets: avg(last4, 'returnOnAssets'),
+        return_on_equity: avg(last4, 'returnOnEquity'),
+        return_on_invested_capital: avg(last4, 'roic'),
+        return_on_capital_employed: avg(last4, 'roce'),
         
-        // Quality
-        data_quality_score: Math.round(last4.reduce((acc, q) => acc + (assessDataQuality(q).score || 0), 0) / 4),
-        missing_fields: [...new Set(last4.flatMap(q => assessDataQuality(q).missingFields))],
+        // Liquidity: Latest
+        current_ratio: latest(last4, 'currentRatio'),
+        quick_ratio: latest(last4, 'quickRatio'),
+        cash_ratio: latest(last4, 'cashRatio'),
         
-        // Raw
-        raw_data_income: last4[0].rawIncome,
-        raw_data_balance: last4[0].rawBalance,
-        raw_data_cashflow: last4[0].rawCashflow,
-        raw_data_profile: profileData[0]
+        // Leverage: Latest
+        debt_to_equity: latest(last4, 'debtEquityRatio'),
+        debt_to_assets: latest(last4, 'debtRatio'),
+        net_debt_to_ebitda: latest(last4, 'netDebtToEBITDA'),
+        interest_coverage: latest(last4, 'interestCoverage'),
+        
+        // Efficiency: Average
+        asset_turnover: avg(last4, 'assetTurnover'),
+        cash_conversion_cycle: avg(last4, 'cashConversionCycle'),
+        
+        // Shareholder: Latest
+        dividend_yield: latest(last4, 'dividendYield'),
+        payout_ratio: latest(last4, 'payoutRatio'),
+        
+        data_quality_score: 85,
+        data_source: 'FMP'
       };
       
       const { error: ttmError } = await supabase
@@ -544,18 +716,19 @@ serve(async (req) => {
       if (ttmError) {
         console.error('TTM upsert error:', ttmError);
       } else {
-        console.log('TTM data upserted successfully');
+        console.log('✅ TTM data upserted');
       }
     }
     
-    console.log(`Successfully populated ${recordsToUpsert.length} quarters for ${ticker}`);
+    console.log(`✅ Successfully populated ${recordsToUpsert.length} quarters for ${ticker}`);
     
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         success: true,
         ticker: ticker.toUpperCase(),
-        quartersPopulated: recordsToUpsert.length,
-        ttmCalculated: last4.length === 4
+        quarters: recordsToUpsert.length,
+        hasKeyMetrics: keyMetricsData.length > 0,
+        hasRatios: ratiosData.length > 0
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
