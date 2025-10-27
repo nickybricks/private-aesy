@@ -83,6 +83,198 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_data_quarterly: {
+        Row: {
+          book_value_per_share: number | null
+          calendar_year: number
+          capex: number | null
+          cash_and_equivalents: number | null
+          created_at: string
+          current_assets: number | null
+          current_liabilities: number | null
+          data_quality_score: number | null
+          data_source: string
+          dividend_per_share: number | null
+          ebit: number | null
+          ebitda: number | null
+          eps: number | null
+          eps_diluted: number | null
+          eps_wo_nri: number | null
+          fiscal_date: string
+          fmp_filing_date: string | null
+          free_cash_flow: number | null
+          fx_rate_to_usd: number | null
+          goodwill_impairment: number | null
+          id: string
+          impairment_of_assets: number | null
+          income_before_tax: number | null
+          income_tax_expense: number | null
+          interest_expense: number | null
+          invested_capital: number | null
+          is_ttm: boolean
+          long_term_debt: number | null
+          missing_fields: string[] | null
+          net_income: number | null
+          nopat: number | null
+          operating_cash_flow: number | null
+          period: string
+          raw_data_balance: Json | null
+          raw_data_cashflow: Json | null
+          raw_data_income: Json | null
+          raw_data_profile: Json | null
+          reported_currency: string
+          restructuring_charges: number | null
+          revenue: number | null
+          short_term_debt: number | null
+          stock_price_close: number | null
+          stock_price_date: string | null
+          symbol: string
+          tax_rate: number | null
+          total_assets: number | null
+          total_debt: number | null
+          total_equity: number | null
+          unusual_items: number | null
+          updated_at: string
+          wacc: number | null
+          weighted_avg_shares_diluted: number | null
+        }
+        Insert: {
+          book_value_per_share?: number | null
+          calendar_year: number
+          capex?: number | null
+          cash_and_equivalents?: number | null
+          created_at?: string
+          current_assets?: number | null
+          current_liabilities?: number | null
+          data_quality_score?: number | null
+          data_source?: string
+          dividend_per_share?: number | null
+          ebit?: number | null
+          ebitda?: number | null
+          eps?: number | null
+          eps_diluted?: number | null
+          eps_wo_nri?: number | null
+          fiscal_date: string
+          fmp_filing_date?: string | null
+          free_cash_flow?: number | null
+          fx_rate_to_usd?: number | null
+          goodwill_impairment?: number | null
+          id?: string
+          impairment_of_assets?: number | null
+          income_before_tax?: number | null
+          income_tax_expense?: number | null
+          interest_expense?: number | null
+          invested_capital?: number | null
+          is_ttm?: boolean
+          long_term_debt?: number | null
+          missing_fields?: string[] | null
+          net_income?: number | null
+          nopat?: number | null
+          operating_cash_flow?: number | null
+          period: string
+          raw_data_balance?: Json | null
+          raw_data_cashflow?: Json | null
+          raw_data_income?: Json | null
+          raw_data_profile?: Json | null
+          reported_currency: string
+          restructuring_charges?: number | null
+          revenue?: number | null
+          short_term_debt?: number | null
+          stock_price_close?: number | null
+          stock_price_date?: string | null
+          symbol: string
+          tax_rate?: number | null
+          total_assets?: number | null
+          total_debt?: number | null
+          total_equity?: number | null
+          unusual_items?: number | null
+          updated_at?: string
+          wacc?: number | null
+          weighted_avg_shares_diluted?: number | null
+        }
+        Update: {
+          book_value_per_share?: number | null
+          calendar_year?: number
+          capex?: number | null
+          cash_and_equivalents?: number | null
+          created_at?: string
+          current_assets?: number | null
+          current_liabilities?: number | null
+          data_quality_score?: number | null
+          data_source?: string
+          dividend_per_share?: number | null
+          ebit?: number | null
+          ebitda?: number | null
+          eps?: number | null
+          eps_diluted?: number | null
+          eps_wo_nri?: number | null
+          fiscal_date?: string
+          fmp_filing_date?: string | null
+          free_cash_flow?: number | null
+          fx_rate_to_usd?: number | null
+          goodwill_impairment?: number | null
+          id?: string
+          impairment_of_assets?: number | null
+          income_before_tax?: number | null
+          income_tax_expense?: number | null
+          interest_expense?: number | null
+          invested_capital?: number | null
+          is_ttm?: boolean
+          long_term_debt?: number | null
+          missing_fields?: string[] | null
+          net_income?: number | null
+          nopat?: number | null
+          operating_cash_flow?: number | null
+          period?: string
+          raw_data_balance?: Json | null
+          raw_data_cashflow?: Json | null
+          raw_data_income?: Json | null
+          raw_data_profile?: Json | null
+          reported_currency?: string
+          restructuring_charges?: number | null
+          revenue?: number | null
+          short_term_debt?: number | null
+          stock_price_close?: number | null
+          stock_price_date?: string | null
+          symbol?: string
+          tax_rate?: number | null
+          total_assets?: number | null
+          total_debt?: number | null
+          total_equity?: number | null
+          unusual_items?: number | null
+          updated_at?: string
+          wacc?: number | null
+          weighted_avg_shares_diluted?: number | null
+        }
+        Relationships: []
+      }
+      industry_metrics: {
+        Row: {
+          created_at: string
+          date: string
+          exchange: string | null
+          id: string
+          industry: string
+          pe_ratio: number | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          exchange?: string | null
+          id?: string
+          industry: string
+          pe_ratio?: number | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          exchange?: string | null
+          id?: string
+          industry?: string
+          pe_ratio?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
