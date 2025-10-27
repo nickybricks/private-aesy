@@ -14,7 +14,6 @@ import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
 import RatingSection from '@/components/RatingSection';
 import PeterLynchSection from '@/components/PeterLynchSection';
-import CriteriaTabsSection from '@/components/CriteriaTabsSection';
 import DataMissingAlert from '@/components/DataMissingAlert';
 import LoadingSection from '@/components/LoadingSection';
 import ErrorAlert from '@/components/ErrorAlert';

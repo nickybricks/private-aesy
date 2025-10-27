@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStock } from '@/context/StockContext';
 import RatingSection from '@/components/RatingSection';
-import CriteriaTabsSection from '@/components/CriteriaTabsSection';
 import KiAvailabilityAlert from '@/components/KiAvailabilityAlert';
 import CurrencyAlert from '@/components/CurrencyAlert';
 import DataMissingAlert from '@/components/DataMissingAlert';
@@ -61,7 +60,6 @@ const DeepResearch: React.FC = () => {
           </div>
           
           <RatingSection />
-          <CriteriaTabsSection />
           
           <LoadingSection />
           
