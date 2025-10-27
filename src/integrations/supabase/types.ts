@@ -163,39 +163,13 @@ export type Database = {
       }
       financial_data_quarterly: {
         Row: {
-          accepted_date: string | null
-          accounts_payable: number | null
-          accounts_payables_change: number | null
-          accounts_receivable: number | null
-          accounts_receivables_change: number | null
-          accumulated_other_comprehensive_income_loss: number | null
-          acquisitions_net: number | null
           asset_turnover: number | null
-          average_inventory: number | null
-          average_payables: number | null
-          average_receivables: number | null
           book_value_per_share: number | null
-          bottom_line_net_income: number | null
           calendar_year: number
           capex: number | null
-          capex_per_share: number | null
-          capex_to_depreciation: number | null
-          capex_to_operating_cash_flow: number | null
-          capex_to_operating_income: number | null
-          capex_to_revenue: number | null
-          capital_expenditure_coverage_ratio: number | null
-          capital_lease_obligations: number | null
           cash_and_equivalents: number | null
           cash_conversion_cycle: number | null
-          cash_flow_to_debt_ratio: number | null
-          cash_per_share: number | null
-          cash_per_share_ratio: number | null
           cash_ratio: number | null
-          change_in_working_capital: number | null
-          common_stock: number | null
-          company_equity_multiplier: number | null
-          cost_and_expenses: number | null
-          cost_of_revenue: number | null
           created_at: string
           current_assets: number | null
           current_liabilities: number | null
@@ -203,142 +177,52 @@ export type Database = {
           data_quality_score: number | null
           data_source: string
           days_inventory_outstanding: number | null
-          days_of_inventory_outstanding_ratio: number | null
-          days_of_payables_outstanding_ratio: number | null
-          days_of_sales_outstanding_ratio: number | null
           days_payables_outstanding: number | null
           days_sales_outstanding: number | null
-          debt_repayment: number | null
           debt_to_assets: number | null
           debt_to_equity: number | null
-          debt_to_market_cap: number | null
-          deferred_income_tax: number | null
-          deferred_revenue: number | null
-          deferred_revenue_non_current: number | null
-          deferred_tax_liabilities_non_current: number | null
-          dividend_paid_and_capex_coverage_ratio: number | null
-          dividend_payments_coverage_ratio: number | null
           dividend_per_share: number | null
-          dividend_per_share_ratio: number | null
           dividend_yield: number | null
-          earnings_yield: number | null
           ebit: number | null
-          ebit_per_revenue: number | null
           ebitda: number | null
-          ebitda_margin: number | null
-          effect_of_forex_changes_on_cash: number | null
-          effective_tax_rate: number | null
           enterprise_value: number | null
           eps: number | null
-          eps_corrected: number | null
           eps_diluted: number | null
           eps_wo_nri: number | null
           ev_to_ebitda: number | null
           ev_to_operating_cash_flow: number | null
           ev_to_sales: number | null
-          fcf_yield: number | null
-          filing_date: string | null
           fiscal_date: string
-          fiscal_year: string | null
-          fixed_asset_turnover: number | null
           fmp_filing_date: string | null
           free_cash_flow: number | null
-          free_cash_flow_operating_cash_flow_ratio: number | null
-          free_cash_flow_per_share: number | null
-          free_cash_flow_per_share_ratio: number | null
           fx_rate_to_usd: number | null
-          general_and_administrative_expenses: number | null
-          goodwill: number | null
           goodwill_impairment: number | null
-          graham_net_net: number | null
-          graham_number: number | null
-          gross_profit: number | null
           gross_profit_margin: number | null
           id: string
           impairment_of_assets: number | null
           income_before_tax: number | null
           income_tax_expense: number | null
-          intangible_assets: number | null
-          intangibles_to_total_assets: number | null
           interest_coverage: number | null
-          interest_debt_per_share: number | null
           interest_expense: number | null
-          interest_income: number | null
-          inventory: number | null
-          inventory_change: number | null
           inventory_turnover: number | null
           invested_capital: number | null
-          invested_capital_metric: number | null
-          investments_in_property_plant_and_equipment: number | null
           is_ttm: boolean
           long_term_debt: number | null
-          long_term_debt_to_capitalization: number | null
-          long_term_investments: number | null
           market_cap: number | null
-          minority_interest: number | null
           missing_fields: string[] | null
-          net_cash_provided_by_operating_activities: number | null
-          net_cash_used_for_investing_activities: number | null
-          net_cash_used_provided_by_financing_activities: number | null
-          net_change_in_cash: number | null
-          net_current_asset_value: number | null
-          net_debt: number | null
           net_debt_to_ebitda: number | null
           net_income: number | null
-          net_income_before_adjustments: number | null
-          net_income_deductions: number | null
-          net_income_from_continuing_operations: number | null
-          net_income_from_discontinued_operations: number | null
-          net_income_per_share: number | null
-          net_interest_income: number | null
           net_profit_margin: number | null
-          net_profit_margin_ratio: number | null
-          non_operating_income_excluding_interest: number | null
           nopat: number | null
           operating_cash_flow: number | null
-          operating_cash_flow_per_share: number | null
-          operating_cash_flow_sales_ratio: number | null
-          operating_cycle: number | null
-          operating_expenses: number | null
           operating_profit_margin: number | null
-          other_adjustments_to_net_income: number | null
-          other_current_assets: number | null
-          other_current_liabilities: number | null
-          other_expenses: number | null
-          other_financing_activities: number | null
-          other_investing_activities: number | null
-          other_liabilities: number | null
-          other_non_cash_items: number | null
-          other_non_current_assets: number | null
-          other_non_current_liabilities: number | null
-          other_total_stockholders_equity: number | null
-          other_working_capital_change: number | null
-          payables_period: number | null
           payout_ratio: number | null
           pb_ratio: number | null
           pe_ratio: number | null
-          pe_ratio_corrected: number | null
           peg_ratio: number | null
           period: string
           pfcf_ratio: number | null
-          preferred_stock: number | null
-          pretax_profit_margin: number | null
-          price_book_value_ratio: number | null
-          price_earnings_ratio: number | null
-          price_earnings_to_growth_ratio: number | null
-          price_fair_value: number | null
-          price_sales_ratio: number | null
-          price_to_book_ratio: number | null
-          price_to_free_cash_flows_ratio: number | null
-          price_to_operating_cash_flows_ratio: number | null
-          price_to_sales_ratio: number | null
-          price_to_sales_ratio_ttm: number | null
-          proceeds_from_issuance_of_common_stock: number | null
-          proceeds_from_issuance_of_debt: number | null
-          proceeds_from_repurchase_of_equity: number | null
-          property_plant_equipment_net: number | null
           ps_ratio: number | null
-          purchases_of_investments: number | null
           quick_ratio: number | null
           raw_data_balance: Json | null
           raw_data_cashflow: Json | null
@@ -346,86 +230,35 @@ export type Database = {
           raw_data_profile: Json | null
           raw_key_metrics: Json | null
           raw_ratios: Json | null
-          receivables_period: number | null
           receivables_turnover: number | null
           reported_currency: string
-          research_and_development_expenses: number | null
-          research_and_development_to_revenue: number | null
           restructuring_charges: number | null
-          retained_earnings: number | null
           return_on_assets: number | null
           return_on_capital_employed: number | null
           return_on_equity: number | null
           return_on_invested_capital: number | null
           revenue: number | null
-          revenue_per_share: number | null
-          sales_general_and_administrative_to_revenue: number | null
-          sales_maturities_of_investments: number | null
-          selling_and_marketing_expenses: number | null
-          selling_general_and_administrative_expenses: number | null
-          shareholders_equity_per_share: number | null
-          short_term_coverage_ratios: number | null
           short_term_debt: number | null
-          short_term_investments: number | null
-          stock_based_compensation: number | null
-          stock_based_compensation_to_revenue: number | null
           stock_price_close: number | null
           stock_price_date: string | null
           symbol: string
-          tangible_asset_value: number | null
-          tangible_book_value_per_share: number | null
-          tax_assets: number | null
           tax_rate: number | null
-          total_asset_turnover: number | null
           total_assets: number | null
           total_debt: number | null
-          total_debt_to_capitalization: number | null
           total_equity: number | null
-          total_liabilities: number | null
-          total_non_current_assets: number | null
-          total_non_current_liabilities: number | null
-          total_stockholders_equity: number | null
-          treasury_stock: number | null
           unusual_items: number | null
           updated_at: string
           wacc: number | null
           weighted_avg_shares_diluted: number | null
-          working_capital: number | null
         }
         Insert: {
-          accepted_date?: string | null
-          accounts_payable?: number | null
-          accounts_payables_change?: number | null
-          accounts_receivable?: number | null
-          accounts_receivables_change?: number | null
-          accumulated_other_comprehensive_income_loss?: number | null
-          acquisitions_net?: number | null
           asset_turnover?: number | null
-          average_inventory?: number | null
-          average_payables?: number | null
-          average_receivables?: number | null
           book_value_per_share?: number | null
-          bottom_line_net_income?: number | null
           calendar_year: number
           capex?: number | null
-          capex_per_share?: number | null
-          capex_to_depreciation?: number | null
-          capex_to_operating_cash_flow?: number | null
-          capex_to_operating_income?: number | null
-          capex_to_revenue?: number | null
-          capital_expenditure_coverage_ratio?: number | null
-          capital_lease_obligations?: number | null
           cash_and_equivalents?: number | null
           cash_conversion_cycle?: number | null
-          cash_flow_to_debt_ratio?: number | null
-          cash_per_share?: number | null
-          cash_per_share_ratio?: number | null
           cash_ratio?: number | null
-          change_in_working_capital?: number | null
-          common_stock?: number | null
-          company_equity_multiplier?: number | null
-          cost_and_expenses?: number | null
-          cost_of_revenue?: number | null
           created_at?: string
           current_assets?: number | null
           current_liabilities?: number | null
@@ -433,142 +266,52 @@ export type Database = {
           data_quality_score?: number | null
           data_source?: string
           days_inventory_outstanding?: number | null
-          days_of_inventory_outstanding_ratio?: number | null
-          days_of_payables_outstanding_ratio?: number | null
-          days_of_sales_outstanding_ratio?: number | null
           days_payables_outstanding?: number | null
           days_sales_outstanding?: number | null
-          debt_repayment?: number | null
           debt_to_assets?: number | null
           debt_to_equity?: number | null
-          debt_to_market_cap?: number | null
-          deferred_income_tax?: number | null
-          deferred_revenue?: number | null
-          deferred_revenue_non_current?: number | null
-          deferred_tax_liabilities_non_current?: number | null
-          dividend_paid_and_capex_coverage_ratio?: number | null
-          dividend_payments_coverage_ratio?: number | null
           dividend_per_share?: number | null
-          dividend_per_share_ratio?: number | null
           dividend_yield?: number | null
-          earnings_yield?: number | null
           ebit?: number | null
-          ebit_per_revenue?: number | null
           ebitda?: number | null
-          ebitda_margin?: number | null
-          effect_of_forex_changes_on_cash?: number | null
-          effective_tax_rate?: number | null
           enterprise_value?: number | null
           eps?: number | null
-          eps_corrected?: number | null
           eps_diluted?: number | null
           eps_wo_nri?: number | null
           ev_to_ebitda?: number | null
           ev_to_operating_cash_flow?: number | null
           ev_to_sales?: number | null
-          fcf_yield?: number | null
-          filing_date?: string | null
           fiscal_date: string
-          fiscal_year?: string | null
-          fixed_asset_turnover?: number | null
           fmp_filing_date?: string | null
           free_cash_flow?: number | null
-          free_cash_flow_operating_cash_flow_ratio?: number | null
-          free_cash_flow_per_share?: number | null
-          free_cash_flow_per_share_ratio?: number | null
           fx_rate_to_usd?: number | null
-          general_and_administrative_expenses?: number | null
-          goodwill?: number | null
           goodwill_impairment?: number | null
-          graham_net_net?: number | null
-          graham_number?: number | null
-          gross_profit?: number | null
           gross_profit_margin?: number | null
           id?: string
           impairment_of_assets?: number | null
           income_before_tax?: number | null
           income_tax_expense?: number | null
-          intangible_assets?: number | null
-          intangibles_to_total_assets?: number | null
           interest_coverage?: number | null
-          interest_debt_per_share?: number | null
           interest_expense?: number | null
-          interest_income?: number | null
-          inventory?: number | null
-          inventory_change?: number | null
           inventory_turnover?: number | null
           invested_capital?: number | null
-          invested_capital_metric?: number | null
-          investments_in_property_plant_and_equipment?: number | null
           is_ttm?: boolean
           long_term_debt?: number | null
-          long_term_debt_to_capitalization?: number | null
-          long_term_investments?: number | null
           market_cap?: number | null
-          minority_interest?: number | null
           missing_fields?: string[] | null
-          net_cash_provided_by_operating_activities?: number | null
-          net_cash_used_for_investing_activities?: number | null
-          net_cash_used_provided_by_financing_activities?: number | null
-          net_change_in_cash?: number | null
-          net_current_asset_value?: number | null
-          net_debt?: number | null
           net_debt_to_ebitda?: number | null
           net_income?: number | null
-          net_income_before_adjustments?: number | null
-          net_income_deductions?: number | null
-          net_income_from_continuing_operations?: number | null
-          net_income_from_discontinued_operations?: number | null
-          net_income_per_share?: number | null
-          net_interest_income?: number | null
           net_profit_margin?: number | null
-          net_profit_margin_ratio?: number | null
-          non_operating_income_excluding_interest?: number | null
           nopat?: number | null
           operating_cash_flow?: number | null
-          operating_cash_flow_per_share?: number | null
-          operating_cash_flow_sales_ratio?: number | null
-          operating_cycle?: number | null
-          operating_expenses?: number | null
           operating_profit_margin?: number | null
-          other_adjustments_to_net_income?: number | null
-          other_current_assets?: number | null
-          other_current_liabilities?: number | null
-          other_expenses?: number | null
-          other_financing_activities?: number | null
-          other_investing_activities?: number | null
-          other_liabilities?: number | null
-          other_non_cash_items?: number | null
-          other_non_current_assets?: number | null
-          other_non_current_liabilities?: number | null
-          other_total_stockholders_equity?: number | null
-          other_working_capital_change?: number | null
-          payables_period?: number | null
           payout_ratio?: number | null
           pb_ratio?: number | null
           pe_ratio?: number | null
-          pe_ratio_corrected?: number | null
           peg_ratio?: number | null
           period: string
           pfcf_ratio?: number | null
-          preferred_stock?: number | null
-          pretax_profit_margin?: number | null
-          price_book_value_ratio?: number | null
-          price_earnings_ratio?: number | null
-          price_earnings_to_growth_ratio?: number | null
-          price_fair_value?: number | null
-          price_sales_ratio?: number | null
-          price_to_book_ratio?: number | null
-          price_to_free_cash_flows_ratio?: number | null
-          price_to_operating_cash_flows_ratio?: number | null
-          price_to_sales_ratio?: number | null
-          price_to_sales_ratio_ttm?: number | null
-          proceeds_from_issuance_of_common_stock?: number | null
-          proceeds_from_issuance_of_debt?: number | null
-          proceeds_from_repurchase_of_equity?: number | null
-          property_plant_equipment_net?: number | null
           ps_ratio?: number | null
-          purchases_of_investments?: number | null
           quick_ratio?: number | null
           raw_data_balance?: Json | null
           raw_data_cashflow?: Json | null
@@ -576,86 +319,35 @@ export type Database = {
           raw_data_profile?: Json | null
           raw_key_metrics?: Json | null
           raw_ratios?: Json | null
-          receivables_period?: number | null
           receivables_turnover?: number | null
           reported_currency: string
-          research_and_development_expenses?: number | null
-          research_and_development_to_revenue?: number | null
           restructuring_charges?: number | null
-          retained_earnings?: number | null
           return_on_assets?: number | null
           return_on_capital_employed?: number | null
           return_on_equity?: number | null
           return_on_invested_capital?: number | null
           revenue?: number | null
-          revenue_per_share?: number | null
-          sales_general_and_administrative_to_revenue?: number | null
-          sales_maturities_of_investments?: number | null
-          selling_and_marketing_expenses?: number | null
-          selling_general_and_administrative_expenses?: number | null
-          shareholders_equity_per_share?: number | null
-          short_term_coverage_ratios?: number | null
           short_term_debt?: number | null
-          short_term_investments?: number | null
-          stock_based_compensation?: number | null
-          stock_based_compensation_to_revenue?: number | null
           stock_price_close?: number | null
           stock_price_date?: string | null
           symbol: string
-          tangible_asset_value?: number | null
-          tangible_book_value_per_share?: number | null
-          tax_assets?: number | null
           tax_rate?: number | null
-          total_asset_turnover?: number | null
           total_assets?: number | null
           total_debt?: number | null
-          total_debt_to_capitalization?: number | null
           total_equity?: number | null
-          total_liabilities?: number | null
-          total_non_current_assets?: number | null
-          total_non_current_liabilities?: number | null
-          total_stockholders_equity?: number | null
-          treasury_stock?: number | null
           unusual_items?: number | null
           updated_at?: string
           wacc?: number | null
           weighted_avg_shares_diluted?: number | null
-          working_capital?: number | null
         }
         Update: {
-          accepted_date?: string | null
-          accounts_payable?: number | null
-          accounts_payables_change?: number | null
-          accounts_receivable?: number | null
-          accounts_receivables_change?: number | null
-          accumulated_other_comprehensive_income_loss?: number | null
-          acquisitions_net?: number | null
           asset_turnover?: number | null
-          average_inventory?: number | null
-          average_payables?: number | null
-          average_receivables?: number | null
           book_value_per_share?: number | null
-          bottom_line_net_income?: number | null
           calendar_year?: number
           capex?: number | null
-          capex_per_share?: number | null
-          capex_to_depreciation?: number | null
-          capex_to_operating_cash_flow?: number | null
-          capex_to_operating_income?: number | null
-          capex_to_revenue?: number | null
-          capital_expenditure_coverage_ratio?: number | null
-          capital_lease_obligations?: number | null
           cash_and_equivalents?: number | null
           cash_conversion_cycle?: number | null
-          cash_flow_to_debt_ratio?: number | null
-          cash_per_share?: number | null
-          cash_per_share_ratio?: number | null
           cash_ratio?: number | null
-          change_in_working_capital?: number | null
-          common_stock?: number | null
-          company_equity_multiplier?: number | null
-          cost_and_expenses?: number | null
-          cost_of_revenue?: number | null
           created_at?: string
           current_assets?: number | null
           current_liabilities?: number | null
@@ -663,142 +355,52 @@ export type Database = {
           data_quality_score?: number | null
           data_source?: string
           days_inventory_outstanding?: number | null
-          days_of_inventory_outstanding_ratio?: number | null
-          days_of_payables_outstanding_ratio?: number | null
-          days_of_sales_outstanding_ratio?: number | null
           days_payables_outstanding?: number | null
           days_sales_outstanding?: number | null
-          debt_repayment?: number | null
           debt_to_assets?: number | null
           debt_to_equity?: number | null
-          debt_to_market_cap?: number | null
-          deferred_income_tax?: number | null
-          deferred_revenue?: number | null
-          deferred_revenue_non_current?: number | null
-          deferred_tax_liabilities_non_current?: number | null
-          dividend_paid_and_capex_coverage_ratio?: number | null
-          dividend_payments_coverage_ratio?: number | null
           dividend_per_share?: number | null
-          dividend_per_share_ratio?: number | null
           dividend_yield?: number | null
-          earnings_yield?: number | null
           ebit?: number | null
-          ebit_per_revenue?: number | null
           ebitda?: number | null
-          ebitda_margin?: number | null
-          effect_of_forex_changes_on_cash?: number | null
-          effective_tax_rate?: number | null
           enterprise_value?: number | null
           eps?: number | null
-          eps_corrected?: number | null
           eps_diluted?: number | null
           eps_wo_nri?: number | null
           ev_to_ebitda?: number | null
           ev_to_operating_cash_flow?: number | null
           ev_to_sales?: number | null
-          fcf_yield?: number | null
-          filing_date?: string | null
           fiscal_date?: string
-          fiscal_year?: string | null
-          fixed_asset_turnover?: number | null
           fmp_filing_date?: string | null
           free_cash_flow?: number | null
-          free_cash_flow_operating_cash_flow_ratio?: number | null
-          free_cash_flow_per_share?: number | null
-          free_cash_flow_per_share_ratio?: number | null
           fx_rate_to_usd?: number | null
-          general_and_administrative_expenses?: number | null
-          goodwill?: number | null
           goodwill_impairment?: number | null
-          graham_net_net?: number | null
-          graham_number?: number | null
-          gross_profit?: number | null
           gross_profit_margin?: number | null
           id?: string
           impairment_of_assets?: number | null
           income_before_tax?: number | null
           income_tax_expense?: number | null
-          intangible_assets?: number | null
-          intangibles_to_total_assets?: number | null
           interest_coverage?: number | null
-          interest_debt_per_share?: number | null
           interest_expense?: number | null
-          interest_income?: number | null
-          inventory?: number | null
-          inventory_change?: number | null
           inventory_turnover?: number | null
           invested_capital?: number | null
-          invested_capital_metric?: number | null
-          investments_in_property_plant_and_equipment?: number | null
           is_ttm?: boolean
           long_term_debt?: number | null
-          long_term_debt_to_capitalization?: number | null
-          long_term_investments?: number | null
           market_cap?: number | null
-          minority_interest?: number | null
           missing_fields?: string[] | null
-          net_cash_provided_by_operating_activities?: number | null
-          net_cash_used_for_investing_activities?: number | null
-          net_cash_used_provided_by_financing_activities?: number | null
-          net_change_in_cash?: number | null
-          net_current_asset_value?: number | null
-          net_debt?: number | null
           net_debt_to_ebitda?: number | null
           net_income?: number | null
-          net_income_before_adjustments?: number | null
-          net_income_deductions?: number | null
-          net_income_from_continuing_operations?: number | null
-          net_income_from_discontinued_operations?: number | null
-          net_income_per_share?: number | null
-          net_interest_income?: number | null
           net_profit_margin?: number | null
-          net_profit_margin_ratio?: number | null
-          non_operating_income_excluding_interest?: number | null
           nopat?: number | null
           operating_cash_flow?: number | null
-          operating_cash_flow_per_share?: number | null
-          operating_cash_flow_sales_ratio?: number | null
-          operating_cycle?: number | null
-          operating_expenses?: number | null
           operating_profit_margin?: number | null
-          other_adjustments_to_net_income?: number | null
-          other_current_assets?: number | null
-          other_current_liabilities?: number | null
-          other_expenses?: number | null
-          other_financing_activities?: number | null
-          other_investing_activities?: number | null
-          other_liabilities?: number | null
-          other_non_cash_items?: number | null
-          other_non_current_assets?: number | null
-          other_non_current_liabilities?: number | null
-          other_total_stockholders_equity?: number | null
-          other_working_capital_change?: number | null
-          payables_period?: number | null
           payout_ratio?: number | null
           pb_ratio?: number | null
           pe_ratio?: number | null
-          pe_ratio_corrected?: number | null
           peg_ratio?: number | null
           period?: string
           pfcf_ratio?: number | null
-          preferred_stock?: number | null
-          pretax_profit_margin?: number | null
-          price_book_value_ratio?: number | null
-          price_earnings_ratio?: number | null
-          price_earnings_to_growth_ratio?: number | null
-          price_fair_value?: number | null
-          price_sales_ratio?: number | null
-          price_to_book_ratio?: number | null
-          price_to_free_cash_flows_ratio?: number | null
-          price_to_operating_cash_flows_ratio?: number | null
-          price_to_sales_ratio?: number | null
-          price_to_sales_ratio_ttm?: number | null
-          proceeds_from_issuance_of_common_stock?: number | null
-          proceeds_from_issuance_of_debt?: number | null
-          proceeds_from_repurchase_of_equity?: number | null
-          property_plant_equipment_net?: number | null
           ps_ratio?: number | null
-          purchases_of_investments?: number | null
           quick_ratio?: number | null
           raw_data_balance?: Json | null
           raw_data_cashflow?: Json | null
@@ -806,51 +408,26 @@ export type Database = {
           raw_data_profile?: Json | null
           raw_key_metrics?: Json | null
           raw_ratios?: Json | null
-          receivables_period?: number | null
           receivables_turnover?: number | null
           reported_currency?: string
-          research_and_development_expenses?: number | null
-          research_and_development_to_revenue?: number | null
           restructuring_charges?: number | null
-          retained_earnings?: number | null
           return_on_assets?: number | null
           return_on_capital_employed?: number | null
           return_on_equity?: number | null
           return_on_invested_capital?: number | null
           revenue?: number | null
-          revenue_per_share?: number | null
-          sales_general_and_administrative_to_revenue?: number | null
-          sales_maturities_of_investments?: number | null
-          selling_and_marketing_expenses?: number | null
-          selling_general_and_administrative_expenses?: number | null
-          shareholders_equity_per_share?: number | null
-          short_term_coverage_ratios?: number | null
           short_term_debt?: number | null
-          short_term_investments?: number | null
-          stock_based_compensation?: number | null
-          stock_based_compensation_to_revenue?: number | null
           stock_price_close?: number | null
           stock_price_date?: string | null
           symbol?: string
-          tangible_asset_value?: number | null
-          tangible_book_value_per_share?: number | null
-          tax_assets?: number | null
           tax_rate?: number | null
-          total_asset_turnover?: number | null
           total_assets?: number | null
           total_debt?: number | null
-          total_debt_to_capitalization?: number | null
           total_equity?: number | null
-          total_liabilities?: number | null
-          total_non_current_assets?: number | null
-          total_non_current_liabilities?: number | null
-          total_stockholders_equity?: number | null
-          treasury_stock?: number | null
           unusual_items?: number | null
           updated_at?: string
           wacc?: number | null
           weighted_avg_shares_diluted?: number | null
-          working_capital?: number | null
         }
         Relationships: []
       }
