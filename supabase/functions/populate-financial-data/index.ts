@@ -21,6 +21,8 @@ interface QuarterData {
   
   // Income Statement
   netIncome?: number;
+  otherAdjustments?: number; // totalOtherIncomeExpensesNet from FMP
+  netIncomeBeforeAdjustments?: number; // Net Income - Other Adjustments
   revenue?: number;
   ebit?: number;
   ebitda?: number;
@@ -183,7 +185,7 @@ async function getQuarterEndPrice(
   }
 }
 
-// Calculate EPS w/o NRI (simplified version)
+// Calculate EPS w/o NRI (simplified version - keep for backwards compatibility)
 function calculateEpsWoNri(quarter: QuarterData): number | null {
   const niCont = quarter.netIncome || 0;
   const preTax = quarter.incomeBeforeTax || 0;
@@ -207,6 +209,38 @@ function calculateEpsWoNri(quarter: QuarterData): number | null {
   const niWoNri = niCont - unusualAfterTax;
   
   return niWoNri / shares;
+}
+
+// Calculate corrected EPS (Net Income before Other Adjustments)
+function calculateCorrectedEps(quarter: QuarterData): {
+  epsCorrect: number | null;
+  netIncomeBeforeAdj: number | null;
+  peRatioCorrect: number | null;
+  stockPrice: number | null;
+} {
+  const shares = quarter.weightedAverageShsOutDil || 0;
+  
+  if (shares <= 0) {
+    return { 
+      epsCorrect: null, 
+      netIncomeBeforeAdj: null,
+      peRatioCorrect: null,
+      stockPrice: null
+    };
+  }
+  
+  // Net Income before Adjustments = Net Income (reported) - Other Adjustments
+  const netIncomeBeforeAdj = (quarter.netIncome || 0) - (quarter.otherAdjustments || 0);
+  
+  const epsCorrect = netIncomeBeforeAdj / shares;
+  
+  // Note: stockPrice will be added later after fetching quarter-end price
+  return { 
+    epsCorrect, 
+    netIncomeBeforeAdj,
+    peRatioCorrect: null,
+    stockPrice: null
+  };
 }
 
 // Assess data quality
@@ -262,6 +296,8 @@ function mergeByFiscalDate(
     }
     const q = quarterMap.get(date)!;
     q.netIncome = i.netIncome;
+    q.otherAdjustments = i.totalOtherIncomeExpensesNet || 0; // The actual adjustments from FMP
+    q.netIncomeBeforeAdjustments = (i.netIncome || 0) - (i.totalOtherIncomeExpensesNet || 0); // Corrected Net Income
     q.revenue = i.revenue;
     q.ebit = i.operatingIncome;
     q.ebitda = i.ebitda;
@@ -273,7 +309,7 @@ function mergeByFiscalDate(
     q.weightedAverageShsOutDil = i.weightedAverageShsOutDil;
     q.depreciationAndAmortization = i.depreciationAndAmortization;
     
-    // Non-recurring items
+    // Non-recurring items (keep for backwards compatibility)
     q.unusualItems = i.otherNonOperatingIncomeExpenses;
     q.goodwillImpairment = 0;
     q.impairmentOfAssets = 0;
@@ -458,8 +494,11 @@ serve(async (req) => {
         apiKey
       );
       
-      // Calculate EPS w/o NRI
+      // Calculate EPS w/o NRI (old method, keep for backwards compatibility)
       const epsWoNri = calculateEpsWoNri(q);
+      
+      // Calculate corrected EPS (new method)
+      const { epsCorrect, netIncomeBeforeAdj } = calculateCorrectedEps(q);
       
       // Calculate smoothed tax rate (simplified - just use current quarter)
       const taxRate = (q.incomeBeforeTax && q.incomeTaxExpense && q.incomeBeforeTax > 0)
@@ -476,6 +515,11 @@ serve(async (req) => {
       
       // Get quarter-end price
       const { price, priceDate } = await getQuarterEndPrice(ticker, q.date, apiKey);
+      
+      // Calculate corrected P/E Ratio
+      const peRatioCorrect = (price && epsCorrect && epsCorrect > 0) 
+        ? price / epsCorrect 
+        : null;
       
       // Assess data quality
       const { score, missingFields } = assessDataQuality(q);
@@ -500,13 +544,16 @@ serve(async (req) => {
         fx_rate_to_usd: fxRate,
         
         // Income Statement
-        net_income: q.netIncome,
+        net_income: q.netIncome, // Reported Net Income (includes adjustments)
+        other_adjustments_to_net_income: q.otherAdjustments, // totalOtherIncomeExpensesNet
+        net_income_before_adjustments: netIncomeBeforeAdj, // Corrected Net Income
         revenue: q.revenue,
         ebit: q.ebit,
         ebitda: q.ebitda,
-        eps: q.eps,
+        eps: q.eps, // FMP's EPS (based on reported Net Income)
         eps_diluted: q.epsdiluted,
-        eps_wo_nri: epsWoNri,
+        eps_wo_nri: epsWoNri, // Old calculation (keep for backwards compatibility)
+        eps_corrected: epsCorrect, // NEW: Corrected EPS
         interest_expense: q.interestExpense,
         income_before_tax: q.incomeBeforeTax,
         income_tax_expense: q.incomeTaxExpense,
@@ -544,7 +591,8 @@ serve(async (req) => {
         enterprise_value: q.enterpriseValue,
         
         // Valuation Ratios
-        pe_ratio: q.peRatio,
+        pe_ratio: q.peRatio, // FMP's P/E (based on reported EPS)
+        pe_ratio_corrected: peRatioCorrect, // NEW: Corrected P/E Ratio
         pb_ratio: q.pbRatio,
         ps_ratio: q.psRatio,
         pfcf_ratio: q.pfcfRatio,
@@ -646,6 +694,8 @@ serve(async (req) => {
         
         // Flows: Sum
         net_income: sum(last4, 'netIncome'),
+        other_adjustments_to_net_income: sum(last4, 'otherAdjustments'),
+        net_income_before_adjustments: sum(last4, 'netIncomeBeforeAdjustments'),
         revenue: sum(last4, 'revenue'),
         ebit: sum(last4, 'ebit'),
         ebitda: sum(last4, 'ebitda'),
@@ -668,6 +718,23 @@ serve(async (req) => {
         market_cap: latest(last4, 'marketCap'),
         enterprise_value: latest(last4, 'enterpriseValue'),
         pe_ratio: latest(last4, 'peRatio'),
+        pe_ratio_corrected: (() => {
+          const ttmNetIncomeBeforeAdj = sum(last4, 'netIncomeBeforeAdjustments');
+          const shares = latest(last4, 'weightedAverageShsOutDil');
+          const price = recordsToUpsert[0]?.stock_price_close; // Latest stock price
+          if (shares && shares > 0 && ttmNetIncomeBeforeAdj && price) {
+            const ttmEpsCorrect = ttmNetIncomeBeforeAdj / shares;
+            return ttmEpsCorrect > 0 ? price / ttmEpsCorrect : null;
+          }
+          return null;
+        })(),
+        eps_corrected: (() => {
+          const ttmNetIncomeBeforeAdj = sum(last4, 'netIncomeBeforeAdjustments');
+          const shares = latest(last4, 'weightedAverageShsOutDil');
+          return (shares && shares > 0 && ttmNetIncomeBeforeAdj) 
+            ? ttmNetIncomeBeforeAdj / shares 
+            : null;
+        })(),
         pb_ratio: latest(last4, 'pbRatio'),
         ps_ratio: latest(last4, 'psRatio'),
         pfcf_ratio: latest(last4, 'pfcfRatio'),

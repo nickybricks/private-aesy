@@ -187,6 +187,7 @@ export type Database = {
           ebitda: number | null
           enterprise_value: number | null
           eps: number | null
+          eps_corrected: number | null
           eps_diluted: number | null
           eps_wo_nri: number | null
           ev_to_ebitda: number | null
@@ -212,13 +213,16 @@ export type Database = {
           missing_fields: string[] | null
           net_debt_to_ebitda: number | null
           net_income: number | null
+          net_income_before_adjustments: number | null
           net_profit_margin: number | null
           nopat: number | null
           operating_cash_flow: number | null
           operating_profit_margin: number | null
+          other_adjustments_to_net_income: number | null
           payout_ratio: number | null
           pb_ratio: number | null
           pe_ratio: number | null
+          pe_ratio_corrected: number | null
           peg_ratio: number | null
           period: string
           pfcf_ratio: number | null
@@ -276,6 +280,7 @@ export type Database = {
           ebitda?: number | null
           enterprise_value?: number | null
           eps?: number | null
+          eps_corrected?: number | null
           eps_diluted?: number | null
           eps_wo_nri?: number | null
           ev_to_ebitda?: number | null
@@ -301,13 +306,16 @@ export type Database = {
           missing_fields?: string[] | null
           net_debt_to_ebitda?: number | null
           net_income?: number | null
+          net_income_before_adjustments?: number | null
           net_profit_margin?: number | null
           nopat?: number | null
           operating_cash_flow?: number | null
           operating_profit_margin?: number | null
+          other_adjustments_to_net_income?: number | null
           payout_ratio?: number | null
           pb_ratio?: number | null
           pe_ratio?: number | null
+          pe_ratio_corrected?: number | null
           peg_ratio?: number | null
           period: string
           pfcf_ratio?: number | null
@@ -365,6 +373,7 @@ export type Database = {
           ebitda?: number | null
           enterprise_value?: number | null
           eps?: number | null
+          eps_corrected?: number | null
           eps_diluted?: number | null
           eps_wo_nri?: number | null
           ev_to_ebitda?: number | null
@@ -390,13 +399,16 @@ export type Database = {
           missing_fields?: string[] | null
           net_debt_to_ebitda?: number | null
           net_income?: number | null
+          net_income_before_adjustments?: number | null
           net_profit_margin?: number | null
           nopat?: number | null
           operating_cash_flow?: number | null
           operating_profit_margin?: number | null
+          other_adjustments_to_net_income?: number | null
           payout_ratio?: number | null
           pb_ratio?: number | null
           pe_ratio?: number | null
+          pe_ratio_corrected?: number | null
           peg_ratio?: number | null
           period?: string
           pfcf_ratio?: number | null
