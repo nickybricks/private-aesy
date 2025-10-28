@@ -168,13 +168,13 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
         <p className="font-semibold">EPS w/o NRI-Wachstum</p>
         <p className="text-sm text-muted-foreground">(EPS without NRI Growth = Earnings per Share without Non-Recurring Items Growth)</p>
         <p className="text-xs mt-1">
-          <strong>Gewinn je Aktie aus fortgeführten Geschäftsbereichen</strong> – zeigt das operative Gewinnwachstum.
+          <strong>Gewinn je Aktie ohne Sondereffekte</strong> – zeigt das bereinigte Gewinnwachstum.
         </p>
       </div>
       
       <div className="text-xs">
         <p className="mb-2">
-          Die <strong>Growth Rate</strong> zeigt, wie stark der <strong>Gewinn aus fortgeführten Geschäftsbereichen je Aktie</strong> (Net Income from Continuing Operations / Diluted Shares) über die Zeit wächst (YoY oder als <strong>CAGR</strong> über 3/5/10 Jahre).
+          Die <strong>Growth Rate</strong> zeigt, wie stark dieser <strong>bereinigte Gewinn je Aktie</strong> über die Zeit wächst (YoY oder als <strong>CAGR</strong> über 3/5/10 Jahre).
         </p>
         <p className="text-[10px] italic">
           Beispiel (CAGR): EPS w/o NRI 1,00 → 1,26 → 1,58 → 1,98 in 3 Jahren ⇒ <strong>≈ 25 % p. a.</strong>
@@ -184,7 +184,7 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
       <div className="text-xs">
         <p className="font-medium mb-1">Warum wichtig?</p>
         <ul className="list-disc list-inside space-y-1 pl-2">
-          <li><strong>Operative Ertragskraft:</strong> Fokussiert auf fortgeführte Geschäftsbereiche → <strong>nachhaltige</strong> Gewinne.</li>
+          <li><strong>Saubere Ertragskraft:</strong> Blendet Einmaleffekte aus → <strong>ehrliches</strong> Gewinnwachstum.</li>
           <li><strong>Aktionärssicht:</strong> "Je Aktie" berücksichtigt Verwässerung/Rückkäufe.</li>
           <li><strong>Bewertung & Moat:</strong> Stabiles EPS-Wachstum stützt <strong>Wert</strong> (P/E), besonders wenn <strong>ROIC &gt; WACC</strong>.</li>
         </ul>
