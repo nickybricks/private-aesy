@@ -120,35 +120,21 @@ function computeQuarter(q: FmpIncomeQuarterRaw): EpsWoNriQuarter | null {
   const shares = q.weightedAverageShsOutDil ?? null;
   if (!shares || shares <= 0) return null; // skip invalid
 
-  // Prefer continuing ops; fallback to total net income
-  const niCont = pickNumber(q.netIncomeFromContinuingOperations, q.netIncome);
-  if (niCont === null) return null;
+  // New simplified calculation: netIncomeFromContinuingOperations / diluted shares
+  const niContOps = q.netIncomeFromContinuingOperations ?? null;
+  if (niContOps === null) return null;
 
-  const taxRate = effectiveTaxRate(q);
+  const epsWoNri = niContOps / shares;
 
-  const unusualPretax = (q.unusualItems ?? 0) + (q.goodwillImpairment ?? 0) + (q.impairmentOfGoodwillAndIntangibleAssets ?? 0);
-  const unusualAfterTax = unusualPretax * (1 - taxRate);
-
-  // Remove unusuals from NI to get NI without NRI
-  const niWoNri = niCont - unusualAfterTax;
-  const epsWoNri = niWoNri / shares;
-
-  console.log('🔢 EPS w/o NRI: Computing Quarter', {
+  console.log('🔢 EPS w/o NRI: Computing Quarter (Simplified)', {
     date: dateStr,
     year,
     period: q.period,
     inputs: {
-      netIncomeFromContinuingOps: niCont?.toFixed(2),
-      unusualItems: q.unusualItems ?? 0,
-      goodwillImpairment: q.goodwillImpairment ?? 0,
-      impairmentOfAssets: q.impairmentOfGoodwillAndIntangibleAssets ?? 0,
-      dilutedShares: shares,
-      taxRate: taxRate.toFixed(4)
+      netIncomeFromContinuingOps: niContOps.toFixed(2),
+      dilutedShares: shares
     },
     calculated: {
-      unusualPretax: unusualPretax.toFixed(2),
-      unusualAfterTax: unusualAfterTax.toFixed(2),
-      niWoNri: niWoNri.toFixed(2),
       epsWoNri: epsWoNri.toFixed(4)
     }
   });
@@ -158,8 +144,8 @@ function computeQuarter(q: FmpIncomeQuarterRaw): EpsWoNriQuarter | null {
     year,
     period: q.period,
     epsWoNri,
-    niContOps: niCont,
-    unusualsAfterTax: unusualAfterTax,
+    niContOps: niContOps,
+    unusualsAfterTax: 0, // No longer calculated, kept for type compatibility
     dilutedShares: shares,
   };
 }
@@ -264,13 +250,8 @@ export async function calculateEpsWithoutNri(ticker: string, currentPrice?: numb
   const warnings: string[] = [];
   if (ttm.value === null || !ttm.complete) warnings.push('TTM unvollständig');
 
-  const anyUnusualAvailable = raw.some(
-    (r) =>
-      (typeof r.unusualItems === 'number' && r.unusualItems !== 0) ||
-      (typeof r.goodwillImpairment === 'number' && r.goodwillImpairment !== 0) ||
-      (typeof r.impairmentOfGoodwillAndIntangibleAssets === 'number' && r.impairmentOfGoodwillAndIntangibleAssets !== 0)
-  );
-  if (!anyUnusualAvailable) warnings.push('Keine Bereinigung vorhanden (Unusuals/Impairments nicht verfügbar)');
+  const anyContOpsAvailable = raw.some((r) => typeof r.netIncomeFromContinuingOperations === 'number');
+  if (!anyContOpsAvailable) warnings.push('Net Income from Continuing Operations nicht verfügbar');
 
   const anySharesMissing = raw.some((r) => !r.weightedAverageShsOutDil || r.weightedAverageShsOutDil <= 0);
   if (anySharesMissing) warnings.push('Verwässerte Aktienanzahl teilweise fehlend – betroffene Quartale ignoriert');
@@ -292,7 +273,7 @@ export async function calculateEpsWithoutNri(ticker: string, currentPrice?: numb
     eps_gaap_ttm,
     nri_adjustment_ttm,
     ttm_complete: ttm.complete,
-    nri_data_missing: !anyUnusualAvailable,
+    nri_data_missing: !anyContOpsAvailable,
   };
 
   console.log('🔍 EPS w/o NRI: Diagnostics', {
@@ -309,7 +290,7 @@ export async function calculateEpsWithoutNri(ticker: string, currentPrice?: numb
 
 export const EpsWoNriTexts = {
   tooltip:
-    'EPS w/o NRI (TTM): Gewinn je Aktie ohne Sondereffekte. Pro Quartal steuerbereinigt berechnet und anschließend die letzten 4 Quartale aufsummiert; je Quartal durch verwässerte Aktienzahl geteilt.',
+    'EPS w/o NRI (TTM): Gewinn je Aktie aus fortgeführten Geschäftsbereichen (Net Income from Continuing Operations). Die letzten 4 Quartale werden aufsummiert; je Quartal durch verwässerte Aktienzahl geteilt.',
   hint:
-    'Hinweis: Cashflow je Aktie ist langfristig oft der robustere Indikator; Differenzen prüfen.',
+    'Hinweis: Diese Kennzahl basiert auf Net Income from Continuing Operations und blendet diskontinuierliche Geschäftsbereiche aus.',
 };
