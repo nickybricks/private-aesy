@@ -6,6 +6,7 @@ import { processFinancialMetrics, calculateBuffettBuyPrice } from './StockDataPr
 import { convertFinancialMetrics, convertHistoricalData, convertRatingValues } from './CurrencyService';
 import { DCFCalculationService } from '@/services/DCFCalculationService';
 import { PredictabilityStarsService, PredictabilityResult } from '@/services/PredictabilityStarsService';
+import { calculateEpsWithoutNri } from '@/services/EpsWithoutNriService';
 import { StockInfo } from '@/types/stock';
 import { OverallRatingData } from './StockContextTypes';
 
@@ -129,6 +130,35 @@ export const useStockSearch = (setLoadingProgress?: (progress: number) => void) 
         let metricsData = processFinancialMetrics(rawMetricsData, reportedCurrency, priceCurrency);
         
         if (metricsData) {
+          // Calculate EPS w/o NRI data
+          console.log('🔢 Calculating EPS w/o NRI data...');
+          try {
+            const epsWoNriResult = await calculateEpsWithoutNri(ticker);
+            if (epsWoNriResult && epsWoNriResult.annual && epsWoNriResult.annual.length > 0) {
+              // Convert to HistoricalDataItem format
+              const epsWoNriHistorical = epsWoNriResult.annual.map(item => ({
+                year: item.year.toString(),
+                value: item.epsWoNri
+              }));
+              
+              // Add to metricsData.historicalData
+              if (!metricsData.historicalData) {
+                metricsData.historicalData = {};
+              }
+              metricsData.historicalData.epsWoNri = epsWoNriHistorical;
+              
+              console.log('✅ EPS w/o NRI data calculated:', {
+                years: epsWoNriHistorical.length,
+                latestYear: epsWoNriHistorical[0]?.year,
+                latestValue: epsWoNriHistorical[0]?.value?.toFixed(4)
+              });
+            } else {
+              console.log('⚠️ No EPS w/o NRI data available');
+            }
+          } catch (error) {
+            console.error('❌ Error calculating EPS w/o NRI:', error);
+          }
+          
           if (metricsData.metrics) {
             if (shouldConvertCurrency(reportedCurrency, priceCurrency)) {
               console.log(`✅ Währungsumrechnung für Metrics wird eingeleitet: ${reportedCurrency} → ${priceCurrency}`);
