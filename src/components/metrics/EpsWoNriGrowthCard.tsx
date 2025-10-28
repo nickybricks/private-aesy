@@ -81,6 +81,19 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
     const year10Ago = sortedData.find(d => parseInt(d.year) === parseInt(latestYear.year) - 10);
     const cagr10y = year10Ago ? calculateCAGR(year10Ago.value, latestValue, 10) : null;
 
+    console.log('📊 EPS w/o NRI Card: CAGR Calculation', {
+      inputData: {
+        length: historicalEpsWoNri?.length || 0,
+        latestYear: sortedData[sortedData.length - 1]?.year,
+        latestValue: sortedData[sortedData.length - 1]?.value?.toFixed(4)
+      },
+      calculated: {
+        cagr3y: cagr3y !== null ? cagr3y.toFixed(2) + '%' : null,
+        cagr5y: cagr5y !== null ? cagr5y.toFixed(2) + '%' : null,
+        cagr10y: cagr10y !== null ? cagr10y.toFixed(2) + '%' : null
+      }
+    });
+
     return { cagr3y, cagr5y, cagr10y };
   }, [historicalEpsWoNri]);
 
@@ -93,6 +106,13 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
   }, [cagrData]);
 
   const score = getScoreFromCAGR(primaryCAGR);
+
+  console.log('🎯 EPS w/o NRI Card: Primary CAGR Selection', {
+    selected: primaryCAGR !== null ? primaryCAGR.toFixed(2) + '%' : null,
+    priority: cagrData.cagr10y !== null ? '10Y' : cagrData.cagr5y !== null ? '5Y' : cagrData.cagr3y !== null ? '3Y' : 'None',
+    score,
+    maxScore
+  });
 
   // Prepare chart data with growth rates
   const chartData = useMemo(() => {
@@ -115,7 +135,7 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
     }
 
     // Calculate year-over-year growth
-    return filteredData.map((item, index) => {
+    const data = filteredData.map((item, index) => {
       const growthRate = index > 0 && filteredData[index - 1].value > 0
         ? ((item.value - filteredData[index - 1].value) / filteredData[index - 1].value) * 100
         : null;
@@ -126,6 +146,20 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
         growthRate: growthRate,
       };
     });
+
+    console.log('📈 EPS w/o NRI Card: Chart Data Prepared', {
+      timeRange,
+      dataPoints: data.length,
+      yearRange: data.length > 0 ? {
+        from: data[0].year,
+        to: data[data.length - 1].year
+      } : null,
+      avgGrowthRate: data.length > 1 
+        ? (data.reduce((sum, d) => sum + (d.growthRate || 0), 0) / data.filter(d => d.growthRate !== null).length).toFixed(2) + '%'
+        : null
+    });
+
+    return data;
   }, [historicalEpsWoNri, timeRange]);
 
   const mainTooltipContent = (

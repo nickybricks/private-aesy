@@ -261,6 +261,16 @@ export function StockProvider({ children }: StockProviderProps) {
             
             setValuationData(convertedValuation);
             
+            // Log historical EPS w/o NRI data if available
+            if (metricsData.historicalData?.epsWoNri) {
+              console.log('📊 EPS w/o NRI: Historical Data from Context', {
+                dataPoints: metricsData.historicalData.epsWoNri.length,
+                years: metricsData.historicalData.epsWoNri.map(d => d.year),
+                values: metricsData.historicalData.epsWoNri.map(d => d.value.toFixed(4)),
+                latestValue: metricsData.historicalData.epsWoNri[0]?.value.toFixed(4)
+              });
+            }
+            
             // Calculate valuation scores after valuation data is loaded
             if (metricsData && !criticalDataMissing) {
               console.log('🎯 Calculating valuation scores');
@@ -342,6 +352,15 @@ export function StockProvider({ children }: StockProviderProps) {
             
             // Calculate Growth Scores
             if (metricsData.historicalData) {
+              console.log('📈 Growth Scores Input - EPS w/o NRI', {
+                available: !!metricsData.historicalData.epsWoNri,
+                dataPoints: metricsData.historicalData.epsWoNri?.length || 0,
+                historicalData: metricsData.historicalData.epsWoNri?.slice(0, 3).map(d => ({
+                  year: d.year,
+                  value: d.value.toFixed(4)
+                }))
+              });
+              
               const growthScoresData = calculateGrowthScores(
                 metricsData.historicalData.revenue,
                 metricsData.historicalData.ebitda,
@@ -360,7 +379,11 @@ export function StockProvider({ children }: StockProviderProps) {
                 maxTotalScore: growthScoresData.maxTotalScore
               };
               
-              console.log('✅ Growth scores calculated:', formattedGrowthScores);
+              console.log('✅ Growth scores calculated:', {
+                ...formattedGrowthScores,
+                epsWoNriScore: formattedGrowthScores.scores.epsWoNri.score,
+                epsWoNriMaxScore: formattedGrowthScores.scores.epsWoNri.maxScore
+              });
               setGrowthScores(formattedGrowthScores);
             }
           })

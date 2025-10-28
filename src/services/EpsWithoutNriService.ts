@@ -72,6 +72,22 @@ async function fetchQuarterlyIncomeStatements(ticker: string): Promise<FmpIncome
   const res = await fetch(url);
   if (!res.ok) throw new Error('FMP income statement fetch failed');
   const json = (await res.json()) as FmpIncomeQuarterRaw[];
+  
+  console.log('📊 EPS w/o NRI: FMP API Response', {
+    ticker,
+    url: url.replace(apiKey, 'REDACTED'),
+    quartersReceived: Array.isArray(json) ? json.length : 0,
+    latestQuarter: Array.isArray(json) && json[0] ? {
+      date: json[0].date,
+      netIncome: json[0].netIncome,
+      netIncomeFromContinuingOperations: json[0].netIncomeFromContinuingOperations,
+      unusualItems: json[0].unusualItems,
+      goodwillImpairment: json[0].goodwillImpairment,
+      impairmentOfGoodwillAndIntangibleAssets: json[0].impairmentOfGoodwillAndIntangibleAssets,
+      shares: json[0].weightedAverageShsOutDil
+    } : null
+  });
+  
   return Array.isArray(json) ? json : [];
 }
 
@@ -116,6 +132,26 @@ function computeQuarter(q: FmpIncomeQuarterRaw): EpsWoNriQuarter | null {
   // Remove unusuals from NI to get NI without NRI
   const niWoNri = niCont - unusualAfterTax;
   const epsWoNri = niWoNri / shares;
+
+  console.log('🔢 EPS w/o NRI: Computing Quarter', {
+    date: dateStr,
+    year,
+    period: q.period,
+    inputs: {
+      netIncomeFromContinuingOps: niCont?.toFixed(2),
+      unusualItems: q.unusualItems ?? 0,
+      goodwillImpairment: q.goodwillImpairment ?? 0,
+      impairmentOfAssets: q.impairmentOfGoodwillAndIntangibleAssets ?? 0,
+      dilutedShares: shares,
+      taxRate: taxRate.toFixed(4)
+    },
+    calculated: {
+      unusualPretax: unusualPretax.toFixed(2),
+      unusualAfterTax: unusualAfterTax.toFixed(2),
+      niWoNri: niWoNri.toFixed(2),
+      epsWoNri: epsWoNri.toFixed(4)
+    }
+  });
 
   return {
     date: dateStr,
@@ -183,10 +219,45 @@ export async function calculateEpsWithoutNri(ticker: string, currentPrice?: numb
     .filter((q): q is EpsWoNriQuarter => !!q)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  console.log('📈 EPS w/o NRI: Processing Complete', {
+    ticker,
+    totalQuarters: quartersDesc.length,
+    validQuarters: quartersDesc.filter(q => q.epsWoNri > 0).length,
+    dateRange: quartersDesc.length > 0 ? {
+      from: quartersDesc[quartersDesc.length - 1].date,
+      to: quartersDesc[0].date
+    } : null
+  });
+
   const ttm = sumLastN(quartersDesc, 4, (q) => q.epsWoNri);
+  
+  console.log('📊 EPS w/o NRI: TTM Calculation', {
+    value: ttm.value?.toFixed(4),
+    complete: ttm.complete,
+    quarters: quartersDesc.slice(0, 4).map(q => ({
+      date: q.date,
+      epsWoNri: q.epsWoNri.toFixed(4)
+    }))
+  });
 
   const annual = buildAnnual(quartersDesc);
+  
+  console.log('📅 EPS w/o NRI: Annual Data', {
+    yearsAvailable: annual.length,
+    annual: annual.map(a => ({
+      year: a.year,
+      epsWoNri: a.epsWoNri.toFixed(4),
+      quarters: a.quarters
+    }))
+  });
+  
   const growth = growthFromAnnual(annual);
+  
+  console.log('📈 EPS w/o NRI: Growth Rates', {
+    cagr3y: growth.cagr3y ? `${(growth.cagr3y * 100).toFixed(2)}%` : null,
+    cagr5y: growth.cagr5y ? `${(growth.cagr5y * 100).toFixed(2)}%` : null,
+    cagr10y: growth.cagr10y ? `${(growth.cagr10y * 100).toFixed(2)}%` : null
+  });
 
   const peWoNri = ttm.value && ttm.value > 0 && currentPrice ? currentPrice / ttm.value : null;
 
@@ -223,6 +294,15 @@ export async function calculateEpsWithoutNri(ticker: string, currentPrice?: numb
     ttm_complete: ttm.complete,
     nri_data_missing: !anyUnusualAvailable,
   };
+
+  console.log('🔍 EPS w/o NRI: Diagnostics', {
+    eps_wonri_ttm: diagnostics.eps_wonri_ttm?.toFixed(4),
+    eps_gaap_ttm: diagnostics.eps_gaap_ttm?.toFixed(4),
+    nri_adjustment_ttm: diagnostics.nri_adjustment_ttm?.toFixed(4),
+    ttm_complete: diagnostics.ttm_complete,
+    nri_data_missing: diagnostics.nri_data_missing,
+    warnings
+  });
 
   return { quarters: quartersDesc, ttm, annual, growth, peWoNri, warnings, diagnostics };
 }
