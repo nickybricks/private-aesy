@@ -305,17 +305,17 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
   const priceAtMedianPS = medianPS > 0 && currentRPS > 0 ? currentRPS * medianPS : 0;
   const discount = priceAtMedianPS > 0 ? ((priceAtMedianPS - currentPrice) / priceAtMedianPS) * 100 : 0;
 
-  // Get score based on discount (4-point system)
+  // Get score based on discount (3-point system)
   const getScore = (discount: number): number => {
-    if (discount >= 35) return 4;
-    if (discount >= 23) return 3;
-    if (discount >= 12) return 2;
-    if (discount >= 0) return 1;
+    if (discount >= 35) return 3;
+    if (discount >= 23) return 2;
+    if (discount >= 12) return 1;
+    if (discount >= 0) return 0.5;
     return 0; // Overvalued
   };
 
   const score = getScore(discount);
-  const maxScore = 4;
+  const maxScore = 3;
 
   // Notify parent component when discount/score changes (with ref to prevent loops)
   const lastReportedScoreRef = useRef<{ discount: number; score: number } | null>(null);
@@ -468,11 +468,11 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
 
   const scoringTooltip = (
     <div className="space-y-1">
-      <p className="font-medium text-sm">Bewertungssystem (0-4 Punkte):</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 4 Punkte: ≥ 35%</p>
-      <p className="text-sm"><span className="text-lime-600">●</span> 3 Punkte: ≥ 23%</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 2 Punkte: ≥ 12%</p>
-      <p className="text-sm"><span className="text-orange-600">●</span> 1 Punkt: ≥ 0%</p>
+      <p className="font-medium text-sm">Bewertungssystem (0-3 Punkte):</p>
+      <p className="text-sm"><span className="text-green-600">●</span> 3 Punkte: ≥ 35%</p>
+      <p className="text-sm"><span className="text-lime-600">●</span> 2 Punkte: ≥ 23%</p>
+      <p className="text-sm"><span className="text-yellow-600">●</span> 1 Punkt: ≥ 12%</p>
+      <p className="text-sm"><span className="text-orange-600">●</span> 0,5 Punkt: ≥ 0%</p>
       <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: &lt; 0% (überbewertet)</p>
     </div>
   );

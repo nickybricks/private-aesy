@@ -212,19 +212,19 @@ function calculatePriceToCashFlowScore(
   return { score, maxScore: 4 };
 }
 
-// Calculate Price to Median P/S Score (max 4 points)
+// Calculate Price to Median P/S Score (max 3 points)
 function calculatePriceToMedianPSScore(discount: number | null): ScoreResult {
   if (discount === null) {
-    return { score: 0, maxScore: 4 };
+    return { score: 0, maxScore: 3 };
   }
   
   let score = 0;
-  if (discount >= 35) score = 4;
-  else if (discount >= 23) score = 3;
-  else if (discount >= 12) score = 2;
-  else if (discount >= 0) score = 1;
+  if (discount >= 35) score = 3;
+  else if (discount >= 23) score = 2;
+  else if (discount >= 12) score = 1;
+  else if (discount >= 0) score = 0.5;
   
-  return { score, maxScore: 4 };
+  return { score, maxScore: 3 };
 }
 
 serve(async (req) => {
@@ -273,8 +273,8 @@ serve(async (req) => {
     );
     
     // Calculate total score
-    const maxTotalScore = 21; // Sum of all max scores (3+3+4+3+4+4)
-    const totalScore = 
+    const maxTotalScore = 20; // Sum of all max scores (3+3+4+3+4+3)
+    const totalScore =
       peterLynchDiscount.score +
       peRatio.score +
       dividendYield.score +
