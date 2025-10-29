@@ -188,7 +188,6 @@ export interface FinancialStrengthScores {
 
 export interface ValuationScores {
   scores: {
-    intrinsicValueDiscount: ScoreResult;
     peterLynchDiscount: ScoreResult;
     peRatio: ScoreResult;
     dividendYield: ScoreResult;

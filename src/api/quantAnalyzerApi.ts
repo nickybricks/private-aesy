@@ -725,7 +725,6 @@ export const exportToExcel = (results: QuantAnalysisResult[]) => {
     const headers = [
       'Symbol', 'Name', 'Sektor', 'Börse', 'Preis', 'Währung',
       'Buffett Score (max 14)',
-      'Abweichung zum inneren Wert (Intrinsic Value Discount)',
       'Jahre Profitabel (von 10)', 'Pass',
       'Kurs-Gewinn-Verhältnis (KGV / P/E Ratio)', 'Pass',
       'ROIC (%)', 'Pass',
@@ -746,7 +745,6 @@ export const exportToExcel = (results: QuantAnalysisResult[]) => {
       parseFloat(result.price.toFixed(2)),
       result.currency,
       result.buffettScore,
-      result.intrinsicValue ? parseFloat(result.intrinsicValue.toFixed(2)) : 'N/A',
       result.criteria.yearsOfProfitability.value || 'N/A',
       result.criteria.yearsOfProfitability.pass ? 'Ja' : 'Nein',
       result.criteria.pe.value !== null ? parseFloat(result.criteria.pe.value.toFixed(2)) : 'N/A',

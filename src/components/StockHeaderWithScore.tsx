@@ -66,7 +66,6 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
   ] : [];
 
   const valuationCards = valuationScores?.scores ? [
-    { name: 'Intrinsic Value', score: valuationScores.scores.intrinsicValueDiscount.score, maxScore: valuationScores.scores.intrinsicValueDiscount.maxScore },
     { name: 'Peter Lynch', score: valuationScores.scores.peterLynchDiscount.score, maxScore: valuationScores.scores.peterLynchDiscount.maxScore },
     { name: 'KGV (P/E)', score: valuationScores.scores.peRatio.score, maxScore: valuationScores.scores.peRatio.maxScore },
     { name: 'Dividende', score: valuationScores.scores.dividendYield.score, maxScore: valuationScores.scores.dividendYield.maxScore },

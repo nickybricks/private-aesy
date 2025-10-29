@@ -6,8 +6,6 @@ const corsHeaders = {
 };
 
 interface ValuationInput {
-  // Intrinsic Value Discount (max 1 point)
-  fairValuePerShare: number | null;
   currentPrice: number;
   sector: string;
   
@@ -45,7 +43,6 @@ interface ScoreResult {
 
 interface ValuationScoresResult {
   scores: {
-    intrinsicValueDiscount: ScoreResult;
     peterLynchDiscount: ScoreResult;
     peRatio: ScoreResult;
     dividendYield: ScoreResult;
@@ -75,21 +72,6 @@ function getMoSTarget(sector: string): number {
   }
   
   return 20; // Default
-}
-
-// Calculate Intrinsic Value Discount Score (max 1 point)
-function calculateIntrinsicValueScore(fairValue: number | null, currentPrice: number, sector: string): ScoreResult {
-  if (!fairValue || fairValue <= 0) {
-    return { score: 0, maxScore: 1 };
-  }
-  
-  const discount = ((fairValue - currentPrice) / fairValue) * 100;
-  
-  let score = 0;
-  if (discount >= 35) score = 1;
-  else if (discount >= 20) score = 0.5;
-  
-  return { score, maxScore: 1 };
 }
 
 // Calculate Peter Lynch Discount Score (max 3 points)
@@ -255,12 +237,6 @@ serve(async (req) => {
     const input: ValuationInput = await req.json();
     
     // Calculate individual scores
-    const intrinsicValueDiscount = calculateIntrinsicValueScore(
-      input.fairValuePerShare,
-      input.currentPrice,
-      input.sector
-    );
-    
     const peterLynchDiscount = calculatePeterLynchScore(
       input.peterLynchFairValue,
       input.currentPrice
@@ -297,9 +273,8 @@ serve(async (req) => {
     );
     
     // Calculate total score
-    const maxTotalScore = 22; // Sum of all max scores (1+3+3+4+3+4+4)
+    const maxTotalScore = 21; // Sum of all max scores (3+3+4+3+4+4)
     const totalScore = 
-      intrinsicValueDiscount.score +
       peterLynchDiscount.score +
       peRatio.score +
       dividendYield.score +
@@ -309,7 +284,6 @@ serve(async (req) => {
     
     const result: ValuationScoresResult = {
       scores: {
-        intrinsicValueDiscount,
         peterLynchDiscount,
         peRatio,
         dividendYield,

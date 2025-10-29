@@ -33,7 +33,6 @@ import { CurrentRatioCard } from '@/components/metrics/CurrentRatioCard';
 import { NetDebtToEbitdaCard } from '@/components/metrics/NetDebtToEbitdaCard';
 import { PERatioCard } from '@/components/metrics/PERatioCard';
 import { DividendYieldCard } from '@/components/metrics/DividendYieldCard';
-import { IntrinsicValueDiscountCard } from '@/components/metrics/IntrinsicValueDiscountCard';
 import { PeterLynchDiscountCard } from '@/components/metrics/PeterLynchDiscountCard';
 import { PriceToBookCard } from '@/components/metrics/PriceToBookCard';
 import { PriceToCashFlowCard } from '@/components/metrics/PriceToCashFlowCard';
@@ -287,17 +286,6 @@ const IndexContent: React.FC = () => {
                   setValuationCardScore('priceToMedianPS', score, 4);
                 }}
               />
-              
-              {/* Intrinsic Value Discount Card */}
-              {valuationData?.fairValuePerShare && (
-                <IntrinsicValueDiscountCard
-                  ticker={stockInfo.ticker}
-                  currentPrice={stockInfo.price}
-                  fairValue={valuationData.fairValuePerShare}
-                  sector={stockInfo.sector}
-                  currency={stockInfo.currency}
-                />
-              )}
               
               {/* Peter Lynch Discount Card */}
               <PeterLynchDiscountCard

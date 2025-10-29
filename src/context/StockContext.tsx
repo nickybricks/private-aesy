@@ -305,7 +305,6 @@ export function StockProvider({ children }: StockProviderProps) {
               
               supabase.functions.invoke('calculate-valuation-scores', {
                 body: {
-                  fairValuePerShare: valuation.fairValuePerShare,
                   currentPrice: info.price,
                   sector: info.sector || 'Default',
                   peterLynchFairValue,
@@ -333,7 +332,6 @@ export function StockProvider({ children }: StockProviderProps) {
                     totalScore: data.totalScore,
                     maxTotalScore: data.maxTotalScore,
                     individualScores: {
-                      intrinsicValue: data.scores.intrinsicValueDiscount,
                       peterLynch: data.scores.peterLynchDiscount,
                       peRatio: data.scores.peRatio,
                       dividend: data.scores.dividendYield,

@@ -14,7 +14,6 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { IntrinsicValueDiscountCard } from '@/components/metrics/IntrinsicValueDiscountCard';
 
 const DesignSystem = () => {
   return (
@@ -501,32 +500,6 @@ const DesignSystem = () => {
           </SectionHeader>
 
           <div className="space-y-6">
-            <div>
-              <h4 className="text-sm font-semibold mb-3">Innerer Wert-Abweichung Card</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                Diese Card zeigt die Abweichung des aktuellen Kurses vom inneren Wert (Fair Value) 
-                mit historischem Chart, Zeitraumauswahl und Scoring-System basierend auf Sektor.
-              </p>
-              <IntrinsicValueDiscountCard
-                ticker="AAPL"
-                currentPrice={42.5}
-                fairValue={55.0}
-                sector="Technology"
-                currency="USD"
-              />
-              <div className="mt-4 p-4 bg-muted/30 rounded-2xl space-y-2">
-                <h5 className="font-semibold text-sm">Design-Features:</h5>
-                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                  <li><strong>Farbcodiertes Scoring:</strong> Hintergrundfarbe basiert auf Score (0-5 Punkte)</li>
-                  <li><strong>3er-Grid KPIs:</strong> Aktueller Kurs, Innerer Wert, Differenz als Pill mit Icon</li>
-                  <li><strong>Meta-Row:</strong> Kompakte Darstellung von Abweichung, MoS-Ziel und Erfüllung mit Tooltips</li>
-                  <li><strong>Zeitraumauswahl:</strong> 8 Buttons (1M, 6M, YTD, 1Y, 5Y, 10Y, 25Y, MAX) rechtsbündig</li>
-                  <li><strong>Historischer Chart:</strong> Stock Price Line mit Fair Value Reference Line</li>
-                  <li><strong>Sektorbasiertes Scoring:</strong> MoS-Ziel variiert je nach Sektor (20-40%)</li>
-                  <li><strong>Responsive Tooltips:</strong> Info-Icons mit detaillierten Erklärungen</li>
-                </ul>
-              </div>
-            </div>
           </div>
         </Section>
 
