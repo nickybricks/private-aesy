@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Info } from 'lucide-react';
@@ -11,25 +11,11 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useStock } from '@/context/StockContext';
 import { HistoricalDataItem } from '@/context/StockContextTypes';
-import { supabase } from '@/integrations/supabase/client';
 
 type TimeRange = '3Y' | '5Y' | '10Y' | 'MAX';
 
 interface EpsWoNriGrowthCardProps {
   historicalEpsWoNri: HistoricalDataItem[];
-}
-
-interface QuarterlyIncomeStatement {
-  date: string;
-  calendarYear: string;
-  period: string;
-  netIncome: number;
-  weightedAverageShsOut: number;
-  eps: number;
-  epsdiluted: number;
-  incomeBeforeTax: number;
-  incomeTaxExpense: number;
-  netIncomeRatio: number;
 }
 
 // Calculate CAGR (Compound Annual Growth Rate)
@@ -66,71 +52,9 @@ const getBgColorByScore = (score: number, maxScore: number): string => {
 };
 
 export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardProps) {
-  const { stockCurrency, stockInfo } = useStock();
+  const { stockCurrency } = useStock();
   const [timeRange, setTimeRange] = useState<TimeRange>('MAX');
-  const [ttmEpsWoNri, setTtmEpsWoNri] = useState<number | null>(null);
-  const [isLoadingTtm, setIsLoadingTtm] = useState(false);
   const maxScore = 6;
-
-  // Fetch and calculate TTM EPS w/o NRI
-  useEffect(() => {
-    const fetchTtmEps = async () => {
-      if (!stockInfo?.ticker) return;
-      
-      setIsLoadingTtm(true);
-      try {
-        // Get FMP API key from Supabase
-        const { data: keyData, error: keyError } = await supabase.functions.invoke('get-fmp-key');
-        
-        if (keyError || !keyData?.key) {
-          console.error('❌ Failed to get FMP API key:', keyError);
-          return;
-        }
-
-        const apiKey = keyData.key;
-        
-        // Fetch quarterly income statements
-        const response = await fetch(
-          `https://financialmodelingprep.com/api/v3/income-statement/${stockInfo.ticker}?period=quarter&limit=4&apikey=${apiKey}`
-        );
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch quarterly data');
-        }
-
-        const quarterlyData: QuarterlyIncomeStatement[] = await response.json();
-        
-        if (!quarterlyData || quarterlyData.length < 4) {
-          console.warn('⚠️ Not enough quarterly data for TTM calculation');
-          return;
-        }
-
-        // Calculate TTM EPS w/o NRI (sum last 4 quarters)
-        // We use EPS diluted as the base, assuming it already excludes major NRI
-        const ttmEps = quarterlyData.slice(0, 4).reduce((sum, quarter) => {
-          return sum + (quarter.epsdiluted || quarter.eps || 0);
-        }, 0);
-
-        setTtmEpsWoNri(ttmEps);
-        
-        console.log('📊 TTM EPS w/o NRI calculated:', {
-          ticker: stockInfo.ticker,
-          ttmEps: ttmEps.toFixed(4),
-          quarters: quarterlyData.slice(0, 4).map(q => ({
-            date: q.date,
-            eps: q.epsdiluted || q.eps
-          }))
-        });
-        
-      } catch (error) {
-        console.error('❌ Error fetching TTM EPS:', error);
-      } finally {
-        setIsLoadingTtm(false);
-      }
-    };
-
-    fetchTtmEps();
-  }, [stockInfo?.ticker]);
 
   // Calculate CAGRs for different time periods
   const cagrData = useMemo(() => {
@@ -348,25 +272,11 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
         </TooltipProvider>
       </div>
       
-      {/* KPIs as 4-column grid with TTM */}
-      <div className="grid grid-cols-4 gap-3 mb-4 text-sm">
-        {/* TTM 2025 */}
-        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-2">
-          <p className="text-xs text-muted-foreground">TTM 2025</p>
-          {isLoadingTtm ? (
-            <p className="font-semibold text-blue-600">Lädt...</p>
-          ) : ttmEpsWoNri !== null ? (
-            <p className="font-semibold text-blue-600">
-              {ttmEpsWoNri.toFixed(2)} {stockCurrency}
-            </p>
-          ) : (
-            <p className="font-semibold text-muted-foreground">N/A</p>
-          )}
-        </div>
-
+      {/* KPIs as 3-column grid */}
+      <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
         {cagrData.cagr3y !== null && (
           <div>
-            <p className="text-xs text-muted-foreground">CAGR 3J</p>
+            <p className="text-xs text-muted-foreground">CAGR 3 Jahre</p>
             <p className={`font-semibold ${cagrData.cagr3y >= 9 ? 'text-green-600' : cagrData.cagr3y >= 6 ? 'text-yellow-600' : ''}`}>
               {cagrData.cagr3y.toFixed(1)}%
             </p>
@@ -375,7 +285,7 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
         
         {cagrData.cagr5y !== null && (
           <div>
-            <p className="text-xs text-muted-foreground">CAGR 5J</p>
+            <p className="text-xs text-muted-foreground">CAGR 5 Jahre</p>
             <p className={`font-semibold ${cagrData.cagr5y >= 9 ? 'text-green-600' : cagrData.cagr5y >= 6 ? 'text-yellow-600' : ''}`}>
               {cagrData.cagr5y.toFixed(1)}%
             </p>
@@ -384,7 +294,7 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
         
         {cagrData.cagr10y !== null && (
           <div>
-            <p className="text-xs text-muted-foreground">CAGR 10J</p>
+            <p className="text-xs text-muted-foreground">CAGR 10 Jahre</p>
             <p className={`font-semibold ${cagrData.cagr10y >= 9 ? 'text-green-600' : cagrData.cagr10y >= 6 ? 'text-yellow-600' : ''}`}>
               {cagrData.cagr10y.toFixed(1)}%
             </p>
