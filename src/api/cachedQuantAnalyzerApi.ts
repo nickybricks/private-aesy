@@ -115,8 +115,7 @@ const saveToCache = async (
         market_id: marketId,
         buffett_score: analysis.buffettScore,
         analysis_result: analysis,
-        last_updated: new Date().toISOString(),
-        industry: analysis.industry || null
+        last_updated: new Date().toISOString()
       });
   } catch (error) {
     console.error(`Error saving to cache for ${symbol}:`, error);
