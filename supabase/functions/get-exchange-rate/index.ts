@@ -47,73 +47,36 @@ serve(async (req) => {
       )
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    )
-
-    // Approach: Convert both currencies to USD as intermediate
-    // from → USD → to
+    const FMP_API_KEY = Deno.env.get('FMP_API_KEY') || 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y'
     
-    let rate = 1.0
-    let source = 'database'
-
-    if (fromCurrency !== 'USD') {
-      // Get USD/from rate
-      const { data: fromData, error: fromError } = await supabase
-        .from('exchange_rates')
-        .select('rate, fetched_at, is_fallback')
-        .eq('base_currency', 'USD')
-        .eq('target_currency', fromCurrency)
-        .maybeSingle()
-
-      if (fromError || !fromData) {
-        console.error(`No exchange rate found for USD → ${fromCurrency}`, fromError)
-        return new Response(
-          JSON.stringify({ error: `No exchange rate found for USD → ${fromCurrency}` }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Rate from → USD = 1 / (USD → from)
-      rate = 1 / Number(fromData.rate)
-      
-      if (fromData.is_fallback) {
-        source = 'fallback'
-      }
+    // Construct currency pair symbol for FMP API
+    // FMP uses format like "EURUSD" for EUR to USD
+    const currencyPair = `${fromCurrency}${toCurrency}`
+    
+    console.log(`Fetching exchange rate from FMP API: ${currencyPair}`)
+    
+    // Fetch current rate from FMP API
+    const fmpUrl = `https://financialmodelingprep.com/stable/quote-short?symbol=${currencyPair}&apikey=${FMP_API_KEY}`
+    const response = await fetch(fmpUrl)
+    
+    if (!response.ok) {
+      throw new Error(`FMP API returned ${response.status}`)
     }
-
-    if (toCurrency !== 'USD') {
-      // Get USD/to rate
-      const { data: toData, error: toError } = await supabase
-        .from('exchange_rates')
-        .select('rate, fetched_at, is_fallback')
-        .eq('base_currency', 'USD')
-        .eq('target_currency', toCurrency)
-        .maybeSingle()
-
-      if (toError || !toData) {
-        console.error(`No exchange rate found for USD → ${toCurrency}`, toError)
-        return new Response(
-          JSON.stringify({ error: `No exchange rate found for USD → ${toCurrency}` }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      // Final rate = (from → USD) * (USD → to)
-      rate = rate * Number(toData.rate)
-      
-      if (toData.is_fallback && source !== 'fallback') {
-        source = 'fallback'
-      }
+    
+    const data = await response.json()
+    
+    if (!Array.isArray(data) || data.length === 0 || !data[0].price) {
+      throw new Error('Invalid FMP API response or no rate available')
     }
-
-    console.log(`Exchange rate ${fromCurrency} → ${toCurrency}: ${rate} (source: ${source})`)
+    
+    const rate = Number(data[0].price)
+    
+    console.log(`Exchange rate ${fromCurrency} → ${toCurrency}: ${rate} (source: FMP API)`)
 
     return new Response(
       JSON.stringify({ 
         rate, 
-        source,
+        source: 'fmp_api',
         from: fromCurrency,
         to: toCurrency
       }),
