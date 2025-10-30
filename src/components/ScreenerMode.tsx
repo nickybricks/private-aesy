@@ -8,7 +8,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
 import { QuantAnalysisResult } from '@/api/quantAnalyzerApi';
 import { Filter, ChevronDown } from 'lucide-react';
-import { getAllPresets, getBranchesForPreset, getIndustriesForBranch, getMapping } from '@/utils/industryBranchMapping';
 
 interface ScreenerModeProps {
   cachedStocks: QuantAnalysisResult[];
@@ -47,9 +46,7 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
     maxNetMargin: '',
     minFcfMargin: '',
     maxFcfMargin: '',
-    preset: 'all',
-    branch: 'all',
-    industry: 'all',
+    sector: 'all',
     exchange: 'all',
     searchQuery: ''
   });
@@ -116,17 +113,8 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
       if (filters.minFcfMargin !== '' && stock.criteria.fcfMargin.value != null && stock.criteria.fcfMargin.value < parseFloat(filters.minFcfMargin)) return false;
       if (filters.maxFcfMargin !== '' && stock.criteria.fcfMargin.value != null && stock.criteria.fcfMargin.value > parseFloat(filters.maxFcfMargin)) return false;
       
-      // Preset (Sektor) filter
-      if (filters.preset !== 'all' && stock.sector !== filters.preset) return false;
-      
-      // Branch filter
-      if (filters.branch !== 'all' && stock.branch_en !== filters.branch) return false;
-      
-      // Industry filter
-      if (filters.industry !== 'all') {
-        const mapping = getMapping(stock.industry || '');
-        if (!mapping || mapping.industry !== filters.industry) return false;
-      }
+      // Sector filter
+      if (filters.sector !== 'all' && stock.sector !== filters.sector) return false;
       
       // Exchange filter
       if (filters.exchange !== 'all' && stock.exchange !== filters.exchange) return false;
@@ -139,17 +127,10 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
     });
   }, [cachedStocks, filters]);
 
-  const availablePresets = useMemo(() => getAllPresets(), []);
-
-  const availableBranches = useMemo(() => {
-    if (filters.preset === 'all') return [];
-    return getBranchesForPreset(filters.preset);
-  }, [filters.preset]);
-
-  const availableIndustries = useMemo(() => {
-    if (filters.branch === 'all') return [];
-    return getIndustriesForBranch(filters.branch);
-  }, [filters.branch]);
+  const sectors = useMemo(() => {
+    const uniqueSectors = new Set(cachedStocks.map(s => s.sector));
+    return Array.from(uniqueSectors).sort();
+  }, [cachedStocks]);
 
   const exchanges = useMemo(() => {
     const uniqueExchanges = new Set(cachedStocks.map(s => s.exchange));
@@ -184,60 +165,17 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
                 />
               </div>
 
-              {/* Preset (Sektor) */}
+              {/* Sector */}
               <div className="space-y-2">
-                <Label>Sektor (Preset)</Label>
-                <Select 
-                  value={filters.preset} 
-                  onValueChange={(value) => setFilters({ ...filters, preset: value, branch: 'all', industry: 'all' })}
-                >
+                <Label>Sektor</Label>
+                <Select value={filters.sector} onValueChange={(value) => setFilters({ ...filters, sector: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Alle Sektoren</SelectItem>
-                    {availablePresets.map(p => (
-                      <SelectItem key={p.preset} value={p.preset}>{p.preset_de}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Branche */}
-              <div className="space-y-2">
-                <Label>Branche</Label>
-                <Select 
-                  value={filters.branch} 
-                  disabled={filters.preset === 'all'}
-                  onValueChange={(value) => setFilters({ ...filters, branch: value, industry: 'all' })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={filters.preset === 'all' ? 'Zuerst Sektor wählen' : 'Alle Branchen'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Branchen</SelectItem>
-                    {availableBranches.map(b => (
-                      <SelectItem key={b.branch_en} value={b.branch_en}>{b.branch_de}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Industrie */}
-              <div className="space-y-2">
-                <Label>Industrie</Label>
-                <Select 
-                  value={filters.industry}
-                  disabled={filters.branch === 'all'}
-                  onValueChange={(value) => setFilters({ ...filters, industry: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={filters.branch === 'all' ? 'Zuerst Branche wählen' : 'Alle Industrien'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Industrien</SelectItem>
-                    {availableIndustries.map(i => (
-                      <SelectItem key={i.industry} value={i.industry}>{i.industry_de}</SelectItem>
+                    {sectors.map(sector => (
+                      <SelectItem key={sector} value={sector}>{sector}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
