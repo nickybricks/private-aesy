@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { calculateEpsWithoutNri } from '@/services/EpsWithoutNriService';
+import { getMapping } from '@/utils/industryBranchMapping';
 
 const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 
@@ -132,6 +133,10 @@ export interface QuantAnalysisResult {
   name: string;
   exchange: string;
   sector: string;
+  industry?: string;
+  branch_de?: string;
+  branch_en?: string;
+  industry_de?: string;
   country: string;
   buffettScore: number; // Max 14 points
   criteria: {
@@ -592,11 +597,19 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
 
     console.log(`${ticker} Score: ${buffettScore}/14 - Profitable years: ${profitabilityYears?.total}/10, P/E: ${pe}, ROIC: ${roic}%, ROE: ${roe}%, FCF Margin: ${fcfMargin}%`);
 
+    // Get industry mapping for hierarchy
+    const industryEn = companyProfile.industry || 'Unknown';
+    const mapping = getMapping(industryEn);
+
     return {
       symbol: ticker,
       name: companyProfile.companyName,
       exchange: companyProfile.exchangeShortName,
       sector: companyProfile.sector || 'Unknown',
+      industry: industryEn,
+      branch_de: mapping?.branch_de || null,
+      branch_en: mapping?.branch_en || null,
+      industry_de: mapping?.industry_de || null,
       country: companyProfile.country || 'Unknown',
       buffettScore,
       criteria: {
@@ -723,7 +736,7 @@ export const exportToExcel = (results: QuantAnalysisResult[]) => {
   // Dynamically import xlsx
   import('xlsx').then((XLSX) => {
     const headers = [
-      'Symbol', 'Name', 'Sektor', 'Börse', 'Preis', 'Währung',
+      'Symbol', 'Name', 'Sektor / Branche / Industrie', 'Börse', 'Preis', 'Währung',
       'Buffett Score (max 14)',
       'Jahre Profitabel (von 10)', 'Pass',
       'Kurs-Gewinn-Verhältnis (KGV / P/E Ratio)', 'Pass',
@@ -737,43 +750,50 @@ export const exportToExcel = (results: QuantAnalysisResult[]) => {
       'FCF-Marge (FCF Margin)', 'Pass'
     ];
     
-    const rows = results.map(result => [
-      result.symbol,
-      result.name,
-      result.sector,
-      result.exchange,
-      parseFloat(result.price.toFixed(2)),
-      result.currency,
-      result.buffettScore,
-      result.criteria.yearsOfProfitability.value || 'N/A',
-      result.criteria.yearsOfProfitability.pass ? 'Ja' : 'Nein',
-      result.criteria.pe.value !== null ? parseFloat(result.criteria.pe.value.toFixed(2)) : 'N/A',
-      result.criteria.pe.pass ? 'Ja' : 'Nein',
-      result.criteria.roic.value !== null ? parseFloat(result.criteria.roic.value.toFixed(2)) : 'N/A',
-      result.criteria.roic.pass ? 'Ja' : 'Nein',
-      result.criteria.roe.value !== null ? parseFloat(result.criteria.roe.value.toFixed(2)) : 'N/A',
-      result.criteria.roe.pass ? 'Ja' : 'Nein',
-      result.criteria.dividendYield.value !== null ? parseFloat(result.criteria.dividendYield.value.toFixed(2)) : 'N/A',
-      result.criteria.dividendYield.pass ? 'Ja' : 'Nein',
-      result.criteria.epsGrowth.cagr3y !== null ? parseFloat(result.criteria.epsGrowth.cagr3y.toFixed(2)) : 'N/A',
-      result.criteria.epsGrowth.cagr3y !== null && result.criteria.epsGrowth.cagr3y >= 5 ? 'Ja' : 'Nein',
-      result.criteria.epsGrowth.value !== null ? parseFloat(result.criteria.epsGrowth.value.toFixed(2)) : 'N/A',
-      result.criteria.epsGrowth.pass ? 'Ja' : 'Nein',
-      result.criteria.epsGrowth.cagr10y !== null ? parseFloat(result.criteria.epsGrowth.cagr10y.toFixed(2)) : 'N/A',
-      result.criteria.epsGrowth.cagr10y !== null && result.criteria.epsGrowth.cagr10y >= 5 ? 'Ja' : 'Nein',
-      result.criteria.revenueGrowth.cagr3y !== null ? parseFloat(result.criteria.revenueGrowth.cagr3y.toFixed(2)) : 'N/A',
-      result.criteria.revenueGrowth.cagr3y !== null && result.criteria.revenueGrowth.cagr3y >= 5 ? 'Ja' : 'Nein',
-      result.criteria.revenueGrowth.value !== null ? parseFloat(result.criteria.revenueGrowth.value.toFixed(2)) : 'N/A',
-      result.criteria.revenueGrowth.pass ? 'Ja' : 'Nein',
-      result.criteria.revenueGrowth.cagr10y !== null ? parseFloat(result.criteria.revenueGrowth.cagr10y.toFixed(2)) : 'N/A',
-      result.criteria.revenueGrowth.cagr10y !== null && result.criteria.revenueGrowth.cagr10y >= 5 ? 'Ja' : 'Nein',
-      result.criteria.netDebtToEbitda.value !== null ? parseFloat(result.criteria.netDebtToEbitda.value.toFixed(2)) : 'N/A',
-      result.criteria.netDebtToEbitda.pass ? 'Ja' : 'Nein',
-      result.criteria.netMargin.value !== null ? parseFloat(result.criteria.netMargin.value.toFixed(2)) : 'N/A',
-      result.criteria.netMargin.pass ? 'Ja' : 'Nein',
-      result.criteria.fcfMargin?.value !== null ? parseFloat(result.criteria.fcfMargin.value.toFixed(2)) : 'N/A',
-      result.criteria.fcfMargin?.pass ? 'Ja' : 'Nein'
-    ]);
+    const rows = results.map(result => {
+      const mapping = getMapping(result.industry || '');
+      const sectorDisplay = mapping 
+        ? `${mapping.preset_de} / ${mapping.branch_de} / ${mapping.industry_de}`
+        : result.sector;
+
+      return [
+        result.symbol,
+        result.name,
+        sectorDisplay,
+        result.exchange,
+        parseFloat(result.price.toFixed(2)),
+        result.currency,
+        result.buffettScore,
+        result.criteria.yearsOfProfitability.value || 'N/A',
+        result.criteria.yearsOfProfitability.pass ? 'Ja' : 'Nein',
+        result.criteria.pe.value !== null ? parseFloat(result.criteria.pe.value.toFixed(2)) : 'N/A',
+        result.criteria.pe.pass ? 'Ja' : 'Nein',
+        result.criteria.roic.value !== null ? parseFloat(result.criteria.roic.value.toFixed(2)) : 'N/A',
+        result.criteria.roic.pass ? 'Ja' : 'Nein',
+        result.criteria.roe.value !== null ? parseFloat(result.criteria.roe.value.toFixed(2)) : 'N/A',
+        result.criteria.roe.pass ? 'Ja' : 'Nein',
+        result.criteria.dividendYield.value !== null ? parseFloat(result.criteria.dividendYield.value.toFixed(2)) : 'N/A',
+        result.criteria.dividendYield.pass ? 'Ja' : 'Nein',
+        result.criteria.epsGrowth.cagr3y !== null ? parseFloat(result.criteria.epsGrowth.cagr3y.toFixed(2)) : 'N/A',
+        result.criteria.epsGrowth.cagr3y !== null && result.criteria.epsGrowth.cagr3y >= 5 ? 'Ja' : 'Nein',
+        result.criteria.epsGrowth.value !== null ? parseFloat(result.criteria.epsGrowth.value.toFixed(2)) : 'N/A',
+        result.criteria.epsGrowth.pass ? 'Ja' : 'Nein',
+        result.criteria.epsGrowth.cagr10y !== null ? parseFloat(result.criteria.epsGrowth.cagr10y.toFixed(2)) : 'N/A',
+        result.criteria.epsGrowth.cagr10y !== null && result.criteria.epsGrowth.cagr10y >= 5 ? 'Ja' : 'Nein',
+        result.criteria.revenueGrowth.cagr3y !== null ? parseFloat(result.criteria.revenueGrowth.cagr3y.toFixed(2)) : 'N/A',
+        result.criteria.revenueGrowth.cagr3y !== null && result.criteria.revenueGrowth.cagr3y >= 5 ? 'Ja' : 'Nein',
+        result.criteria.revenueGrowth.value !== null ? parseFloat(result.criteria.revenueGrowth.value.toFixed(2)) : 'N/A',
+        result.criteria.revenueGrowth.pass ? 'Ja' : 'Nein',
+        result.criteria.revenueGrowth.cagr10y !== null ? parseFloat(result.criteria.revenueGrowth.cagr10y.toFixed(2)) : 'N/A',
+        result.criteria.revenueGrowth.cagr10y !== null && result.criteria.revenueGrowth.cagr10y >= 5 ? 'Ja' : 'Nein',
+        result.criteria.netDebtToEbitda.value !== null ? parseFloat(result.criteria.netDebtToEbitda.value.toFixed(2)) : 'N/A',
+        result.criteria.netDebtToEbitda.pass ? 'Ja' : 'Nein',
+        result.criteria.netMargin.value !== null ? parseFloat(result.criteria.netMargin.value.toFixed(2)) : 'N/A',
+        result.criteria.netMargin.pass ? 'Ja' : 'Nein',
+        result.criteria.fcfMargin?.value !== null ? parseFloat(result.criteria.fcfMargin.value.toFixed(2)) : 'N/A',
+        result.criteria.fcfMargin?.pass ? 'Ja' : 'Nein'
+      ];
+    });
     
     // Create worksheet with headers and data
     const wsData = [headers, ...rows];

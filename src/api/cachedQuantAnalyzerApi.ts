@@ -114,6 +114,9 @@ const saveToCache = async (
         symbol,
         market_id: marketId,
         buffett_score: analysis.buffettScore,
+        branch_de: analysis.branch_de || null,
+        branch_en: analysis.branch_en || null,
+        industry_de: analysis.industry_de || null,
         analysis_result: analysis,
         last_updated: new Date().toISOString()
       });

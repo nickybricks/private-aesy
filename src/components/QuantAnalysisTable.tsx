@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import {
@@ -48,6 +47,7 @@ import {
 import { QuantAnalysisResult, exportToExcel } from '@/api/quantAnalyzerApi';
 import { useUserStocks } from '@/hooks/useUserStocks';
 import { addStockToWatchlist } from '@/utils/watchlistService';
+import { getMapping } from '@/utils/industryBranchMapping';
 
 interface QuantAnalysisTableProps {
   results: QuantAnalysisResult[];
@@ -271,8 +271,15 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           valueB = b.exchange;
           break;
         case 'sector':
-          valueA = a.sector;
-          valueB = b.sector;
+          // Sort by hierarchy: Preset_DE -> Branch_DE -> Industry_DE
+          const getFullHierarchy = (stock: QuantAnalysisResult) => {
+            const mapping = getMapping(stock.industry || '');
+            return mapping 
+              ? `${mapping.preset_de}|${mapping.branch_de}|${mapping.industry_de}`
+              : stock.sector;
+          };
+          valueA = getFullHierarchy(a);
+          valueB = getFullHierarchy(b);
           break;
         case 'price':
           valueA = a.price;
@@ -487,10 +494,10 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                   setSortDirection={setSortDirection}
                 />
               </TableHead>
-              <TableHead className="min-w-[150px] px-4 py-2 h-10">
+              <TableHead className="min-w-[200px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="sector" 
-                  name="Sektor" 
+                  name="Sektor / Branche / Industrie" 
                   sortField={sortField}
                   sortDirection={sortDirection}
                   setSortField={setSortField}
@@ -733,7 +740,29 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                     </div>
                   </TableCell>
                   <TableCell className="py-1">{stock.exchange}</TableCell>
-                  <TableCell className="py-1">{stock.sector}</TableCell>
+                  <TableCell className="py-1">
+                    <div className="space-y-0.5">
+                      {(() => {
+                        const mapping = getMapping(stock.industry || '');
+                        if (mapping) {
+                          return (
+                            <>
+                              <div className="font-medium text-foreground">
+                                {mapping.preset_de}
+                              </div>
+                              <div className="text-muted-foreground text-xs">
+                                {mapping.branch_de}
+                              </div>
+                              <div className="text-muted-foreground/80 text-xs">
+                                {mapping.industry_de}
+                              </div>
+                            </>
+                          );
+                        }
+                        return <div>{stock.sector}</div>;
+                      })()}
+                    </div>
+                  </TableCell>
                   <TableCell className="py-1">
                     <div className="flex items-center">
                       <span className="mr-2">{stock.buffettScore}/14</span>
