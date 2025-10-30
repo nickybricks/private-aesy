@@ -23,6 +23,23 @@ interface StockProfile {
   country: string
   exchange: string
   currency: string
+  mktCap?: number
+  isin?: string
+  website?: string
+  description?: string
+  ceo?: string
+  fullTimeEmployees?: number
+  phone?: string
+  address?: string
+  city?: string
+  state?: string
+  zip?: string
+  image?: string
+  ipoDate?: string
+  isEtf?: boolean
+  isActivelyTrading?: boolean
+  isAdr?: boolean
+  isFund?: boolean
 }
 
 serve(async (req) => {
@@ -117,6 +134,23 @@ serve(async (req) => {
             country: profile.country || null,
             exchange: profile.exchange || null,
             currency: profile.currency || null,
+            market_cap: profile.mktCap || null,
+            isin: profile.isin || null,
+            website: profile.website || null,
+            description: profile.description || null,
+            ceo: profile.ceo || null,
+            full_time_employees: profile.fullTimeEmployees || null,
+            phone: profile.phone || null,
+            address: profile.address || null,
+            city: profile.city || null,
+            state: profile.state || null,
+            zip: profile.zip || null,
+            image: profile.image || null,
+            ipo_date: profile.ipoDate || null,
+            is_etf: profile.isEtf || false,
+            is_actively_trading: profile.isActivelyTrading !== false,
+            is_adr: profile.isAdr || false,
+            is_fund: profile.isFund || false,
             last_updated: new Date().toISOString()
           })
           

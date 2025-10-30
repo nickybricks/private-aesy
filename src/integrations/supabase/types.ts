@@ -872,6 +872,7 @@ export type Database = {
           operating_cash_flow: number | null
           other_adjustments_net_income: number | null
           period: string
+          reported_currency: string | null
           revenue: number | null
           stock_id: number | null
           total_assets: number | null
@@ -898,6 +899,7 @@ export type Database = {
           operating_cash_flow?: number | null
           other_adjustments_net_income?: number | null
           period: string
+          reported_currency?: string | null
           revenue?: number | null
           stock_id?: number | null
           total_assets?: number | null
@@ -924,6 +926,7 @@ export type Database = {
           operating_cash_flow?: number | null
           other_adjustments_net_income?: number | null
           period?: string
+          reported_currency?: string | null
           revenue?: number | null
           stock_id?: number | null
           total_assets?: number | null
@@ -1056,42 +1059,6 @@ export type Database = {
         }
         Relationships: []
       }
-      saved_analyses: {
-        Row: {
-          analysis_data: Json
-          company_name: string
-          created_at: string
-          id: string
-          saved_at: string
-          ticker: string
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          analysis_data: Json
-          company_name: string
-          created_at?: string
-          id?: string
-          saved_at?: string
-          ticker: string
-          title: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          analysis_data?: Json
-          company_name?: string
-          created_at?: string
-          id?: string
-          saved_at?: string
-          ticker?: string
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       stock_analysis_cache: {
         Row: {
           analysis_result: Json
@@ -1160,37 +1127,88 @@ export type Database = {
       }
       stocks: {
         Row: {
+          address: string | null
+          ceo: string | null
+          city: string | null
           country: string | null
           currency: string | null
+          description: string | null
           exchange: string | null
+          full_time_employees: number | null
           id: number
+          image: string | null
           industry: string | null
+          ipo_date: string | null
+          is_actively_trading: boolean | null
+          is_adr: boolean | null
+          is_etf: boolean | null
+          is_fund: boolean | null
+          isin: string | null
           last_updated: string | null
+          market_cap: number | null
           name: string | null
+          phone: string | null
           sector: string | null
+          state: string | null
           symbol: string
+          website: string | null
+          zip: string | null
         }
         Insert: {
+          address?: string | null
+          ceo?: string | null
+          city?: string | null
           country?: string | null
           currency?: string | null
+          description?: string | null
           exchange?: string | null
+          full_time_employees?: number | null
           id?: number
+          image?: string | null
           industry?: string | null
+          ipo_date?: string | null
+          is_actively_trading?: boolean | null
+          is_adr?: boolean | null
+          is_etf?: boolean | null
+          is_fund?: boolean | null
+          isin?: string | null
           last_updated?: string | null
+          market_cap?: number | null
           name?: string | null
+          phone?: string | null
           sector?: string | null
+          state?: string | null
           symbol: string
+          website?: string | null
+          zip?: string | null
         }
         Update: {
+          address?: string | null
+          ceo?: string | null
+          city?: string | null
           country?: string | null
           currency?: string | null
+          description?: string | null
           exchange?: string | null
+          full_time_employees?: number | null
           id?: number
+          image?: string | null
           industry?: string | null
+          ipo_date?: string | null
+          is_actively_trading?: boolean | null
+          is_adr?: boolean | null
+          is_etf?: boolean | null
+          is_fund?: boolean | null
+          isin?: string | null
           last_updated?: string | null
+          market_cap?: number | null
           name?: string | null
+          phone?: string | null
           sector?: string | null
+          state?: string | null
           symbol?: string
+          website?: string | null
+          zip?: string | null
         }
         Relationships: []
       }
