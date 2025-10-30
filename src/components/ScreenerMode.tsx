@@ -5,9 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
 import { QuantAnalysisResult } from '@/api/quantAnalyzerApi';
 import { Filter, ChevronDown } from 'lucide-react';
+import { industryHierarchy, getAllFmpIndustries } from '@/utils/industryHierarchy';
 
 interface ScreenerModeProps {
   cachedStocks: QuantAnalysisResult[];
@@ -15,6 +17,13 @@ interface ScreenerModeProps {
 
 export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [expandedBranches, setExpandedBranches] = useState<{
+    [categoryDe: string]: { [branchDe: string]: boolean }
+  }>({
+    "Zyklisch": {},
+    "Defensiv": {},
+    "Sensitiv": {}
+  });
   const [filters, setFilters] = useState({
     minAesyScore: '',
     maxAesyScore: '',
@@ -46,7 +55,7 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
     maxNetMargin: '',
     minFcfMargin: '',
     maxFcfMargin: '',
-    sector: 'all',
+    selectedIndustries: [] as string[],
     exchange: 'all',
     searchQuery: ''
   });
@@ -113,8 +122,12 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
       if (filters.minFcfMargin !== '' && stock.criteria.fcfMargin.value != null && stock.criteria.fcfMargin.value < parseFloat(filters.minFcfMargin)) return false;
       if (filters.maxFcfMargin !== '' && stock.criteria.fcfMargin.value != null && stock.criteria.fcfMargin.value > parseFloat(filters.maxFcfMargin)) return false;
       
-      // Sector filter
-      if (filters.sector !== 'all' && stock.sector !== filters.sector) return false;
+      // Industry filter (multi-select)
+      if (filters.selectedIndustries.length > 0) {
+        if (!stock.industry || !filters.selectedIndustries.includes(stock.industry)) {
+          return false;
+        }
+      }
       
       // Exchange filter
       if (filters.exchange !== 'all' && stock.exchange !== filters.exchange) return false;
@@ -126,11 +139,6 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
       return true;
     });
   }, [cachedStocks, filters]);
-
-  const sectors = useMemo(() => {
-    const uniqueSectors = new Set(cachedStocks.map(s => s.sector));
-    return Array.from(uniqueSectors).sort();
-  }, [cachedStocks]);
 
   const exchanges = useMemo(() => {
     const uniqueExchanges = new Set(cachedStocks.map(s => s.exchange));
@@ -165,20 +173,139 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
                 />
               </div>
 
-              {/* Sector */}
-              <div className="space-y-2">
-                <Label>Sektor</Label>
-                <Select value={filters.sector} onValueChange={(value) => setFilters({ ...filters, sector: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Sektoren</SelectItem>
-                    {sectors.map(sector => (
-                      <SelectItem key={sector} value={sector}>{sector}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Industrie Filter (ersetzt Sektor) */}
+              <div className="space-y-2 col-span-3">
+                <div className="flex items-center justify-between">
+                  <Label>Industrie</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {filters.selectedIndustries.length === 0 
+                      ? "Alle Industrien" 
+                      : `${filters.selectedIndustries.length} ausgewählt`}
+                  </span>
+                </div>
+                
+                {/* Scrollbarer Container */}
+                <div className="border rounded-md p-3 max-h-96 overflow-y-auto space-y-3">
+                  {industryHierarchy.map((category) => (
+                    <div key={category.de} className="space-y-2">
+                      {/* Hauptkategorie (immer ausgeklappt) */}
+                      <div className="font-semibold text-sm border-b pb-1">
+                        {category.de}
+                      </div>
+                      
+                      {/* Branches */}
+                      {category.branches.map((branch) => {
+                        const branchIndustries = branch.industries.map(i => i.fmpIndustry);
+                        const allSelected = branchIndustries.every(ind => 
+                          filters.selectedIndustries.includes(ind)
+                        );
+                        const someSelected = branchIndustries.some(ind => 
+                          filters.selectedIndustries.includes(ind)
+                        );
+                        const isExpanded = expandedBranches[category.de]?.[branch.de] || false;
+                        
+                        return (
+                          <div key={branch.de} className="ml-3 space-y-1">
+                            {/* Branch Header mit Checkbox */}
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                checked={allSelected}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setFilters({
+                                      ...filters,
+                                      selectedIndustries: [
+                                        ...new Set([...filters.selectedIndustries, ...branchIndustries])
+                                      ]
+                                    });
+                                  } else {
+                                    setFilters({
+                                      ...filters,
+                                      selectedIndustries: filters.selectedIndustries.filter(
+                                        ind => !branchIndustries.includes(ind)
+                                      )
+                                    });
+                                  }
+                                }}
+                                className={someSelected && !allSelected ? "bg-muted" : ""}
+                              />
+                              <button
+                                onClick={() => {
+                                  setExpandedBranches({
+                                    ...expandedBranches,
+                                    [category.de]: {
+                                      ...expandedBranches[category.de],
+                                      [branch.de]: !isExpanded
+                                    }
+                                  });
+                                }}
+                                className="flex items-center gap-1 text-sm hover:text-primary transition-colors"
+                              >
+                                <ChevronDown 
+                                  className={`h-3 w-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                />
+                                {branch.de}
+                              </button>
+                            </div>
+                            
+                            {/* Einzelne Industrien (ausgeklappt) */}
+                            {isExpanded && (
+                              <div className="ml-6 space-y-1">
+                                {branch.industries.map((industry) => (
+                                  <div key={industry.fmpIndustry} className="flex items-center gap-2">
+                                    <Checkbox
+                                      id={`industry-${industry.fmpIndustry}`}
+                                      checked={filters.selectedIndustries.includes(industry.fmpIndustry)}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          setFilters({
+                                            ...filters,
+                                            selectedIndustries: [...filters.selectedIndustries, industry.fmpIndustry]
+                                          });
+                                        } else {
+                                          setFilters({
+                                            ...filters,
+                                            selectedIndustries: filters.selectedIndustries.filter(
+                                              ind => ind !== industry.fmpIndustry
+                                            )
+                                          });
+                                        }
+                                      }}
+                                    />
+                                    <Label 
+                                      htmlFor={`industry-${industry.fmpIndustry}`}
+                                      className="text-xs font-normal cursor-pointer"
+                                    >
+                                      {industry.de}
+                                    </Label>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                  
+                  {/* Alle auswählen / Zurücksetzen Buttons */}
+                  <div className="flex gap-2 pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFilters({ ...filters, selectedIndustries: getAllFmpIndustries() })}
+                    >
+                      Alle auswählen
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFilters({ ...filters, selectedIndustries: [] })}
+                    >
+                      Zurücksetzen
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               {/* Exchange */}

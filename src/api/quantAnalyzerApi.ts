@@ -132,6 +132,7 @@ export interface QuantAnalysisResult {
   name: string;
   exchange: string;
   sector: string;
+  industry?: string;
   country: string;
   buffettScore: number; // Max 14 points
   criteria: {
@@ -592,12 +593,13 @@ export const analyzeStockByBuffettCriteria = async (ticker: string): Promise<Qua
 
     console.log(`${ticker} Score: ${buffettScore}/14 - Profitable years: ${profitabilityYears?.total}/10, P/E: ${pe}, ROIC: ${roic}%, ROE: ${roe}%, FCF Margin: ${fcfMargin}%`);
 
-    return {
-      symbol: ticker,
-      name: companyProfile.companyName,
-      exchange: companyProfile.exchangeShortName,
-      sector: companyProfile.sector || 'Unknown',
-      country: companyProfile.country || 'Unknown',
+  return {
+    symbol: ticker,
+    name: companyProfile.companyName,
+    exchange: companyProfile.exchangeShortName,
+    sector: companyProfile.sector || 'Unknown',
+    industry: companyProfile.industry || undefined,
+    country: companyProfile.country || 'Unknown',
       buffettScore,
       criteria: {
         yearsOfProfitability: { 
