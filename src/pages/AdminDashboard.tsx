@@ -64,7 +64,7 @@ const AdminDashboard: React.FC = () => {
         .select('user_id');
 
       const { data: analysisStats } = await supabase
-        .from('saved_analyses')
+        .from('user_stocks')
         .select('user_id');
 
       // Combine all data
