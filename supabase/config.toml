@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.populate-company-profile]
 verify_jwt = false
+
+[functions.import-historical-financials]
+verify_jwt = false
+
+[functions.populate-stocks-metadata]
+verify_jwt = false
