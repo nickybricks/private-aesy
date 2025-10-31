@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +8,9 @@ const corsHeaders = {
 
 const TARGET_CURRENCIES = ['USD', 'EUR']
 
+/**
+ * Get exchange rate from database for a specific date
+ */
 async function getExchangeRate(
   supabase: any,
   fromCurrency: string,
@@ -16,59 +19,95 @@ async function getExchangeRate(
 ): Promise<number> {
   if (fromCurrency === toCurrency) return 1.0
 
-  // Try to get historical rate from exchange_rates table
-  const { data: rateData } = await supabase
+  // Try direct rate
+  const { data: directRate } = await supabase
     .from('exchange_rates')
     .select('rate')
     .eq('base_currency', fromCurrency)
     .eq('target_currency', toCurrency)
-    .lte('fetched_at', date)
-    .order('fetched_at', { ascending: false })
+    .lte('valid_date', date)
+    .order('valid_date', { ascending: false })
     .limit(1)
     .maybeSingle()
 
-  if (rateData?.rate) {
-    return Number(rateData.rate)
-  }
+  if (directRate) return directRate.rate
 
-  // Fallback: Try to get the inverse rate
+  // Try inverse rate
   const { data: inverseRate } = await supabase
     .from('exchange_rates')
     .select('rate')
     .eq('base_currency', toCurrency)
     .eq('target_currency', fromCurrency)
-    .lte('fetched_at', date)
-    .order('fetched_at', { ascending: false })
+    .lte('valid_date', date)
+    .order('valid_date', { ascending: false })
     .limit(1)
     .maybeSingle()
 
-  if (inverseRate?.rate) {
-    return 1.0 / Number(inverseRate.rate)
+  if (inverseRate && inverseRate.rate !== 0) {
+    return 1 / inverseRate.rate
   }
 
-  console.warn(`No exchange rate found for ${fromCurrency} to ${toCurrency} on ${date}, using 1.0`)
-  return 1.0
+  // If not found, fetch from FMP and store
+  console.warn(`⚠️ No rate found for ${fromCurrency} to ${toCurrency} on ${date}, fetching from FMP...`)
+  const fmpApiKey = Deno.env.get('FMP_API_KEY')
+  const pair = `${fromCurrency}${toCurrency}`
+  const url = `https://financialmodelingprep.com/stable/historical-price-eod/light?symbol=${pair}&from=${date}&to=${date}&apikey=${fmpApiKey}`
+  
+  try {
+    const response = await fetch(url)
+    if (response.ok) {
+      const data: any = await response.json()
+      const historical = Array.isArray(data) ? data : data?.historical || []
+      if (historical.length > 0) {
+        const rate = Number(historical[0].close || historical[0].adjClose || historical[0].price)
+        if (Number.isFinite(rate)) {
+          // Store in database
+          await supabase.from('exchange_rates').upsert({
+            base_currency: fromCurrency,
+            target_currency: toCurrency,
+            valid_date: date,
+            rate: rate,
+            fetched_at: new Date().toISOString(),
+            is_fallback: false,
+          }, { onConflict: 'base_currency,target_currency,valid_date' })
+          return rate
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error fetching rate from FMP: ${error}`)
+  }
+
+  throw new Error(`Could not find exchange rate for ${fromCurrency} to ${toCurrency} on ${date}`)
 }
 
+/**
+ * Convert value to multiple currencies
+ */
 async function convertValueToMultipleCurrencies(
   supabase: any,
   value: number | null | undefined,
   fromCurrency: string,
   date: string
 ): Promise<Record<string, number | null>> {
-  if (!value || value === null) {
-    return {
-      orig: null,
-      usd: null,
-      eur: null,
-    }
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return { USD: null, EUR: null }
   }
 
-  const result: Record<string, number | null> = { orig: value }
+  const result: Record<string, number | null> = {}
 
-  for (const currency of TARGET_CURRENCIES) {
-    const rate = await getExchangeRate(supabase, fromCurrency, currency, date)
-    result[currency.toLowerCase()] = value * rate
+  for (const targetCurrency of TARGET_CURRENCIES) {
+    try {
+      if (fromCurrency === targetCurrency) {
+        result[targetCurrency] = value
+      } else {
+        const rate = await getExchangeRate(supabase, fromCurrency, targetCurrency, date)
+        result[targetCurrency] = value * rate
+      }
+    } catch (error) {
+      console.error(`Failed to convert ${fromCurrency} to ${targetCurrency}: ${error}`)
+      result[targetCurrency] = null
+    }
   }
 
   return result
@@ -80,328 +119,321 @@ serve(async (req) => {
   }
 
   try {
-    const { testMode = false, testSymbol = null } = await req.json()
-    
-    const FMP_API_KEY = Deno.env.get('FMP_API_KEY')
-    if (!FMP_API_KEY) {
-      throw new Error('FMP_API_KEY not configured')
-    }
+    const { testMode = false, testSymbol = null } = await req.json().catch(() => ({}))
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log(`Starting historical financial data import (testMode: ${testMode}, testSymbol: ${testSymbol})`)
-
-    // Get stocks to process
-    let stocksQuery = supabase.from('stocks').select('id, symbol')
-    
-    if (testMode && testSymbol) {
-      stocksQuery = stocksQuery.eq('symbol', testSymbol)
+    const fmpApiKey = Deno.env.get('FMP_API_KEY')
+    if (!fmpApiKey) {
+      throw new Error('FMP_API_KEY not configured')
     }
 
-    const { data: stocks, error: stocksError } = await stocksQuery
+    console.log('Starting historical financial data import...')
+    console.log(testMode ? `TEST MODE: Processing only ${testSymbol || 'first stock'}` : 'Processing all stocks')
+
+    // Get stocks to process
+    let query = supabase
+      .from('stocks')
+      .select('symbol, currency, name')
+      .order('symbol')
+
+    if (testMode && testSymbol) {
+      query = query.eq('symbol', testSymbol)
+    } else if (testMode) {
+      query = query.limit(1)
+    }
+
+    const { data: stocks, error: stocksError } = await query
 
     if (stocksError) {
-      throw new Error(`Failed to fetch stocks: ${stocksError.message}`)
+      throw new Error(`Error fetching stocks: ${stocksError.message}`)
     }
 
     if (!stocks || stocks.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'No stocks found' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 404,
-        }
-      )
+      throw new Error('No stocks found to process')
     }
 
-    console.log(`Processing ${stocks.length} stocks`)
+    console.log(`📊 Processing ${stocks.length} stock(s)...`)
 
     let totalProcessed = 0
     let totalInserted = 0
-    let totalErrors = 0
+    const errors: string[] = []
 
-    // Process each stock
     for (const stock of stocks) {
+      console.log(`\n🔍 Processing ${stock.symbol} (${stock.currency || 'USD'})...`)
+
       try {
-        console.log(`Processing ${stock.symbol}...`)
+        const stockCurrency = stock.currency || 'USD'
 
-        // Fetch quarterly data from FMP
-        const [incomeQuarterly, balanceQuarterly, cashflowQuarterly] = await Promise.all([
-          fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?period=quarter&limit=400&apikey=${FMP_API_KEY}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?period=quarter&limit=400&apikey=${FMP_API_KEY}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=quarter&limit=400&apikey=${FMP_API_KEY}`).then(r => r.json())
+        // Fetch quarterly data
+        const [incomeQ, balanceQ, cashflowQ] = await Promise.all([
+          fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
         ])
 
-        // Fetch TTM data from FMP
+        // Fetch TTM data
         const [incomeTTM, balanceTTM, cashflowTTM] = await Promise.all([
-          fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?period=ttm&limit=1&apikey=${FMP_API_KEY}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?period=ttm&limit=1&apikey=${FMP_API_KEY}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=ttm&limit=1&apikey=${FMP_API_KEY}`).then(r => r.json())
+          fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
         ])
 
-        // Combine quarterly and TTM data
-        const allIncome = [...(Array.isArray(incomeQuarterly) ? incomeQuarterly : []), ...(Array.isArray(incomeTTM) ? incomeTTM : [])]
-        const allBalance = [...(Array.isArray(balanceQuarterly) ? balanceQuarterly : []), ...(Array.isArray(balanceTTM) ? balanceTTM : [])]
-        const allCashflow = [...(Array.isArray(cashflowQuarterly) ? cashflowQuarterly : []), ...(Array.isArray(cashflowTTM) ? cashflowTTM : [])]
+        // Merge all data
+        const allIncome = [...(Array.isArray(incomeQ) ? incomeQ : []), ...(Array.isArray(incomeTTM) ? incomeTTM : [])]
+        const allBalance = [...(Array.isArray(balanceQ) ? balanceQ : []), ...(Array.isArray(balanceTTM) ? balanceTTM : [])]
+        const allCashflow = [...(Array.isArray(cashflowQ) ? cashflowQ : []), ...(Array.isArray(cashflowTTM) ? cashflowTTM : [])]
 
-        // Merge data by date and period
-        const dataByKey = new Map<string, any>()
-
-        allIncome.forEach((item: any) => {
-          const period = item.period === 'FY' ? 'ttm' : 'quarter'
-          const key = `${item.date}_${period}`
-          if (!dataByKey.has(key)) {
-            dataByKey.set(key, { date: item.date, period, reportedCurrency: item.reportedCurrency || 'USD' })
-          }
-          const data = dataByKey.get(key)
-          Object.assign(data, {
-            revenue: item.revenue,
-            ebitda: item.ebitda,
-            operatingIncome: item.operatingIncome,
-            netIncome: item.netIncome,
-            epsdiluted: item.epsdiluted,
-            weightedAverageShsOutDil: item.weightedAverageShsOutDil,
-            interestExpense: item.interestExpense,
-            incomeTaxExpense: item.incomeTaxExpense,
-            incomeBeforeTax: item.incomeBeforeTax,
-            otherNonOperatingIncomeExpenses: item.otherNonOperatingIncomeExpenses
-          })
-        })
-
-        allBalance.forEach((item: any) => {
-          const period = item.period === 'FY' ? 'ttm' : 'quarter'
-          const key = `${item.date}_${period}`
-          if (!dataByKey.has(key)) {
-            dataByKey.set(key, { date: item.date, period, reportedCurrency: item.reportedCurrency || 'USD' })
-          }
-          const data = dataByKey.get(key)
-          Object.assign(data, {
-            totalCurrentAssets: item.totalCurrentAssets,
-            totalAssets: item.totalAssets,
-            totalCurrentLiabilities: item.totalCurrentLiabilities,
-            totalDebt: item.totalDebt,
-            totalStockholdersEquity: item.totalStockholdersEquity,
-            cashAndCashEquivalents: item.cashAndCashEquivalents
-          })
-        })
-
-        allCashflow.forEach((item: any) => {
-          const period = item.period === 'FY' ? 'ttm' : 'quarter'
-          const key = `${item.date}_${period}`
-          if (!dataByKey.has(key)) {
-            dataByKey.set(key, { date: item.date, period, reportedCurrency: item.reportedCurrency || 'USD' })
-          }
-          const data = dataByKey.get(key)
-          Object.assign(data, {
-            operatingCashFlow: item.operatingCashFlow,
-            capitalExpenditure: item.capitalExpenditure,
-            freeCashFlow: item.freeCashFlow,
-            dividendsPaid: item.dividendsPaid || item.commonStockDividendsPaid
-          })
-        })
-
-        const rowsToInsert = []
-
-        // Process each merged record
-        for (const [key, data] of dataByKey) {
-          const reportedCurrency = data.reportedCurrency || 'USD'
-          const date = data.date
-          const period = data.period
-
-          // Convert all monetary values to multiple currencies
-          const revenue = await convertValueToMultipleCurrencies(supabase, data.revenue, reportedCurrency, date)
-          const ebitda = await convertValueToMultipleCurrencies(supabase, data.ebitda, reportedCurrency, date)
-          const ebit = await convertValueToMultipleCurrencies(supabase, data.operatingIncome, reportedCurrency, date)
-          const netIncome = await convertValueToMultipleCurrencies(supabase, data.netIncome, reportedCurrency, date)
-          const epsDiluted = await convertValueToMultipleCurrencies(supabase, data.epsdiluted, reportedCurrency, date)
-          const totalCurrentAssets = await convertValueToMultipleCurrencies(supabase, data.totalCurrentAssets, reportedCurrency, date)
-          const totalAssets = await convertValueToMultipleCurrencies(supabase, data.totalAssets, reportedCurrency, date)
-          const totalCurrentLiabilities = await convertValueToMultipleCurrencies(supabase, data.totalCurrentLiabilities, reportedCurrency, date)
-          const totalDebt = await convertValueToMultipleCurrencies(supabase, data.totalDebt, reportedCurrency, date)
-          const totalStockholdersEquity = await convertValueToMultipleCurrencies(supabase, data.totalStockholdersEquity, reportedCurrency, date)
-          const cashAndEquivalents = await convertValueToMultipleCurrencies(supabase, data.cashAndCashEquivalents, reportedCurrency, date)
-          const interestExpense = await convertValueToMultipleCurrencies(supabase, data.interestExpense, reportedCurrency, date)
-          const operatingCashFlow = await convertValueToMultipleCurrencies(supabase, data.operatingCashFlow, reportedCurrency, date)
-          const capex = await convertValueToMultipleCurrencies(supabase, data.capitalExpenditure, reportedCurrency, date)
-          const freeCashFlow = await convertValueToMultipleCurrencies(supabase, data.freeCashFlow, reportedCurrency, date)
-          const dividendsPaid = await convertValueToMultipleCurrencies(supabase, data.dividendsPaid, reportedCurrency, date)
-          const otherAdjustments = await convertValueToMultipleCurrencies(supabase, data.otherNonOperatingIncomeExpenses, reportedCurrency, date)
-          const incomeTaxExpense = await convertValueToMultipleCurrencies(supabase, data.incomeTaxExpense, reportedCurrency, date)
-          const incomeBeforeTax = await convertValueToMultipleCurrencies(supabase, data.incomeBeforeTax, reportedCurrency, date)
-
-          const row = {
-            stock_id: stock.id,
-            date,
-            period,
-            reported_currency: reportedCurrency,
-            
-            // Revenue
-            revenue_orig: revenue.orig,
-            revenue_usd: revenue.usd,
-            revenue_eur: revenue.eur,
-            
-            // EBITDA
-            ebitda_orig: ebitda.orig,
-            ebitda_usd: ebitda.usd,
-            ebitda_eur: ebitda.eur,
-            
-            // EBIT
-            ebit_orig: ebit.orig,
-            ebit_usd: ebit.usd,
-            ebit_eur: ebit.eur,
-            
-            // Net Income
-            net_income_orig: netIncome.orig,
-            net_income_usd: netIncome.usd,
-            net_income_eur: netIncome.eur,
-            
-            // EPS Diluted
-            eps_diluted_orig: epsDiluted.orig,
-            eps_diluted_usd: epsDiluted.usd,
-            eps_diluted_eur: epsDiluted.eur,
-            
-            // Shares
-            weighted_avg_shares_dil: data.weightedAverageShsOutDil,
-            
-            // Total Current Assets
-            total_current_assets_orig: totalCurrentAssets.orig,
-            total_current_assets_usd: totalCurrentAssets.usd,
-            total_current_assets_eur: totalCurrentAssets.eur,
-            
-            // Total Assets
-            total_assets_orig: totalAssets.orig,
-            total_assets_usd: totalAssets.usd,
-            total_assets_eur: totalAssets.eur,
-            
-            // Total Current Liabilities
-            total_current_liabilities_orig: totalCurrentLiabilities.orig,
-            total_current_liabilities_usd: totalCurrentLiabilities.usd,
-            total_current_liabilities_eur: totalCurrentLiabilities.eur,
-            
-            // Total Debt
-            total_debt_orig: totalDebt.orig,
-            total_debt_usd: totalDebt.usd,
-            total_debt_eur: totalDebt.eur,
-            
-            // Total Stockholders Equity
-            total_stockholders_equity_orig: totalStockholdersEquity.orig,
-            total_stockholders_equity_usd: totalStockholdersEquity.usd,
-            total_stockholders_equity_eur: totalStockholdersEquity.eur,
-            
-            // Cash and Equivalents
-            cash_and_equivalents_orig: cashAndEquivalents.orig,
-            cash_and_equivalents_usd: cashAndEquivalents.usd,
-            cash_and_equivalents_eur: cashAndEquivalents.eur,
-            
-            // Interest Expense
-            interest_expense_orig: interestExpense.orig,
-            interest_expense_usd: interestExpense.usd,
-            interest_expense_eur: interestExpense.eur,
-            
-            // Operating Cash Flow
-            operating_cash_flow_orig: operatingCashFlow.orig,
-            operating_cash_flow_usd: operatingCashFlow.usd,
-            operating_cash_flow_eur: operatingCashFlow.eur,
-            
-            // Capital Expenditure
-            capital_expenditure_orig: capex.orig,
-            capital_expenditure_usd: capex.usd,
-            capital_expenditure_eur: capex.eur,
-            
-            // Free Cash Flow
-            free_cash_flow_orig: freeCashFlow.orig,
-            free_cash_flow_usd: freeCashFlow.usd,
-            free_cash_flow_eur: freeCashFlow.eur,
-            
-            // Dividends Paid
-            dividends_paid_orig: dividendsPaid.orig,
-            dividends_paid_usd: dividendsPaid.usd,
-            dividends_paid_eur: dividendsPaid.eur,
-            
-            // Other Adjustments
-            other_adjustments_net_income_orig: otherAdjustments.orig,
-            other_adjustments_net_income_usd: otherAdjustments.usd,
-            other_adjustments_net_income_eur: otherAdjustments.eur,
-            
-            // Income Tax Expense
-            income_tax_expense_orig: incomeTaxExpense.orig,
-            income_tax_expense_usd: incomeTaxExpense.usd,
-            income_tax_expense_eur: incomeTaxExpense.eur,
-            
-            // Income Before Tax
-            income_before_tax_orig: incomeBeforeTax.orig,
-            income_before_tax_usd: incomeBeforeTax.usd,
-            income_before_tax_eur: incomeBeforeTax.eur,
-          }
-
-          rowsToInsert.push(row)
+        if (allIncome.length === 0) {
+          console.warn(`  ⚠️ No financial data found for ${stock.symbol}`)
+          continue
         }
 
-        // Insert in batches of 100 with ON CONFLICT DO NOTHING
-        const BATCH_SIZE = 100
-        for (let i = 0; i < rowsToInsert.length; i += BATCH_SIZE) {
-          const batch = rowsToInsert.slice(i, i + BATCH_SIZE)
-          
+        console.log(`  ✓ Fetched ${allIncome.length} income statements, ${allBalance.length} balance sheets, ${allCashflow.length} cash flows`)
+
+        // Group by date and period
+        const dataByDatePeriod = new Map<string, any>()
+
+        for (const income of allIncome) {
+          const key = `${income.date}_${income.period}`
+          if (!dataByDatePeriod.has(key)) {
+            dataByDatePeriod.set(key, { date: income.date, period: income.period })
+          }
+          const entry = dataByDatePeriod.get(key)
+          entry.income = income
+          entry.reportedCurrency = income.reportedCurrency || stockCurrency
+        }
+
+        for (const balance of allBalance) {
+          const key = `${balance.date}_${balance.period}`
+          if (!dataByDatePeriod.has(key)) {
+            dataByDatePeriod.set(key, { date: balance.date, period: balance.period })
+          }
+          const entry = dataByDatePeriod.get(key)
+          entry.balance = balance
+          if (!entry.reportedCurrency) {
+            entry.reportedCurrency = balance.reportedCurrency || stockCurrency
+          }
+        }
+
+        for (const cashflow of allCashflow) {
+          const key = `${cashflow.date}_${cashflow.period}`
+          if (!dataByDatePeriod.has(key)) {
+            dataByDatePeriod.set(key, { date: cashflow.date, period: cashflow.period })
+          }
+          const entry = dataByDatePeriod.get(key)
+          entry.cashflow = cashflow
+          if (!entry.reportedCurrency) {
+            entry.reportedCurrency = cashflow.reportedCurrency || stockCurrency
+          }
+        }
+
+        console.log(`  📝 Merged ${dataByDatePeriod.size} unique date/period combinations`)
+
+        // Process and insert data
+        const records = []
+
+        for (const [key, data] of dataByDatePeriod) {
+          const { income, balance, cashflow, date, period, reportedCurrency } = data
+
+          if (!date) continue
+
+          // Extract original values
+          const revenue_orig = income?.revenue
+          const ebitda_orig = income?.ebitda
+          const ebit_orig = income?.operatingIncome
+          const net_income_orig = income?.netIncome
+          const eps_diluted_orig = income?.epsdiluted
+          const weighted_avg_shares_dil = income?.weightedAverageShsOutDil
+          const interest_expense_orig = income?.interestExpense
+          const income_tax_expense_orig = income?.incomeTaxExpense
+          const income_before_tax_orig = income?.incomeBeforeTax
+          const other_adjustments_net_income_orig = income?.otherAdjustmentsToNetIncome
+
+          const total_current_assets_orig = balance?.totalCurrentAssets
+          const total_assets_orig = balance?.totalAssets
+          const total_current_liabilities_orig = balance?.totalCurrentLiabilities
+          const total_debt_orig = balance?.totalDebt
+          const total_stockholders_equity_orig = balance?.totalStockholdersEquity
+          const cash_and_equivalents_orig = balance?.cashAndCashEquivalents
+
+          const operating_cash_flow_orig = cashflow?.operatingCashFlow
+          const capital_expenditure_orig = cashflow?.capitalExpenditure
+          const free_cash_flow_orig = cashflow?.freeCashFlow
+          const dividends_paid_orig = cashflow?.commonStockDividendsPaid || cashflow?.dividendsPaid
+
+          // Convert all values to USD and EUR
+          const revenue_converted = await convertValueToMultipleCurrencies(supabase, revenue_orig, reportedCurrency, date)
+          const ebitda_converted = await convertValueToMultipleCurrencies(supabase, ebitda_orig, reportedCurrency, date)
+          const ebit_converted = await convertValueToMultipleCurrencies(supabase, ebit_orig, reportedCurrency, date)
+          const net_income_converted = await convertValueToMultipleCurrencies(supabase, net_income_orig, reportedCurrency, date)
+          const eps_diluted_converted = await convertValueToMultipleCurrencies(supabase, eps_diluted_orig, reportedCurrency, date)
+          const total_current_assets_converted = await convertValueToMultipleCurrencies(supabase, total_current_assets_orig, reportedCurrency, date)
+          const total_assets_converted = await convertValueToMultipleCurrencies(supabase, total_assets_orig, reportedCurrency, date)
+          const total_current_liabilities_converted = await convertValueToMultipleCurrencies(supabase, total_current_liabilities_orig, reportedCurrency, date)
+          const total_debt_converted = await convertValueToMultipleCurrencies(supabase, total_debt_orig, reportedCurrency, date)
+          const total_stockholders_equity_converted = await convertValueToMultipleCurrencies(supabase, total_stockholders_equity_orig, reportedCurrency, date)
+          const cash_and_equivalents_converted = await convertValueToMultipleCurrencies(supabase, cash_and_equivalents_orig, reportedCurrency, date)
+          const interest_expense_converted = await convertValueToMultipleCurrencies(supabase, interest_expense_orig, reportedCurrency, date)
+          const operating_cash_flow_converted = await convertValueToMultipleCurrencies(supabase, operating_cash_flow_orig, reportedCurrency, date)
+          const capital_expenditure_converted = await convertValueToMultipleCurrencies(supabase, capital_expenditure_orig, reportedCurrency, date)
+          const free_cash_flow_converted = await convertValueToMultipleCurrencies(supabase, free_cash_flow_orig, reportedCurrency, date)
+          const dividends_paid_converted = await convertValueToMultipleCurrencies(supabase, dividends_paid_orig, reportedCurrency, date)
+          const other_adjustments_converted = await convertValueToMultipleCurrencies(supabase, other_adjustments_net_income_orig, reportedCurrency, date)
+          const income_tax_expense_converted = await convertValueToMultipleCurrencies(supabase, income_tax_expense_orig, reportedCurrency, date)
+          const income_before_tax_converted = await convertValueToMultipleCurrencies(supabase, income_before_tax_orig, reportedCurrency, date)
+
+          const record = {
+            stock_id: null, // We'll rely on symbol lookup in queries
+            date,
+            period: period === 'FY' ? 'quarter' : period.toLowerCase(), // Normalize period
+            reported_currency: reportedCurrency,
+
+            // Original values
+            revenue_orig,
+            ebitda_orig,
+            ebit_orig,
+            net_income_orig,
+            eps_diluted_orig,
+            total_current_assets_orig,
+            total_assets_orig,
+            total_current_liabilities_orig,
+            total_debt_orig,
+            total_stockholders_equity_orig,
+            cash_and_equivalents_orig,
+            interest_expense_orig,
+            operating_cash_flow_orig,
+            capital_expenditure_orig,
+            free_cash_flow_orig,
+            dividends_paid_orig,
+            other_adjustments_net_income_orig,
+            income_tax_expense_orig,
+            income_before_tax_orig,
+
+            // USD converted values
+            revenue_usd: revenue_converted.USD,
+            ebitda_usd: ebitda_converted.USD,
+            ebit_usd: ebit_converted.USD,
+            net_income_usd: net_income_converted.USD,
+            eps_diluted_usd: eps_diluted_converted.USD,
+            total_current_assets_usd: total_current_assets_converted.USD,
+            total_assets_usd: total_assets_converted.USD,
+            total_current_liabilities_usd: total_current_liabilities_converted.USD,
+            total_debt_usd: total_debt_converted.USD,
+            total_stockholders_equity_usd: total_stockholders_equity_converted.USD,
+            cash_and_equivalents_usd: cash_and_equivalents_converted.USD,
+            interest_expense_usd: interest_expense_converted.USD,
+            operating_cash_flow_usd: operating_cash_flow_converted.USD,
+            capital_expenditure_usd: capital_expenditure_converted.USD,
+            free_cash_flow_usd: free_cash_flow_converted.USD,
+            dividends_paid_usd: dividends_paid_converted.USD,
+            other_adjustments_net_income_usd: other_adjustments_converted.USD,
+            income_tax_expense_usd: income_tax_expense_converted.USD,
+            income_before_tax_usd: income_before_tax_converted.USD,
+
+            // EUR converted values
+            revenue_eur: revenue_converted.EUR,
+            ebitda_eur: ebitda_converted.EUR,
+            ebit_eur: ebit_converted.EUR,
+            net_income_eur: net_income_converted.EUR,
+            eps_diluted_eur: eps_diluted_converted.EUR,
+            total_current_assets_eur: total_current_assets_converted.EUR,
+            total_assets_eur: total_assets_converted.EUR,
+            total_current_liabilities_eur: total_current_liabilities_converted.EUR,
+            total_debt_eur: total_debt_converted.EUR,
+            total_stockholders_equity_eur: total_stockholders_equity_converted.EUR,
+            cash_and_equivalents_eur: cash_and_equivalents_converted.EUR,
+            interest_expense_eur: interest_expense_converted.EUR,
+            operating_cash_flow_eur: operating_cash_flow_converted.EUR,
+            capital_expenditure_eur: capital_expenditure_converted.EUR,
+            free_cash_flow_eur: free_cash_flow_converted.EUR,
+            dividends_paid_eur: dividends_paid_converted.EUR,
+            other_adjustments_net_income_eur: other_adjustments_converted.EUR,
+            income_tax_expense_eur: income_tax_expense_converted.EUR,
+            income_before_tax_eur: income_before_tax_converted.EUR,
+
+            // Additional fields
+            weighted_avg_shares_dil,
+            revenue: revenue_converted.USD, // Default to USD for backward compatibility
+            ebitda: ebitda_converted.USD,
+            ebit: ebit_converted.USD,
+            net_income: net_income_converted.USD,
+            eps_diluted: eps_diluted_converted.USD,
+            total_current_assets: total_current_assets_converted.USD,
+            total_assets: total_assets_converted.USD,
+            total_current_liabilities: total_current_liabilities_converted.USD,
+            total_debt: total_debt_converted.USD,
+            total_stockholders_equity: total_stockholders_equity_converted.USD,
+            cash_and_equivalents: cash_and_equivalents_converted.USD,
+            interest_expense: interest_expense_converted.USD,
+            operating_cash_flow: operating_cash_flow_converted.USD,
+            capital_expenditure: capital_expenditure_converted.USD,
+            free_cash_flow: free_cash_flow_converted.USD,
+            dividends_paid: dividends_paid_converted.USD,
+            other_adjustments_net_income: other_adjustments_converted.USD,
+            income_tax_expense: income_tax_expense_converted.USD,
+            income_before_tax: income_before_tax_converted.USD,
+          }
+
+          records.push(record)
+        }
+
+        // Insert in batches of 100
+        const batchSize = 100
+        for (let i = 0; i < records.length; i += batchSize) {
+          const batch = records.slice(i, i + batchSize)
           const { error: insertError } = await supabase
             .from('financial_statements')
-            .upsert(batch, {
-              onConflict: 'stock_id,date,period',
-              ignoreDuplicates: true
+            .upsert(batch, { 
+              onConflict: 'date,period',
+              ignoreDuplicates: true 
             })
 
           if (insertError) {
-            console.error(`Error inserting batch for ${stock.symbol}:`, insertError)
-            totalErrors++
+            console.error(`  ❌ Error inserting batch for ${stock.symbol}:`, insertError.message)
+            errors.push(`${stock.symbol}: ${insertError.message}`)
           } else {
             totalInserted += batch.length
           }
         }
 
+        console.log(`  ✅ Processed ${records.length} records for ${stock.symbol}`)
         totalProcessed++
-        console.log(`✓ Processed ${stock.symbol}: ${rowsToInsert.length} records`)
 
-        // Rate limiting: wait 100ms between stocks, longer every 10 stocks
-        if (totalProcessed % 10 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 1000))
-        } else {
-          await new Promise(resolve => setTimeout(resolve, 100))
-        }
+        // Rate limit: 750 calls/minute = 80ms per call, but we make 6 calls per stock
+        await new Promise(resolve => setTimeout(resolve, 500))
 
-      } catch (error) {
-        console.error(`Error processing ${stock.symbol}:`, error)
-        totalErrors++
+      } catch (error: any) {
+        const errorMsg = `Error processing ${stock.symbol}: ${error?.message || 'Unknown error'}`
+        console.error(`  ❌ ${errorMsg}`)
+        errors.push(errorMsg)
       }
     }
 
-    const summary = {
-      success: true,
-      totalProcessed,
-      totalInserted,
-      totalErrors,
-      testMode,
-      testSymbol
+    console.log(`\n✅ Import complete: ${totalProcessed} stocks processed, ${totalInserted} records inserted`)
+    if (errors.length > 0) {
+      console.log(`⚠️ Encountered ${errors.length} errors`)
     }
-
-    console.log('Import completed:', summary)
 
     return new Response(
-      JSON.stringify(summary),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      JSON.stringify({
+        success: true,
+        totalProcessed,
+        totalInserted,
+        errors: errors.length > 0 ? errors : undefined,
+        timestamp: new Date().toISOString()
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-  } catch (error) {
-    console.error('Import failed:', error)
+
+  } catch (error: any) {
+    console.error('Fatal error importing historical financials:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
+      JSON.stringify({ error: error?.message || 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

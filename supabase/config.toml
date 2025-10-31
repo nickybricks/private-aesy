@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.fetch-historical-exchange-rates]
 verify_jwt = false
 
+[functions.import-historical-financials]
+verify_jwt = false
+
 [functions.get-exchange-rate]
 verify_jwt = false
 
@@ -28,9 +31,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.populate-company-profile]
-verify_jwt = false
-
-[functions.import-historical-financials]
 verify_jwt = false
 
 [functions.populate-stocks-metadata]
