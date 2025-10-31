@@ -1339,7 +1339,7 @@ export type Database = {
           description?: string | null
           exchange?: string | null
           full_time_employees?: number | null
-          id: number
+          id?: number
           image?: string | null
           industry?: string | null
           industry_de?: string | null
