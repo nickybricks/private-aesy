@@ -857,537 +857,252 @@ export type Database = {
       financial_statements: {
         Row: {
           capital_expenditure: number | null
-          capital_expenditure_aud: number | null
-          capital_expenditure_cny: number | null
-          capital_expenditure_dkk: number | null
-          capital_expenditure_gbp: number | null
-          capital_expenditure_jpy: number | null
-          capital_expenditure_mxn: number | null
+          capital_expenditure_eur: number | null
           capital_expenditure_orig: number | null
           capital_expenditure_usd: number | null
           cash_and_equivalents: number | null
-          cash_and_equivalents_aud: number | null
-          cash_and_equivalents_cny: number | null
-          cash_and_equivalents_dkk: number | null
-          cash_and_equivalents_gbp: number | null
-          cash_and_equivalents_jpy: number | null
-          cash_and_equivalents_mxn: number | null
+          cash_and_equivalents_eur: number | null
           cash_and_equivalents_orig: number | null
           cash_and_equivalents_usd: number | null
           date: string
           dividends_paid: number | null
-          dividends_paid_aud: number | null
-          dividends_paid_cny: number | null
-          dividends_paid_dkk: number | null
-          dividends_paid_gbp: number | null
-          dividends_paid_jpy: number | null
-          dividends_paid_mxn: number | null
+          dividends_paid_eur: number | null
           dividends_paid_orig: number | null
           dividends_paid_usd: number | null
           ebit: number | null
-          ebit_aud: number | null
-          ebit_cny: number | null
-          ebit_dkk: number | null
-          ebit_gbp: number | null
-          ebit_jpy: number | null
-          ebit_mxn: number | null
+          ebit_eur: number | null
           ebit_orig: number | null
           ebit_usd: number | null
           ebitda: number | null
-          ebitda_aud: number | null
-          ebitda_cny: number | null
-          ebitda_dkk: number | null
-          ebitda_gbp: number | null
-          ebitda_jpy: number | null
-          ebitda_mxn: number | null
+          ebitda_eur: number | null
           ebitda_orig: number | null
           ebitda_usd: number | null
           eps_diluted: number | null
-          eps_diluted_aud: number | null
-          eps_diluted_cny: number | null
-          eps_diluted_dkk: number | null
-          eps_diluted_gbp: number | null
-          eps_diluted_jpy: number | null
-          eps_diluted_mxn: number | null
+          eps_diluted_eur: number | null
           eps_diluted_orig: number | null
           eps_diluted_usd: number | null
           free_cash_flow: number | null
-          free_cash_flow_aud: number | null
-          free_cash_flow_cny: number | null
-          free_cash_flow_dkk: number | null
-          free_cash_flow_gbp: number | null
-          free_cash_flow_jpy: number | null
-          free_cash_flow_mxn: number | null
+          free_cash_flow_eur: number | null
           free_cash_flow_orig: number | null
           free_cash_flow_usd: number | null
           id: number
           income_before_tax: number | null
-          income_before_tax_aud: number | null
-          income_before_tax_cny: number | null
-          income_before_tax_dkk: number | null
-          income_before_tax_gbp: number | null
-          income_before_tax_jpy: number | null
-          income_before_tax_mxn: number | null
+          income_before_tax_eur: number | null
           income_before_tax_orig: number | null
           income_before_tax_usd: number | null
           income_tax_expense: number | null
-          income_tax_expense_aud: number | null
-          income_tax_expense_cny: number | null
-          income_tax_expense_dkk: number | null
-          income_tax_expense_gbp: number | null
-          income_tax_expense_jpy: number | null
-          income_tax_expense_mxn: number | null
+          income_tax_expense_eur: number | null
           income_tax_expense_orig: number | null
           income_tax_expense_usd: number | null
           interest_expense: number | null
-          interest_expense_aud: number | null
-          interest_expense_cny: number | null
-          interest_expense_dkk: number | null
-          interest_expense_gbp: number | null
-          interest_expense_jpy: number | null
-          interest_expense_mxn: number | null
+          interest_expense_eur: number | null
           interest_expense_orig: number | null
           interest_expense_usd: number | null
           net_income: number | null
-          net_income_aud: number | null
-          net_income_cny: number | null
-          net_income_dkk: number | null
-          net_income_gbp: number | null
-          net_income_jpy: number | null
-          net_income_mxn: number | null
+          net_income_eur: number | null
           net_income_orig: number | null
           net_income_usd: number | null
           operating_cash_flow: number | null
-          operating_cash_flow_aud: number | null
-          operating_cash_flow_cny: number | null
-          operating_cash_flow_dkk: number | null
-          operating_cash_flow_gbp: number | null
-          operating_cash_flow_jpy: number | null
-          operating_cash_flow_mxn: number | null
+          operating_cash_flow_eur: number | null
           operating_cash_flow_orig: number | null
           operating_cash_flow_usd: number | null
           other_adjustments_net_income: number | null
-          other_adjustments_net_income_aud: number | null
-          other_adjustments_net_income_cny: number | null
-          other_adjustments_net_income_dkk: number | null
-          other_adjustments_net_income_gbp: number | null
-          other_adjustments_net_income_jpy: number | null
-          other_adjustments_net_income_mxn: number | null
+          other_adjustments_net_income_eur: number | null
           other_adjustments_net_income_orig: number | null
           other_adjustments_net_income_usd: number | null
           period: string
           reported_currency: string | null
           revenue: number | null
-          revenue_aud: number | null
-          revenue_cny: number | null
-          revenue_dkk: number | null
-          revenue_gbp: number | null
-          revenue_jpy: number | null
-          revenue_mxn: number | null
+          revenue_eur: number | null
           revenue_orig: number | null
           revenue_usd: number | null
           stock_id: number | null
           total_assets: number | null
-          total_assets_aud: number | null
-          total_assets_cny: number | null
-          total_assets_dkk: number | null
-          total_assets_gbp: number | null
-          total_assets_jpy: number | null
-          total_assets_mxn: number | null
+          total_assets_eur: number | null
           total_assets_orig: number | null
           total_assets_usd: number | null
           total_current_assets: number | null
-          total_current_assets_aud: number | null
-          total_current_assets_cny: number | null
-          total_current_assets_dkk: number | null
-          total_current_assets_gbp: number | null
-          total_current_assets_jpy: number | null
-          total_current_assets_mxn: number | null
+          total_current_assets_eur: number | null
           total_current_assets_orig: number | null
           total_current_assets_usd: number | null
           total_current_liabilities: number | null
-          total_current_liabilities_aud: number | null
-          total_current_liabilities_cny: number | null
-          total_current_liabilities_dkk: number | null
-          total_current_liabilities_gbp: number | null
-          total_current_liabilities_jpy: number | null
-          total_current_liabilities_mxn: number | null
+          total_current_liabilities_eur: number | null
           total_current_liabilities_orig: number | null
           total_current_liabilities_usd: number | null
           total_debt: number | null
-          total_debt_aud: number | null
-          total_debt_cny: number | null
-          total_debt_dkk: number | null
-          total_debt_gbp: number | null
-          total_debt_jpy: number | null
-          total_debt_mxn: number | null
+          total_debt_eur: number | null
           total_debt_orig: number | null
           total_debt_usd: number | null
           total_stockholders_equity: number | null
-          total_stockholders_equity_aud: number | null
-          total_stockholders_equity_cny: number | null
-          total_stockholders_equity_dkk: number | null
-          total_stockholders_equity_gbp: number | null
-          total_stockholders_equity_jpy: number | null
-          total_stockholders_equity_mxn: number | null
+          total_stockholders_equity_eur: number | null
           total_stockholders_equity_orig: number | null
           total_stockholders_equity_usd: number | null
           weighted_avg_shares_dil: number | null
         }
         Insert: {
           capital_expenditure?: number | null
-          capital_expenditure_aud?: number | null
-          capital_expenditure_cny?: number | null
-          capital_expenditure_dkk?: number | null
-          capital_expenditure_gbp?: number | null
-          capital_expenditure_jpy?: number | null
-          capital_expenditure_mxn?: number | null
+          capital_expenditure_eur?: number | null
           capital_expenditure_orig?: number | null
           capital_expenditure_usd?: number | null
           cash_and_equivalents?: number | null
-          cash_and_equivalents_aud?: number | null
-          cash_and_equivalents_cny?: number | null
-          cash_and_equivalents_dkk?: number | null
-          cash_and_equivalents_gbp?: number | null
-          cash_and_equivalents_jpy?: number | null
-          cash_and_equivalents_mxn?: number | null
+          cash_and_equivalents_eur?: number | null
           cash_and_equivalents_orig?: number | null
           cash_and_equivalents_usd?: number | null
           date: string
           dividends_paid?: number | null
-          dividends_paid_aud?: number | null
-          dividends_paid_cny?: number | null
-          dividends_paid_dkk?: number | null
-          dividends_paid_gbp?: number | null
-          dividends_paid_jpy?: number | null
-          dividends_paid_mxn?: number | null
+          dividends_paid_eur?: number | null
           dividends_paid_orig?: number | null
           dividends_paid_usd?: number | null
           ebit?: number | null
-          ebit_aud?: number | null
-          ebit_cny?: number | null
-          ebit_dkk?: number | null
-          ebit_gbp?: number | null
-          ebit_jpy?: number | null
-          ebit_mxn?: number | null
+          ebit_eur?: number | null
           ebit_orig?: number | null
           ebit_usd?: number | null
           ebitda?: number | null
-          ebitda_aud?: number | null
-          ebitda_cny?: number | null
-          ebitda_dkk?: number | null
-          ebitda_gbp?: number | null
-          ebitda_jpy?: number | null
-          ebitda_mxn?: number | null
+          ebitda_eur?: number | null
           ebitda_orig?: number | null
           ebitda_usd?: number | null
           eps_diluted?: number | null
-          eps_diluted_aud?: number | null
-          eps_diluted_cny?: number | null
-          eps_diluted_dkk?: number | null
-          eps_diluted_gbp?: number | null
-          eps_diluted_jpy?: number | null
-          eps_diluted_mxn?: number | null
+          eps_diluted_eur?: number | null
           eps_diluted_orig?: number | null
           eps_diluted_usd?: number | null
           free_cash_flow?: number | null
-          free_cash_flow_aud?: number | null
-          free_cash_flow_cny?: number | null
-          free_cash_flow_dkk?: number | null
-          free_cash_flow_gbp?: number | null
-          free_cash_flow_jpy?: number | null
-          free_cash_flow_mxn?: number | null
+          free_cash_flow_eur?: number | null
           free_cash_flow_orig?: number | null
           free_cash_flow_usd?: number | null
           id?: number
           income_before_tax?: number | null
-          income_before_tax_aud?: number | null
-          income_before_tax_cny?: number | null
-          income_before_tax_dkk?: number | null
-          income_before_tax_gbp?: number | null
-          income_before_tax_jpy?: number | null
-          income_before_tax_mxn?: number | null
+          income_before_tax_eur?: number | null
           income_before_tax_orig?: number | null
           income_before_tax_usd?: number | null
           income_tax_expense?: number | null
-          income_tax_expense_aud?: number | null
-          income_tax_expense_cny?: number | null
-          income_tax_expense_dkk?: number | null
-          income_tax_expense_gbp?: number | null
-          income_tax_expense_jpy?: number | null
-          income_tax_expense_mxn?: number | null
+          income_tax_expense_eur?: number | null
           income_tax_expense_orig?: number | null
           income_tax_expense_usd?: number | null
           interest_expense?: number | null
-          interest_expense_aud?: number | null
-          interest_expense_cny?: number | null
-          interest_expense_dkk?: number | null
-          interest_expense_gbp?: number | null
-          interest_expense_jpy?: number | null
-          interest_expense_mxn?: number | null
+          interest_expense_eur?: number | null
           interest_expense_orig?: number | null
           interest_expense_usd?: number | null
           net_income?: number | null
-          net_income_aud?: number | null
-          net_income_cny?: number | null
-          net_income_dkk?: number | null
-          net_income_gbp?: number | null
-          net_income_jpy?: number | null
-          net_income_mxn?: number | null
+          net_income_eur?: number | null
           net_income_orig?: number | null
           net_income_usd?: number | null
           operating_cash_flow?: number | null
-          operating_cash_flow_aud?: number | null
-          operating_cash_flow_cny?: number | null
-          operating_cash_flow_dkk?: number | null
-          operating_cash_flow_gbp?: number | null
-          operating_cash_flow_jpy?: number | null
-          operating_cash_flow_mxn?: number | null
+          operating_cash_flow_eur?: number | null
           operating_cash_flow_orig?: number | null
           operating_cash_flow_usd?: number | null
           other_adjustments_net_income?: number | null
-          other_adjustments_net_income_aud?: number | null
-          other_adjustments_net_income_cny?: number | null
-          other_adjustments_net_income_dkk?: number | null
-          other_adjustments_net_income_gbp?: number | null
-          other_adjustments_net_income_jpy?: number | null
-          other_adjustments_net_income_mxn?: number | null
+          other_adjustments_net_income_eur?: number | null
           other_adjustments_net_income_orig?: number | null
           other_adjustments_net_income_usd?: number | null
           period: string
           reported_currency?: string | null
           revenue?: number | null
-          revenue_aud?: number | null
-          revenue_cny?: number | null
-          revenue_dkk?: number | null
-          revenue_gbp?: number | null
-          revenue_jpy?: number | null
-          revenue_mxn?: number | null
+          revenue_eur?: number | null
           revenue_orig?: number | null
           revenue_usd?: number | null
           stock_id?: number | null
           total_assets?: number | null
-          total_assets_aud?: number | null
-          total_assets_cny?: number | null
-          total_assets_dkk?: number | null
-          total_assets_gbp?: number | null
-          total_assets_jpy?: number | null
-          total_assets_mxn?: number | null
+          total_assets_eur?: number | null
           total_assets_orig?: number | null
           total_assets_usd?: number | null
           total_current_assets?: number | null
-          total_current_assets_aud?: number | null
-          total_current_assets_cny?: number | null
-          total_current_assets_dkk?: number | null
-          total_current_assets_gbp?: number | null
-          total_current_assets_jpy?: number | null
-          total_current_assets_mxn?: number | null
+          total_current_assets_eur?: number | null
           total_current_assets_orig?: number | null
           total_current_assets_usd?: number | null
           total_current_liabilities?: number | null
-          total_current_liabilities_aud?: number | null
-          total_current_liabilities_cny?: number | null
-          total_current_liabilities_dkk?: number | null
-          total_current_liabilities_gbp?: number | null
-          total_current_liabilities_jpy?: number | null
-          total_current_liabilities_mxn?: number | null
+          total_current_liabilities_eur?: number | null
           total_current_liabilities_orig?: number | null
           total_current_liabilities_usd?: number | null
           total_debt?: number | null
-          total_debt_aud?: number | null
-          total_debt_cny?: number | null
-          total_debt_dkk?: number | null
-          total_debt_gbp?: number | null
-          total_debt_jpy?: number | null
-          total_debt_mxn?: number | null
+          total_debt_eur?: number | null
           total_debt_orig?: number | null
           total_debt_usd?: number | null
           total_stockholders_equity?: number | null
-          total_stockholders_equity_aud?: number | null
-          total_stockholders_equity_cny?: number | null
-          total_stockholders_equity_dkk?: number | null
-          total_stockholders_equity_gbp?: number | null
-          total_stockholders_equity_jpy?: number | null
-          total_stockholders_equity_mxn?: number | null
+          total_stockholders_equity_eur?: number | null
           total_stockholders_equity_orig?: number | null
           total_stockholders_equity_usd?: number | null
           weighted_avg_shares_dil?: number | null
         }
         Update: {
           capital_expenditure?: number | null
-          capital_expenditure_aud?: number | null
-          capital_expenditure_cny?: number | null
-          capital_expenditure_dkk?: number | null
-          capital_expenditure_gbp?: number | null
-          capital_expenditure_jpy?: number | null
-          capital_expenditure_mxn?: number | null
+          capital_expenditure_eur?: number | null
           capital_expenditure_orig?: number | null
           capital_expenditure_usd?: number | null
           cash_and_equivalents?: number | null
-          cash_and_equivalents_aud?: number | null
-          cash_and_equivalents_cny?: number | null
-          cash_and_equivalents_dkk?: number | null
-          cash_and_equivalents_gbp?: number | null
-          cash_and_equivalents_jpy?: number | null
-          cash_and_equivalents_mxn?: number | null
+          cash_and_equivalents_eur?: number | null
           cash_and_equivalents_orig?: number | null
           cash_and_equivalents_usd?: number | null
           date?: string
           dividends_paid?: number | null
-          dividends_paid_aud?: number | null
-          dividends_paid_cny?: number | null
-          dividends_paid_dkk?: number | null
-          dividends_paid_gbp?: number | null
-          dividends_paid_jpy?: number | null
-          dividends_paid_mxn?: number | null
+          dividends_paid_eur?: number | null
           dividends_paid_orig?: number | null
           dividends_paid_usd?: number | null
           ebit?: number | null
-          ebit_aud?: number | null
-          ebit_cny?: number | null
-          ebit_dkk?: number | null
-          ebit_gbp?: number | null
-          ebit_jpy?: number | null
-          ebit_mxn?: number | null
+          ebit_eur?: number | null
           ebit_orig?: number | null
           ebit_usd?: number | null
           ebitda?: number | null
-          ebitda_aud?: number | null
-          ebitda_cny?: number | null
-          ebitda_dkk?: number | null
-          ebitda_gbp?: number | null
-          ebitda_jpy?: number | null
-          ebitda_mxn?: number | null
+          ebitda_eur?: number | null
           ebitda_orig?: number | null
           ebitda_usd?: number | null
           eps_diluted?: number | null
-          eps_diluted_aud?: number | null
-          eps_diluted_cny?: number | null
-          eps_diluted_dkk?: number | null
-          eps_diluted_gbp?: number | null
-          eps_diluted_jpy?: number | null
-          eps_diluted_mxn?: number | null
+          eps_diluted_eur?: number | null
           eps_diluted_orig?: number | null
           eps_diluted_usd?: number | null
           free_cash_flow?: number | null
-          free_cash_flow_aud?: number | null
-          free_cash_flow_cny?: number | null
-          free_cash_flow_dkk?: number | null
-          free_cash_flow_gbp?: number | null
-          free_cash_flow_jpy?: number | null
-          free_cash_flow_mxn?: number | null
+          free_cash_flow_eur?: number | null
           free_cash_flow_orig?: number | null
           free_cash_flow_usd?: number | null
           id?: number
           income_before_tax?: number | null
-          income_before_tax_aud?: number | null
-          income_before_tax_cny?: number | null
-          income_before_tax_dkk?: number | null
-          income_before_tax_gbp?: number | null
-          income_before_tax_jpy?: number | null
-          income_before_tax_mxn?: number | null
+          income_before_tax_eur?: number | null
           income_before_tax_orig?: number | null
           income_before_tax_usd?: number | null
           income_tax_expense?: number | null
-          income_tax_expense_aud?: number | null
-          income_tax_expense_cny?: number | null
-          income_tax_expense_dkk?: number | null
-          income_tax_expense_gbp?: number | null
-          income_tax_expense_jpy?: number | null
-          income_tax_expense_mxn?: number | null
+          income_tax_expense_eur?: number | null
           income_tax_expense_orig?: number | null
           income_tax_expense_usd?: number | null
           interest_expense?: number | null
-          interest_expense_aud?: number | null
-          interest_expense_cny?: number | null
-          interest_expense_dkk?: number | null
-          interest_expense_gbp?: number | null
-          interest_expense_jpy?: number | null
-          interest_expense_mxn?: number | null
+          interest_expense_eur?: number | null
           interest_expense_orig?: number | null
           interest_expense_usd?: number | null
           net_income?: number | null
-          net_income_aud?: number | null
-          net_income_cny?: number | null
-          net_income_dkk?: number | null
-          net_income_gbp?: number | null
-          net_income_jpy?: number | null
-          net_income_mxn?: number | null
+          net_income_eur?: number | null
           net_income_orig?: number | null
           net_income_usd?: number | null
           operating_cash_flow?: number | null
-          operating_cash_flow_aud?: number | null
-          operating_cash_flow_cny?: number | null
-          operating_cash_flow_dkk?: number | null
-          operating_cash_flow_gbp?: number | null
-          operating_cash_flow_jpy?: number | null
-          operating_cash_flow_mxn?: number | null
+          operating_cash_flow_eur?: number | null
           operating_cash_flow_orig?: number | null
           operating_cash_flow_usd?: number | null
           other_adjustments_net_income?: number | null
-          other_adjustments_net_income_aud?: number | null
-          other_adjustments_net_income_cny?: number | null
-          other_adjustments_net_income_dkk?: number | null
-          other_adjustments_net_income_gbp?: number | null
-          other_adjustments_net_income_jpy?: number | null
-          other_adjustments_net_income_mxn?: number | null
+          other_adjustments_net_income_eur?: number | null
           other_adjustments_net_income_orig?: number | null
           other_adjustments_net_income_usd?: number | null
           period?: string
           reported_currency?: string | null
           revenue?: number | null
-          revenue_aud?: number | null
-          revenue_cny?: number | null
-          revenue_dkk?: number | null
-          revenue_gbp?: number | null
-          revenue_jpy?: number | null
-          revenue_mxn?: number | null
+          revenue_eur?: number | null
           revenue_orig?: number | null
           revenue_usd?: number | null
           stock_id?: number | null
           total_assets?: number | null
-          total_assets_aud?: number | null
-          total_assets_cny?: number | null
-          total_assets_dkk?: number | null
-          total_assets_gbp?: number | null
-          total_assets_jpy?: number | null
-          total_assets_mxn?: number | null
+          total_assets_eur?: number | null
           total_assets_orig?: number | null
           total_assets_usd?: number | null
           total_current_assets?: number | null
-          total_current_assets_aud?: number | null
-          total_current_assets_cny?: number | null
-          total_current_assets_dkk?: number | null
-          total_current_assets_gbp?: number | null
-          total_current_assets_jpy?: number | null
-          total_current_assets_mxn?: number | null
+          total_current_assets_eur?: number | null
           total_current_assets_orig?: number | null
           total_current_assets_usd?: number | null
           total_current_liabilities?: number | null
-          total_current_liabilities_aud?: number | null
-          total_current_liabilities_cny?: number | null
-          total_current_liabilities_dkk?: number | null
-          total_current_liabilities_gbp?: number | null
-          total_current_liabilities_jpy?: number | null
-          total_current_liabilities_mxn?: number | null
+          total_current_liabilities_eur?: number | null
           total_current_liabilities_orig?: number | null
           total_current_liabilities_usd?: number | null
           total_debt?: number | null
-          total_debt_aud?: number | null
-          total_debt_cny?: number | null
-          total_debt_dkk?: number | null
-          total_debt_gbp?: number | null
-          total_debt_jpy?: number | null
-          total_debt_mxn?: number | null
+          total_debt_eur?: number | null
           total_debt_orig?: number | null
           total_debt_usd?: number | null
           total_stockholders_equity?: number | null
-          total_stockholders_equity_aud?: number | null
-          total_stockholders_equity_cny?: number | null
-          total_stockholders_equity_dkk?: number | null
-          total_stockholders_equity_gbp?: number | null
-          total_stockholders_equity_jpy?: number | null
-          total_stockholders_equity_mxn?: number | null
+          total_stockholders_equity_eur?: number | null
           total_stockholders_equity_orig?: number | null
           total_stockholders_equity_usd?: number | null
           weighted_avg_shares_dil?: number | null
@@ -1594,6 +1309,7 @@ export type Database = {
           id: number
           image: string | null
           industry: string | null
+          industry_de: string | null
           ipo_date: string | null
           is_actively_trading: boolean | null
           is_adr: boolean | null
@@ -1605,6 +1321,7 @@ export type Database = {
           name: string | null
           phone: string | null
           sector: string | null
+          sector_de: string | null
           state: string | null
           symbol: string
           website: string | null
@@ -1622,6 +1339,7 @@ export type Database = {
           id: number
           image?: string | null
           industry?: string | null
+          industry_de?: string | null
           ipo_date?: string | null
           is_actively_trading?: boolean | null
           is_adr?: boolean | null
@@ -1633,6 +1351,7 @@ export type Database = {
           name?: string | null
           phone?: string | null
           sector?: string | null
+          sector_de?: string | null
           state?: string | null
           symbol: string
           website?: string | null
@@ -1650,6 +1369,7 @@ export type Database = {
           id?: number
           image?: string | null
           industry?: string | null
+          industry_de?: string | null
           ipo_date?: string | null
           is_actively_trading?: boolean | null
           is_adr?: boolean | null
@@ -1661,6 +1381,7 @@ export type Database = {
           name?: string | null
           phone?: string | null
           sector?: string | null
+          sector_de?: string | null
           state?: string | null
           symbol?: string
           website?: string | null

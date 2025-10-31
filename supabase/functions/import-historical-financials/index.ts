@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const TARGET_CURRENCIES = ['USD', 'GBP', 'JPY', 'AUD', 'CNY', 'MXN', 'DKK']
+const TARGET_CURRENCIES = ['USD', 'EUR']
 
 async function getExchangeRate(
   supabase: any,
@@ -60,12 +60,7 @@ async function convertValueToMultipleCurrencies(
     return {
       orig: null,
       usd: null,
-      gbp: null,
-      jpy: null,
-      aud: null,
-      cny: null,
-      mxn: null,
-      dkk: null,
+      eur: null,
     }
   }
 
@@ -243,55 +238,30 @@ serve(async (req) => {
             period,
             reported_currency: reportedCurrency,
             
-            // Revenue with all currencies
+            // Revenue
             revenue_orig: revenue.orig,
             revenue_usd: revenue.usd,
-            revenue_gbp: revenue.gbp,
-            revenue_jpy: revenue.jpy,
-            revenue_aud: revenue.aud,
-            revenue_cny: revenue.cny,
-            revenue_mxn: revenue.mxn,
-            revenue_dkk: revenue.dkk,
+            revenue_eur: revenue.eur,
             
             // EBITDA
             ebitda_orig: ebitda.orig,
             ebitda_usd: ebitda.usd,
-            ebitda_gbp: ebitda.gbp,
-            ebitda_jpy: ebitda.jpy,
-            ebitda_aud: ebitda.aud,
-            ebitda_cny: ebitda.cny,
-            ebitda_mxn: ebitda.mxn,
-            ebitda_dkk: ebitda.dkk,
+            ebitda_eur: ebitda.eur,
             
             // EBIT
             ebit_orig: ebit.orig,
             ebit_usd: ebit.usd,
-            ebit_gbp: ebit.gbp,
-            ebit_jpy: ebit.jpy,
-            ebit_aud: ebit.aud,
-            ebit_cny: ebit.cny,
-            ebit_mxn: ebit.mxn,
-            ebit_dkk: ebit.dkk,
+            ebit_eur: ebit.eur,
             
             // Net Income
             net_income_orig: netIncome.orig,
             net_income_usd: netIncome.usd,
-            net_income_gbp: netIncome.gbp,
-            net_income_jpy: netIncome.jpy,
-            net_income_aud: netIncome.aud,
-            net_income_cny: netIncome.cny,
-            net_income_mxn: netIncome.mxn,
-            net_income_dkk: netIncome.dkk,
+            net_income_eur: netIncome.eur,
             
             // EPS Diluted
             eps_diluted_orig: epsDiluted.orig,
             eps_diluted_usd: epsDiluted.usd,
-            eps_diluted_gbp: epsDiluted.gbp,
-            eps_diluted_jpy: epsDiluted.jpy,
-            eps_diluted_aud: epsDiluted.aud,
-            eps_diluted_cny: epsDiluted.cny,
-            eps_diluted_mxn: epsDiluted.mxn,
-            eps_diluted_dkk: epsDiluted.dkk,
+            eps_diluted_eur: epsDiluted.eur,
             
             // Shares
             weighted_avg_shares_dil: data.weightedAverageShsOutDil,
@@ -299,142 +269,72 @@ serve(async (req) => {
             // Total Current Assets
             total_current_assets_orig: totalCurrentAssets.orig,
             total_current_assets_usd: totalCurrentAssets.usd,
-            total_current_assets_gbp: totalCurrentAssets.gbp,
-            total_current_assets_jpy: totalCurrentAssets.jpy,
-            total_current_assets_aud: totalCurrentAssets.aud,
-            total_current_assets_cny: totalCurrentAssets.cny,
-            total_current_assets_mxn: totalCurrentAssets.mxn,
-            total_current_assets_dkk: totalCurrentAssets.dkk,
+            total_current_assets_eur: totalCurrentAssets.eur,
             
             // Total Assets
             total_assets_orig: totalAssets.orig,
             total_assets_usd: totalAssets.usd,
-            total_assets_gbp: totalAssets.gbp,
-            total_assets_jpy: totalAssets.jpy,
-            total_assets_aud: totalAssets.aud,
-            total_assets_cny: totalAssets.cny,
-            total_assets_mxn: totalAssets.mxn,
-            total_assets_dkk: totalAssets.dkk,
+            total_assets_eur: totalAssets.eur,
             
             // Total Current Liabilities
             total_current_liabilities_orig: totalCurrentLiabilities.orig,
             total_current_liabilities_usd: totalCurrentLiabilities.usd,
-            total_current_liabilities_gbp: totalCurrentLiabilities.gbp,
-            total_current_liabilities_jpy: totalCurrentLiabilities.jpy,
-            total_current_liabilities_aud: totalCurrentLiabilities.aud,
-            total_current_liabilities_cny: totalCurrentLiabilities.cny,
-            total_current_liabilities_mxn: totalCurrentLiabilities.mxn,
-            total_current_liabilities_dkk: totalCurrentLiabilities.dkk,
+            total_current_liabilities_eur: totalCurrentLiabilities.eur,
             
             // Total Debt
             total_debt_orig: totalDebt.orig,
             total_debt_usd: totalDebt.usd,
-            total_debt_gbp: totalDebt.gbp,
-            total_debt_jpy: totalDebt.jpy,
-            total_debt_aud: totalDebt.aud,
-            total_debt_cny: totalDebt.cny,
-            total_debt_mxn: totalDebt.mxn,
-            total_debt_dkk: totalDebt.dkk,
+            total_debt_eur: totalDebt.eur,
             
             // Total Stockholders Equity
             total_stockholders_equity_orig: totalStockholdersEquity.orig,
             total_stockholders_equity_usd: totalStockholdersEquity.usd,
-            total_stockholders_equity_gbp: totalStockholdersEquity.gbp,
-            total_stockholders_equity_jpy: totalStockholdersEquity.jpy,
-            total_stockholders_equity_aud: totalStockholdersEquity.aud,
-            total_stockholders_equity_cny: totalStockholdersEquity.cny,
-            total_stockholders_equity_mxn: totalStockholdersEquity.mxn,
-            total_stockholders_equity_dkk: totalStockholdersEquity.dkk,
+            total_stockholders_equity_eur: totalStockholdersEquity.eur,
             
             // Cash and Equivalents
             cash_and_equivalents_orig: cashAndEquivalents.orig,
             cash_and_equivalents_usd: cashAndEquivalents.usd,
-            cash_and_equivalents_gbp: cashAndEquivalents.gbp,
-            cash_and_equivalents_jpy: cashAndEquivalents.jpy,
-            cash_and_equivalents_aud: cashAndEquivalents.aud,
-            cash_and_equivalents_cny: cashAndEquivalents.cny,
-            cash_and_equivalents_mxn: cashAndEquivalents.mxn,
-            cash_and_equivalents_dkk: cashAndEquivalents.dkk,
+            cash_and_equivalents_eur: cashAndEquivalents.eur,
             
             // Interest Expense
             interest_expense_orig: interestExpense.orig,
             interest_expense_usd: interestExpense.usd,
-            interest_expense_gbp: interestExpense.gbp,
-            interest_expense_jpy: interestExpense.jpy,
-            interest_expense_aud: interestExpense.aud,
-            interest_expense_cny: interestExpense.cny,
-            interest_expense_mxn: interestExpense.mxn,
-            interest_expense_dkk: interestExpense.dkk,
+            interest_expense_eur: interestExpense.eur,
             
             // Operating Cash Flow
             operating_cash_flow_orig: operatingCashFlow.orig,
             operating_cash_flow_usd: operatingCashFlow.usd,
-            operating_cash_flow_gbp: operatingCashFlow.gbp,
-            operating_cash_flow_jpy: operatingCashFlow.jpy,
-            operating_cash_flow_aud: operatingCashFlow.aud,
-            operating_cash_flow_cny: operatingCashFlow.cny,
-            operating_cash_flow_mxn: operatingCashFlow.mxn,
-            operating_cash_flow_dkk: operatingCashFlow.dkk,
+            operating_cash_flow_eur: operatingCashFlow.eur,
             
             // Capital Expenditure
             capital_expenditure_orig: capex.orig,
             capital_expenditure_usd: capex.usd,
-            capital_expenditure_gbp: capex.gbp,
-            capital_expenditure_jpy: capex.jpy,
-            capital_expenditure_aud: capex.aud,
-            capital_expenditure_cny: capex.cny,
-            capital_expenditure_mxn: capex.mxn,
-            capital_expenditure_dkk: capex.dkk,
+            capital_expenditure_eur: capex.eur,
             
             // Free Cash Flow
             free_cash_flow_orig: freeCashFlow.orig,
             free_cash_flow_usd: freeCashFlow.usd,
-            free_cash_flow_gbp: freeCashFlow.gbp,
-            free_cash_flow_jpy: freeCashFlow.jpy,
-            free_cash_flow_aud: freeCashFlow.aud,
-            free_cash_flow_cny: freeCashFlow.cny,
-            free_cash_flow_mxn: freeCashFlow.mxn,
-            free_cash_flow_dkk: freeCashFlow.dkk,
+            free_cash_flow_eur: freeCashFlow.eur,
             
             // Dividends Paid
             dividends_paid_orig: dividendsPaid.orig,
             dividends_paid_usd: dividendsPaid.usd,
-            dividends_paid_gbp: dividendsPaid.gbp,
-            dividends_paid_jpy: dividendsPaid.jpy,
-            dividends_paid_aud: dividendsPaid.aud,
-            dividends_paid_cny: dividendsPaid.cny,
-            dividends_paid_mxn: dividendsPaid.mxn,
-            dividends_paid_dkk: dividendsPaid.dkk,
+            dividends_paid_eur: dividendsPaid.eur,
             
             // Other Adjustments
             other_adjustments_net_income_orig: otherAdjustments.orig,
             other_adjustments_net_income_usd: otherAdjustments.usd,
-            other_adjustments_net_income_gbp: otherAdjustments.gbp,
-            other_adjustments_net_income_jpy: otherAdjustments.jpy,
-            other_adjustments_net_income_aud: otherAdjustments.aud,
-            other_adjustments_net_income_cny: otherAdjustments.cny,
-            other_adjustments_net_income_mxn: otherAdjustments.mxn,
-            other_adjustments_net_income_dkk: otherAdjustments.dkk,
+            other_adjustments_net_income_eur: otherAdjustments.eur,
             
             // Income Tax Expense
             income_tax_expense_orig: incomeTaxExpense.orig,
             income_tax_expense_usd: incomeTaxExpense.usd,
-            income_tax_expense_gbp: incomeTaxExpense.gbp,
-            income_tax_expense_jpy: incomeTaxExpense.jpy,
-            income_tax_expense_aud: incomeTaxExpense.aud,
-            income_tax_expense_cny: incomeTaxExpense.cny,
-            income_tax_expense_mxn: incomeTaxExpense.mxn,
-            income_tax_expense_dkk: incomeTaxExpense.dkk,
+            income_tax_expense_eur: incomeTaxExpense.eur,
             
             // Income Before Tax
             income_before_tax_orig: incomeBeforeTax.orig,
             income_before_tax_usd: incomeBeforeTax.usd,
-            income_before_tax_gbp: incomeBeforeTax.gbp,
-            income_before_tax_jpy: incomeBeforeTax.jpy,
-            income_before_tax_aud: incomeBeforeTax.aud,
-            income_before_tax_cny: incomeBeforeTax.cny,
-            income_before_tax_mxn: incomeBeforeTax.mxn,
-            income_before_tax_dkk: incomeBeforeTax.dkk,
+            income_before_tax_eur: incomeBeforeTax.eur,
           }
 
           rowsToInsert.push(row)
