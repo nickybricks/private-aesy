@@ -46,9 +46,16 @@ serve(async (req) => {
         console.log(`  → Fetching ${pair}...`)
         
         try {
-          const url = `https://financialmodelingprep.com/api/v3/historical-price-full/forex/${pair}?from=${fromDate}&to=${toDate}&apikey=${fmpApiKey}`
-          const response = await fetch(url)
-          
+          const primaryUrl = `https://financialmodelingprep.com/stable/historical-price-eod/light?symbol=${pair}&from=${fromDate}&to=${toDate}&apikey=${fmpApiKey}`
+          console.log(`    🔗 Fetching: ${primaryUrl}`)
+          let response = await fetch(primaryUrl)
+
+          if (!response.ok) {
+            console.warn(`    ⚠️ Primary endpoint failed for ${pair} (${response.status}). Falling back...`)
+            const fallbackUrl = `https://financialmodelingprep.com/api/v3/historical-price-full/forex/${pair}?from=${fromDate}&to=${toDate}&apikey=${fmpApiKey}`
+            response = await fetch(fallbackUrl)
+          }
+
           if (!response.ok) {
             const errorMsg = `FMP API error for ${pair}: ${response.status}`
             console.error(errorMsg)
@@ -56,24 +63,36 @@ serve(async (req) => {
             continue
           }
 
-          const data = await response.json()
-          
-          if (!data.historical || !Array.isArray(data.historical) || data.historical.length === 0) {
+          const data: any = await response.json()
+
+          const historical = Array.isArray(data?.historical)
+            ? data.historical
+            : Array.isArray(data)
+              ? data
+              : Array.isArray(data?.results)
+                ? data.results
+                : Array.isArray(data?.historicalStockList?.[0]?.historical)
+                  ? data.historicalStockList[0].historical
+                  : []
+
+          if (!Array.isArray(historical) || historical.length === 0) {
             console.warn(`    ⚠️ No historical data for ${pair}`)
             continue
           }
 
-          console.log(`    ✓ Received ${data.historical.length} days for ${pair}`)
+          console.log(`    ✓ Received ${historical.length} days for ${pair}`)
           
           // Prepare batch updates
-          const updates = data.historical.map((day: any) => ({
-            base_currency: baseCurrency,
-            target_currency: targetCurrency,
-            valid_date: day.date,
-            rate: Number(day.close),
-            fetched_at: new Date().toISOString(),
-            is_fallback: false,
-          }))
+          const updates = historical
+            .map((day: any) => ({
+              base_currency: baseCurrency,
+              target_currency: targetCurrency,
+              valid_date: day.date || day.dateTime || day.datetime,
+              rate: Number(day.close ?? day.adjClose ?? day.price ?? day.value),
+              fetched_at: new Date().toISOString(),
+              is_fallback: false,
+            }))
+            .filter((u: any) => u.valid_date && Number.isFinite(u.rate))
 
           // Upsert in batches of 1000
           const batchSize = 1000
@@ -97,8 +116,8 @@ serve(async (req) => {
           // Fill missing days with carry-forward
           await fillMissingDays(supabase, baseCurrency, targetCurrency, fromDate, toDate)
           
-          // Small delay to avoid rate limits
-          await new Promise(resolve => setTimeout(resolve, 300))
+          // Rate limit: 750 calls/minute = 80ms delay minimum
+          await new Promise(resolve => setTimeout(resolve, 100))
 
         } catch (error: any) {
           const errorMsg = `Error processing ${pair}: ${error?.message || 'Unknown error'}`
