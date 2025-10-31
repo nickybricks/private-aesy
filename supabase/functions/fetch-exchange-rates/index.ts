@@ -32,7 +32,7 @@ serve(async (req) => {
 
     if (usdResp.ok) {
       usdData = await usdResp.json()
-      if (!usdData.success || !usdData.rates) {
+      if (!usdData || !usdData.rates || typeof usdData.rates !== 'object') {
         console.warn('Invalid USD-base API response; ignoring USD block')
         usdData = null
       }
@@ -42,7 +42,7 @@ serve(async (req) => {
 
     if (eurResp.ok) {
       eurData = await eurResp.json()
-      if (!eurData.success || !eurData.rates) {
+      if (!eurData || !eurData.rates || typeof eurData.rates !== 'object') {
         console.warn('Invalid EUR-base API response; ignoring EUR block')
         eurData = null
       }
@@ -91,17 +91,17 @@ serve(async (req) => {
 
     if (upsertError) throw upsertError
 
-    console.log(`✅ Successfully updated ${updates.length} exchange rates (USD & EUR bases)')
+    console.log(`Successfully updated ${updates.length} exchange rates (USD & EUR bases)`) 
 
     return new Response(
       JSON.stringify({ success: true, updated: updates.length, timestamp: nowIso }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching exchange rates:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error?.message || 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
