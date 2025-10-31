@@ -39,54 +39,113 @@ serve(async (req) => {
       )
     }
 
-    // Same currency
+    fromCurrency = fromCurrency.toUpperCase()
+    toCurrency = toCurrency.toUpperCase()
+
+    // Same currency shortcut
     if (fromCurrency === toCurrency) {
       return new Response(
-        JSON.stringify({ rate: 1.0, source: 'same_currency' }),
+        JSON.stringify({ rate: 1.0, source: 'same_currency', from: fromCurrency, to: toCurrency }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const FMP_API_KEY = Deno.env.get('FMP_API_KEY') || 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y'
-    
-    // Construct currency pair symbol for FMP API
-    // FMP uses format like "EURUSD" for EUR to USD
+    // Supabase client (service role)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Helper: get latest direct rate (base->target)
+    const getLatestRate = async (base: string, target: string): Promise<number | null> => {
+      const { data, error } = await supabase
+        .from('exchange_rates')
+        .select('rate, fetched_at')
+        .eq('base_currency', base)
+        .eq('target_currency', target)
+        .order('fetched_at', { ascending: false })
+        .limit(1)
+      if (error) {
+        console.warn('DB rate query error', { base, target, error })
+        return null
+      }
+      if (data && data.length > 0) return Number(data[0].rate)
+      return null
+    }
+
+    // Try to resolve from DB via direct, reciprocal, or bridge using USD/EUR
+    const tryResolveFromDB = async (from: string, to: string): Promise<{ rate: number; source: string } | null> => {
+      // 1) direct
+      const direct = await getLatestRate(from, to)
+      if (direct) return { rate: direct, source: 'exchange_rates_db_direct' }
+      // 2) reciprocal
+      const reciprocal = await getLatestRate(to, from)
+      if (reciprocal) return { rate: 1 / reciprocal, source: 'exchange_rates_db_reciprocal' }
+      // 3) USD bridge
+      const usdToFrom = await getLatestRate('USD', from)
+      const usdToTo = await getLatestRate('USD', to)
+      if (usdToFrom && usdToTo) {
+        // USD->FROM means units of FROM per 1 USD
+        // FROM->USD = 1 / (USD->FROM)
+        // FROM->TO = (FROM->USD) * (USD->TO)
+        return { rate: (1 / usdToFrom) * usdToTo, source: 'exchange_rates_db_usd_bridge' }
+      }
+      // 4) EUR bridge
+      const eurToFrom = await getLatestRate('EUR', from)
+      const eurToTo = await getLatestRate('EUR', to)
+      if (eurToFrom && eurToTo) {
+        return { rate: (1 / eurToFrom) * eurToTo, source: 'exchange_rates_db_eur_bridge' }
+      }
+      return null
+    }
+
+    const dbResult = await tryResolveFromDB(fromCurrency, toCurrency)
+    if (dbResult) {
+      console.log(`Exchange rate ${fromCurrency} → ${toCurrency}: ${dbResult.rate} (source: ${dbResult.source})`)
+      return new Response(
+        JSON.stringify({ rate: dbResult.rate, source: dbResult.source, from: fromCurrency, to: toCurrency }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Fallback: FMP API (only if DB could not resolve)
+    const FMP_API_KEY = Deno.env.get('FMP_API_KEY')
     const currencyPair = `${fromCurrency}${toCurrency}`
-    
-    console.log(`Fetching exchange rate from FMP API: ${currencyPair}`)
-    
-    // Fetch current rate from FMP API
     const fmpUrl = `https://financialmodelingprep.com/stable/quote-short?symbol=${currencyPair}&apikey=${FMP_API_KEY}`
+    console.log(`Fetching exchange rate from FMP API: ${currencyPair}`)
+
     const response = await fetch(fmpUrl)
-    
     if (!response.ok) {
-      throw new Error(`FMP API returned ${response.status}`)
+      const msg = `FMP API returned ${response.status}`
+      console.warn(msg)
+      return new Response(
+        JSON.stringify({ error: msg, from: fromCurrency, to: toCurrency }),
+        { status: response.status === 429 ? 429 : 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
-    
+
     const data = await response.json()
-    
     if (!Array.isArray(data) || data.length === 0 || !data[0].price) {
-      throw new Error('Invalid FMP API response or no rate available')
+      const msg = 'Invalid FMP API response or no rate available'
+      console.warn(msg)
+      return new Response(
+        JSON.stringify({ error: msg, from: fromCurrency, to: toCurrency }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
-    
+
     const rate = Number(data[0].price)
-    
-    console.log(`Exchange rate ${fromCurrency} → ${toCurrency}: ${rate} (source: FMP API)`)
+    console.log(`Exchange rate ${fromCurrency} → ${toCurrency}: ${rate} (source: fmp_api)`)
 
     return new Response(
-      JSON.stringify({ 
-        rate, 
-        source: 'fmp_api',
-        from: fromCurrency,
-        to: toCurrency
-      }),
+      JSON.stringify({ rate, source: 'fmp_api', from: fromCurrency, to: toCurrency }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
     console.error('Error getting exchange rate:', error)
+    const message = (error as Error)?.message ?? 'Unknown error'
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
