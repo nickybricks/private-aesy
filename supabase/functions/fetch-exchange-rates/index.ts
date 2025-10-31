@@ -20,6 +20,7 @@ serve(async (req) => {
     console.log('Fetching latest exchange rates from fxratesapi.com (USD & EUR bases)...')
 
     const nowIso = new Date().toISOString()
+    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
 
     // Fetch USD and EUR base in parallel
     const [usdResp, eurResp] = await Promise.all([
@@ -63,6 +64,7 @@ serve(async (req) => {
         updates.push({
           base_currency: 'USD',
           target_currency: currency,
+          valid_date: today,
           rate: Number(rate),
           fetched_at: nowIso,
           is_fallback: false,
@@ -77,6 +79,7 @@ serve(async (req) => {
         updates.push({
           base_currency: 'EUR',
           target_currency: currency,
+          valid_date: today,
           rate: Number(rate),
           fetched_at: nowIso,
           is_fallback: false,
@@ -87,7 +90,7 @@ serve(async (req) => {
     // Upsert (insert or update) both bases
     const { error: upsertError } = await supabase
       .from('exchange_rates')
-      .upsert(updates, { onConflict: 'base_currency,target_currency', ignoreDuplicates: false })
+      .upsert(updates, { onConflict: 'base_currency,target_currency,valid_date', ignoreDuplicates: false })
 
     if (upsertError) throw upsertError
 

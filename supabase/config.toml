@@ -15,6 +15,9 @@ verify_jwt = false
 [functions.fetch-exchange-rates]
 verify_jwt = false
 
+[functions.fetch-historical-exchange-rates]
+verify_jwt = false
+
 [functions.get-exchange-rate]
 verify_jwt = false
 

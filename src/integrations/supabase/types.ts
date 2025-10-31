@@ -138,6 +138,7 @@ export type Database = {
           rate: number
           target_currency: string
           updated_at: string | null
+          valid_date: string
         }
         Insert: {
           base_currency?: string
@@ -148,6 +149,7 @@ export type Database = {
           rate: number
           target_currency: string
           updated_at?: string | null
+          valid_date?: string
         }
         Update: {
           base_currency?: string
@@ -158,6 +160,7 @@ export type Database = {
           rate?: number
           target_currency?: string
           updated_at?: string | null
+          valid_date?: string
         }
         Relationships: []
       }

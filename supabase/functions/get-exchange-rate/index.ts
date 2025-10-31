@@ -15,6 +15,7 @@ serve(async (req) => {
     const url = new URL(req.url)
     let fromCurrency = url.searchParams.get('from') || undefined
     let toCurrency = url.searchParams.get('to') || undefined
+    const targetDate = url.searchParams.get('date') || undefined // Optional date parameter (YYYY-MM-DD)
 
     // Support JSON body for POST/PUT (supabase.functions.invoke sends JSON)
     if ((!fromCurrency || !toCurrency) && (req.method === 'POST' || req.method === 'PUT')) {
@@ -55,17 +56,21 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Helper: get latest direct rate (base->target)
+    // Helper: get latest rate for a specific date or most recent
     const getLatestRate = async (base: string, target: string): Promise<number | null> => {
+      const dateToUse = targetDate || new Date().toISOString().split('T')[0]
+      
       const { data, error } = await supabase
         .from('exchange_rates')
-        .select('rate, fetched_at')
+        .select('rate, valid_date')
         .eq('base_currency', base)
         .eq('target_currency', target)
-        .order('fetched_at', { ascending: false })
+        .lte('valid_date', dateToUse)
+        .order('valid_date', { ascending: false })
         .limit(1)
+      
       if (error) {
-        console.warn('DB rate query error', { base, target, error })
+        console.warn('DB rate query error', { base, target, date: dateToUse, error })
         return null
       }
       if (data && data.length > 0) return Number(data[0].rate)
