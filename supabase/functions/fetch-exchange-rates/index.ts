@@ -22,6 +22,13 @@ serve(async (req) => {
     const nowIso = new Date().toISOString()
     const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
 
+    // Extended target currencies including USD and EUR for cross-rates
+    const allCurrencies = [
+      'JPY', 'GBP', 'CHF', 'CAD', 'AUD', 'CNY', 'KRW', 'SEK', 'NOK', 'NZD',
+      'INR', 'BRL', 'ZAR', 'MXN', 'SGD', 'HKD', 'TRY', 'ILS', 'DKK', 'PLN',
+      'USD', 'EUR'
+    ]
+
     // Fetch USD and EUR base in parallel
     const [usdResp, eurResp] = await Promise.all([
       fetch('https://api.fxratesapi.com/latest?base=USD'),
@@ -60,30 +67,38 @@ serve(async (req) => {
     if (usdData) {
       const ratesUSD = usdData.rates as Record<string, number>
       console.log(`Received ${Object.keys(ratesUSD).length} USD-base exchange rates`)
-      for (const [currency, rate] of Object.entries(ratesUSD)) {
-        updates.push({
-          base_currency: 'USD',
-          target_currency: currency,
-          valid_date: today,
-          rate: Number(rate),
-          fetched_at: nowIso,
-          is_fallback: false,
-        })
+      // Filter to only our target currencies
+      for (const currency of allCurrencies) {
+        const rate = ratesUSD[currency]
+        if (rate !== undefined) {
+          updates.push({
+            base_currency: 'USD',
+            target_currency: currency,
+            valid_date: today,
+            rate: Number(rate),
+            fetched_at: nowIso,
+            is_fallback: false,
+          })
+        }
       }
     }
 
     if (eurData) {
       const ratesEUR = eurData.rates as Record<string, number>
       console.log(`Received ${Object.keys(ratesEUR).length} EUR-base exchange rates`)
-      for (const [currency, rate] of Object.entries(ratesEUR)) {
-        updates.push({
-          base_currency: 'EUR',
-          target_currency: currency,
-          valid_date: today,
-          rate: Number(rate),
-          fetched_at: nowIso,
-          is_fallback: false,
-        })
+      // Filter to only our target currencies
+      for (const currency of allCurrencies) {
+        const rate = ratesEUR[currency]
+        if (rate !== undefined) {
+          updates.push({
+            base_currency: 'EUR',
+            target_currency: currency,
+            valid_date: today,
+            rate: Number(rate),
+            fetched_at: nowIso,
+            is_fallback: false,
+          })
+        }
       }
     }
 

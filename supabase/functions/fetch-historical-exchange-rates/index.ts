@@ -9,7 +9,8 @@ const corsHeaders = {
 // Target currencies for historical data
 const TARGET_CURRENCIES = [
   'JPY', 'GBP', 'CHF', 'CAD', 'AUD', 'CNY', 'KRW', 'SEK', 'NOK', 'NZD',
-  'INR', 'BRL', 'ZAR', 'MXN', 'SGD', 'HKD', 'TRY', 'ILS', 'DKK', 'PLN'
+  'INR', 'BRL', 'ZAR', 'MXN', 'SGD', 'HKD', 'TRY', 'ILS', 'DKK', 'PLN',
+  'USD', 'EUR'  // Cross-rates for USD<->EUR conversion
 ]
 
 const BASE_CURRENCIES = ['USD', 'EUR']
@@ -46,15 +47,10 @@ serve(async (req) => {
         console.log(`  → Fetching ${pair}...`)
         
         try {
-          const primaryUrl = `https://financialmodelingprep.com/stable/historical-price-eod/light?symbol=${pair}&from=${fromDate}&to=${toDate}&apikey=${fmpApiKey}`
-          console.log(`    🔗 Fetching: ${primaryUrl}`)
-          let response = await fetch(primaryUrl)
-
-          if (!response.ok) {
-            console.warn(`    ⚠️ Primary endpoint failed for ${pair} (${response.status}). Falling back...`)
-            const fallbackUrl = `https://financialmodelingprep.com/api/v3/historical-price-full/forex/${pair}?from=${fromDate}&to=${toDate}&apikey=${fmpApiKey}`
-            response = await fetch(fallbackUrl)
-          }
+          // Use correct FMP API endpoint
+          const url = `https://financialmodelingprep.com/api/v3/historical-price-full/forex/${pair}?from=${fromDate}&to=${toDate}&apikey=${fmpApiKey}`
+          console.log(`    🔗 Fetching: ${url}`)
+          const response = await fetch(url)
 
           if (!response.ok) {
             const errorMsg = `FMP API error for ${pair}: ${response.status}`

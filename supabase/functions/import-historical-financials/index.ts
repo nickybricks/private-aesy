@@ -47,38 +47,49 @@ async function getExchangeRate(
     return 1 / inverseRate.rate
   }
 
-  // If not found, fetch from FMP and store
-  console.warn(`⚠️ No rate found for ${fromCurrency} to ${toCurrency} on ${date}, fetching from FMP...`)
+  // If not found, try to fetch from FMP with 7-day backward fallback
+  console.warn(`⚠️ No rate found for ${fromCurrency} to ${toCurrency} on ${date}, searching backwards...`)
   const fmpApiKey = Deno.env.get('FMP_API_KEY')
   const pair = `${fromCurrency}${toCurrency}`
-  const url = `https://financialmodelingprep.com/stable/historical-price-eod/light?symbol=${pair}&from=${date}&to=${date}&apikey=${fmpApiKey}`
   
-  try {
-    const response = await fetch(url)
-    if (response.ok) {
-      const data: any = await response.json()
-      const historical = Array.isArray(data) ? data : data?.historical || []
-      if (historical.length > 0) {
-        const rate = Number(historical[0].close || historical[0].adjClose || historical[0].price)
-        if (Number.isFinite(rate)) {
-          // Store in database
-          await supabase.from('exchange_rates').upsert({
-            base_currency: fromCurrency,
-            target_currency: toCurrency,
-            valid_date: date,
-            rate: rate,
-            fetched_at: new Date().toISOString(),
-            is_fallback: false,
-          }, { onConflict: 'base_currency,target_currency,valid_date' })
-          return rate
+  // Try the exact date and up to 7 days back (for weekends/holidays)
+  for (let daysBack = 0; daysBack <= 7; daysBack++) {
+    const searchDate = new Date(date)
+    searchDate.setDate(searchDate.getDate() - daysBack)
+    const searchDateStr = searchDate.toISOString().split('T')[0]
+    
+    try {
+      // Use correct FMP API endpoint
+      const url = `https://financialmodelingprep.com/api/v3/historical-price-full/forex/${pair}?from=${searchDateStr}&to=${searchDateStr}&apikey=${fmpApiKey}`
+      const response = await fetch(url)
+      
+      if (response.ok) {
+        const data: any = await response.json()
+        const historical = data?.historical || []
+        
+        if (historical.length > 0) {
+          const rate = Number(historical[0].close || historical[0].adjClose || historical[0].price)
+          if (Number.isFinite(rate)) {
+            console.log(`  ✓ Found rate for ${pair} on ${searchDateStr} (${daysBack} days back)`)
+            // Store in database with original date
+            await supabase.from('exchange_rates').upsert({
+              base_currency: fromCurrency,
+              target_currency: toCurrency,
+              valid_date: date,
+              rate: rate,
+              fetched_at: new Date().toISOString(),
+              is_fallback: daysBack > 0,
+            }, { onConflict: 'base_currency,target_currency,valid_date' })
+            return rate
+          }
         }
       }
+    } catch (error) {
+      console.error(`Error fetching rate from FMP for ${searchDateStr}: ${error}`)
     }
-  } catch (error) {
-    console.error(`Error fetching rate from FMP: ${error}`)
   }
 
-  throw new Error(`Could not find exchange rate for ${fromCurrency} to ${toCurrency} on ${date}`)
+  throw new Error(`Could not find exchange rate for ${fromCurrency} to ${toCurrency} on ${date} (searched 7 days back)`)
 }
 
 /**
