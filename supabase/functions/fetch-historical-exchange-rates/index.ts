@@ -110,8 +110,8 @@ serve(async (req) => {
             }
           }
 
-          // Fill missing days with carry-forward
-          await fillMissingDays(supabase, baseCurrency, targetCurrency, fromDate, toDate)
+          console.log(`    ✓ Inserted ${batch.length} trading days for ${pair}`)
+          console.log(`    ℹ️ Fallback rates will be handled on-demand in queries`)
           
           // Rate limit: 750 calls/minute = 80ms delay minimum
           await new Promise(resolve => setTimeout(resolve, 100))
@@ -148,80 +148,3 @@ serve(async (req) => {
   }
 })
 
-/**
- * Fill missing days using carry-forward from the last available rate
- */
-async function fillMissingDays(
-  supabase: any,
-  baseCurrency: string,
-  targetCurrency: string,
-  fromDate: string,
-  toDate: string
-) {
-  try {
-    // Get all existing dates for this pair
-    const { data: existingRates, error: fetchError } = await supabase
-      .from('exchange_rates')
-      .select('valid_date, rate')
-      .eq('base_currency', baseCurrency)
-      .eq('target_currency', targetCurrency)
-      .gte('valid_date', fromDate)
-      .lte('valid_date', toDate)
-      .order('valid_date', { ascending: true })
-
-    if (fetchError || !existingRates || existingRates.length === 0) {
-      return
-    }
-
-    // Create a map of existing dates
-    const existingDateMap = new Map(
-      existingRates.map((r: any) => [r.valid_date, r.rate])
-    )
-
-    // Generate all dates in range
-    const start = new Date(fromDate)
-    const end = new Date(toDate)
-    const allDates: string[] = []
-    
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      allDates.push(d.toISOString().split('T')[0])
-    }
-
-    // Find missing dates and fill with carry-forward
-    const fillUps: any[] = []
-    let lastKnownRate = existingRates[0].rate
-
-    for (const date of allDates) {
-      if (existingDateMap.has(date)) {
-        lastKnownRate = existingDateMap.get(date)
-      } else {
-        fillUps.push({
-          base_currency: baseCurrency,
-          target_currency: targetCurrency,
-          valid_date: date,
-          rate: lastKnownRate,
-          fetched_at: new Date().toISOString(),
-          is_fallback: true,
-        })
-      }
-    }
-
-    if (fillUps.length > 0) {
-      console.log(`    📝 Filling ${fillUps.length} missing days for ${baseCurrency}${targetCurrency}`)
-      
-      // Insert in batches
-      const batchSize = 1000
-      for (let i = 0; i < fillUps.length; i += batchSize) {
-        const batch = fillUps.slice(i, i + batchSize)
-        await supabase
-          .from('exchange_rates')
-          .upsert(batch, { 
-            onConflict: 'base_currency,target_currency,valid_date',
-            ignoreDuplicates: false 
-          })
-      }
-    }
-  } catch (error: any) {
-    console.error(`Error filling missing days for ${baseCurrency}${targetCurrency}:`, error.message)
-  }
-}
