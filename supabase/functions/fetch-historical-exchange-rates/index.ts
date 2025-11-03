@@ -31,9 +31,9 @@ serve(async (req) => {
       throw new Error('FMP_API_KEY not configured')
     }
 
-    console.log('Starting historical exchange rate fetch for 30 years...')
+    console.log('Starting historical exchange rate fetch from 1980...')
     
-    const fromDate = '1995-01-01'
+    const fromDate = '1980-01-01'
     const toDate = '2025-12-31'
     let totalUpdates = 0
     const errors: string[] = []
@@ -44,11 +44,18 @@ serve(async (req) => {
       
       for (const targetCurrency of TARGET_CURRENCIES) {
         const pair = `${baseCurrency}${targetCurrency}`
+        
+        // Skip same-currency pairs (USDUSD, EUREUR)
+        if (baseCurrency === targetCurrency) {
+          console.log(`  ⏭️ Skipping ${pair} (same currency)`)
+          continue
+        }
+        
         console.log(`  → Fetching ${pair}...`)
         
         try {
-          // Use correct FMP API endpoint
-          const url = `https://financialmodelingprep.com/api/v3/historical-price-full/forex/${pair}?from=${fromDate}&to=${toDate}&apikey=${fmpApiKey}`
+          // Use FMP Light EOD API endpoint
+          const url = `https://financialmodelingprep.com/stable/historical-price-eod/light?symbol=${pair}&from=${fromDate}&to=${toDate}&apikey=${fmpApiKey}`
           console.log(`    🔗 Fetching: ${url}`)
           const response = await fetch(url)
 
@@ -61,18 +68,12 @@ serve(async (req) => {
 
           const data: any = await response.json()
 
-          const historical = Array.isArray(data?.historical)
-            ? data.historical
-            : Array.isArray(data)
-              ? data
-              : Array.isArray(data?.results)
-                ? data.results
-                : Array.isArray(data?.historicalStockList?.[0]?.historical)
-                  ? data.historicalStockList[0].historical
-                  : []
+          // Light API returns array directly: [{ "symbol": "EURUSD", "date": "2025-10-30", "price": 1.0902, "volume": 1 }]
+          const historical = Array.isArray(data) ? data : []
 
           if (!Array.isArray(historical) || historical.length === 0) {
             console.warn(`    ⚠️ No historical data for ${pair}`)
+            console.log(`    API Response (first 300 chars):`, JSON.stringify(data).slice(0, 300))
             continue
           }
 
@@ -83,8 +84,8 @@ serve(async (req) => {
             .map((day: any) => ({
               base_currency: baseCurrency,
               target_currency: targetCurrency,
-              valid_date: day.date || day.dateTime || day.datetime,
-              rate: Number(day.close ?? day.adjClose ?? day.price ?? day.value),
+              valid_date: day.date,
+              rate: Number(day.price),
               fetched_at: new Date().toISOString(),
               is_fallback: false,
             }))
