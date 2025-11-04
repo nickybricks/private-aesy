@@ -91,8 +91,8 @@ serve(async (req) => {
             }))
             .filter((u: any) => u.valid_date && Number.isFinite(u.rate))
 
-          // Upsert in batches of 1000
-          const batchSize = 1000
+          // Upsert in batches of 5000
+          const batchSize = 5000
           for (let i = 0; i < updates.length; i += batchSize) {
             const batch = updates.slice(i, i + batchSize)
             const { error: upsertError } = await supabase
@@ -110,7 +110,7 @@ serve(async (req) => {
             }
           }
 
-          console.log(`    ✓ Inserted ${batch.length} trading days for ${pair}`)
+          console.log(`    ✓ Inserted ${updates.length} trading days for ${pair}`)
           console.log(`    ℹ️ Fallback rates will be handled on-demand in queries`)
           
           // Rate limit: 750 calls/minute = 80ms delay minimum
