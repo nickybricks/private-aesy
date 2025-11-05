@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.daily-price-update]
 verify_jwt = false
 
+[functions.daily-stocks-update]
+verify_jwt = false
+
 [functions.bulk-populate-cache]
 verify_jwt = false
 
@@ -15,7 +18,10 @@ verify_jwt = false
 [functions.fetch-exchange-rates]
 verify_jwt = false
 
-[functions.fetch-historical-exchange-rates]
+[functions.fetch-historical-exchange-rates-usd]
+verify_jwt = false
+
+[functions.fetch-historical-exchange-rates-eur]
 verify_jwt = false
 
 [functions.import-historical-financials]
