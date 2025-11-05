@@ -1319,10 +1319,12 @@ export type Database = {
           is_etf: boolean | null
           is_fund: boolean | null
           isin: string | null
+          last_dividend: number | null
           last_updated: string | null
           market_cap: number | null
           name: string | null
           phone: string | null
+          price: number | null
           sector: string | null
           sector_de: string | null
           state: string | null
@@ -1349,10 +1351,12 @@ export type Database = {
           is_etf?: boolean | null
           is_fund?: boolean | null
           isin?: string | null
+          last_dividend?: number | null
           last_updated?: string | null
           market_cap?: number | null
           name?: string | null
           phone?: string | null
+          price?: number | null
           sector?: string | null
           sector_de?: string | null
           state?: string | null
@@ -1379,10 +1383,12 @@ export type Database = {
           is_etf?: boolean | null
           is_fund?: boolean | null
           isin?: string | null
+          last_dividend?: number | null
           last_updated?: string | null
           market_cap?: number | null
           name?: string | null
           phone?: string | null
+          price?: number | null
           sector?: string | null
           sector_de?: string | null
           state?: string | null
