@@ -859,6 +859,7 @@ export type Database = {
       }
       financial_statements: {
         Row: {
+          beta: number | null
           capital_expenditure: number | null
           capital_expenditure_eur: number | null
           capital_expenditure_orig: number | null
@@ -901,6 +902,7 @@ export type Database = {
           interest_expense_eur: number | null
           interest_expense_orig: number | null
           interest_expense_usd: number | null
+          market_cap: number | null
           net_income: number | null
           net_income_eur: number | null
           net_income_orig: number | null
@@ -943,6 +945,7 @@ export type Database = {
           weighted_avg_shares_dil: number | null
         }
         Insert: {
+          beta?: number | null
           capital_expenditure?: number | null
           capital_expenditure_eur?: number | null
           capital_expenditure_orig?: number | null
@@ -985,6 +988,7 @@ export type Database = {
           interest_expense_eur?: number | null
           interest_expense_orig?: number | null
           interest_expense_usd?: number | null
+          market_cap?: number | null
           net_income?: number | null
           net_income_eur?: number | null
           net_income_orig?: number | null
@@ -1027,6 +1031,7 @@ export type Database = {
           weighted_avg_shares_dil?: number | null
         }
         Update: {
+          beta?: number | null
           capital_expenditure?: number | null
           capital_expenditure_eur?: number | null
           capital_expenditure_orig?: number | null
@@ -1069,6 +1074,7 @@ export type Database = {
           interest_expense_eur?: number | null
           interest_expense_orig?: number | null
           interest_expense_usd?: number | null
+          market_cap?: number | null
           net_income?: number | null
           net_income_eur?: number | null
           net_income_orig?: number | null

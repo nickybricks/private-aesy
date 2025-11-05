@@ -193,6 +193,13 @@ serve(async (req) => {
           fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
         ])
 
+        // Fetch company profile for beta and market cap
+        const profileResponse = await fetch(`https://financialmodelingprep.com/api/v3/profile/${stock.symbol}?apikey=${fmpApiKey}`)
+        const profileData = await profileResponse.json()
+        const companyProfile = Array.isArray(profileData) ? profileData[0] : profileData
+        const beta = companyProfile?.beta || null
+        const marketCap = companyProfile?.mktCap || null
+
         // Merge all data
         const allIncome = [...(Array.isArray(incomeQ) ? incomeQ : []), ...(Array.isArray(incomeTTM) ? incomeTTM : [])]
         const allBalance = [...(Array.isArray(balanceQ) ? balanceQ : []), ...(Array.isArray(balanceTTM) ? balanceTTM : [])]
@@ -387,6 +394,10 @@ serve(async (req) => {
             other_adjustments_net_income: other_adjustments_converted.USD,
             income_tax_expense: income_tax_expense_converted.USD,
             income_before_tax: income_before_tax_converted.USD,
+
+            // Company metrics
+            beta,
+            market_cap: marketCap,
           }
 
           records.push(record)
