@@ -200,6 +200,7 @@ interface StockProfile {
   exchange: string
   currency: string
   mktCap?: number
+  price?: number
   isin?: string
   website?: string
   description?: string
@@ -218,13 +219,26 @@ interface StockProfile {
   isFund?: boolean
 }
 
+interface QuoteData {
+  symbol: string
+  price: number
+  marketCap?: number
+}
+
+interface DividendData {
+  historical?: Array<{
+    date: string
+    dividend: number
+  }>
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { testMode = false, testSymbols = [] } = await req.json()
+    const { testMode = false, testSymbols = [], startIndex = 0, batchSize = 100 } = await req.json()
     
     const FMP_API_KEY = Deno.env.get('FMP_API_KEY') || 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y'
     const supabase = createClient(
@@ -232,7 +246,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log(`Starting stock metadata import (testMode: ${testMode})`)
+    console.log(`Starting stock metadata import (testMode: ${testMode}, startIndex: ${startIndex}, batchSize: ${batchSize})`)
 
     let symbols: string[] = []
     
@@ -261,124 +275,162 @@ serve(async (req) => {
       
       symbols = filteredStocks.map(s => s.symbol)
       console.log(`Filtered to ${symbols.length} US stocks (NASDAQ/NYSE)`)
+      
+      // Apply startIndex and batchSize for incremental loading
+      const endIndex = Math.min(startIndex + batchSize, symbols.length)
+      symbols = symbols.slice(startIndex, endIndex)
+      console.log(`Processing batch: ${startIndex} to ${endIndex} (${symbols.length} stocks)`)
     }
 
-    // Process in batches
-    const BATCH_SIZE = 1000
-    const PROFILE_BATCH_SIZE = 100 // Fetch profiles in smaller batches to respect rate limits
-    const DELAY_MS = 1000 // 1 second delay between profile batches
+    // Rate limit: 750 calls/minute
+    // We make 3 API calls per stock (profile, quote, dividend)
+    // For 100 stocks = 300 calls
+    // Time needed: (300 / 750) * 60 seconds = 24 seconds
+    const CALL_DELAY_MS = 120 // 120ms between calls = ~8.3 calls/second = ~500 calls/minute (safe buffer)
     
     let totalProcessed = 0
     let totalInserted = 0
-    let totalUpdated = 0
     let totalErrors = 0
+    const stockData: any[] = []
 
-    // Process symbols in profile batches first
-    for (let i = 0; i < symbols.length; i += PROFILE_BATCH_SIZE) {
-      const profileBatch = symbols.slice(i, i + PROFILE_BATCH_SIZE)
-      console.log(`Fetching profiles for batch ${Math.floor(i / PROFILE_BATCH_SIZE) + 1} (${profileBatch.length} symbols)`)
+    console.log(`Processing ${symbols.length} symbols...`)
+    
+    // Process each symbol
+    for (let i = 0; i < symbols.length; i++) {
+      const symbol = symbols[i]
       
-      const stockData: any[] = []
-      
-      // Fetch profiles for this batch
-      for (const symbol of profileBatch) {
-        try {
-          const profileUrl = `https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${FMP_API_KEY}`
-          const profileResponse = await fetch(profileUrl)
-          
-          if (!profileResponse.ok) {
-            console.warn(`Failed to fetch profile for ${symbol}: ${profileResponse.status}`)
-            totalErrors++
-            continue
-          }
-          
-          const profiles: StockProfile[] = await profileResponse.json()
-          
-          if (!profiles || profiles.length === 0) {
-            console.warn(`No profile data for ${symbol}`)
-            totalErrors++
-            continue
-          }
-          
-          const profile = profiles[0]
-          
-          const sectorDe = profile.sector ? SECTOR_MAPPING[profile.sector] || null : null
-          const industryDe = profile.industry ? INDUSTRY_MAPPING[profile.industry] || null : null
-          
-          stockData.push({
-            symbol: profile.symbol,
-            name: profile.companyName || null,
-            sector: profile.sector || null,
-            sector_de: sectorDe,
-            industry: profile.industry || null,
-            industry_de: industryDe,
-            country: profile.country || null,
-            exchange: profile.exchange || null,
-            currency: profile.currency || null,
-            market_cap: profile.mktCap || null,
-            isin: profile.isin || null,
-            website: profile.website || null,
-            description: profile.description || null,
-            ceo: profile.ceo || null,
-            full_time_employees: profile.fullTimeEmployees || null,
-            phone: profile.phone || null,
-            address: profile.address || null,
-            city: profile.city || null,
-            state: profile.state || null,
-            zip: profile.zip || null,
-            image: profile.image || null,
-            ipo_date: profile.ipoDate || null,
-            is_etf: profile.isEtf || false,
-            is_actively_trading: profile.isActivelyTrading !== false,
-            is_adr: profile.isAdr || false,
-            is_fund: profile.isFund || false,
-            last_updated: new Date().toISOString()
-          })
-          
-          totalProcessed++
-          
-          // Small delay to avoid rate limiting on individual requests
-          if (profileBatch.indexOf(symbol) % 10 === 0) {
-            await new Promise(resolve => setTimeout(resolve, 100))
-          }
-          
-        } catch (error) {
-          console.error(`Error processing ${symbol}:`, error.message)
+      try {
+        // 1. Fetch profile
+        const profileUrl = `https://financialmodelingprep.com/api/v3/profile/${symbol}?apikey=${FMP_API_KEY}`
+        const profileResponse = await fetch(profileUrl)
+        await new Promise(resolve => setTimeout(resolve, CALL_DELAY_MS))
+        
+        if (!profileResponse.ok) {
+          console.warn(`Failed to fetch profile for ${symbol}: ${profileResponse.status}`)
           totalErrors++
+          continue
         }
-      }
-      
-      // Insert/update in database batches of 1000
-      for (let j = 0; j < stockData.length; j += BATCH_SIZE) {
-        const dbBatch = stockData.slice(j, j + BATCH_SIZE)
+        
+        const profiles: StockProfile[] = await profileResponse.json()
+        
+        if (!profiles || profiles.length === 0) {
+          console.warn(`No profile data for ${symbol}`)
+          totalErrors++
+          continue
+        }
+        
+        const profile = profiles[0]
+        
+        // 2. Fetch quote for current price
+        let price = profile.price || null
+        let marketCap = profile.mktCap || null
         
         try {
-          const { data, error } = await supabase
-            .from('stocks')
-            .upsert(dbBatch, { 
-              onConflict: 'symbol',
-              ignoreDuplicates: false 
-            })
-            .select()
+          const quoteUrl = `https://financialmodelingprep.com/api/v3/quote/${symbol}?apikey=${FMP_API_KEY}`
+          const quoteResponse = await fetch(quoteUrl)
+          await new Promise(resolve => setTimeout(resolve, CALL_DELAY_MS))
           
-          if (error) {
-            console.error(`Database batch error:`, error)
-            totalErrors += dbBatch.length
-          } else {
-            const inserted = data?.length || 0
-            totalInserted += inserted
-            console.log(`Inserted/updated ${inserted} stocks in database`)
+          if (quoteResponse.ok) {
+            const quoteData: QuoteData[] = await quoteResponse.json()
+            if (quoteData && quoteData.length > 0) {
+              price = quoteData[0].price || price
+              marketCap = quoteData[0].marketCap || marketCap
+            }
           }
         } catch (error) {
-          console.error(`Database batch exception:`, error.message)
-          totalErrors += dbBatch.length
+          console.warn(`Could not fetch quote for ${symbol}:`, error.message)
         }
+        
+        // 3. Fetch dividend data
+        let lastDividend = null
+        
+        try {
+          const dividendUrl = `https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/${symbol}?apikey=${FMP_API_KEY}`
+          const dividendResponse = await fetch(dividendUrl)
+          await new Promise(resolve => setTimeout(resolve, CALL_DELAY_MS))
+          
+          if (dividendResponse.ok) {
+            const dividendData: DividendData = await dividendResponse.json()
+            if (dividendData?.historical && dividendData.historical.length > 0) {
+              lastDividend = dividendData.historical[0].dividend
+            }
+          }
+        } catch (error) {
+          console.warn(`Could not fetch dividend for ${symbol}:`, error.message)
+        }
+        
+        // Translate sector and industry
+        const sectorDe = profile.sector ? SECTOR_MAPPING[profile.sector] || null : null
+        const industryDe = profile.industry ? INDUSTRY_MAPPING[profile.industry] || null : null
+        
+        stockData.push({
+          symbol: profile.symbol,
+          name: profile.companyName || null,
+          sector: profile.sector || null,
+          sector_de: sectorDe,
+          industry: profile.industry || null,
+          industry_de: industryDe,
+          country: profile.country || null,
+          exchange: profile.exchange || null,
+          currency: profile.currency || null,
+          price: price,
+          market_cap: marketCap,
+          last_dividend: lastDividend,
+          isin: profile.isin || null,
+          website: profile.website || null,
+          description: profile.description || null,
+          ceo: profile.ceo || null,
+          full_time_employees: profile.fullTimeEmployees || null,
+          phone: profile.phone || null,
+          address: profile.address || null,
+          city: profile.city || null,
+          state: profile.state || null,
+          zip: profile.zip || null,
+          image: profile.image || null,
+          ipo_date: profile.ipoDate || null,
+          is_etf: profile.isEtf || false,
+          is_actively_trading: profile.isActivelyTrading !== false,
+          is_adr: profile.isAdr || false,
+          is_fund: profile.isFund || false,
+          last_updated: new Date().toISOString()
+        })
+        
+        totalProcessed++
+        
+        // Log progress every 10 stocks
+        if ((i + 1) % 10 === 0) {
+          console.log(`Progress: ${i + 1}/${symbols.length} stocks processed`)
+        }
+        
+      } catch (error) {
+        console.error(`Error processing ${symbol}:`, error.message)
+        totalErrors++
       }
+    }
+    
+    // Insert/update all data in database
+    if (stockData.length > 0) {
+      console.log(`Upserting ${stockData.length} stocks to database...`)
       
-      // Delay between profile batches to respect rate limits
-      if (i + PROFILE_BATCH_SIZE < symbols.length) {
-        console.log(`Waiting ${DELAY_MS}ms before next batch...`)
-        await new Promise(resolve => setTimeout(resolve, DELAY_MS))
+      try {
+        const { data, error } = await supabase
+          .from('stocks')
+          .upsert(stockData, { 
+            onConflict: 'symbol',
+            ignoreDuplicates: false 
+          })
+          .select()
+        
+        if (error) {
+          console.error(`Database error:`, error)
+          totalErrors += stockData.length
+        } else {
+          totalInserted = data?.length || 0
+          console.log(`Successfully upserted ${totalInserted} stocks`)
+        }
+      } catch (error) {
+        console.error(`Database exception:`, error.message)
+        totalErrors += stockData.length
       }
     }
 
@@ -401,9 +453,11 @@ serve(async (req) => {
       success: true,
       totalProcessed,
       totalInserted,
-      totalUpdated,
       totalErrors,
       testMode,
+      startIndex,
+      endIndex: startIndex + symbols.length,
+      hasMore: !testMode && (startIndex + batchSize < 11562), // Approximate total US stocks
       verificationResults
     }
 
