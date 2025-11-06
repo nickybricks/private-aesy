@@ -177,6 +177,22 @@ serve(async (req) => {
       console.log(`\n🔍 Processing ${stock.symbol} (${stock.currency || 'USD'})...`)
 
       try {
+        // Get stock_id from stocks table
+        const { data: stockData, error: stockError } = await supabase
+          .from('stocks')
+          .select('id')
+          .eq('symbol', stock.symbol)
+          .single()
+
+        if (stockError || !stockData) {
+          console.error(`  ❌ Stock ${stock.symbol} not found in stocks table:`, stockError)
+          errors.push(`${stock.symbol}: Stock not found in stocks table - ${stockError?.message || 'Unknown error'}`)
+          continue
+        }
+
+        const stockId = stockData.id
+        console.log(`  ✓ Found stock_id: ${stockId} for ${stock.symbol}`)
+
         const stockCurrency = stock.currency || 'USD'
 
         // Fetch quarterly data
@@ -309,7 +325,7 @@ serve(async (req) => {
           const total_other_income_expenses_net_converted = await convertValueToMultipleCurrencies(supabase, total_other_income_expenses_net_orig, reportedCurrency, date)
 
           const record = {
-            stock_id: null, // We'll rely on symbol lookup in queries
+            stock_id: stockId,
             date,
             period: period === 'FY' ? 'quarter' : period.toLowerCase(), // Normalize period
             reported_currency: reportedCurrency,
@@ -420,7 +436,7 @@ serve(async (req) => {
           const { error: insertError } = await supabase
             .from('financial_statements')
             .upsert(batch, { 
-              onConflict: 'date,period',
+              onConflict: 'stock_id,date,period',
               ignoreDuplicates: true 
             })
 
