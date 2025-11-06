@@ -238,7 +238,20 @@ serve(async (req) => {
   }
 
   try {
-    const { testMode = false, testSymbols = [], startIndex = 0, batchSize = 100 } = await req.json()
+    const body = await req.json()
+    
+    // Handle both testMode and testmode (case-insensitive)
+    const testMode = body.testMode || body.testmode || false
+    
+    // Handle both testSymbol (singular) and testSymbols (plural)
+    let testSymbols = body.testSymbols || []
+    if (body.testSymbol && typeof body.testSymbol === 'string') {
+      testSymbols = [body.testSymbol]
+    }
+    
+    const startIndex = body.startIndex || 0
+    // Only use batchSize if explicitly provided, otherwise process all stocks
+    const batchSize = body.batchSize || null
     
     const FMP_API_KEY = Deno.env.get('FMP_API_KEY') || 'uxE1jVMvI8QQen0a4AEpLFTaqf3KQO0y'
     const supabase = createClient(
@@ -276,10 +289,18 @@ serve(async (req) => {
       symbols = filteredStocks.map(s => s.symbol)
       console.log(`Filtered to ${symbols.length} US stocks (NASDAQ/NYSE)`)
       
-      // Apply startIndex and batchSize for incremental loading
-      const endIndex = Math.min(startIndex + batchSize, symbols.length)
-      symbols = symbols.slice(startIndex, endIndex)
-      console.log(`Processing batch: ${startIndex} to ${endIndex} (${symbols.length} stocks)`)
+      // Apply startIndex and batchSize for incremental loading (only if batchSize is provided)
+      if (batchSize !== null) {
+        const endIndex = Math.min(startIndex + batchSize, symbols.length)
+        symbols = symbols.slice(startIndex, endIndex)
+        console.log(`Processing batch: ${startIndex} to ${endIndex} (${symbols.length} stocks)`)
+      } else {
+        // Process all stocks
+        if (startIndex > 0) {
+          symbols = symbols.slice(startIndex)
+        }
+        console.log(`Processing all stocks: ${symbols.length} stocks (starting from index ${startIndex})`)
+      }
     }
 
     // Rate limit: 750 calls/minute
