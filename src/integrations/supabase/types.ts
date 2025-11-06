@@ -917,6 +917,9 @@ export type Database = {
           other_adjustments_net_income_usd: number | null
           period: string
           reported_currency: string | null
+          research_and_development_expenses_eur: number | null
+          research_and_development_expenses_orig: number | null
+          research_and_development_expenses_usd: number | null
           revenue: number | null
           revenue_eur: number | null
           revenue_orig: number | null
@@ -938,6 +941,9 @@ export type Database = {
           total_debt_eur: number | null
           total_debt_orig: number | null
           total_debt_usd: number | null
+          total_other_income_expenses_net_eur: number | null
+          total_other_income_expenses_net_orig: number | null
+          total_other_income_expenses_net_usd: number | null
           total_stockholders_equity: number | null
           total_stockholders_equity_eur: number | null
           total_stockholders_equity_orig: number | null
@@ -1003,6 +1009,9 @@ export type Database = {
           other_adjustments_net_income_usd?: number | null
           period: string
           reported_currency?: string | null
+          research_and_development_expenses_eur?: number | null
+          research_and_development_expenses_orig?: number | null
+          research_and_development_expenses_usd?: number | null
           revenue?: number | null
           revenue_eur?: number | null
           revenue_orig?: number | null
@@ -1024,6 +1033,9 @@ export type Database = {
           total_debt_eur?: number | null
           total_debt_orig?: number | null
           total_debt_usd?: number | null
+          total_other_income_expenses_net_eur?: number | null
+          total_other_income_expenses_net_orig?: number | null
+          total_other_income_expenses_net_usd?: number | null
           total_stockholders_equity?: number | null
           total_stockholders_equity_eur?: number | null
           total_stockholders_equity_orig?: number | null
@@ -1089,6 +1101,9 @@ export type Database = {
           other_adjustments_net_income_usd?: number | null
           period?: string
           reported_currency?: string | null
+          research_and_development_expenses_eur?: number | null
+          research_and_development_expenses_orig?: number | null
+          research_and_development_expenses_usd?: number | null
           revenue?: number | null
           revenue_eur?: number | null
           revenue_orig?: number | null
@@ -1110,6 +1125,9 @@ export type Database = {
           total_debt_eur?: number | null
           total_debt_orig?: number | null
           total_debt_usd?: number | null
+          total_other_income_expenses_net_eur?: number | null
+          total_other_income_expenses_net_orig?: number | null
+          total_other_income_expenses_net_usd?: number | null
           total_stockholders_equity?: number | null
           total_stockholders_equity_eur?: number | null
           total_stockholders_equity_orig?: number | null

@@ -270,6 +270,8 @@ serve(async (req) => {
           const income_tax_expense_orig = income?.incomeTaxExpense
           const income_before_tax_orig = income?.incomeBeforeTax
           const other_adjustments_net_income_orig = income?.otherAdjustmentsToNetIncome
+          const research_and_development_expenses_orig = income?.researchAndDevelopmentExpenses
+          const total_other_income_expenses_net_orig = income?.totalOtherIncomeExpensesNet
 
           const total_current_assets_orig = balance?.totalCurrentAssets
           const total_assets_orig = balance?.totalAssets
@@ -303,6 +305,8 @@ serve(async (req) => {
           const other_adjustments_converted = await convertValueToMultipleCurrencies(supabase, other_adjustments_net_income_orig, reportedCurrency, date)
           const income_tax_expense_converted = await convertValueToMultipleCurrencies(supabase, income_tax_expense_orig, reportedCurrency, date)
           const income_before_tax_converted = await convertValueToMultipleCurrencies(supabase, income_before_tax_orig, reportedCurrency, date)
+          const research_and_development_expenses_converted = await convertValueToMultipleCurrencies(supabase, research_and_development_expenses_orig, reportedCurrency, date)
+          const total_other_income_expenses_net_converted = await convertValueToMultipleCurrencies(supabase, total_other_income_expenses_net_orig, reportedCurrency, date)
 
           const record = {
             stock_id: null, // We'll rely on symbol lookup in queries
@@ -330,6 +334,8 @@ serve(async (req) => {
             other_adjustments_net_income_orig,
             income_tax_expense_orig,
             income_before_tax_orig,
+            research_and_development_expenses_orig,
+            total_other_income_expenses_net_orig,
 
             // USD converted values
             revenue_usd: revenue_converted.USD,
@@ -351,6 +357,8 @@ serve(async (req) => {
             other_adjustments_net_income_usd: other_adjustments_converted.USD,
             income_tax_expense_usd: income_tax_expense_converted.USD,
             income_before_tax_usd: income_before_tax_converted.USD,
+            research_and_development_expenses_usd: research_and_development_expenses_converted.USD,
+            total_other_income_expenses_net_usd: total_other_income_expenses_net_converted.USD,
 
             // EUR converted values
             revenue_eur: revenue_converted.EUR,
@@ -372,6 +380,8 @@ serve(async (req) => {
             other_adjustments_net_income_eur: other_adjustments_converted.EUR,
             income_tax_expense_eur: income_tax_expense_converted.EUR,
             income_before_tax_eur: income_before_tax_converted.EUR,
+            research_and_development_expenses_eur: research_and_development_expenses_converted.EUR,
+            total_other_income_expenses_net_eur: total_other_income_expenses_net_converted.EUR,
 
             // Additional fields
             weighted_avg_shares_dil,
