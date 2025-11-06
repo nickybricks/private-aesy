@@ -130,7 +130,16 @@ serve(async (req) => {
   }
 
   try {
-    const { testMode = false, testSymbol = null } = await req.json().catch(() => ({}))
+    const body = await req.json().catch(() => ({}))
+    
+    // Handle both testMode and testmode (case-insensitive)
+    const testMode = body.testMode || body.testmode || false
+    
+    // Handle both testSymbol (singular) and testSymbols (plural)
+    let testSymbol = body.testSymbol || body.testSymbols || null
+    if (Array.isArray(testSymbol) && testSymbol.length > 0) {
+      testSymbol = testSymbol[0] // Use first symbol if array provided
+    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
