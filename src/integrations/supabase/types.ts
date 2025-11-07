@@ -1195,6 +1195,33 @@ export type Database = {
         }
         Relationships: []
       }
+      market_risk_premiums: {
+        Row: {
+          country: string
+          created_at: string
+          id: string
+          total_equity_risk_premium: number
+          updated_at: string
+          valid_date: string
+        }
+        Insert: {
+          country: string
+          created_at?: string
+          id?: string
+          total_equity_risk_premium: number
+          updated_at?: string
+          valid_date?: string
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          id?: string
+          total_equity_risk_premium?: number
+          updated_at?: string
+          valid_date?: string
+        }
+        Relationships: []
+      }
       precomputed_metrics: {
         Row: {
           calculation_date: string

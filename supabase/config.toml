@@ -3,6 +3,9 @@ project_id = "slpruxtkowlxawssqyup"
 [functions.valuation]
 verify_jwt = false
 
+[functions.fetch-market-risk-premium]
+verify_jwt = false
+
 [functions.daily-price-update]
 verify_jwt = false
 
