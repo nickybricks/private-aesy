@@ -1284,6 +1284,39 @@ export type Database = {
         }
         Relationships: []
       }
+      risk_free_rates: {
+        Row: {
+          country_code: string
+          country_name: string
+          created_at: string
+          data_source: string
+          id: string
+          rate: number
+          updated_at: string
+          valid_date: string
+        }
+        Insert: {
+          country_code: string
+          country_name: string
+          created_at?: string
+          data_source: string
+          id?: string
+          rate: number
+          updated_at?: string
+          valid_date: string
+        }
+        Update: {
+          country_code?: string
+          country_name?: string
+          created_at?: string
+          data_source?: string
+          id?: string
+          rate?: number
+          updated_at?: string
+          valid_date?: string
+        }
+        Relationships: []
+      }
       stock_analysis_cache: {
         Row: {
           analysis_result: Json
