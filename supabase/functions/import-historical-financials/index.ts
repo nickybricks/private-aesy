@@ -335,6 +335,8 @@ serve(async (req) => {
 
           const record = {
             stock_id: stockId,
+            symbol: stock.symbol,
+            name: stock.name,
             date,
             period: period === 'FY' ? 'quarter' : period.toLowerCase(), // Normalize period
             reported_currency: reportedCurrency,

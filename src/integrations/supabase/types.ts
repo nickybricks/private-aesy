@@ -903,6 +903,7 @@ export type Database = {
           interest_expense_orig: number | null
           interest_expense_usd: number | null
           market_cap: number | null
+          name: string | null
           net_income: number | null
           net_income_eur: number | null
           net_income_orig: number | null
@@ -925,6 +926,7 @@ export type Database = {
           revenue_orig: number | null
           revenue_usd: number | null
           stock_id: number | null
+          symbol: string | null
           total_assets: number | null
           total_assets_eur: number | null
           total_assets_orig: number | null
@@ -995,6 +997,7 @@ export type Database = {
           interest_expense_orig?: number | null
           interest_expense_usd?: number | null
           market_cap?: number | null
+          name?: string | null
           net_income?: number | null
           net_income_eur?: number | null
           net_income_orig?: number | null
@@ -1017,6 +1020,7 @@ export type Database = {
           revenue_orig?: number | null
           revenue_usd?: number | null
           stock_id?: number | null
+          symbol?: string | null
           total_assets?: number | null
           total_assets_eur?: number | null
           total_assets_orig?: number | null
@@ -1087,6 +1091,7 @@ export type Database = {
           interest_expense_orig?: number | null
           interest_expense_usd?: number | null
           market_cap?: number | null
+          name?: string | null
           net_income?: number | null
           net_income_eur?: number | null
           net_income_orig?: number | null
@@ -1109,6 +1114,7 @@ export type Database = {
           revenue_orig?: number | null
           revenue_usd?: number | null
           stock_id?: number | null
+          symbol?: string | null
           total_assets?: number | null
           total_assets_eur?: number | null
           total_assets_orig?: number | null
