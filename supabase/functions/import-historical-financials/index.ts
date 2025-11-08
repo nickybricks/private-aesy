@@ -218,12 +218,13 @@ serve(async (req) => {
           fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
         ])
 
-        // Fetch company profile for beta and market cap
+        // Fetch company profile for beta, market cap and full time employees
         const profileResponse = await fetch(`https://financialmodelingprep.com/api/v3/profile/${stock.symbol}?apikey=${fmpApiKey}`)
         const profileData = await profileResponse.json()
         const companyProfile = Array.isArray(profileData) ? profileData[0] : profileData
         const beta = companyProfile?.beta || null
         const marketCap = companyProfile?.mktCap || null
+        const fullTimeEmployees = companyProfile?.fullTimeEmployees || null
 
         // Merge all data
         const allIncome = [...(Array.isArray(incomeQ) ? incomeQ : []), ...(Array.isArray(incomeTTM) ? incomeTTM : [])]
@@ -304,6 +305,7 @@ serve(async (req) => {
           const total_debt_orig = balance?.totalDebt
           const total_stockholders_equity_orig = balance?.totalStockholdersEquity
           const cash_and_equivalents_orig = balance?.cashAndCashEquivalents
+          const intangible_assets_orig = balance?.intangibleAssets
 
           const operating_cash_flow_orig = cashflow?.operatingCashFlow
           const capital_expenditure_orig = cashflow?.capitalExpenditure
@@ -332,6 +334,7 @@ serve(async (req) => {
           const income_before_tax_converted = await convertValueToMultipleCurrencies(supabase, income_before_tax_orig, reportedCurrency, date)
           const research_and_development_expenses_converted = await convertValueToMultipleCurrencies(supabase, research_and_development_expenses_orig, reportedCurrency, date)
           const total_other_income_expenses_net_converted = await convertValueToMultipleCurrencies(supabase, total_other_income_expenses_net_orig, reportedCurrency, date)
+          const intangible_assets_converted = await convertValueToMultipleCurrencies(supabase, intangible_assets_orig, reportedCurrency, date)
 
           const record = {
             stock_id: stockId,
@@ -363,6 +366,7 @@ serve(async (req) => {
             income_before_tax_orig,
             research_and_development_expenses_orig,
             total_other_income_expenses_net_orig,
+            intangible_assets_orig,
 
             // USD converted values
             revenue_usd: revenue_converted.USD,
@@ -386,6 +390,7 @@ serve(async (req) => {
             income_before_tax_usd: income_before_tax_converted.USD,
             research_and_development_expenses_usd: research_and_development_expenses_converted.USD,
             total_other_income_expenses_net_usd: total_other_income_expenses_net_converted.USD,
+            intangible_assets_usd: intangible_assets_converted.USD,
 
             // EUR converted values
             revenue_eur: revenue_converted.EUR,
@@ -409,6 +414,7 @@ serve(async (req) => {
             income_before_tax_eur: income_before_tax_converted.EUR,
             research_and_development_expenses_eur: research_and_development_expenses_converted.EUR,
             total_other_income_expenses_net_eur: total_other_income_expenses_net_converted.EUR,
+            intangible_assets_eur: intangible_assets_converted.EUR,
 
             // Additional fields
             weighted_avg_shares_dil,
@@ -435,6 +441,7 @@ serve(async (req) => {
             // Company metrics
             beta,
             market_cap: marketCap,
+            full_time_employees: fullTimeEmployees,
           }
 
           records.push(record)

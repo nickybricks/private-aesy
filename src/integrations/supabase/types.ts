@@ -889,6 +889,7 @@ export type Database = {
           free_cash_flow_eur: number | null
           free_cash_flow_orig: number | null
           free_cash_flow_usd: number | null
+          full_time_employees: number | null
           id: number
           income_before_tax: number | null
           income_before_tax_eur: number | null
@@ -898,6 +899,9 @@ export type Database = {
           income_tax_expense_eur: number | null
           income_tax_expense_orig: number | null
           income_tax_expense_usd: number | null
+          intangible_assets_eur: number | null
+          intangible_assets_orig: number | null
+          intangible_assets_usd: number | null
           interest_expense: number | null
           interest_expense_eur: number | null
           interest_expense_orig: number | null
@@ -983,6 +987,7 @@ export type Database = {
           free_cash_flow_eur?: number | null
           free_cash_flow_orig?: number | null
           free_cash_flow_usd?: number | null
+          full_time_employees?: number | null
           id?: number
           income_before_tax?: number | null
           income_before_tax_eur?: number | null
@@ -992,6 +997,9 @@ export type Database = {
           income_tax_expense_eur?: number | null
           income_tax_expense_orig?: number | null
           income_tax_expense_usd?: number | null
+          intangible_assets_eur?: number | null
+          intangible_assets_orig?: number | null
+          intangible_assets_usd?: number | null
           interest_expense?: number | null
           interest_expense_eur?: number | null
           interest_expense_orig?: number | null
@@ -1077,6 +1085,7 @@ export type Database = {
           free_cash_flow_eur?: number | null
           free_cash_flow_orig?: number | null
           free_cash_flow_usd?: number | null
+          full_time_employees?: number | null
           id?: number
           income_before_tax?: number | null
           income_before_tax_eur?: number | null
@@ -1086,6 +1095,9 @@ export type Database = {
           income_tax_expense_eur?: number | null
           income_tax_expense_orig?: number | null
           income_tax_expense_usd?: number | null
+          intangible_assets_eur?: number | null
+          intangible_assets_orig?: number | null
+          intangible_assets_usd?: number | null
           interest_expense?: number | null
           interest_expense_eur?: number | null
           interest_expense_orig?: number | null
