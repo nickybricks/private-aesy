@@ -10,7 +10,6 @@ interface StockData {
   symbol: string;
   name: string;
   currency: string;
-  price: number | null;
 }
 
 interface HistoricalPrice {
@@ -101,7 +100,7 @@ Deno.serve(async (req) => {
     // Get stocks to process
     let query = supabase
       .from('stocks')
-      .select('id, symbol, name, currency, price')
+      .select('id, symbol, name, currency')
       .eq('is_actively_trading', true);
     
     if (testSymbol) {
@@ -200,17 +199,12 @@ async function calculateMetricsForStock(
   }
   
   const latestFinancial = financials[0];
-  
-  // Use historical price from API if available, otherwise fall back to stock.price
-  const currentPrice = historicalPrices[0]?.close || stock.price;
+  const currentPrice = historicalPrices[0]?.close;
   
   if (!currentPrice) {
     console.warn(`No current price for ${stock.symbol}`);
     return null;
   }
-  
-  console.log(`Using price ${currentPrice} for ${stock.symbol} (${historicalPrices[0]?.close ? 'from API' : 'from DB'})`);
-
   
   const metrics: any = {
     stock_id: stock.id,
