@@ -214,8 +214,8 @@ async function calculateMetricsForStock(
     calculation_date: new Date().toISOString().split('T')[0],
   };
   
-  // Calculate price changes
-  calculatePriceChanges(metrics, historicalPrices);
+  // Calculate price changes using FMP API
+  await calculatePriceChanges(metrics, stock.symbol, fmpApiKey);
   
   // Calculate valuation ratios
   calculateValuationRatios(metrics, currentPrice, latestFinancial, suffix);
@@ -264,31 +264,41 @@ async function fetchHistoricalPrices(symbol: string, apiKey: string): Promise<Hi
   }
 }
 
-function calculatePriceChanges(metrics: any, prices: HistoricalPrice[]) {
-  if (prices.length === 0) return;
+async function calculatePriceChanges(metrics: any, symbol: string, apiKey: string) {
+  const url = `https://financialmodelingprep.com/stable/stock-price-change?symbol=${symbol}&apikey=${apiKey}`;
   
-  const today = prices[0];
-  const price5dAgo = findPriceByDaysAgo(prices, 5);
-  const price1mAgo = findPriceByDaysAgo(prices, 30);
-  const price3mAgo = findPriceByDaysAgo(prices, 90);
-  const price6mAgo = findPriceByDaysAgo(prices, 180);
-  const price1yAgo = findPriceByDaysAgo(prices, 365);
-  const priceJan1 = findPriceByDate(prices, new Date(new Date().getFullYear(), 0, 1));
-  const price3yAgo = findPriceByDaysAgo(prices, 365 * 3);
-  const price5yAgo = findPriceByDaysAgo(prices, 365 * 5);
-  const price10yAgo = findPriceByDaysAgo(prices, 365 * 10);
-  const priceFirst = prices[prices.length - 1];
-  
-  metrics.price_change_5d = calculatePercentChange(today.close, price5dAgo?.close);
-  metrics.price_change_1m = calculatePercentChange(today.close, price1mAgo?.close);
-  metrics.price_change_3m = calculatePercentChange(today.close, price3mAgo?.close);
-  metrics.price_change_6m = calculatePercentChange(today.close, price6mAgo?.close);
-  metrics.price_change_1y = calculatePercentChange(today.close, price1yAgo?.close);
-  metrics.price_change_ytd = calculatePercentChange(today.close, priceJan1?.close);
-  metrics.price_change_3y = calculateCAGR(today.close, price3yAgo?.close, 3);
-  metrics.price_change_5y = calculateCAGR(today.close, price5yAgo?.close, 5);
-  metrics.price_change_10y = calculateCAGR(today.close, price10yAgo?.close, 10);
-  metrics.price_change_max = calculatePercentChange(today.close, priceFirst?.close);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`Failed to fetch price changes for ${symbol}: ${response.status}`);
+      return;
+    }
+    
+    const data = await response.json();
+    if (!data || data.length === 0) {
+      console.warn(`No price change data for ${symbol}`);
+      return;
+    }
+    
+    const priceChange = data[0];
+    
+    // Map FMP API fields to our database fields
+    metrics.price_change_1d = priceChange['1D'] || null;
+    metrics.price_change_5d = priceChange['5D'] || null;
+    metrics.price_change_1m = priceChange['1M'] || null;
+    metrics.price_change_3m = priceChange['3M'] || null;
+    metrics.price_change_6m = priceChange['6M'] || null;
+    metrics.price_change_ytd = priceChange['ytd'] || null;
+    metrics.price_change_1y = priceChange['1Y'] || null;
+    metrics.price_change_3y = priceChange['3Y'] || null;
+    metrics.price_change_5y = priceChange['5Y'] || null;
+    metrics.price_change_10y = priceChange['10Y'] || null;
+    metrics.price_change_max = priceChange['max'] || null;
+    
+    console.log(`Price changes fetched for ${symbol}`);
+  } catch (error) {
+    console.error(`Error fetching price changes for ${symbol}:`, error);
+  }
 }
 
 function calculateValuationRatios(metrics: any, currentPrice: number, financial: FinancialStatement, suffix: string) {

@@ -1312,6 +1312,7 @@ export type Database = {
           pe_ratio: number | null
           pretax_margin: number | null
           price_change_10y: number | null
+          price_change_1d: number | null
           price_change_1m: number | null
           price_change_1y: number | null
           price_change_3m: number | null
@@ -1416,6 +1417,7 @@ export type Database = {
           pe_ratio?: number | null
           pretax_margin?: number | null
           price_change_10y?: number | null
+          price_change_1d?: number | null
           price_change_1m?: number | null
           price_change_1y?: number | null
           price_change_3m?: number | null
@@ -1520,6 +1522,7 @@ export type Database = {
           pe_ratio?: number | null
           pretax_margin?: number | null
           price_change_10y?: number | null
+          price_change_1d?: number | null
           price_change_1m?: number | null
           price_change_1y?: number | null
           price_change_3m?: number | null
