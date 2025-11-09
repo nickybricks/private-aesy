@@ -1242,38 +1242,318 @@ export type Database = {
       }
       precomputed_metrics: {
         Row: {
+          bvps: number | null
           calculation_date: string
-          id: number
-          last_updated: string | null
-          metric_type: string
-          stock_id: number | null
-          value: number | null
+          cash_to_market_cap: number | null
+          company_name: string | null
+          created_at: string
+          currency: string
+          current_ratio: number | null
+          debt_growth_3y_cagr: number | null
+          debt_growth_5y_cagr: number | null
+          debt_growth_qoq: number | null
+          debt_growth_yoy: number | null
+          debt_to_ebitda: number | null
+          debt_to_equity: number | null
+          debt_to_fcf: number | null
+          ebit_growth_10y_cagr: number | null
+          ebit_growth_3y_cagr: number | null
+          ebit_growth_5y_cagr: number | null
+          ebit_growth_qoq: number | null
+          ebit_growth_yoy: number | null
+          ebit_margin: number | null
+          ebitda_eur: number | null
+          ebitda_margin: number | null
+          ebitda_orig: number | null
+          ebitda_usd: number | null
+          eps_diluted_eur: number | null
+          eps_diluted_orig: number | null
+          eps_diluted_usd: number | null
+          eps_growth_3y_cagr: number | null
+          eps_growth_5y_cagr: number | null
+          eps_growth_qoq: number | null
+          eps_growth_quarters: number | null
+          eps_growth_years: number | null
+          eps_growth_yoy: number | null
+          fcf_growth_3y_cagr: number | null
+          fcf_growth_5y_cagr: number | null
+          fcf_growth_qoq: number | null
+          fcf_growth_yoy: number | null
+          fcf_margin: number | null
+          fcf_per_share: number | null
+          graham_number_eur: number | null
+          graham_number_orig: number | null
+          graham_number_usd: number | null
+          gross_margin: number | null
+          gross_profit_eur: number | null
+          gross_profit_orig: number | null
+          gross_profit_usd: number | null
+          id: string
+          interest_coverage: number | null
+          net_cash_eur: number | null
+          net_cash_growth_yoy: number | null
+          net_cash_orig: number | null
+          net_cash_usd: number | null
+          net_income_eur: number | null
+          net_income_growth_3y_cagr: number | null
+          net_income_growth_5y_cagr: number | null
+          net_income_growth_qoq: number | null
+          net_income_growth_quarters: number | null
+          net_income_growth_years: number | null
+          net_income_growth_yoy: number | null
+          net_income_orig: number | null
+          net_income_profitable_10years: number | null
+          net_income_profitable_20years: number | null
+          net_income_usd: number | null
+          operating_margin: number | null
+          p_fcf_ratio: number | null
+          p_ocf_ratio: number | null
+          pb_ratio: number | null
+          pe_ratio: number | null
+          pretax_margin: number | null
+          price_change_10y: number | null
+          price_change_1m: number | null
+          price_change_1y: number | null
+          price_change_3m: number | null
+          price_change_3y: number | null
+          price_change_5d: number | null
+          price_change_5y: number | null
+          price_change_6m: number | null
+          price_change_max: number | null
+          price_change_ytd: number | null
+          profit_margin: number | null
+          profits_per_employee: number | null
+          ps_ratio: number | null
+          quick_ratio: number | null
+          revenue_per_employee: number | null
+          rnd_expenses_eur: number | null
+          rnd_expenses_orig: number | null
+          rnd_expenses_usd: number | null
+          rnd_to_revenue_ratio: number | null
+          roa: number | null
+          roa_5y_avg: number | null
+          roce: number | null
+          roe: number | null
+          roe_5y_avg: number | null
+          roic: number | null
+          roic_5y_avg: number | null
+          stock_id: number
+          symbol: string
+          tax_to_revenue_ratio: number | null
+          tbvps: number | null
+          updated_at: string
+          working_capital: number | null
+          working_capital_turnover: number | null
         }
         Insert: {
-          calculation_date: string
-          id?: number
-          last_updated?: string | null
-          metric_type: string
-          stock_id?: number | null
-          value?: number | null
+          bvps?: number | null
+          calculation_date?: string
+          cash_to_market_cap?: number | null
+          company_name?: string | null
+          created_at?: string
+          currency: string
+          current_ratio?: number | null
+          debt_growth_3y_cagr?: number | null
+          debt_growth_5y_cagr?: number | null
+          debt_growth_qoq?: number | null
+          debt_growth_yoy?: number | null
+          debt_to_ebitda?: number | null
+          debt_to_equity?: number | null
+          debt_to_fcf?: number | null
+          ebit_growth_10y_cagr?: number | null
+          ebit_growth_3y_cagr?: number | null
+          ebit_growth_5y_cagr?: number | null
+          ebit_growth_qoq?: number | null
+          ebit_growth_yoy?: number | null
+          ebit_margin?: number | null
+          ebitda_eur?: number | null
+          ebitda_margin?: number | null
+          ebitda_orig?: number | null
+          ebitda_usd?: number | null
+          eps_diluted_eur?: number | null
+          eps_diluted_orig?: number | null
+          eps_diluted_usd?: number | null
+          eps_growth_3y_cagr?: number | null
+          eps_growth_5y_cagr?: number | null
+          eps_growth_qoq?: number | null
+          eps_growth_quarters?: number | null
+          eps_growth_years?: number | null
+          eps_growth_yoy?: number | null
+          fcf_growth_3y_cagr?: number | null
+          fcf_growth_5y_cagr?: number | null
+          fcf_growth_qoq?: number | null
+          fcf_growth_yoy?: number | null
+          fcf_margin?: number | null
+          fcf_per_share?: number | null
+          graham_number_eur?: number | null
+          graham_number_orig?: number | null
+          graham_number_usd?: number | null
+          gross_margin?: number | null
+          gross_profit_eur?: number | null
+          gross_profit_orig?: number | null
+          gross_profit_usd?: number | null
+          id?: string
+          interest_coverage?: number | null
+          net_cash_eur?: number | null
+          net_cash_growth_yoy?: number | null
+          net_cash_orig?: number | null
+          net_cash_usd?: number | null
+          net_income_eur?: number | null
+          net_income_growth_3y_cagr?: number | null
+          net_income_growth_5y_cagr?: number | null
+          net_income_growth_qoq?: number | null
+          net_income_growth_quarters?: number | null
+          net_income_growth_years?: number | null
+          net_income_growth_yoy?: number | null
+          net_income_orig?: number | null
+          net_income_profitable_10years?: number | null
+          net_income_profitable_20years?: number | null
+          net_income_usd?: number | null
+          operating_margin?: number | null
+          p_fcf_ratio?: number | null
+          p_ocf_ratio?: number | null
+          pb_ratio?: number | null
+          pe_ratio?: number | null
+          pretax_margin?: number | null
+          price_change_10y?: number | null
+          price_change_1m?: number | null
+          price_change_1y?: number | null
+          price_change_3m?: number | null
+          price_change_3y?: number | null
+          price_change_5d?: number | null
+          price_change_5y?: number | null
+          price_change_6m?: number | null
+          price_change_max?: number | null
+          price_change_ytd?: number | null
+          profit_margin?: number | null
+          profits_per_employee?: number | null
+          ps_ratio?: number | null
+          quick_ratio?: number | null
+          revenue_per_employee?: number | null
+          rnd_expenses_eur?: number | null
+          rnd_expenses_orig?: number | null
+          rnd_expenses_usd?: number | null
+          rnd_to_revenue_ratio?: number | null
+          roa?: number | null
+          roa_5y_avg?: number | null
+          roce?: number | null
+          roe?: number | null
+          roe_5y_avg?: number | null
+          roic?: number | null
+          roic_5y_avg?: number | null
+          stock_id: number
+          symbol: string
+          tax_to_revenue_ratio?: number | null
+          tbvps?: number | null
+          updated_at?: string
+          working_capital?: number | null
+          working_capital_turnover?: number | null
         }
         Update: {
+          bvps?: number | null
           calculation_date?: string
-          id?: number
-          last_updated?: string | null
-          metric_type?: string
-          stock_id?: number | null
-          value?: number | null
+          cash_to_market_cap?: number | null
+          company_name?: string | null
+          created_at?: string
+          currency?: string
+          current_ratio?: number | null
+          debt_growth_3y_cagr?: number | null
+          debt_growth_5y_cagr?: number | null
+          debt_growth_qoq?: number | null
+          debt_growth_yoy?: number | null
+          debt_to_ebitda?: number | null
+          debt_to_equity?: number | null
+          debt_to_fcf?: number | null
+          ebit_growth_10y_cagr?: number | null
+          ebit_growth_3y_cagr?: number | null
+          ebit_growth_5y_cagr?: number | null
+          ebit_growth_qoq?: number | null
+          ebit_growth_yoy?: number | null
+          ebit_margin?: number | null
+          ebitda_eur?: number | null
+          ebitda_margin?: number | null
+          ebitda_orig?: number | null
+          ebitda_usd?: number | null
+          eps_diluted_eur?: number | null
+          eps_diluted_orig?: number | null
+          eps_diluted_usd?: number | null
+          eps_growth_3y_cagr?: number | null
+          eps_growth_5y_cagr?: number | null
+          eps_growth_qoq?: number | null
+          eps_growth_quarters?: number | null
+          eps_growth_years?: number | null
+          eps_growth_yoy?: number | null
+          fcf_growth_3y_cagr?: number | null
+          fcf_growth_5y_cagr?: number | null
+          fcf_growth_qoq?: number | null
+          fcf_growth_yoy?: number | null
+          fcf_margin?: number | null
+          fcf_per_share?: number | null
+          graham_number_eur?: number | null
+          graham_number_orig?: number | null
+          graham_number_usd?: number | null
+          gross_margin?: number | null
+          gross_profit_eur?: number | null
+          gross_profit_orig?: number | null
+          gross_profit_usd?: number | null
+          id?: string
+          interest_coverage?: number | null
+          net_cash_eur?: number | null
+          net_cash_growth_yoy?: number | null
+          net_cash_orig?: number | null
+          net_cash_usd?: number | null
+          net_income_eur?: number | null
+          net_income_growth_3y_cagr?: number | null
+          net_income_growth_5y_cagr?: number | null
+          net_income_growth_qoq?: number | null
+          net_income_growth_quarters?: number | null
+          net_income_growth_years?: number | null
+          net_income_growth_yoy?: number | null
+          net_income_orig?: number | null
+          net_income_profitable_10years?: number | null
+          net_income_profitable_20years?: number | null
+          net_income_usd?: number | null
+          operating_margin?: number | null
+          p_fcf_ratio?: number | null
+          p_ocf_ratio?: number | null
+          pb_ratio?: number | null
+          pe_ratio?: number | null
+          pretax_margin?: number | null
+          price_change_10y?: number | null
+          price_change_1m?: number | null
+          price_change_1y?: number | null
+          price_change_3m?: number | null
+          price_change_3y?: number | null
+          price_change_5d?: number | null
+          price_change_5y?: number | null
+          price_change_6m?: number | null
+          price_change_max?: number | null
+          price_change_ytd?: number | null
+          profit_margin?: number | null
+          profits_per_employee?: number | null
+          ps_ratio?: number | null
+          quick_ratio?: number | null
+          revenue_per_employee?: number | null
+          rnd_expenses_eur?: number | null
+          rnd_expenses_orig?: number | null
+          rnd_expenses_usd?: number | null
+          rnd_to_revenue_ratio?: number | null
+          roa?: number | null
+          roa_5y_avg?: number | null
+          roce?: number | null
+          roe?: number | null
+          roe_5y_avg?: number | null
+          roic?: number | null
+          roic_5y_avg?: number | null
+          stock_id?: number
+          symbol?: string
+          tax_to_revenue_ratio?: number | null
+          tbvps?: number | null
+          updated_at?: string
+          working_capital?: number | null
+          working_capital_turnover?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "precomputed_metrics_stock_id_fkey"
-            columns: ["stock_id"]
-            isOneToOne: false
-            referencedRelation: "stocks"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {

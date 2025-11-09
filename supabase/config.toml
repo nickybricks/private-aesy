@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.populate-stocks-metadata]
 verify_jwt = false
+
+[functions.calculate-precomputed-metrics]
+verify_jwt = false
