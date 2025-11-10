@@ -10,6 +10,7 @@ interface StockData {
   symbol: string;
   name: string;
   currency: string;
+  price: number | null;
 }
 
 interface HistoricalPrice {
@@ -100,7 +101,7 @@ Deno.serve(async (req) => {
     // Get stocks to process
     let query = supabase
       .from('stocks')
-      .select('id, symbol, name, currency')
+      .select('id, symbol, name, currency, price')
       .eq('is_actively_trading', true);
     
     if (testSymbol) {
@@ -181,10 +182,6 @@ async function calculateMetricsForStock(
   
   // Fetch historical prices
   const historicalPrices = await fetchHistoricalPrices(stock.symbol, fmpApiKey);
-  if (!historicalPrices || historicalPrices.length === 0) {
-    console.warn(`No historical prices for ${stock.symbol}`);
-    return null;
-  }
   
   // Fetch financial statements from DB
   const { data: financials, error: financialsError } = await supabase
@@ -199,12 +196,16 @@ async function calculateMetricsForStock(
   }
   
   const latestFinancial = financials[0];
-  const currentPrice = historicalPrices[0]?.close;
+  
+  // Use historical price from API, fallback to stock.price from database
+  const currentPrice = historicalPrices?.[0]?.close || stock.price;
   
   if (!currentPrice) {
-    console.warn(`No current price for ${stock.symbol}`);
+    console.warn(`No current price for ${stock.symbol} (neither from API nor from database)`);
     return null;
   }
+  
+  console.log(`Using current price ${currentPrice} for ${stock.symbol} (source: ${historicalPrices?.[0]?.close ? 'API' : 'Database'})`);
   
   const metrics: any = {
     stock_id: stock.id,
