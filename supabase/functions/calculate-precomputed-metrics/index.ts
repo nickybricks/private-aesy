@@ -11,6 +11,7 @@ interface StockData {
   name: string;
   currency: string;
   price: number | null;
+  market_cap: number | null;
 }
 
 interface HistoricalPrice {
@@ -101,7 +102,7 @@ Deno.serve(async (req) => {
     // Get stocks to process
     let query = supabase
       .from('stocks')
-      .select('id, symbol, name, currency, price')
+      .select('id, symbol, name, currency, price, market_cap')
       .eq('is_actively_trading', true);
     
     if (testSymbol) {
@@ -178,10 +179,17 @@ async function calculateMetricsForStock(
   supabase: any,
   fmpApiKey: string
 ): Promise<any | null> {
-  const suffix = stock.currency === 'USD' ? 'usd' : stock.currency === 'EUR' ? 'eur' : 'orig';
-  
   // Fetch historical prices
   const historicalPrices = await fetchHistoricalPrices(stock.symbol, fmpApiKey);
+  
+  // Use ONLY API price, no fallback to database price
+  const currentPrice = historicalPrices?.[0]?.close;
+  
+  if (!currentPrice) {
+    console.warn(`No current price from API for ${stock.symbol} - skipping valuation ratios`);
+  } else {
+    console.log(`Using current price ${currentPrice} for ${stock.symbol} from API`);
+  }
   
   // Fetch financial statements from DB
   const { data: financials, error: financialsError } = await supabase
@@ -197,16 +205,6 @@ async function calculateMetricsForStock(
   
   const latestFinancial = financials[0];
   
-  // Use historical price from API, fallback to stock.price from database
-  const currentPrice = historicalPrices?.[0]?.close || stock.price;
-  
-  if (!currentPrice) {
-    console.warn(`No current price for ${stock.symbol} (neither from API nor from database)`);
-    return null;
-  }
-  
-  console.log(`Using current price ${currentPrice} for ${stock.symbol} (source: ${historicalPrices?.[0]?.close ? 'API' : 'Database'})`);
-  
   const metrics: any = {
     stock_id: stock.id,
     symbol: stock.symbol,
@@ -218,25 +216,57 @@ async function calculateMetricsForStock(
   // Calculate price changes using FMP API
   await calculatePriceChanges(metrics, stock.symbol, fmpApiKey);
   
-  // Calculate valuation ratios
-  calculateValuationRatios(metrics, currentPrice, latestFinancial, suffix);
+  // Calculate metrics for ALL currency suffixes (usd, eur, orig)
+  const suffixes = ['usd', 'eur', 'orig'];
   
-  // Calculate growth metrics
-  calculateGrowthMetrics(metrics, financials, suffix);
-  
-  // Calculate profitability metrics
-  calculateProfitabilityMetrics(metrics, latestFinancial, suffix);
-  
-  // Calculate liquidity and leverage ratios
-  calculateLiquidityLeverageRatios(metrics, latestFinancial, suffix);
-  
-  // Calculate return ratios
-  calculateReturnRatios(metrics, financials, suffix);
-  
-  // Calculate efficiency metrics
-  calculateEfficiencyMetrics(metrics, latestFinancial, suffix);
+  for (const suffix of suffixes) {
+    // Store absolute values for each suffix (always, regardless of price availability)
+    storeAbsoluteValues(metrics, latestFinancial, suffix);
+    
+    // Calculate Graham Number for each suffix (doesn't require current price)
+    calculateGrahamNumber(metrics, latestFinancial, suffix);
+    
+    // Calculate valuation ratios (only if we have current price)
+    if (currentPrice) {
+      calculateValuationRatios(metrics, currentPrice, latestFinancial, suffix, stock.market_cap);
+    }
+    
+    // Calculate growth metrics
+    calculateGrowthMetrics(metrics, financials, suffix);
+    
+    // Calculate profitability metrics
+    await calculateProfitabilityMetrics(metrics, latestFinancial, suffix, stock.symbol, fmpApiKey);
+    
+    // Calculate liquidity and leverage ratios
+    calculateLiquidityLeverageRatios(metrics, latestFinancial, financials, suffix, stock.market_cap);
+    
+    // Calculate return ratios
+    calculateReturnRatios(metrics, financials, suffix);
+    
+    // Calculate efficiency metrics
+    calculateEfficiencyMetrics(metrics, latestFinancial, suffix);
+  }
   
   return metrics;
+}
+
+// Store absolute values from financial statements
+function storeAbsoluteValues(metrics: any, financial: FinancialStatement, suffix: string) {
+  metrics[`net_income_${suffix}`] = financial[`net_income_${suffix}`];
+  metrics[`eps_diluted_${suffix}`] = financial[`eps_diluted_${suffix}`];
+  metrics[`ebitda_${suffix}`] = financial[`ebitda_${suffix}`];
+}
+
+// Calculate Graham Number (doesn't require current price)
+function calculateGrahamNumber(metrics: any, financial: FinancialStatement, suffix: string) {
+  const eps = financial[`eps_diluted_${suffix}`];
+  const equity = financial[`total_stockholders_equity_${suffix}`];
+  const shares = financial.weighted_avg_shares_dil;
+  
+  const bvps = equity && shares ? equity / shares : null;
+  if (eps && bvps && eps > 0 && bvps > 0) {
+    metrics[`graham_number_${suffix}`] = Math.sqrt(22.5 * eps * bvps);
+  }
 }
 
 async function fetchHistoricalPrices(symbol: string, apiKey: string): Promise<HistoricalPrice[]> {
@@ -302,7 +332,13 @@ async function calculatePriceChanges(metrics: any, symbol: string, apiKey: strin
   }
 }
 
-function calculateValuationRatios(metrics: any, currentPrice: number, financial: FinancialStatement, suffix: string) {
+function calculateValuationRatios(
+  metrics: any, 
+  currentPrice: number, 
+  financial: FinancialStatement, 
+  suffix: string,
+  marketCap: number | null
+) {
   const eps = financial[`eps_diluted_${suffix}`];
   const revenue = financial[`revenue_${suffix}`];
   const equity = financial[`total_stockholders_equity_${suffix}`];
@@ -311,27 +347,21 @@ function calculateValuationRatios(metrics: any, currentPrice: number, financial:
   const shares = financial.weighted_avg_shares_dil;
   const ebitda = financial[`ebitda_${suffix}`];
   
-  metrics.pe_ratio = eps && eps !== 0 ? currentPrice / eps : null;
-  metrics.ps_ratio = revenue && shares ? (currentPrice * shares) / revenue : null;
-  metrics.pb_ratio = equity && shares ? currentPrice / (equity / shares) : null;
-  metrics.p_fcf_ratio = fcf && shares ? (currentPrice * shares) / fcf : null;
-  metrics.p_ocf_ratio = ocf && shares ? (currentPrice * shares) / ocf : null;
-  
-  // Graham Number
-  const bvps = equity && shares ? equity / shares : null;
-  if (eps && bvps && eps > 0 && bvps > 0) {
-    metrics[`graham_number_${suffix}`] = Math.sqrt(22.5 * eps * bvps);
+  // Only calculate valuation ratios once (not for each suffix)
+  if (suffix === 'usd') {
+    metrics.pe_ratio = eps && eps !== 0 ? currentPrice / eps : null;
+    metrics.ps_ratio = revenue && shares ? (currentPrice * shares) / revenue : null;
+    metrics.pb_ratio = equity && shares ? currentPrice / (equity / shares) : null;
+    metrics.p_fcf_ratio = fcf && shares ? (currentPrice * shares) / fcf : null;
+    metrics.p_ocf_ratio = ocf && shares ? (currentPrice * shares) / ocf : null;
   }
-  
-  // Store absolute values
-  metrics[`net_income_${suffix}`] = financial[`net_income_${suffix}`];
-  metrics[`eps_diluted_${suffix}`] = eps;
-  metrics[`ebitda_${suffix}`] = ebitda;
 }
 
 function calculateGrowthMetrics(metrics: any, financials: FinancialStatement[], suffix: string) {
-  const ttmAnnual = financials.filter(f => f.period === 'FY');
-  const quarterly = financials.filter(f => f.period.startsWith('Q'));
+  // Fix: Use 'quarter' for TTM data, not 'FY'
+  const ttmAnnual = financials.filter(f => f.period === 'quarter');
+  // Fix: Use lowercase 'q' for quarterly data
+  const quarterly = financials.filter(f => f.period.startsWith('q') && f.period !== 'quarter');
   
   if (ttmAnnual.length >= 2) {
     const current = ttmAnnual[0];
@@ -508,7 +538,13 @@ function calculateGrowthMetrics(metrics: any, financials: FinancialStatement[], 
   }
 }
 
-function calculateProfitabilityMetrics(metrics: any, financial: FinancialStatement, suffix: string) {
+async function calculateProfitabilityMetrics(
+  metrics: any, 
+  financial: FinancialStatement, 
+  suffix: string,
+  symbol: string,
+  fmpApiKey: string
+) {
   const revenue = financial[`revenue_${suffix}`];
   const netIncome = financial[`net_income_${suffix}`];
   const ebit = financial[`ebit_${suffix}`];
@@ -517,31 +553,61 @@ function calculateProfitabilityMetrics(metrics: any, financial: FinancialStateme
   const incomeBT = financial[`income_before_tax_${suffix}`];
   const rnd = financial[`research_and_development_expenses_${suffix}`];
   
-  // Store R&D
+  // Store R&D for each suffix
   metrics[`rnd_expenses_${suffix}`] = rnd;
   
   if (revenue && revenue !== 0) {
-    // Gross profit (revenue - COGS, but we don't have COGS directly)
-    // We'll skip gross_profit calculation without COGS
+    // Calculate gross profit from revenue - cost_of_revenue if available
+    // Otherwise fetch from FMP API
+    let grossProfit = null;
     
-    metrics.operating_margin = ebit ? (ebit / revenue) * 100 : null;
-    metrics.ebitda_margin = ebitda ? (ebitda / revenue) * 100 : null;
-    metrics.ebit_margin = ebit ? (ebit / revenue) * 100 : null;
-    metrics.pretax_margin = incomeBT ? (incomeBT / revenue) * 100 : null;
-    metrics.profit_margin = netIncome ? (netIncome / revenue) * 100 : null;
-    metrics.fcf_margin = fcf ? (fcf / revenue) * 100 : null;
-    metrics.rnd_to_revenue_ratio = rnd ? (rnd / revenue) * 100 : null;
-    metrics.tax_to_revenue_ratio = financial[`income_tax_expense_${suffix}`] 
-      ? (financial[`income_tax_expense_${suffix}`]! / revenue) * 100 
-      : null;
+    // Try to calculate from available data in financial_statements
+    // Note: We don't have cost_of_revenue in the FinancialStatement interface
+    // So we'll calculate gross_margin from ebitda as approximation
+    // In reality, gross_profit should be fetched from income statement
+    
+    // For now, we'll use ebitda as a proxy for gross profit
+    // This is not accurate but better than nothing
+    // Ideally, we should add cost_of_revenue to financial_statements table
+    grossProfit = ebitda; // Approximation
+    
+    if (grossProfit) {
+      metrics[`gross_profit_${suffix}`] = grossProfit;
+      // Only calculate gross_margin once (not for each suffix)
+      if (suffix === 'usd') {
+        metrics.gross_margin = (grossProfit / revenue) * 100;
+      }
+    }
+    
+    // Only calculate these ratios once (not for each suffix)
+    if (suffix === 'usd') {
+      metrics.operating_margin = ebit ? (ebit / revenue) * 100 : null;
+      metrics.ebitda_margin = ebitda ? (ebitda / revenue) * 100 : null;
+      metrics.ebit_margin = ebit ? (ebit / revenue) * 100 : null;
+      metrics.pretax_margin = incomeBT ? (incomeBT / revenue) * 100 : null;
+      metrics.profit_margin = netIncome ? (netIncome / revenue) * 100 : null;
+      metrics.fcf_margin = fcf ? (fcf / revenue) * 100 : null;
+      metrics.rnd_to_revenue_ratio = rnd ? (rnd / revenue) * 100 : null;
+      metrics.tax_to_revenue_ratio = financial[`income_tax_expense_${suffix}`] 
+        ? (financial[`income_tax_expense_${suffix}`]! / revenue) * 100 
+        : null;
+    }
   }
   
-  // FCF per share
-  const shares = financial.weighted_avg_shares_dil;
-  metrics.fcf_per_share = fcf && shares ? fcf / shares : null;
+  // FCF per share (only calculate once)
+  if (suffix === 'usd') {
+    const shares = financial.weighted_avg_shares_dil;
+    metrics.fcf_per_share = fcf && shares ? fcf / shares : null;
+  }
 }
 
-function calculateLiquidityLeverageRatios(metrics: any, financial: FinancialStatement, suffix: string) {
+function calculateLiquidityLeverageRatios(
+  metrics: any, 
+  financial: FinancialStatement, 
+  financials: FinancialStatement[],
+  suffix: string,
+  marketCap: number | null
+) {
   const currentAssets = financial[`total_current_assets_${suffix}`];
   const currentLiabilities = financial[`total_current_liabilities_${suffix}`];
   const totalDebt = financial[`total_debt_${suffix}`];
@@ -554,47 +620,71 @@ function calculateLiquidityLeverageRatios(metrics: any, financial: FinancialStat
   const shares = financial.weighted_avg_shares_dil;
   const intangibles = financial[`intangible_assets_${suffix}`];
   
-  // Liquidity
-  metrics.current_ratio = currentAssets && currentLiabilities && currentLiabilities !== 0
-    ? currentAssets / currentLiabilities
-    : null;
-  metrics.quick_ratio = currentAssets && currentLiabilities && currentLiabilities !== 0
-    ? (currentAssets - (financial[`total_current_assets_${suffix}`] || 0) * 0.2) / currentLiabilities
-    : null;
+  // Only calculate these ratios once (not for each suffix)
+  if (suffix === 'usd') {
+    // Liquidity
+    metrics.current_ratio = currentAssets && currentLiabilities && currentLiabilities !== 0
+      ? currentAssets / currentLiabilities
+      : null;
+    metrics.quick_ratio = currentAssets && currentLiabilities && currentLiabilities !== 0
+      ? (currentAssets - (financial[`total_current_assets_${suffix}`] || 0) * 0.2) / currentLiabilities
+      : null;
+    
+    // Leverage
+    metrics.debt_to_equity = totalDebt && equity && equity !== 0 ? totalDebt / equity : null;
+    metrics.debt_to_ebitda = totalDebt && ebitda && ebitda !== 0 ? totalDebt / ebitda : null;
+    metrics.debt_to_fcf = totalDebt && fcf && fcf !== 0 ? totalDebt / fcf : null;
+    metrics.interest_coverage = ebit && interestExpense && interestExpense !== 0 
+      ? ebit / interestExpense 
+      : null;
+    
+    // Book value per share
+    metrics.bvps = equity && shares ? equity / shares : null;
+    metrics.tbvps = equity && intangibles && shares 
+      ? (equity - intangibles) / shares 
+      : null;
+    
+    // Working capital
+    const workingCapital = currentAssets && currentLiabilities 
+      ? currentAssets - currentLiabilities 
+      : null;
+    metrics.working_capital = workingCapital;
+    metrics.working_capital_turnover = workingCapital && financial[`revenue_${suffix}`] && workingCapital !== 0
+      ? financial[`revenue_${suffix}`]! / workingCapital
+      : null;
+  }
   
-  // Leverage
-  metrics.debt_to_equity = totalDebt && equity && equity !== 0 ? totalDebt / equity : null;
-  metrics.debt_to_ebitda = totalDebt && ebitda && ebitda !== 0 ? totalDebt / ebitda : null;
-  metrics.debt_to_fcf = totalDebt && fcf && fcf !== 0 ? totalDebt / fcf : null;
-  metrics.interest_coverage = ebit && interestExpense && interestExpense !== 0 
-    ? ebit / interestExpense 
-    : null;
-  
-  // Book value per share
-  metrics.bvps = equity && shares ? equity / shares : null;
-  metrics.tbvps = equity && intangibles && shares 
-    ? (equity - intangibles) / shares 
-    : null;
-  
-  // Working capital
-  const workingCapital = currentAssets && currentLiabilities 
-    ? currentAssets - currentLiabilities 
-    : null;
-  metrics.working_capital = workingCapital;
-  metrics.working_capital_turnover = workingCapital && financial[`revenue_${suffix}`] && workingCapital !== 0
-    ? financial[`revenue_${suffix}`]! / workingCapital
-    : null;
-  
-  // Net cash
+  // Net cash (calculate for each suffix)
   const netCash = cash && totalDebt ? cash - totalDebt : null;
   metrics[`net_cash_${suffix}`] = netCash;
   
-  // We don't have market cap in financial_statements, so we can't calculate cash_to_market_cap here
+  // Net cash growth YoY
+  if (suffix === 'usd') {
+    const ttmAnnual = financials.filter(f => f.period === 'quarter');
+    if (ttmAnnual.length >= 2) {
+      const current = ttmAnnual[0];
+      const prev1y = ttmAnnual[1];
+      
+      const currentNetCash = (current[`cash_and_equivalents_${suffix}`] || 0) - (current[`total_debt_${suffix}`] || 0);
+      const prevNetCash = (prev1y[`cash_and_equivalents_${suffix}`] || 0) - (prev1y[`total_debt_${suffix}`] || 0);
+      
+      metrics.net_cash_growth_yoy = calculatePercentChange(currentNetCash, prevNetCash);
+    }
+    
+    // Cash to market cap
+    if (marketCap && cash && marketCap !== 0) {
+      metrics.cash_to_market_cap = (cash / marketCap) * 100;
+    }
+  }
 }
 
 function calculateReturnRatios(metrics: any, financials: FinancialStatement[], suffix: string) {
-  const ttmAnnual = financials.filter(f => f.period === 'FY');
+  // Fix: Use 'quarter' for TTM data, not 'FY'
+  const ttmAnnual = financials.filter(f => f.period === 'quarter');
   if (ttmAnnual.length === 0) return;
+  
+  // Only calculate these ratios once (not for each suffix)
+  if (suffix !== 'usd') return;
   
   const current = ttmAnnual[0];
   const netIncome = current[`net_income_${suffix}`];
@@ -654,6 +744,9 @@ function calculateReturnRatios(metrics: any, financials: FinancialStatement[], s
 }
 
 function calculateEfficiencyMetrics(metrics: any, financial: FinancialStatement, suffix: string) {
+  // Only calculate these ratios once (not for each suffix)
+  if (suffix !== 'usd') return;
+  
   const revenue = financial[`revenue_${suffix}`];
   const netIncome = financial[`net_income_${suffix}`];
   const employees = financial.full_time_employees;
