@@ -205,17 +205,21 @@ serve(async (req) => {
         const stockCurrency = stock.currency || 'USD'
 
         // Fetch quarterly data
-        const [incomeQ, balanceQ, cashflowQ] = await Promise.all([
+        const [incomeQ, balanceQ, cashflowQ, keyMetricsQ, ratiosQ] = await Promise.all([
           fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/ratios/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
         ])
 
         // Fetch TTM data
-        const [incomeTTM, balanceTTM, cashflowTTM] = await Promise.all([
+        const [incomeTTM, balanceTTM, cashflowTTM, keyMetricsTTM, ratiosTTM] = await Promise.all([
           fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/ratios/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
         ])
 
         // Fetch company profile for beta, market cap and full time employees
@@ -230,13 +234,15 @@ serve(async (req) => {
         const allIncome = [...(Array.isArray(incomeQ) ? incomeQ : []), ...(Array.isArray(incomeTTM) ? incomeTTM : [])]
         const allBalance = [...(Array.isArray(balanceQ) ? balanceQ : []), ...(Array.isArray(balanceTTM) ? balanceTTM : [])]
         const allCashflow = [...(Array.isArray(cashflowQ) ? cashflowQ : []), ...(Array.isArray(cashflowTTM) ? cashflowTTM : [])]
+        const allKeyMetrics = [...(Array.isArray(keyMetricsQ) ? keyMetricsQ : []), ...(Array.isArray(keyMetricsTTM) ? keyMetricsTTM : [])]
+        const allRatios = [...(Array.isArray(ratiosQ) ? ratiosQ : []), ...(Array.isArray(ratiosTTM) ? ratiosTTM : [])]
 
         if (allIncome.length === 0) {
           console.warn(`  ⚠️ No financial data found for ${stock.symbol}`)
           continue
         }
 
-        console.log(`  ✓ Fetched ${allIncome.length} income statements, ${allBalance.length} balance sheets, ${allCashflow.length} cash flows`)
+        console.log(`  ✓ Fetched ${allIncome.length} income statements, ${allBalance.length} balance sheets, ${allCashflow.length} cash flows, ${allKeyMetrics.length} key metrics, ${allRatios.length} ratios`)
 
         // Group by date and period
         const dataByDatePeriod = new Map<string, any>()
@@ -275,17 +281,35 @@ serve(async (req) => {
           }
         }
 
+        for (const keyMetric of allKeyMetrics) {
+          const key = `${keyMetric.date}_${keyMetric.period}`
+          if (!dataByDatePeriod.has(key)) {
+            dataByDatePeriod.set(key, { date: keyMetric.date, period: keyMetric.period })
+          }
+          const entry = dataByDatePeriod.get(key)
+          entry.keyMetrics = keyMetric
+        }
+
+        for (const ratio of allRatios) {
+          const key = `${ratio.date}_${ratio.period}`
+          if (!dataByDatePeriod.has(key)) {
+            dataByDatePeriod.set(key, { date: ratio.date, period: ratio.period })
+          }
+          const entry = dataByDatePeriod.get(key)
+          entry.ratios = ratio
+        }
+
         console.log(`  📝 Merged ${dataByDatePeriod.size} unique date/period combinations`)
 
         // Process and insert data
         const records = []
 
         for (const [key, data] of dataByDatePeriod) {
-          const { income, balance, cashflow, date, period, reportedCurrency } = data
+          const { income, balance, cashflow, keyMetrics, ratios, date, period, reportedCurrency } = data
 
           if (!date) continue
 
-          // Extract original values
+          // Extract original values from financial statements
           const revenue_orig = income?.revenue
           const ebitda_orig = income?.ebitda
           const ebit_orig = income?.operatingIncome
@@ -312,6 +336,12 @@ serve(async (req) => {
           const free_cash_flow_orig = cashflow?.freeCashFlow
           const dividends_paid_orig = cashflow?.commonStockDividendsPaid || cashflow?.dividendsPaid
 
+          // Extract Key Metrics values (original currency)
+          const graham_number_orig = keyMetrics?.grahamNumber
+          const enterprise_value_orig = keyMetrics?.enterpriseValue
+          const working_capital_orig = keyMetrics?.workingCapital
+          const invested_capital_orig = keyMetrics?.investedCapital
+
           // Convert all values to USD and EUR
           const revenue_converted = await convertValueToMultipleCurrencies(supabase, revenue_orig, reportedCurrency, date)
           const ebitda_converted = await convertValueToMultipleCurrencies(supabase, ebitda_orig, reportedCurrency, date)
@@ -335,6 +365,12 @@ serve(async (req) => {
           const research_and_development_expenses_converted = await convertValueToMultipleCurrencies(supabase, research_and_development_expenses_orig, reportedCurrency, date)
           const total_other_income_expenses_net_converted = await convertValueToMultipleCurrencies(supabase, total_other_income_expenses_net_orig, reportedCurrency, date)
           const intangible_assets_converted = await convertValueToMultipleCurrencies(supabase, intangible_assets_orig, reportedCurrency, date)
+          
+          // Convert Key Metrics values to multiple currencies
+          const graham_number_converted = await convertValueToMultipleCurrencies(supabase, graham_number_orig, reportedCurrency, date)
+          const enterprise_value_converted = await convertValueToMultipleCurrencies(supabase, enterprise_value_orig, reportedCurrency, date)
+          const working_capital_converted = await convertValueToMultipleCurrencies(supabase, working_capital_orig, reportedCurrency, date)
+          const invested_capital_converted = await convertValueToMultipleCurrencies(supabase, invested_capital_orig, reportedCurrency, date)
 
           const record = {
             stock_id: stockId,
@@ -438,10 +474,119 @@ serve(async (req) => {
             income_tax_expense: income_tax_expense_converted.USD,
             income_before_tax: income_before_tax_converted.USD,
 
-            // Company metrics
+            // Company metrics (always current values)
             beta,
             market_cap: marketCap,
             full_time_employees: fullTimeEmployees,
+
+            // Key Metrics (original currency values)
+            graham_number_orig,
+            graham_number_usd: graham_number_converted.USD,
+            graham_number_eur: graham_number_converted.EUR,
+            enterprise_value_orig,
+            enterprise_value_usd: enterprise_value_converted.USD,
+            enterprise_value_eur: enterprise_value_converted.EUR,
+            working_capital_orig,
+            working_capital_usd: working_capital_converted.USD,
+            working_capital_eur: working_capital_converted.EUR,
+            invested_capital_orig,
+            invested_capital_usd: invested_capital_converted.USD,
+            invested_capital_eur: invested_capital_converted.EUR,
+            
+            // Key Metrics (currency-independent ratios and per-share values)
+            pe_ratio: keyMetrics?.peRatio,
+            pb_ratio: keyMetrics?.pbRatio,
+            ps_ratio: keyMetrics?.priceToSalesRatio,
+            pfcf_ratio: keyMetrics?.pfcfRatio,
+            peg_ratio: keyMetrics?.pegRatio,
+            ev_to_ebitda: keyMetrics?.evToEbitda,
+            ev_to_sales: keyMetrics?.evToSales,
+            ev_to_operating_cash_flow: keyMetrics?.evToOperatingCashFlow,
+            roic: keyMetrics?.roic,
+            roce: keyMetrics?.roce,
+            roa: keyMetrics?.returnOnTangibleAssets,
+            roe: keyMetrics?.roe,
+            net_debt_to_ebitda: keyMetrics?.netDebtToEBITDA,
+            dividend_yield: keyMetrics?.dividendYield,
+            book_value_per_share: keyMetrics?.bookValuePerShare,
+            tangible_book_value_per_share: keyMetrics?.tangibleBookValuePerShare,
+            fcf_per_share: keyMetrics?.freeCashFlowPerShare,
+            operating_cash_flow_per_share: keyMetrics?.operatingCashFlowPerShare,
+            revenue_per_share: keyMetrics?.revenuePerShare,
+            net_income_per_share: keyMetrics?.netIncomePerShare,
+            shareholders_equity_per_share: keyMetrics?.shareholdersEquityPerShare,
+            interest_debt_per_share: keyMetrics?.interestDebtPerShare,
+            capex_per_share: keyMetrics?.capexPerShare,
+            capex_to_operating_cash_flow: keyMetrics?.capexToOperatingCashFlow,
+            capex_to_revenue: keyMetrics?.capexToRevenue,
+            capex_to_depreciation: keyMetrics?.capexToDepreciation,
+            stock_based_compensation_to_revenue: keyMetrics?.stockBasedCompensationToRevenue,
+            earnings_yield: keyMetrics?.earningsYield,
+            fcf_yield: keyMetrics?.freeCashFlowYield,
+            debt_to_market_cap: keyMetrics?.debtToMarketCap,
+            payables_period: keyMetrics?.payablesTurnover,
+            receivables_period: keyMetrics?.receivablesTurnover,
+            inventory_period: keyMetrics?.inventoryTurnover,
+            sales_general_and_administrative_to_revenue: keyMetrics?.salesGeneralAndAdministrativeToRevenue,
+            research_and_development_to_revenue: keyMetrics?.researchAndDdevelopementToRevenue,
+            intangibles_to_total_assets: keyMetrics?.intangiblesToTotalAssets,
+            dividend_paid_and_capex_coverage_ratio: keyMetrics?.dividendPaidAndCapexCoverageRatio,
+            price_fair_value: keyMetrics?.priceFairValue,
+
+            // Financial Ratios
+            current_ratio: ratios?.currentRatio,
+            quick_ratio: ratios?.quickRatio,
+            cash_ratio: ratios?.cashRatio,
+            debt_to_equity: ratios?.debtEquityRatio,
+            debt_to_assets: ratios?.debtRatio,
+            interest_coverage: ratios?.interestCoverage,
+            gross_profit_margin: ratios?.grossProfitMargin,
+            operating_profit_margin: ratios?.operatingProfitMargin,
+            net_profit_margin: ratios?.netProfitMargin,
+            ebit_margin: ratios?.ebitPerRevenue,
+            ebitda_margin: ratios?.ebitdaMargin,
+            pretax_profit_margin: ratios?.pretaxProfitMargin,
+            asset_turnover: ratios?.assetTurnover,
+            inventory_turnover: ratios?.inventoryTurnover,
+            receivables_turnover: ratios?.receivablesTurnover,
+            days_sales_outstanding: ratios?.daysOfSalesOutstanding,
+            days_inventory_outstanding: ratios?.daysOfInventoryOnHand,
+            days_payables_outstanding: ratios?.daysOfPayablesOutstanding,
+            cash_conversion_cycle: ratios?.cashConversionCycle,
+            payout_ratio: ratios?.payoutRatio,
+            dividend_per_share: ratios?.dividendPerShare,
+            effective_tax_rate: ratios?.effectiveTaxRate,
+            free_cash_flow_per_share_ratio: ratios?.freeCashFlowPerShare,
+            price_to_book_ratio: ratios?.priceBookValueRatio,
+            price_to_sales_ratio: ratios?.priceToSalesRatio,
+            price_earnings_ratio: ratios?.priceEarningsRatio,
+            price_to_free_cash_flows_ratio: ratios?.priceToFreeCashFlowsRatio,
+            price_to_operating_cash_flows_ratio: ratios?.priceToOperatingCashFlowsRatio,
+            cash_per_share_ratio: ratios?.cashPerShare,
+            operating_cash_flow_sales_ratio: ratios?.operatingCashFlowSalesRatio,
+            free_cash_flow_operating_cash_flow_ratio: ratios?.freeCashFlowOperatingCashFlowRatio,
+            short_term_coverage_ratios: ratios?.shortTermCoverageRatios,
+            capital_expenditure_coverage_ratio: ratios?.capitalExpenditureCoverageRatio,
+            dividend_payments_coverage_ratio: ratios?.dividendPayoutRatio,
+            price_earnings_to_growth_ratio: ratios?.priceEarningsToGrowthRatio,
+            price_sales_ratio_ttm: ratios?.priceToSalesRatio,
+            ebit_per_revenue: ratios?.ebitPerRevenue,
+            operating_cycle: ratios?.operatingCycle,
+            days_of_inventory_outstanding_ratio: ratios?.daysOfInventoryOutstanding,
+            days_of_payables_outstanding_ratio: ratios?.daysOfPayablesOutstanding,
+            days_of_sales_outstanding_ratio: ratios?.daysOfSalesOutstanding,
+            fixed_asset_turnover: ratios?.fixedAssetTurnover,
+            total_asset_turnover: ratios?.totalAssetTurnover,
+            company_equity_multiplier: ratios?.companyEquityMultiplier,
+            cash_flow_to_debt_ratio: ratios?.cashFlowToDebtRatio,
+            total_debt_to_capitalization: ratios?.totalDebtToCapitalization,
+            long_term_debt_to_capitalization: ratios?.longTermDebtToCapitalization,
+            return_on_invested_capital: ratios?.returnOnCapitalEmployed,
+            return_on_capital_employed: ratios?.returnOnCapitalEmployed,
+
+            // Raw data storage
+            raw_key_metrics: keyMetrics || null,
+            raw_ratios: ratios || null,
           }
 
           records.push(record)
