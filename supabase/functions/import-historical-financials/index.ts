@@ -218,9 +218,27 @@ serve(async (req) => {
           fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/ratios/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${stock.symbol}?apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/ratios-ttm/${stock.symbol}?apikey=${fmpApiKey}`).then(r => r.json()),
         ])
+
+        // Log API responses for debugging
+        console.log(`  📊 API Data Summary for ${stock.symbol}:`)
+        console.log(`     - Income Q: ${Array.isArray(incomeQ) ? incomeQ.length : 0} records`)
+        console.log(`     - Balance Q: ${Array.isArray(balanceQ) ? balanceQ.length : 0} records`)
+        console.log(`     - Cashflow Q: ${Array.isArray(cashflowQ) ? cashflowQ.length : 0} records`)
+        console.log(`     - Key Metrics Q: ${Array.isArray(keyMetricsQ) ? keyMetricsQ.length : 0} records`)
+        console.log(`     - Ratios Q: ${Array.isArray(ratiosQ) ? ratiosQ.length : 0} records`)
+        console.log(`     - Key Metrics TTM: ${Array.isArray(keyMetricsTTM) ? keyMetricsTTM.length : (keyMetricsTTM ? 'object' : 'null')}`)
+        console.log(`     - Ratios TTM: ${Array.isArray(ratiosTTM) ? ratiosTTM.length : (ratiosTTM ? 'object' : 'null')}`)
+        
+        // Check if key metrics and ratios are empty
+        if ((!Array.isArray(keyMetricsQ) || keyMetricsQ.length === 0) && (!keyMetricsTTM || (Array.isArray(keyMetricsTTM) && keyMetricsTTM.length === 0))) {
+          console.warn(`  ⚠️ No key metrics data found for ${stock.symbol}`)
+        }
+        if ((!Array.isArray(ratiosQ) || ratiosQ.length === 0) && (!ratiosTTM || (Array.isArray(ratiosTTM) && ratiosTTM.length === 0))) {
+          console.warn(`  ⚠️ No ratios data found for ${stock.symbol}`)
+        }
 
         // Fetch company profile for beta, market cap and full time employees
         const profileResponse = await fetch(`https://financialmodelingprep.com/api/v3/profile/${stock.symbol}?apikey=${fmpApiKey}`)
@@ -231,11 +249,27 @@ serve(async (req) => {
         const fullTimeEmployees = companyProfile?.fullTimeEmployees || null
 
         // Merge all data
-        const allIncome = [...(Array.isArray(incomeQ) ? incomeQ : []), ...(Array.isArray(incomeTTM) ? incomeTTM : [])]
-        const allBalance = [...(Array.isArray(balanceQ) ? balanceQ : []), ...(Array.isArray(balanceTTM) ? balanceTTM : [])]
-        const allCashflow = [...(Array.isArray(cashflowQ) ? cashflowQ : []), ...(Array.isArray(cashflowTTM) ? cashflowTTM : [])]
-        const allKeyMetrics = [...(Array.isArray(keyMetricsQ) ? keyMetricsQ : []), ...(Array.isArray(keyMetricsTTM) ? keyMetricsTTM : [])]
-        const allRatios = [...(Array.isArray(ratiosQ) ? ratiosQ : []), ...(Array.isArray(ratiosTTM) ? ratiosTTM : [])]
+        // TTM endpoints return a single object, not an array, so we need to wrap them
+        const allIncome = [
+          ...(Array.isArray(incomeQ) ? incomeQ : []), 
+          ...(Array.isArray(incomeTTM) ? incomeTTM : (incomeTTM && typeof incomeTTM === 'object' ? [incomeTTM] : []))
+        ]
+        const allBalance = [
+          ...(Array.isArray(balanceQ) ? balanceQ : []), 
+          ...(Array.isArray(balanceTTM) ? balanceTTM : (balanceTTM && typeof balanceTTM === 'object' ? [balanceTTM] : []))
+        ]
+        const allCashflow = [
+          ...(Array.isArray(cashflowQ) ? cashflowQ : []), 
+          ...(Array.isArray(cashflowTTM) ? cashflowTTM : (cashflowTTM && typeof cashflowTTM === 'object' ? [cashflowTTM] : []))
+        ]
+        const allKeyMetrics = [
+          ...(Array.isArray(keyMetricsQ) ? keyMetricsQ : []), 
+          ...(Array.isArray(keyMetricsTTM) ? keyMetricsTTM : (keyMetricsTTM && typeof keyMetricsTTM === 'object' ? [keyMetricsTTM] : []))
+        ]
+        const allRatios = [
+          ...(Array.isArray(ratiosQ) ? ratiosQ : []), 
+          ...(Array.isArray(ratiosTTM) ? ratiosTTM : (ratiosTTM && typeof ratiosTTM === 'object' ? [ratiosTTM] : []))
+        ]
 
         if (allIncome.length === 0) {
           console.warn(`  ⚠️ No financial data found for ${stock.symbol}`)
