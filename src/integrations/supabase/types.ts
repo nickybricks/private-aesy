@@ -1551,6 +1551,8 @@ export type Database = {
           company_name: string | null
           created_at: string
           currency: string
+          current_price_eur: number | null
+          current_price_usd: number | null
           current_ratio: number | null
           debt_growth_3y_cagr: number | null
           debt_growth_5y_cagr: number | null
@@ -1608,6 +1610,7 @@ export type Database = {
           net_income_profitable_10years: number | null
           net_income_profitable_20years: number | null
           net_income_usd: number | null
+          operating_cash_flow_per_share: number | null
           operating_margin: number | null
           p_fcf_ratio: number | null
           p_ocf_ratio: number | null
@@ -1625,11 +1628,15 @@ export type Database = {
           price_change_6m: number | null
           price_change_max: number | null
           price_change_ytd: number | null
+          price_updated_at: string | null
           profit_margin: number | null
           profits_per_employee: number | null
           ps_ratio: number | null
           quick_ratio: number | null
+          revenue_eur: number | null
+          revenue_orig: number | null
           revenue_per_employee: number | null
+          revenue_usd: number | null
           rnd_expenses_eur: number | null
           rnd_expenses_orig: number | null
           rnd_expenses_usd: number | null
@@ -1646,6 +1653,7 @@ export type Database = {
           tax_to_revenue_ratio: number | null
           tbvps: number | null
           updated_at: string
+          weighted_avg_shares_dil: number | null
           working_capital: number | null
           working_capital_turnover: number | null
         }
@@ -1656,6 +1664,8 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           currency: string
+          current_price_eur?: number | null
+          current_price_usd?: number | null
           current_ratio?: number | null
           debt_growth_3y_cagr?: number | null
           debt_growth_5y_cagr?: number | null
@@ -1713,6 +1723,7 @@ export type Database = {
           net_income_profitable_10years?: number | null
           net_income_profitable_20years?: number | null
           net_income_usd?: number | null
+          operating_cash_flow_per_share?: number | null
           operating_margin?: number | null
           p_fcf_ratio?: number | null
           p_ocf_ratio?: number | null
@@ -1730,11 +1741,15 @@ export type Database = {
           price_change_6m?: number | null
           price_change_max?: number | null
           price_change_ytd?: number | null
+          price_updated_at?: string | null
           profit_margin?: number | null
           profits_per_employee?: number | null
           ps_ratio?: number | null
           quick_ratio?: number | null
+          revenue_eur?: number | null
+          revenue_orig?: number | null
           revenue_per_employee?: number | null
+          revenue_usd?: number | null
           rnd_expenses_eur?: number | null
           rnd_expenses_orig?: number | null
           rnd_expenses_usd?: number | null
@@ -1751,6 +1766,7 @@ export type Database = {
           tax_to_revenue_ratio?: number | null
           tbvps?: number | null
           updated_at?: string
+          weighted_avg_shares_dil?: number | null
           working_capital?: number | null
           working_capital_turnover?: number | null
         }
@@ -1761,6 +1777,8 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           currency?: string
+          current_price_eur?: number | null
+          current_price_usd?: number | null
           current_ratio?: number | null
           debt_growth_3y_cagr?: number | null
           debt_growth_5y_cagr?: number | null
@@ -1818,6 +1836,7 @@ export type Database = {
           net_income_profitable_10years?: number | null
           net_income_profitable_20years?: number | null
           net_income_usd?: number | null
+          operating_cash_flow_per_share?: number | null
           operating_margin?: number | null
           p_fcf_ratio?: number | null
           p_ocf_ratio?: number | null
@@ -1835,11 +1854,15 @@ export type Database = {
           price_change_6m?: number | null
           price_change_max?: number | null
           price_change_ytd?: number | null
+          price_updated_at?: string | null
           profit_margin?: number | null
           profits_per_employee?: number | null
           ps_ratio?: number | null
           quick_ratio?: number | null
+          revenue_eur?: number | null
+          revenue_orig?: number | null
           revenue_per_employee?: number | null
+          revenue_usd?: number | null
           rnd_expenses_eur?: number | null
           rnd_expenses_orig?: number | null
           rnd_expenses_usd?: number | null
@@ -1856,6 +1879,7 @@ export type Database = {
           tax_to_revenue_ratio?: number | null
           tbvps?: number | null
           updated_at?: string
+          weighted_avg_shares_dil?: number | null
           working_capital?: number | null
           working_capital_turnover?: number | null
         }
