@@ -213,13 +213,13 @@ serve(async (req) => {
           fetch(`https://financialmodelingprep.com/api/v3/ratios/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
         ])
 
-        // Fetch TTM data
-        const [incomeTTM, balanceTTM, cashflowTTM, keyMetricsTTM, ratiosTTM] = await Promise.all([
-          fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=ttm&apikey=${fmpApiKey}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${stock.symbol}?apikey=${fmpApiKey}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/ratios-ttm/${stock.symbol}?apikey=${fmpApiKey}`).then(r => r.json()),
+        // Fetch yearly (annual) data
+        const [incomeY, balanceY, cashflowY, keyMetricsY, ratiosY] = await Promise.all([
+          fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/ratios/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
         ])
 
         // Log API responses for debugging
@@ -229,28 +229,17 @@ serve(async (req) => {
         console.log(`     - Cashflow Q: ${Array.isArray(cashflowQ) ? cashflowQ.length : 0} records`)
         console.log(`     - Key Metrics Q: ${Array.isArray(keyMetricsQ) ? keyMetricsQ.length : 0} records`)
         console.log(`     - Ratios Q: ${Array.isArray(ratiosQ) ? ratiosQ.length : 0} records`)
-        console.log(`     - Income TTM: ${Array.isArray(incomeTTM) ? incomeTTM.length : (incomeTTM ? 'object' : 'null')}`)
-        console.log(`     - Key Metrics TTM: ${Array.isArray(keyMetricsTTM) ? keyMetricsTTM.length : (keyMetricsTTM ? 'object' : 'null')}`)
-        console.log(`     - Ratios TTM: ${Array.isArray(ratiosTTM) ? ratiosTTM.length : (ratiosTTM ? 'object' : 'null')}`)
-        
-        // Debug: Log TTM data structure
-        if (keyMetricsTTM && !Array.isArray(keyMetricsTTM)) {
-          console.log(`  🔍 Key Metrics TTM structure:`, JSON.stringify(keyMetricsTTM).substring(0, 300))
-          console.log(`  🔍 Has date? ${keyMetricsTTM.date}, Has period? ${keyMetricsTTM.period}`)
-        }
-        if (ratiosTTM && !Array.isArray(ratiosTTM)) {
-          console.log(`  🔍 Ratios TTM structure:`, JSON.stringify(ratiosTTM).substring(0, 300))
-          console.log(`  🔍 Has date? ${ratiosTTM.date}, Has period? ${ratiosTTM.period}`)
-        }
-        if (Array.isArray(incomeTTM) && incomeTTM.length > 0) {
-          console.log(`  🔍 Income TTM has: date=${incomeTTM[0].date}, period=${incomeTTM[0].period}`)
-        }
+        console.log(`     - Income Y: ${Array.isArray(incomeY) ? incomeY.length : 0} records`)
+        console.log(`     - Balance Y: ${Array.isArray(balanceY) ? balanceY.length : 0} records`)
+        console.log(`     - Cashflow Y: ${Array.isArray(cashflowY) ? cashflowY.length : 0} records`)
+        console.log(`     - Key Metrics Y: ${Array.isArray(keyMetricsY) ? keyMetricsY.length : 0} records`)
+        console.log(`     - Ratios Y: ${Array.isArray(ratiosY) ? ratiosY.length : 0} records`)
         
         // Check if key metrics and ratios are empty
-        if ((!Array.isArray(keyMetricsQ) || keyMetricsQ.length === 0) && (!keyMetricsTTM || (Array.isArray(keyMetricsTTM) && keyMetricsTTM.length === 0))) {
+        if ((!Array.isArray(keyMetricsQ) || keyMetricsQ.length === 0) && (!Array.isArray(keyMetricsY) || keyMetricsY.length === 0)) {
           console.warn(`  ⚠️ No key metrics data found for ${stock.symbol}`)
         }
-        if ((!Array.isArray(ratiosQ) || ratiosQ.length === 0) && (!ratiosTTM || (Array.isArray(ratiosTTM) && ratiosTTM.length === 0))) {
+        if ((!Array.isArray(ratiosQ) || ratiosQ.length === 0) && (!Array.isArray(ratiosY) || ratiosY.length === 0)) {
           console.warn(`  ⚠️ No ratios data found for ${stock.symbol}`)
         }
 
@@ -270,49 +259,23 @@ serve(async (req) => {
         ]
         const allBalance = [
           ...(Array.isArray(balanceQ) ? balanceQ : []), 
-          ...(Array.isArray(balanceTTM) ? balanceTTM : (balanceTTM && typeof balanceTTM === 'object' ? [balanceTTM] : []))
+          ...(Array.isArray(balanceY) ? balanceY : [])
         ]
         const allCashflow = [
           ...(Array.isArray(cashflowQ) ? cashflowQ : []), 
-          ...(Array.isArray(cashflowTTM) ? cashflowTTM : (cashflowTTM && typeof cashflowTTM === 'object' ? [cashflowTTM] : []))
+          ...(Array.isArray(cashflowY) ? cashflowY : [])
         ]
-        
-        // IMPORTANT: key-metrics-ttm and ratios-ttm don't have date/period fields
-        // We need to add them from the TTM income statement data
-        let ttmDate = null
-        let ttmPeriod = null
-        if (Array.isArray(incomeTTM) && incomeTTM.length > 0) {
-          ttmDate = incomeTTM[0].date
-          ttmPeriod = incomeTTM[0].period
-        }
-        
-        // Wrap TTM key metrics and ratios and add date/period if missing
-        const wrappedKeyMetricsTTM = keyMetricsTTM && typeof keyMetricsTTM === 'object' && !Array.isArray(keyMetricsTTM)
-          ? [{
-              ...keyMetricsTTM,
-              date: keyMetricsTTM.date || ttmDate,
-              period: keyMetricsTTM.period || ttmPeriod
-            }]
-          : (Array.isArray(keyMetricsTTM) ? keyMetricsTTM : [])
-          
-        const wrappedRatiosTTM = ratiosTTM && typeof ratiosTTM === 'object' && !Array.isArray(ratiosTTM)
-          ? [{
-              ...ratiosTTM,
-              date: ratiosTTM.date || ttmDate,
-              period: ratiosTTM.period || ttmPeriod
-            }]
-          : (Array.isArray(ratiosTTM) ? ratiosTTM : [])
         
         const allKeyMetrics = [
           ...(Array.isArray(keyMetricsQ) ? keyMetricsQ : []), 
-          ...wrappedKeyMetricsTTM
+          ...(Array.isArray(keyMetricsY) ? keyMetricsY : [])
         ]
         const allRatios = [
           ...(Array.isArray(ratiosQ) ? ratiosQ : []), 
-          ...wrappedRatiosTTM
+          ...(Array.isArray(ratiosY) ? ratiosY : [])
         ]
         
-        console.log(`  🔧 After wrapping: Key Metrics=${allKeyMetrics.length}, Ratios=${allRatios.length}, TTM date=${ttmDate}, period=${ttmPeriod}`)
+        console.log(`  🔧 Merged data: Income=${allIncome.length}, Balance=${allBalance.length}, Cashflow=${allCashflow.length}, KeyMetrics=${allKeyMetrics.length}, Ratios=${allRatios.length}`)
 
         if (allIncome.length === 0) {
           console.warn(`  ⚠️ No financial data found for ${stock.symbol}`)
