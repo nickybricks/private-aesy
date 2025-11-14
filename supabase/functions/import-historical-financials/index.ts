@@ -251,11 +251,10 @@ serve(async (req) => {
         const marketCap = companyProfile?.mktCap || null
         const fullTimeEmployees = companyProfile?.fullTimeEmployees || null
 
-        // Merge all data
-        // TTM endpoints return a single object, not an array, so we need to wrap them
+        // Merge all data (quarterly + yearly)
         const allIncome = [
           ...(Array.isArray(incomeQ) ? incomeQ : []), 
-          ...(Array.isArray(incomeTTM) ? incomeTTM : (incomeTTM && typeof incomeTTM === 'object' ? [incomeTTM] : []))
+          ...(Array.isArray(incomeY) ? incomeY : [])
         ]
         const allBalance = [
           ...(Array.isArray(balanceQ) ? balanceQ : []), 
@@ -269,6 +268,10 @@ serve(async (req) => {
         const allKeyMetrics = [
           ...(Array.isArray(keyMetricsQ) ? keyMetricsQ : []), 
           ...(Array.isArray(keyMetricsY) ? keyMetricsY : [])
+        ]
+        const allRatios = [
+          ...(Array.isArray(ratiosQ) ? ratiosQ : []), 
+          ...(Array.isArray(ratiosY) ? ratiosY : [])
         ]
         const allRatios = [
           ...(Array.isArray(ratiosQ) ? ratiosQ : []), 
