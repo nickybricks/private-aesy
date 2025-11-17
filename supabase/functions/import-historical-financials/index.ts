@@ -572,10 +572,10 @@ serve(async (req) => {
             ev_to_ebitda: keyMetrics?.evToEbitda,
             ev_to_sales: keyMetrics?.evToSales,
             ev_to_operating_cash_flow: keyMetrics?.evToOperatingCashFlow,
-            roic: keyMetrics?.roic,
-            roce: keyMetrics?.roce,
-            roa: keyMetrics?.returnOnTangibleAssets,
-            roe: keyMetrics?.roe,
+            roic: keyMetrics?.returnOnInvestedCapital,
+            roce: keyMetrics?.returnOnCapitalEmployed,
+            roa: keyMetrics?.returnOnAssets,
+            roe: keyMetrics?.returnOnEquity,
             net_debt_to_ebitda: keyMetrics?.netDebtToEBITDA,
             dividend_yield: keyMetrics?.dividendYield,
             book_value_per_share: keyMetrics?.bookValuePerShare,
@@ -670,7 +670,7 @@ serve(async (req) => {
             .from('financial_statements')
             .upsert(batch, { 
               onConflict: 'stock_id,date,period',
-              ignoreDuplicates: true 
+              ignoreDuplicates: false  // Update existing records
             })
 
           if (insertError) {
