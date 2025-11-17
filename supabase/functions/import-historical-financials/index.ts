@@ -133,12 +133,17 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     
     // Handle both testMode and testmode (case-insensitive)
-    const testMode = body.testMode || body.testmode || false
+    let testMode = body.testMode || body.testmode || false
     
     // Handle both testSymbol (singular) and testSymbols (plural)
     let testSymbol = body.testSymbol || body.testSymbols || null
     if (Array.isArray(testSymbol) && testSymbol.length > 0) {
       testSymbol = testSymbol[0] // Use first symbol if array provided
+    }
+    
+    // Auto-enable test mode if testSymbol is provided
+    if (testSymbol) {
+      testMode = true
     }
 
     const supabase = createClient(
@@ -275,6 +280,14 @@ serve(async (req) => {
         ]
         
         console.log(`  🔧 Merged data: Income=${allIncome.length}, Balance=${allBalance.length}, Cashflow=${allCashflow.length}, KeyMetrics=${allKeyMetrics.length}, Ratios=${allRatios.length}`)
+        
+        // Debug: Log first keyMetric and ratio to see available fields
+        if (allKeyMetrics.length > 0) {
+          console.log(`  🔍 Sample KeyMetric fields:`, JSON.stringify(allKeyMetrics[0], null, 2).substring(0, 500))
+        }
+        if (allRatios.length > 0) {
+          console.log(`  🔍 Sample Ratio fields:`, JSON.stringify(allRatios[0], null, 2).substring(0, 500))
+        }
 
         if (allIncome.length === 0) {
           console.warn(`  ⚠️ No financial data found for ${stock.symbol}`)
