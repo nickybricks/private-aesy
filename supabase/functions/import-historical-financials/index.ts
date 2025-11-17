@@ -214,8 +214,8 @@ serve(async (req) => {
           fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/ratios/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/stable/key-metrics?symbol=${stock.symbol}&period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/stable/ratios?symbol=${stock.symbol}&period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
         ])
 
         // Fetch yearly (annual) data
@@ -223,8 +223,8 @@ serve(async (req) => {
           fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
-          fetch(`https://financialmodelingprep.com/api/v3/ratios/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/stable/key-metrics?symbol=${stock.symbol}&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/stable/ratios?symbol=${stock.symbol}&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
         ])
 
         // Log API responses for debugging
@@ -281,12 +281,30 @@ serve(async (req) => {
         
         console.log(`  🔧 Merged data: Income=${allIncome.length}, Balance=${allBalance.length}, Cashflow=${allCashflow.length}, KeyMetrics=${allKeyMetrics.length}, Ratios=${allRatios.length}`)
         
-        // Debug: Log first keyMetric and ratio to see available fields
-        if (allKeyMetrics.length > 0) {
-          console.log(`  🔍 Sample KeyMetric fields:`, JSON.stringify(allKeyMetrics[0], null, 2).substring(0, 500))
+        // Debug: Log quarterly vs yearly data differences
+        const kmQ = allKeyMetrics.find(km => km.period && km.period.toLowerCase().includes('q'))
+        const kmY = allKeyMetrics.find(km => km.period && (km.period.toLowerCase() === 'fy' || !km.period.toLowerCase().includes('q')))
+        
+        if (kmQ) {
+          console.log(`  🔍 Quarterly KeyMetric fields:`, {
+            date: kmQ.date,
+            period: kmQ.period,
+            returnOnAssets: kmQ.returnOnAssets,
+            returnOnEquity: kmQ.returnOnEquity,
+            returnOnInvestedCapital: kmQ.returnOnInvestedCapital,
+            returnOnCapitalEmployed: kmQ.returnOnCapitalEmployed
+          })
         }
-        if (allRatios.length > 0) {
-          console.log(`  🔍 Sample Ratio fields:`, JSON.stringify(allRatios[0], null, 2).substring(0, 500))
+        
+        if (kmY) {
+          console.log(`  🔍 Yearly KeyMetric fields:`, {
+            date: kmY.date,
+            period: kmY.period,
+            returnOnAssets: kmY.returnOnAssets,
+            returnOnEquity: kmY.returnOnEquity,
+            returnOnInvestedCapital: kmY.returnOnInvestedCapital,
+            returnOnCapitalEmployed: kmY.returnOnCapitalEmployed
+          })
         }
 
         if (allIncome.length === 0) {
