@@ -273,10 +273,6 @@ serve(async (req) => {
           ...(Array.isArray(ratiosQ) ? ratiosQ : []), 
           ...(Array.isArray(ratiosY) ? ratiosY : [])
         ]
-        const allRatios = [
-          ...(Array.isArray(ratiosQ) ? ratiosQ : []), 
-          ...(Array.isArray(ratiosY) ? ratiosY : [])
-        ]
         
         console.log(`  🔧 Merged data: Income=${allIncome.length}, Balance=${allBalance.length}, Cashflow=${allCashflow.length}, KeyMetrics=${allKeyMetrics.length}, Ratios=${allRatios.length}`)
 
