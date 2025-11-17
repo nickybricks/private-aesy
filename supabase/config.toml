@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.calculate-precomputed-metrics]
 verify_jwt = false
+
+[functions.delete-financial-statements]
+verify_jwt = false
