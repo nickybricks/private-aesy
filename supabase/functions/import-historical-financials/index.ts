@@ -373,6 +373,7 @@ serve(async (req) => {
 
         // Process and insert data
         const records = []
+        console.log(`  🔧 Starting to process ${dataByDatePeriod.size} date/period combinations...`)
 
         for (const [key, data] of dataByDatePeriod) {
           const { income, balance, cashflow, keyMetrics, ratios, date, period, reportedCurrency } = data
@@ -663,10 +664,16 @@ serve(async (req) => {
           records.push(record)
         }
 
+        console.log(`  ✅ Finished processing ${records.length} records, starting database insert...`)
+        
         // Insert in batches of 100
         const batchSize = 100
         for (let i = 0; i < records.length; i += batchSize) {
           const batch = records.slice(i, i + batchSize)
+          const batchNum = Math.floor(i/batchSize) + 1
+          const totalBatches = Math.ceil(records.length/batchSize)
+          console.log(`  📦 Inserting batch ${batchNum}/${totalBatches} (${batch.length} records)...`)
+          
           const { error: insertError } = await supabase
             .from('financial_statements')
             .upsert(batch, { 
@@ -675,10 +682,11 @@ serve(async (req) => {
             })
 
           if (insertError) {
-            console.error(`  ❌ Error inserting batch for ${stock.symbol}:`, insertError.message)
-            errors.push(`${stock.symbol}: ${insertError.message}`)
+            console.error(`  ❌ Error inserting batch ${batchNum} for ${stock.symbol}:`, insertError.message)
+            errors.push(`${stock.symbol} batch ${batchNum}: ${insertError.message}`)
           } else {
             totalInserted += batch.length
+            console.log(`  ✅ Batch ${batchNum} inserted successfully (${totalInserted}/${records.length} total)`)
           }
         }
 
