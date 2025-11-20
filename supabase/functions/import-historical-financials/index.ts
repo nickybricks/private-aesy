@@ -381,6 +381,7 @@ serve(async (req) => {
           if (!date) continue
 
           // Extract original values from financial statements
+          // Income Statement - Basic fields
           const revenue_orig = income?.revenue
           const ebitda_orig = income?.ebitda
           const ebit_orig = income?.operatingIncome
@@ -393,7 +394,24 @@ serve(async (req) => {
           const other_adjustments_net_income_orig = income?.otherAdjustmentsToNetIncome
           const research_and_development_expenses_orig = income?.researchAndDevelopmentExpenses
           const total_other_income_expenses_net_orig = income?.totalOtherIncomeExpensesNet
+          
+          // Income Statement - New comprehensive fields
+          const cost_of_revenue_orig = income?.costOfRevenue
+          const gross_profit_orig = income?.grossProfit
+          const operating_expenses_orig = income?.operatingExpenses
+          const selling_general_and_administrative_expenses_orig = income?.sellingGeneralAndAdministrativeExpenses
+          const interest_income_orig = income?.interestIncome
+          const net_interest_income_orig = income?.netInterestIncome
+          const weighted_average_shs_out = income?.weightedAverageShsOut
+          const eps_basic = income?.eps
+          
+          // Income Statement - Metadata (no currency conversion needed)
+          const cik = income?.cik
+          const filing_date = income?.filingDate
+          const accepted_date = income?.acceptedDate
+          const fiscal_year = income?.fiscalYear
 
+          // Balance Sheet - Existing fields
           const total_current_assets_orig = balance?.totalCurrentAssets
           const total_assets_orig = balance?.totalAssets
           const total_current_liabilities_orig = balance?.totalCurrentLiabilities
@@ -401,11 +419,70 @@ serve(async (req) => {
           const total_stockholders_equity_orig = balance?.totalStockholdersEquity
           const cash_and_equivalents_orig = balance?.cashAndCashEquivalents
           const intangible_assets_orig = balance?.intangibleAssets
+          
+          // Balance Sheet - New comprehensive fields
+          const short_term_investments_orig = balance?.shortTermInvestments
+          const cash_and_short_term_investments_orig = balance?.cashAndShortTermInvestments
+          const net_receivables_orig = balance?.netReceivables
+          const accounts_receivable_orig = balance?.accountsReceivables
+          const inventory_orig = balance?.inventory
+          const other_current_assets_orig = balance?.otherCurrentAssets
+          const property_plant_equipment_net_orig = balance?.propertyPlantEquipmentNet
+          const goodwill_orig = balance?.goodwill
+          const long_term_investments_orig = balance?.longTermInvestments
+          const total_non_current_assets_orig = balance?.totalNonCurrentAssets
+          const accounts_payable_orig = balance?.accountPayables
+          const short_term_debt_orig = balance?.shortTermDebt
+          const long_term_debt_orig = balance?.longTermDebt
+          const other_current_liabilities_orig = balance?.otherCurrentLiabilities
+          const total_non_current_liabilities_orig = balance?.totalNonCurrentLiabilities
+          const total_liabilities_orig = balance?.totalLiabilities
+          const deferred_revenue_current_orig = balance?.deferredRevenue
+          const deferred_revenue_non_current_orig = balance?.deferredRevenueNonCurrent
+          const retained_earnings_orig = balance?.retainedEarnings
+          const common_stock_orig = balance?.commonStock
+          const accumulated_other_comprehensive_income_loss_orig = balance?.accumulatedOtherComprehensiveIncomeLoss
+          const treasury_stock_orig = balance?.treasuryStock
+          const preferred_stock_orig = balance?.preferredStock
+          const minority_interest_orig = balance?.minorityInterest
+          const net_debt_orig = balance?.netDebt
+          const total_investments_orig = balance?.totalInvestments
 
+          // Cash Flow Statement - Existing fields
           const operating_cash_flow_orig = cashflow?.operatingCashFlow
           const capital_expenditure_orig = cashflow?.capitalExpenditure
           const free_cash_flow_orig = cashflow?.freeCashFlow
           const dividends_paid_orig = cashflow?.commonStockDividendsPaid || cashflow?.dividendsPaid
+          
+          // Cash Flow Statement - New comprehensive fields
+          const depreciation_and_amortization_cf_orig = cashflow?.depreciationAndAmortization
+          const stock_based_compensation_orig = cashflow?.stockBasedCompensation
+          const change_in_working_capital_orig = cashflow?.changeInWorkingCapital
+          const accounts_receivables_change_orig = cashflow?.accountsReceivables
+          const inventory_change_orig = cashflow?.inventory
+          const accounts_payables_change_orig = cashflow?.accountsPayables
+          const other_working_capital_change_orig = cashflow?.otherWorkingCapital
+          const deferred_income_tax_orig = cashflow?.deferredIncomeTax
+          const other_non_cash_items_orig = cashflow?.otherNonCashItems
+          const investments_in_ppe_orig = cashflow?.investmentsInPropertyPlantAndEquipment
+          const acquisitions_net_orig = cashflow?.acquisitionsNet
+          const purchases_of_investments_orig = cashflow?.purchasesOfInvestments
+          const sales_maturities_of_investments_orig = cashflow?.salesMaturitiesOfInvestments
+          const other_investing_activities_orig = cashflow?.otherInvestingActivities
+          const net_debt_issuance_orig = cashflow?.netDebtIssuance
+          const long_term_net_debt_issuance_orig = cashflow?.longTermNetDebtIssuance
+          const short_term_net_debt_issuance_orig = cashflow?.shortTermNetDebtIssuance
+          const common_stock_repurchased_orig = cashflow?.commonStockRepurchased
+          const common_stock_issuance_orig = cashflow?.commonStockIssuance
+          const net_common_stock_issuance_orig = cashflow?.netCommonStockIssuance
+          const net_preferred_stock_issuance_orig = cashflow?.netPreferredStockIssuance
+          const other_financing_activities_orig = cashflow?.otherFinancingActivities
+          const effect_of_forex_changes_on_cash_orig = cashflow?.effectOfForexChangesOnCash
+          const cash_at_beginning_orig = cashflow?.cashAtBeginningOfPeriod
+          const cash_at_end_orig = cashflow?.cashAtEndOfPeriod
+          const net_change_in_cash_orig = cashflow?.netChangeInCash
+          const income_taxes_paid_orig = cashflow?.incomeTaxesPaid
+          const interest_paid_orig = cashflow?.interestPaid
 
           // Extract Key Metrics values (original currency)
           const graham_number_orig = keyMetrics?.grahamNumber
@@ -436,6 +513,72 @@ serve(async (req) => {
           const research_and_development_expenses_converted = await convertValueToMultipleCurrencies(supabase, research_and_development_expenses_orig, reportedCurrency, date)
           const total_other_income_expenses_net_converted = await convertValueToMultipleCurrencies(supabase, total_other_income_expenses_net_orig, reportedCurrency, date)
           const intangible_assets_converted = await convertValueToMultipleCurrencies(supabase, intangible_assets_orig, reportedCurrency, date)
+          
+          // Income Statement - New fields currency conversion
+          const cost_of_revenue_converted = await convertValueToMultipleCurrencies(supabase, cost_of_revenue_orig, reportedCurrency, date)
+          const gross_profit_converted = await convertValueToMultipleCurrencies(supabase, gross_profit_orig, reportedCurrency, date)
+          const operating_expenses_converted = await convertValueToMultipleCurrencies(supabase, operating_expenses_orig, reportedCurrency, date)
+          const selling_general_and_administrative_expenses_converted = await convertValueToMultipleCurrencies(supabase, selling_general_and_administrative_expenses_orig, reportedCurrency, date)
+          const interest_income_converted = await convertValueToMultipleCurrencies(supabase, interest_income_orig, reportedCurrency, date)
+          const net_interest_income_converted = await convertValueToMultipleCurrencies(supabase, net_interest_income_orig, reportedCurrency, date)
+          
+          // Balance Sheet - New fields currency conversion
+          const short_term_investments_converted = await convertValueToMultipleCurrencies(supabase, short_term_investments_orig, reportedCurrency, date)
+          const cash_and_short_term_investments_converted = await convertValueToMultipleCurrencies(supabase, cash_and_short_term_investments_orig, reportedCurrency, date)
+          const net_receivables_converted = await convertValueToMultipleCurrencies(supabase, net_receivables_orig, reportedCurrency, date)
+          const accounts_receivable_converted = await convertValueToMultipleCurrencies(supabase, accounts_receivable_orig, reportedCurrency, date)
+          const inventory_converted = await convertValueToMultipleCurrencies(supabase, inventory_orig, reportedCurrency, date)
+          const other_current_assets_converted = await convertValueToMultipleCurrencies(supabase, other_current_assets_orig, reportedCurrency, date)
+          const property_plant_equipment_net_converted = await convertValueToMultipleCurrencies(supabase, property_plant_equipment_net_orig, reportedCurrency, date)
+          const goodwill_converted = await convertValueToMultipleCurrencies(supabase, goodwill_orig, reportedCurrency, date)
+          const long_term_investments_converted = await convertValueToMultipleCurrencies(supabase, long_term_investments_orig, reportedCurrency, date)
+          const total_non_current_assets_converted = await convertValueToMultipleCurrencies(supabase, total_non_current_assets_orig, reportedCurrency, date)
+          const accounts_payable_converted = await convertValueToMultipleCurrencies(supabase, accounts_payable_orig, reportedCurrency, date)
+          const short_term_debt_converted = await convertValueToMultipleCurrencies(supabase, short_term_debt_orig, reportedCurrency, date)
+          const long_term_debt_converted = await convertValueToMultipleCurrencies(supabase, long_term_debt_orig, reportedCurrency, date)
+          const other_current_liabilities_converted = await convertValueToMultipleCurrencies(supabase, other_current_liabilities_orig, reportedCurrency, date)
+          const total_non_current_liabilities_converted = await convertValueToMultipleCurrencies(supabase, total_non_current_liabilities_orig, reportedCurrency, date)
+          const total_liabilities_converted = await convertValueToMultipleCurrencies(supabase, total_liabilities_orig, reportedCurrency, date)
+          const deferred_revenue_current_converted = await convertValueToMultipleCurrencies(supabase, deferred_revenue_current_orig, reportedCurrency, date)
+          const deferred_revenue_non_current_converted = await convertValueToMultipleCurrencies(supabase, deferred_revenue_non_current_orig, reportedCurrency, date)
+          const retained_earnings_converted = await convertValueToMultipleCurrencies(supabase, retained_earnings_orig, reportedCurrency, date)
+          const common_stock_converted = await convertValueToMultipleCurrencies(supabase, common_stock_orig, reportedCurrency, date)
+          const accumulated_other_comprehensive_income_loss_converted = await convertValueToMultipleCurrencies(supabase, accumulated_other_comprehensive_income_loss_orig, reportedCurrency, date)
+          const treasury_stock_converted = await convertValueToMultipleCurrencies(supabase, treasury_stock_orig, reportedCurrency, date)
+          const preferred_stock_converted = await convertValueToMultipleCurrencies(supabase, preferred_stock_orig, reportedCurrency, date)
+          const minority_interest_converted = await convertValueToMultipleCurrencies(supabase, minority_interest_orig, reportedCurrency, date)
+          const net_debt_converted = await convertValueToMultipleCurrencies(supabase, net_debt_orig, reportedCurrency, date)
+          const total_investments_converted = await convertValueToMultipleCurrencies(supabase, total_investments_orig, reportedCurrency, date)
+          
+          // Cash Flow Statement - New fields currency conversion
+          const depreciation_and_amortization_cf_converted = await convertValueToMultipleCurrencies(supabase, depreciation_and_amortization_cf_orig, reportedCurrency, date)
+          const stock_based_compensation_converted = await convertValueToMultipleCurrencies(supabase, stock_based_compensation_orig, reportedCurrency, date)
+          const change_in_working_capital_converted = await convertValueToMultipleCurrencies(supabase, change_in_working_capital_orig, reportedCurrency, date)
+          const accounts_receivables_change_converted = await convertValueToMultipleCurrencies(supabase, accounts_receivables_change_orig, reportedCurrency, date)
+          const inventory_change_converted = await convertValueToMultipleCurrencies(supabase, inventory_change_orig, reportedCurrency, date)
+          const accounts_payables_change_converted = await convertValueToMultipleCurrencies(supabase, accounts_payables_change_orig, reportedCurrency, date)
+          const other_working_capital_change_converted = await convertValueToMultipleCurrencies(supabase, other_working_capital_change_orig, reportedCurrency, date)
+          const deferred_income_tax_converted = await convertValueToMultipleCurrencies(supabase, deferred_income_tax_orig, reportedCurrency, date)
+          const other_non_cash_items_converted = await convertValueToMultipleCurrencies(supabase, other_non_cash_items_orig, reportedCurrency, date)
+          const investments_in_ppe_converted = await convertValueToMultipleCurrencies(supabase, investments_in_ppe_orig, reportedCurrency, date)
+          const acquisitions_net_converted = await convertValueToMultipleCurrencies(supabase, acquisitions_net_orig, reportedCurrency, date)
+          const purchases_of_investments_converted = await convertValueToMultipleCurrencies(supabase, purchases_of_investments_orig, reportedCurrency, date)
+          const sales_maturities_of_investments_converted = await convertValueToMultipleCurrencies(supabase, sales_maturities_of_investments_orig, reportedCurrency, date)
+          const other_investing_activities_converted = await convertValueToMultipleCurrencies(supabase, other_investing_activities_orig, reportedCurrency, date)
+          const net_debt_issuance_converted = await convertValueToMultipleCurrencies(supabase, net_debt_issuance_orig, reportedCurrency, date)
+          const long_term_net_debt_issuance_converted = await convertValueToMultipleCurrencies(supabase, long_term_net_debt_issuance_orig, reportedCurrency, date)
+          const short_term_net_debt_issuance_converted = await convertValueToMultipleCurrencies(supabase, short_term_net_debt_issuance_orig, reportedCurrency, date)
+          const common_stock_repurchased_converted = await convertValueToMultipleCurrencies(supabase, common_stock_repurchased_orig, reportedCurrency, date)
+          const common_stock_issuance_converted = await convertValueToMultipleCurrencies(supabase, common_stock_issuance_orig, reportedCurrency, date)
+          const net_common_stock_issuance_converted = await convertValueToMultipleCurrencies(supabase, net_common_stock_issuance_orig, reportedCurrency, date)
+          const net_preferred_stock_issuance_converted = await convertValueToMultipleCurrencies(supabase, net_preferred_stock_issuance_orig, reportedCurrency, date)
+          const other_financing_activities_converted = await convertValueToMultipleCurrencies(supabase, other_financing_activities_orig, reportedCurrency, date)
+          const effect_of_forex_changes_on_cash_converted = await convertValueToMultipleCurrencies(supabase, effect_of_forex_changes_on_cash_orig, reportedCurrency, date)
+          const cash_at_beginning_converted = await convertValueToMultipleCurrencies(supabase, cash_at_beginning_orig, reportedCurrency, date)
+          const cash_at_end_converted = await convertValueToMultipleCurrencies(supabase, cash_at_end_orig, reportedCurrency, date)
+          const net_change_in_cash_converted = await convertValueToMultipleCurrencies(supabase, net_change_in_cash_orig, reportedCurrency, date)
+          const income_taxes_paid_converted = await convertValueToMultipleCurrencies(supabase, income_taxes_paid_orig, reportedCurrency, date)
+          const interest_paid_converted = await convertValueToMultipleCurrencies(supabase, interest_paid_orig, reportedCurrency, date)
           
           // Convert Key Metrics values to multiple currencies
           const graham_number_converted = await convertValueToMultipleCurrencies(supabase, graham_number_orig, reportedCurrency, date)
