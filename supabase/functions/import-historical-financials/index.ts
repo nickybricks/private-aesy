@@ -9,15 +9,21 @@ const corsHeaders = {
 const TARGET_CURRENCIES = ['USD', 'EUR']
 
 /**
- * Get exchange rate from database for a specific date
+ * Get exchange rate from database for a specific date (with caching)
  */
 async function getExchangeRate(
   supabase: any,
   fromCurrency: string,
   toCurrency: string,
-  date: string
+  date: string,
+  cache: Map<string, number>
 ): Promise<number> {
   if (fromCurrency === toCurrency) return 1.0
+
+  const cacheKey = `${fromCurrency}-${toCurrency}-${date}`
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey)!
+  }
 
   // Try direct rate
   const { data: directRate } = await supabase
@@ -30,7 +36,10 @@ async function getExchangeRate(
     .limit(1)
     .maybeSingle()
 
-  if (directRate) return directRate.rate
+  if (directRate) {
+    cache.set(cacheKey, directRate.rate)
+    return directRate.rate
+  }
 
   // Try inverse rate
   const { data: inverseRate } = await supabase
@@ -44,7 +53,9 @@ async function getExchangeRate(
     .maybeSingle()
 
   if (inverseRate && inverseRate.rate !== 0) {
-    return 1 / inverseRate.rate
+    const rate = 1 / inverseRate.rate
+    cache.set(cacheKey, rate)
+    return rate
   }
 
   // If not found, try to fetch from FMP with 7-day backward fallback
@@ -77,6 +88,7 @@ async function getExchangeRate(
               fetched_at: new Date().toISOString(),
               is_fallback: daysBack > 0,
             }, { onConflict: 'base_currency,target_currency,valid_date' })
+            cache.set(cacheKey, rate)
             return rate
           }
         }
@@ -90,13 +102,14 @@ async function getExchangeRate(
 }
 
 /**
- * Convert value to multiple currencies
+ * Convert value to multiple currencies (with caching)
  */
 async function convertValueToMultipleCurrencies(
   supabase: any,
   value: number | null | undefined,
   fromCurrency: string,
-  date: string
+  date: string,
+  cache: Map<string, number>
 ): Promise<Record<string, number | null>> {
   if (value === null || value === undefined || !Number.isFinite(value)) {
     return { USD: null, EUR: null }
@@ -109,7 +122,7 @@ async function convertValueToMultipleCurrencies(
       if (fromCurrency === targetCurrency) {
         result[targetCurrency] = value
       } else {
-        const rate = await getExchangeRate(supabase, fromCurrency, targetCurrency, date)
+        const rate = await getExchangeRate(supabase, fromCurrency, targetCurrency, date, cache)
         result[targetCurrency] = value * rate
       }
     } catch (error) {
@@ -251,6 +264,9 @@ serve(async (req) => {
         const incomeRecords = []
         const balanceRecords = []
         const cashflowRecords = []
+        
+        // Create exchange rate cache for this stock
+        const exchangeRateCache = new Map<string, number>()
 
         for (const [key, data] of dataByDatePeriod) {
           const { income, balance, cashflow, date, period, reportedCurrency } = data
@@ -284,8 +300,9 @@ serve(async (req) => {
 
             for (const field of incomeFields) {
               const value = income[field]
-              const converted = await convertValueToMultipleCurrencies(supabase, value, reportedCurrency, date)
-              const fieldName = field.replace(/([A-Z])/g, '_$1').toLowerCase()
+              const converted = await convertValueToMultipleCurrencies(supabase, value, reportedCurrency, date, exchangeRateCache)
+              // Convert camelCase to snake_case and remove leading underscore
+              const fieldName = field.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')
               incomeRecord[`${fieldName}_orig`] = value
               incomeRecord[`${fieldName}_usd`] = converted.USD
               incomeRecord[`${fieldName}_eur`] = converted.EUR
@@ -333,8 +350,9 @@ serve(async (req) => {
 
             for (const field of balanceFields) {
               const value = balance[field]
-              const converted = await convertValueToMultipleCurrencies(supabase, value, reportedCurrency, date)
-              const fieldName = field.replace(/([A-Z])/g, '_$1').toLowerCase()
+              const converted = await convertValueToMultipleCurrencies(supabase, value, reportedCurrency, date, exchangeRateCache)
+              // Convert camelCase to snake_case and remove leading underscore
+              const fieldName = field.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')
               balanceRecord[`${fieldName}_orig`] = value
               balanceRecord[`${fieldName}_usd`] = converted.USD
               balanceRecord[`${fieldName}_eur`] = converted.EUR
@@ -373,8 +391,9 @@ serve(async (req) => {
 
             for (const field of cashflowFields) {
               const value = cashflow[field]
-              const converted = await convertValueToMultipleCurrencies(supabase, value, reportedCurrency, date)
-              const fieldName = field.replace(/([A-Z])/g, '_$1').toLowerCase()
+              const converted = await convertValueToMultipleCurrencies(supabase, value, reportedCurrency, date, exchangeRateCache)
+              // Convert camelCase to snake_case and remove leading underscore
+              const fieldName = field.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')
               cashflowRecord[`${fieldName}_orig`] = value
               cashflowRecord[`${fieldName}_usd`] = converted.USD
               cashflowRecord[`${fieldName}_eur`] = converted.EUR
