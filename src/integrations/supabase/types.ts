@@ -1769,6 +1769,216 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_ratios: {
+        Row: {
+          asset_turnover: number | null
+          book_value_per_share: number | null
+          bottom_line_profit_margin: number | null
+          capex_per_share: number | null
+          capital_expenditure_coverage_ratio: number | null
+          cash_per_share: number | null
+          cash_ratio: number | null
+          continuous_operations_profit_margin: number | null
+          created_at: string | null
+          current_ratio: number | null
+          date: string
+          debt_service_coverage_ratio: number | null
+          debt_to_assets_ratio: number | null
+          debt_to_capital_ratio: number | null
+          debt_to_equity_ratio: number | null
+          debt_to_market_cap: number | null
+          dividend_paid_and_capex_coverage_ratio: number | null
+          dividend_payout_ratio: number | null
+          dividend_per_share: number | null
+          dividend_yield: number | null
+          dividend_yield_percentage: number | null
+          ebit_margin: number | null
+          ebitda_margin: number | null
+          ebt_per_ebit: number | null
+          effective_tax_rate: number | null
+          enterprise_value_multiple: number | null
+          financial_leverage_ratio: number | null
+          fiscal_year: string | null
+          fixed_asset_turnover: number | null
+          forward_price_to_earnings_growth_ratio: number | null
+          free_cash_flow_operating_cash_flow_ratio: number | null
+          free_cash_flow_per_share: number | null
+          gross_profit_margin: number | null
+          id: string
+          interest_coverage_ratio: number | null
+          interest_debt_per_share: number | null
+          inventory_turnover: number | null
+          long_term_debt_to_capital_ratio: number | null
+          net_income_per_ebt: number | null
+          net_income_per_share: number | null
+          net_profit_margin: number | null
+          operating_cash_flow_coverage_ratio: number | null
+          operating_cash_flow_per_share: number | null
+          operating_cash_flow_ratio: number | null
+          operating_cash_flow_sales_ratio: number | null
+          operating_profit_margin: number | null
+          payables_turnover: number | null
+          period: string
+          pretax_profit_margin: number | null
+          price_to_book_ratio: number | null
+          price_to_earnings_growth_ratio: number | null
+          price_to_earnings_ratio: number | null
+          price_to_fair_value: number | null
+          price_to_free_cash_flow_ratio: number | null
+          price_to_operating_cash_flow_ratio: number | null
+          price_to_sales_ratio: number | null
+          quick_ratio: number | null
+          receivables_turnover: number | null
+          reported_currency: string
+          revenue_per_share: number | null
+          shareholders_equity_per_share: number | null
+          short_term_operating_cash_flow_coverage_ratio: number | null
+          solvency_ratio: number | null
+          symbol: string
+          tangible_book_value_per_share: number | null
+          updated_at: string | null
+          working_capital_turnover_ratio: number | null
+        }
+        Insert: {
+          asset_turnover?: number | null
+          book_value_per_share?: number | null
+          bottom_line_profit_margin?: number | null
+          capex_per_share?: number | null
+          capital_expenditure_coverage_ratio?: number | null
+          cash_per_share?: number | null
+          cash_ratio?: number | null
+          continuous_operations_profit_margin?: number | null
+          created_at?: string | null
+          current_ratio?: number | null
+          date: string
+          debt_service_coverage_ratio?: number | null
+          debt_to_assets_ratio?: number | null
+          debt_to_capital_ratio?: number | null
+          debt_to_equity_ratio?: number | null
+          debt_to_market_cap?: number | null
+          dividend_paid_and_capex_coverage_ratio?: number | null
+          dividend_payout_ratio?: number | null
+          dividend_per_share?: number | null
+          dividend_yield?: number | null
+          dividend_yield_percentage?: number | null
+          ebit_margin?: number | null
+          ebitda_margin?: number | null
+          ebt_per_ebit?: number | null
+          effective_tax_rate?: number | null
+          enterprise_value_multiple?: number | null
+          financial_leverage_ratio?: number | null
+          fiscal_year?: string | null
+          fixed_asset_turnover?: number | null
+          forward_price_to_earnings_growth_ratio?: number | null
+          free_cash_flow_operating_cash_flow_ratio?: number | null
+          free_cash_flow_per_share?: number | null
+          gross_profit_margin?: number | null
+          id?: string
+          interest_coverage_ratio?: number | null
+          interest_debt_per_share?: number | null
+          inventory_turnover?: number | null
+          long_term_debt_to_capital_ratio?: number | null
+          net_income_per_ebt?: number | null
+          net_income_per_share?: number | null
+          net_profit_margin?: number | null
+          operating_cash_flow_coverage_ratio?: number | null
+          operating_cash_flow_per_share?: number | null
+          operating_cash_flow_ratio?: number | null
+          operating_cash_flow_sales_ratio?: number | null
+          operating_profit_margin?: number | null
+          payables_turnover?: number | null
+          period: string
+          pretax_profit_margin?: number | null
+          price_to_book_ratio?: number | null
+          price_to_earnings_growth_ratio?: number | null
+          price_to_earnings_ratio?: number | null
+          price_to_fair_value?: number | null
+          price_to_free_cash_flow_ratio?: number | null
+          price_to_operating_cash_flow_ratio?: number | null
+          price_to_sales_ratio?: number | null
+          quick_ratio?: number | null
+          receivables_turnover?: number | null
+          reported_currency: string
+          revenue_per_share?: number | null
+          shareholders_equity_per_share?: number | null
+          short_term_operating_cash_flow_coverage_ratio?: number | null
+          solvency_ratio?: number | null
+          symbol: string
+          tangible_book_value_per_share?: number | null
+          updated_at?: string | null
+          working_capital_turnover_ratio?: number | null
+        }
+        Update: {
+          asset_turnover?: number | null
+          book_value_per_share?: number | null
+          bottom_line_profit_margin?: number | null
+          capex_per_share?: number | null
+          capital_expenditure_coverage_ratio?: number | null
+          cash_per_share?: number | null
+          cash_ratio?: number | null
+          continuous_operations_profit_margin?: number | null
+          created_at?: string | null
+          current_ratio?: number | null
+          date?: string
+          debt_service_coverage_ratio?: number | null
+          debt_to_assets_ratio?: number | null
+          debt_to_capital_ratio?: number | null
+          debt_to_equity_ratio?: number | null
+          debt_to_market_cap?: number | null
+          dividend_paid_and_capex_coverage_ratio?: number | null
+          dividend_payout_ratio?: number | null
+          dividend_per_share?: number | null
+          dividend_yield?: number | null
+          dividend_yield_percentage?: number | null
+          ebit_margin?: number | null
+          ebitda_margin?: number | null
+          ebt_per_ebit?: number | null
+          effective_tax_rate?: number | null
+          enterprise_value_multiple?: number | null
+          financial_leverage_ratio?: number | null
+          fiscal_year?: string | null
+          fixed_asset_turnover?: number | null
+          forward_price_to_earnings_growth_ratio?: number | null
+          free_cash_flow_operating_cash_flow_ratio?: number | null
+          free_cash_flow_per_share?: number | null
+          gross_profit_margin?: number | null
+          id?: string
+          interest_coverage_ratio?: number | null
+          interest_debt_per_share?: number | null
+          inventory_turnover?: number | null
+          long_term_debt_to_capital_ratio?: number | null
+          net_income_per_ebt?: number | null
+          net_income_per_share?: number | null
+          net_profit_margin?: number | null
+          operating_cash_flow_coverage_ratio?: number | null
+          operating_cash_flow_per_share?: number | null
+          operating_cash_flow_ratio?: number | null
+          operating_cash_flow_sales_ratio?: number | null
+          operating_profit_margin?: number | null
+          payables_turnover?: number | null
+          period?: string
+          pretax_profit_margin?: number | null
+          price_to_book_ratio?: number | null
+          price_to_earnings_growth_ratio?: number | null
+          price_to_earnings_ratio?: number | null
+          price_to_fair_value?: number | null
+          price_to_free_cash_flow_ratio?: number | null
+          price_to_operating_cash_flow_ratio?: number | null
+          price_to_sales_ratio?: number | null
+          quick_ratio?: number | null
+          receivables_turnover?: number | null
+          reported_currency?: string
+          revenue_per_share?: number | null
+          shareholders_equity_per_share?: number | null
+          short_term_operating_cash_flow_coverage_ratio?: number | null
+          solvency_ratio?: number | null
+          symbol?: string
+          tangible_book_value_per_share?: number | null
+          updated_at?: string | null
+          working_capital_turnover_ratio?: number | null
+        }
+        Relationships: []
+      }
       income_statements: {
         Row: {
           accepted_date: string | null
@@ -2114,6 +2324,231 @@ export type Database = {
           id?: string
           industry?: string
           pe_ratio?: number | null
+        }
+        Relationships: []
+      }
+      key_metrics: {
+        Row: {
+          average_inventory_eur: number | null
+          average_inventory_orig: number | null
+          average_inventory_usd: number | null
+          average_payables_eur: number | null
+          average_payables_orig: number | null
+          average_payables_usd: number | null
+          average_receivables_eur: number | null
+          average_receivables_orig: number | null
+          average_receivables_usd: number | null
+          capex_to_depreciation: number | null
+          capex_to_operating_cash_flow: number | null
+          capex_to_revenue: number | null
+          cash_conversion_cycle: number | null
+          created_at: string | null
+          current_ratio: number | null
+          date: string
+          days_of_inventory_outstanding: number | null
+          days_of_payables_outstanding: number | null
+          days_of_sales_outstanding: number | null
+          earnings_yield: number | null
+          enterprise_value_eur: number | null
+          enterprise_value_orig: number | null
+          enterprise_value_usd: number | null
+          ev_to_ebitda: number | null
+          ev_to_free_cash_flow: number | null
+          ev_to_operating_cash_flow: number | null
+          ev_to_sales: number | null
+          fiscal_year: string | null
+          free_cash_flow_to_equity_eur: number | null
+          free_cash_flow_to_equity_orig: number | null
+          free_cash_flow_to_equity_usd: number | null
+          free_cash_flow_to_firm_eur: number | null
+          free_cash_flow_to_firm_orig: number | null
+          free_cash_flow_to_firm_usd: number | null
+          free_cash_flow_yield: number | null
+          graham_net_net: number | null
+          graham_number: number | null
+          id: string
+          income_quality: number | null
+          intangibles_to_total_assets: number | null
+          interest_burden: number | null
+          invested_capital_eur: number | null
+          invested_capital_orig: number | null
+          invested_capital_usd: number | null
+          market_cap_eur: number | null
+          market_cap_orig: number | null
+          market_cap_usd: number | null
+          net_current_asset_value_eur: number | null
+          net_current_asset_value_orig: number | null
+          net_current_asset_value_usd: number | null
+          net_debt_to_ebitda: number | null
+          operating_cycle: number | null
+          operating_return_on_assets: number | null
+          period: string
+          reported_currency: string
+          research_and_developement_to_revenue: number | null
+          return_on_assets: number | null
+          return_on_capital_employed: number | null
+          return_on_equity: number | null
+          return_on_invested_capital: number | null
+          return_on_tangible_assets: number | null
+          sales_general_and_administrative_to_revenue: number | null
+          stock_based_compensation_to_revenue: number | null
+          symbol: string
+          tangible_asset_value_eur: number | null
+          tangible_asset_value_orig: number | null
+          tangible_asset_value_usd: number | null
+          tax_burden: number | null
+          updated_at: string | null
+          working_capital_eur: number | null
+          working_capital_orig: number | null
+          working_capital_usd: number | null
+        }
+        Insert: {
+          average_inventory_eur?: number | null
+          average_inventory_orig?: number | null
+          average_inventory_usd?: number | null
+          average_payables_eur?: number | null
+          average_payables_orig?: number | null
+          average_payables_usd?: number | null
+          average_receivables_eur?: number | null
+          average_receivables_orig?: number | null
+          average_receivables_usd?: number | null
+          capex_to_depreciation?: number | null
+          capex_to_operating_cash_flow?: number | null
+          capex_to_revenue?: number | null
+          cash_conversion_cycle?: number | null
+          created_at?: string | null
+          current_ratio?: number | null
+          date: string
+          days_of_inventory_outstanding?: number | null
+          days_of_payables_outstanding?: number | null
+          days_of_sales_outstanding?: number | null
+          earnings_yield?: number | null
+          enterprise_value_eur?: number | null
+          enterprise_value_orig?: number | null
+          enterprise_value_usd?: number | null
+          ev_to_ebitda?: number | null
+          ev_to_free_cash_flow?: number | null
+          ev_to_operating_cash_flow?: number | null
+          ev_to_sales?: number | null
+          fiscal_year?: string | null
+          free_cash_flow_to_equity_eur?: number | null
+          free_cash_flow_to_equity_orig?: number | null
+          free_cash_flow_to_equity_usd?: number | null
+          free_cash_flow_to_firm_eur?: number | null
+          free_cash_flow_to_firm_orig?: number | null
+          free_cash_flow_to_firm_usd?: number | null
+          free_cash_flow_yield?: number | null
+          graham_net_net?: number | null
+          graham_number?: number | null
+          id?: string
+          income_quality?: number | null
+          intangibles_to_total_assets?: number | null
+          interest_burden?: number | null
+          invested_capital_eur?: number | null
+          invested_capital_orig?: number | null
+          invested_capital_usd?: number | null
+          market_cap_eur?: number | null
+          market_cap_orig?: number | null
+          market_cap_usd?: number | null
+          net_current_asset_value_eur?: number | null
+          net_current_asset_value_orig?: number | null
+          net_current_asset_value_usd?: number | null
+          net_debt_to_ebitda?: number | null
+          operating_cycle?: number | null
+          operating_return_on_assets?: number | null
+          period: string
+          reported_currency: string
+          research_and_developement_to_revenue?: number | null
+          return_on_assets?: number | null
+          return_on_capital_employed?: number | null
+          return_on_equity?: number | null
+          return_on_invested_capital?: number | null
+          return_on_tangible_assets?: number | null
+          sales_general_and_administrative_to_revenue?: number | null
+          stock_based_compensation_to_revenue?: number | null
+          symbol: string
+          tangible_asset_value_eur?: number | null
+          tangible_asset_value_orig?: number | null
+          tangible_asset_value_usd?: number | null
+          tax_burden?: number | null
+          updated_at?: string | null
+          working_capital_eur?: number | null
+          working_capital_orig?: number | null
+          working_capital_usd?: number | null
+        }
+        Update: {
+          average_inventory_eur?: number | null
+          average_inventory_orig?: number | null
+          average_inventory_usd?: number | null
+          average_payables_eur?: number | null
+          average_payables_orig?: number | null
+          average_payables_usd?: number | null
+          average_receivables_eur?: number | null
+          average_receivables_orig?: number | null
+          average_receivables_usd?: number | null
+          capex_to_depreciation?: number | null
+          capex_to_operating_cash_flow?: number | null
+          capex_to_revenue?: number | null
+          cash_conversion_cycle?: number | null
+          created_at?: string | null
+          current_ratio?: number | null
+          date?: string
+          days_of_inventory_outstanding?: number | null
+          days_of_payables_outstanding?: number | null
+          days_of_sales_outstanding?: number | null
+          earnings_yield?: number | null
+          enterprise_value_eur?: number | null
+          enterprise_value_orig?: number | null
+          enterprise_value_usd?: number | null
+          ev_to_ebitda?: number | null
+          ev_to_free_cash_flow?: number | null
+          ev_to_operating_cash_flow?: number | null
+          ev_to_sales?: number | null
+          fiscal_year?: string | null
+          free_cash_flow_to_equity_eur?: number | null
+          free_cash_flow_to_equity_orig?: number | null
+          free_cash_flow_to_equity_usd?: number | null
+          free_cash_flow_to_firm_eur?: number | null
+          free_cash_flow_to_firm_orig?: number | null
+          free_cash_flow_to_firm_usd?: number | null
+          free_cash_flow_yield?: number | null
+          graham_net_net?: number | null
+          graham_number?: number | null
+          id?: string
+          income_quality?: number | null
+          intangibles_to_total_assets?: number | null
+          interest_burden?: number | null
+          invested_capital_eur?: number | null
+          invested_capital_orig?: number | null
+          invested_capital_usd?: number | null
+          market_cap_eur?: number | null
+          market_cap_orig?: number | null
+          market_cap_usd?: number | null
+          net_current_asset_value_eur?: number | null
+          net_current_asset_value_orig?: number | null
+          net_current_asset_value_usd?: number | null
+          net_debt_to_ebitda?: number | null
+          operating_cycle?: number | null
+          operating_return_on_assets?: number | null
+          period?: string
+          reported_currency?: string
+          research_and_developement_to_revenue?: number | null
+          return_on_assets?: number | null
+          return_on_capital_employed?: number | null
+          return_on_equity?: number | null
+          return_on_invested_capital?: number | null
+          return_on_tangible_assets?: number | null
+          sales_general_and_administrative_to_revenue?: number | null
+          stock_based_compensation_to_revenue?: number | null
+          symbol?: string
+          tangible_asset_value_eur?: number | null
+          tangible_asset_value_orig?: number | null
+          tangible_asset_value_usd?: number | null
+          tax_burden?: number | null
+          updated_at?: string | null
+          working_capital_eur?: number | null
+          working_capital_orig?: number | null
+          working_capital_usd?: number | null
         }
         Relationships: []
       }

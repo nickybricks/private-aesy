@@ -9,6 +9,25 @@ const corsHeaders = {
 const TARGET_CURRENCIES = ['USD', 'EUR']
 
 /**
+ * Convert camelCase to snake_case, handling abbreviations correctly
+ */
+function camelToSnake(str: string): string {
+  // Handle common abbreviations
+  return str
+    .replace(/EBITDA/g, 'Ebitda')
+    .replace(/ROIC/g, 'Roic')
+    .replace(/ROE/g, 'Roe')
+    .replace(/ROA/g, 'Roa')
+    .replace(/EBT/g, 'Ebt')
+    .replace(/EPS/g, 'Eps')
+    .replace(/FCF/g, 'Fcf')
+    .replace(/TTM/g, 'Ttm')
+    .replace(/([A-Z])/g, '_$1')
+    .toLowerCase()
+    .replace(/^_/, '')
+}
+
+/**
  * Get exchange rate from database for a specific date (with caching)
  */
 async function getExchangeRate(
@@ -199,22 +218,29 @@ serve(async (req) => {
         const stockCurrency = stock.currency || 'USD'
 
         // Fetch quarterly and annual data
-        const [incomeQ, balanceQ, cashflowQ, incomeY, balanceY, cashflowY] = await Promise.all([
+        const [incomeQ, balanceQ, cashflowQ, incomeY, balanceY, cashflowY, keyMetricsQ, keyMetricsY, ratiosQ, ratiosY] = await Promise.all([
           fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/income-statement/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/balance-sheet-statement/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
           fetch(`https://financialmodelingprep.com/api/v3/cash-flow-statement/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/key-metrics/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/ratios-ttm/${stock.symbol}?period=quarter&limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
+          fetch(`https://financialmodelingprep.com/api/v3/ratios/${stock.symbol}?limit=400&apikey=${fmpApiKey}`).then(r => r.json()),
         ])
 
         console.log(`  📊 API Data: Income Q=${Array.isArray(incomeQ) ? incomeQ.length : 0}, Balance Q=${Array.isArray(balanceQ) ? balanceQ.length : 0}, Cashflow Q=${Array.isArray(cashflowQ) ? cashflowQ.length : 0}`)
         console.log(`  📊 API Data: Income Y=${Array.isArray(incomeY) ? incomeY.length : 0}, Balance Y=${Array.isArray(balanceY) ? balanceY.length : 0}, Cashflow Y=${Array.isArray(cashflowY) ? cashflowY.length : 0}`)
+        console.log(`  📊 API Data: KeyMetrics Q=${Array.isArray(keyMetricsQ) ? keyMetricsQ.length : 0}, KeyMetrics Y=${Array.isArray(keyMetricsY) ? keyMetricsY.length : 0}, Ratios Q=${Array.isArray(ratiosQ) ? ratiosQ.length : 0}, Ratios Y=${Array.isArray(ratiosY) ? ratiosY.length : 0}`)
 
         // Merge quarterly + annual data
         const allIncome = [...(Array.isArray(incomeQ) ? incomeQ : []), ...(Array.isArray(incomeY) ? incomeY : [])]
         const allBalance = [...(Array.isArray(balanceQ) ? balanceQ : []), ...(Array.isArray(balanceY) ? balanceY : [])]
         const allCashflow = [...(Array.isArray(cashflowQ) ? cashflowQ : []), ...(Array.isArray(cashflowY) ? cashflowY : [])]
+        const allKeyMetrics = [...(Array.isArray(keyMetricsQ) ? keyMetricsQ : []), ...(Array.isArray(keyMetricsY) ? keyMetricsY : [])]
+        const allRatios = [...(Array.isArray(ratiosQ) ? ratiosQ : []), ...(Array.isArray(ratiosY) ? ratiosY : [])]
 
         if (allIncome.length === 0) {
           console.warn(`  ⚠️ No financial data found for ${stock.symbol}`)
@@ -258,18 +284,44 @@ serve(async (req) => {
           }
         }
 
+        for (const keyMetric of allKeyMetrics) {
+          const key = `${keyMetric.date}_${keyMetric.period}`
+          if (!dataByDatePeriod.has(key)) {
+            dataByDatePeriod.set(key, { date: keyMetric.date, period: keyMetric.period })
+          }
+          const entry = dataByDatePeriod.get(key)
+          entry.keyMetrics = keyMetric
+          if (!entry.reportedCurrency) {
+            entry.reportedCurrency = keyMetric.reportedCurrency || stockCurrency
+          }
+        }
+
+        for (const ratio of allRatios) {
+          const key = `${ratio.date}_${ratio.period}`
+          if (!dataByDatePeriod.has(key)) {
+            dataByDatePeriod.set(key, { date: ratio.date, period: ratio.period })
+          }
+          const entry = dataByDatePeriod.get(key)
+          entry.ratios = ratio
+          if (!entry.reportedCurrency) {
+            entry.reportedCurrency = ratio.reportedCurrency || stockCurrency
+          }
+        }
+
         console.log(`  📝 Merged ${dataByDatePeriod.size} unique date/period combinations`)
 
         // Process and build records for each table
         const incomeRecords = []
         const balanceRecords = []
         const cashflowRecords = []
+        const keyMetricsRecords = []
+        const ratiosRecords = []
         
         // Create exchange rate cache for this stock
         const exchangeRateCache = new Map<string, number>()
 
         for (const [key, data] of dataByDatePeriod) {
-          const { income, balance, cashflow, date, period, reportedCurrency } = data
+          const { income, balance, cashflow, keyMetrics, ratios, date, period, reportedCurrency } = data
 
           if (!date) continue
 
@@ -301,8 +353,7 @@ serve(async (req) => {
             for (const field of incomeFields) {
               const value = income[field]
               const converted = await convertValueToMultipleCurrencies(supabase, value, reportedCurrency, date, exchangeRateCache)
-              // Convert camelCase to snake_case and remove leading underscore
-              const fieldName = field.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')
+              const fieldName = camelToSnake(field)
               incomeRecord[`${fieldName}_orig`] = value
               incomeRecord[`${fieldName}_usd`] = converted.USD
               incomeRecord[`${fieldName}_eur`] = converted.EUR
@@ -351,8 +402,7 @@ serve(async (req) => {
             for (const field of balanceFields) {
               const value = balance[field]
               const converted = await convertValueToMultipleCurrencies(supabase, value, reportedCurrency, date, exchangeRateCache)
-              // Convert camelCase to snake_case and remove leading underscore
-              const fieldName = field.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')
+              const fieldName = camelToSnake(field)
               balanceRecord[`${fieldName}_orig`] = value
               balanceRecord[`${fieldName}_usd`] = converted.USD
               balanceRecord[`${fieldName}_eur`] = converted.EUR
@@ -392,8 +442,7 @@ serve(async (req) => {
             for (const field of cashflowFields) {
               const value = cashflow[field]
               const converted = await convertValueToMultipleCurrencies(supabase, value, reportedCurrency, date, exchangeRateCache)
-              // Convert camelCase to snake_case and remove leading underscore
-              const fieldName = field.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')
+              const fieldName = camelToSnake(field)
               cashflowRecord[`${fieldName}_orig`] = value
               cashflowRecord[`${fieldName}_usd`] = converted.USD
               cashflowRecord[`${fieldName}_eur`] = converted.EUR
@@ -401,12 +450,100 @@ serve(async (req) => {
 
             cashflowRecords.push(cashflowRecord)
           }
+
+          // Build Key Metrics Record
+          if (keyMetrics) {
+            const keyMetricsRecord: any = {
+              symbol: stock.symbol,
+              date,
+              period: period,
+              reported_currency: reportedCurrency,
+              fiscal_year: keyMetrics.fiscalYear,
+            }
+
+            // Key Metrics fields with currency conversion
+            const keyMetricsCurrencyFields = [
+              'marketCap', 'enterpriseValue', 'workingCapital', 'investedCapital',
+              'averageReceivables', 'averagePayables', 'averageInventory',
+              'freeCashFlowToEquity', 'freeCashFlowToFirm', 'tangibleAssetValue', 'netCurrentAssetValue'
+            ]
+
+            for (const field of keyMetricsCurrencyFields) {
+              const value = keyMetrics[field]
+              const converted = await convertValueToMultipleCurrencies(supabase, value, reportedCurrency, date, exchangeRateCache)
+              const fieldName = camelToSnake(field)
+              keyMetricsRecord[`${fieldName}_orig`] = value
+              keyMetricsRecord[`${fieldName}_usd`] = converted.USD
+              keyMetricsRecord[`${fieldName}_eur`] = converted.EUR
+            }
+
+            // Key Metrics fields without currency conversion (ratios)
+            const keyMetricsRatioFields = [
+              'evToSales', 'evToOperatingCashFlow', 'evToFreeCashFlow', 'evToEBITDA', 'netDebtToEBITDA',
+              'currentRatio', 'incomeQuality', 'grahamNumber', 'grahamNetNet', 'taxBurden', 'interestBurden',
+              'returnOnAssets', 'operatingReturnOnAssets', 'returnOnTangibleAssets', 'returnOnEquity',
+              'returnOnInvestedCapital', 'returnOnCapitalEmployed', 'earningsYield', 'freeCashFlowYield',
+              'capexToOperatingCashFlow', 'capexToDepreciation', 'capexToRevenue',
+              'salesGeneralAndAdministrativeToRevenue', 'researchAndDevelopementToRevenue',
+              'stockBasedCompensationToRevenue', 'intangiblesToTotalAssets',
+              'daysOfSalesOutstanding', 'daysOfPayablesOutstanding', 'daysOfInventoryOutstanding',
+              'operatingCycle', 'cashConversionCycle'
+            ]
+
+            for (const field of keyMetricsRatioFields) {
+              const value = keyMetrics[field]
+              const fieldName = camelToSnake(field)
+              keyMetricsRecord[fieldName] = value
+            }
+
+            keyMetricsRecords.push(keyMetricsRecord)
+          }
+
+          // Build Financial Ratios Record
+          if (ratios) {
+            const ratiosRecord: any = {
+              symbol: stock.symbol,
+              date,
+              period: period,
+              reported_currency: reportedCurrency,
+              fiscal_year: ratios.fiscalYear,
+            }
+
+            // All ratios fields (no currency conversion needed - they're all ratios/percentages)
+            const ratiosFields = [
+              'grossProfitMargin', 'ebitMargin', 'ebitdaMargin', 'operatingProfitMargin', 'pretaxProfitMargin',
+              'continuousOperationsProfitMargin', 'netProfitMargin', 'bottomLineProfitMargin',
+              'receivablesTurnover', 'payablesTurnover', 'inventoryTurnover', 'fixedAssetTurnover', 'assetTurnover',
+              'currentRatio', 'quickRatio', 'solvencyRatio', 'cashRatio',
+              'priceToEarningsRatio', 'priceToEarningsGrowthRatio', 'forwardPriceToEarningsGrowthRatio',
+              'priceToBookRatio', 'priceToSalesRatio', 'priceToFreeCashFlowRatio', 'priceToOperatingCashFlowRatio',
+              'debtToAssetsRatio', 'debtToEquityRatio', 'debtToCapitalRatio', 'longTermDebtToCapitalRatio',
+              'financialLeverageRatio', 'workingCapitalTurnoverRatio',
+              'operatingCashFlowRatio', 'operatingCashFlowSalesRatio', 'freeCashFlowOperatingCashFlowRatio',
+              'debtServiceCoverageRatio', 'interestCoverageRatio', 'shortTermOperatingCashFlowCoverageRatio',
+              'operatingCashFlowCoverageRatio', 'capitalExpenditureCoverageRatio', 'dividendPaidAndCapexCoverageRatio',
+              'dividendPayoutRatio', 'dividendYield', 'dividendYieldPercentage',
+              'revenuePerShare', 'netIncomePerShare', 'interestDebtPerShare', 'cashPerShare',
+              'bookValuePerShare', 'tangibleBookValuePerShare', 'shareholdersEquityPerShare',
+              'operatingCashFlowPerShare', 'capexPerShare', 'freeCashFlowPerShare',
+              'netIncomePerEBT', 'ebtPerEbit', 'priceToFairValue', 'debtToMarketCap',
+              'effectiveTaxRate', 'enterpriseValueMultiple', 'dividendPerShare'
+            ]
+
+            for (const field of ratiosFields) {
+              const value = ratios[field]
+              const fieldName = camelToSnake(field)
+              ratiosRecord[fieldName] = value
+            }
+
+            ratiosRecords.push(ratiosRecord)
+          }
         }
 
-        console.log(`  💾 Inserting: ${incomeRecords.length} income statements, ${balanceRecords.length} balance sheets, ${cashflowRecords.length} cash flow statements`)
+        console.log(`  💾 Inserting: ${incomeRecords.length} income statements, ${balanceRecords.length} balance sheets, ${cashflowRecords.length} cash flow statements, ${keyMetricsRecords.length} key metrics, ${ratiosRecords.length} financial ratios`)
 
-        // Insert into three tables in parallel
-        const [incomeResult, balanceResult, cashflowResult] = await Promise.all([
+        // Insert into all tables in parallel
+        const [incomeResult, balanceResult, cashflowResult, keyMetricsResult, ratiosResult] = await Promise.all([
           incomeRecords.length > 0 ? supabase
             .from('income_statements')
             .upsert(incomeRecords, { onConflict: 'symbol,date,period' })
@@ -418,6 +555,14 @@ serve(async (req) => {
           cashflowRecords.length > 0 ? supabase
             .from('cash_flow_statements')
             .upsert(cashflowRecords, { onConflict: 'symbol,date,period' })
+            : Promise.resolve({ error: null }),
+          keyMetricsRecords.length > 0 ? supabase
+            .from('key_metrics')
+            .upsert(keyMetricsRecords, { onConflict: 'symbol,date,period' })
+            : Promise.resolve({ error: null }),
+          ratiosRecords.length > 0 ? supabase
+            .from('financial_ratios')
+            .upsert(ratiosRecords, { onConflict: 'symbol,date,period' })
             : Promise.resolve({ error: null })
         ])
 
@@ -436,8 +581,18 @@ serve(async (req) => {
           errors.push(`${stock.symbol}: Cash flow statements error - ${cashflowResult.error.message}`)
         }
 
-        if (!incomeResult.error && !balanceResult.error && !cashflowResult.error) {
-          totalInserted += incomeRecords.length + balanceRecords.length + cashflowRecords.length
+        if (keyMetricsResult.error) {
+          console.error(`  ❌ Error inserting key metrics: ${keyMetricsResult.error.message}`)
+          errors.push(`${stock.symbol}: Key metrics error - ${keyMetricsResult.error.message}`)
+        }
+
+        if (ratiosResult.error) {
+          console.error(`  ❌ Error inserting financial ratios: ${ratiosResult.error.message}`)
+          errors.push(`${stock.symbol}: Financial ratios error - ${ratiosResult.error.message}`)
+        }
+
+        if (!incomeResult.error && !balanceResult.error && !cashflowResult.error && !keyMetricsResult.error && !ratiosResult.error) {
+          totalInserted += incomeRecords.length + balanceRecords.length + cashflowRecords.length + keyMetricsRecords.length + ratiosRecords.length
           totalProcessed++
           console.log(`  ✅ Successfully inserted data for ${stock.symbol}`)
         }
