@@ -50,6 +50,918 @@ export type Database = {
         }
         Relationships: []
       }
+      balance_sheets: {
+        Row: {
+          accepted_date: string | null
+          account_payables_eur: number | null
+          account_payables_orig: number | null
+          account_payables_usd: number | null
+          accounts_receivables_eur: number | null
+          accounts_receivables_orig: number | null
+          accounts_receivables_usd: number | null
+          accrued_expenses_eur: number | null
+          accrued_expenses_orig: number | null
+          accrued_expenses_usd: number | null
+          accumulated_other_comprehensive_income_loss_eur: number | null
+          accumulated_other_comprehensive_income_loss_orig: number | null
+          accumulated_other_comprehensive_income_loss_usd: number | null
+          additional_paid_in_capital_eur: number | null
+          additional_paid_in_capital_orig: number | null
+          additional_paid_in_capital_usd: number | null
+          capital_lease_obligations_current_eur: number | null
+          capital_lease_obligations_current_orig: number | null
+          capital_lease_obligations_current_usd: number | null
+          capital_lease_obligations_eur: number | null
+          capital_lease_obligations_non_current_eur: number | null
+          capital_lease_obligations_non_current_orig: number | null
+          capital_lease_obligations_non_current_usd: number | null
+          capital_lease_obligations_orig: number | null
+          capital_lease_obligations_usd: number | null
+          cash_and_cash_equivalents_eur: number | null
+          cash_and_cash_equivalents_orig: number | null
+          cash_and_cash_equivalents_usd: number | null
+          cash_and_short_term_investments_eur: number | null
+          cash_and_short_term_investments_orig: number | null
+          cash_and_short_term_investments_usd: number | null
+          cik: string | null
+          common_stock_eur: number | null
+          common_stock_orig: number | null
+          common_stock_usd: number | null
+          created_at: string | null
+          date: string
+          deferred_revenue_eur: number | null
+          deferred_revenue_non_current_eur: number | null
+          deferred_revenue_non_current_orig: number | null
+          deferred_revenue_non_current_usd: number | null
+          deferred_revenue_orig: number | null
+          deferred_revenue_usd: number | null
+          deferred_tax_liabilities_non_current_eur: number | null
+          deferred_tax_liabilities_non_current_orig: number | null
+          deferred_tax_liabilities_non_current_usd: number | null
+          filing_date: string | null
+          fiscal_year: string | null
+          goodwill_and_intangible_assets_eur: number | null
+          goodwill_and_intangible_assets_orig: number | null
+          goodwill_and_intangible_assets_usd: number | null
+          goodwill_eur: number | null
+          goodwill_orig: number | null
+          goodwill_usd: number | null
+          id: string
+          intangible_assets_eur: number | null
+          intangible_assets_orig: number | null
+          intangible_assets_usd: number | null
+          inventory_eur: number | null
+          inventory_orig: number | null
+          inventory_usd: number | null
+          long_term_debt_eur: number | null
+          long_term_debt_orig: number | null
+          long_term_debt_usd: number | null
+          long_term_investments_eur: number | null
+          long_term_investments_orig: number | null
+          long_term_investments_usd: number | null
+          minority_interest_eur: number | null
+          minority_interest_orig: number | null
+          minority_interest_usd: number | null
+          net_debt_eur: number | null
+          net_debt_orig: number | null
+          net_debt_usd: number | null
+          net_receivables_eur: number | null
+          net_receivables_orig: number | null
+          net_receivables_usd: number | null
+          other_assets_eur: number | null
+          other_assets_orig: number | null
+          other_assets_usd: number | null
+          other_current_assets_eur: number | null
+          other_current_assets_orig: number | null
+          other_current_assets_usd: number | null
+          other_current_liabilities_eur: number | null
+          other_current_liabilities_orig: number | null
+          other_current_liabilities_usd: number | null
+          other_liabilities_eur: number | null
+          other_liabilities_orig: number | null
+          other_liabilities_usd: number | null
+          other_non_current_assets_eur: number | null
+          other_non_current_assets_orig: number | null
+          other_non_current_assets_usd: number | null
+          other_non_current_liabilities_eur: number | null
+          other_non_current_liabilities_orig: number | null
+          other_non_current_liabilities_usd: number | null
+          other_payables_eur: number | null
+          other_payables_orig: number | null
+          other_payables_usd: number | null
+          other_receivables_eur: number | null
+          other_receivables_orig: number | null
+          other_receivables_usd: number | null
+          other_total_stockholders_equity_eur: number | null
+          other_total_stockholders_equity_orig: number | null
+          other_total_stockholders_equity_usd: number | null
+          period: string
+          preferred_stock_eur: number | null
+          preferred_stock_orig: number | null
+          preferred_stock_usd: number | null
+          prepaids_eur: number | null
+          prepaids_orig: number | null
+          prepaids_usd: number | null
+          property_plant_equipment_net_eur: number | null
+          property_plant_equipment_net_orig: number | null
+          property_plant_equipment_net_usd: number | null
+          reported_currency: string
+          retained_earnings_eur: number | null
+          retained_earnings_orig: number | null
+          retained_earnings_usd: number | null
+          short_term_debt_eur: number | null
+          short_term_debt_orig: number | null
+          short_term_debt_usd: number | null
+          short_term_investments_eur: number | null
+          short_term_investments_orig: number | null
+          short_term_investments_usd: number | null
+          symbol: string
+          tax_assets_eur: number | null
+          tax_assets_orig: number | null
+          tax_assets_usd: number | null
+          tax_payables_eur: number | null
+          tax_payables_orig: number | null
+          tax_payables_usd: number | null
+          total_assets_eur: number | null
+          total_assets_orig: number | null
+          total_assets_usd: number | null
+          total_current_assets_eur: number | null
+          total_current_assets_orig: number | null
+          total_current_assets_usd: number | null
+          total_current_liabilities_eur: number | null
+          total_current_liabilities_orig: number | null
+          total_current_liabilities_usd: number | null
+          total_debt_eur: number | null
+          total_debt_orig: number | null
+          total_debt_usd: number | null
+          total_equity_eur: number | null
+          total_equity_orig: number | null
+          total_equity_usd: number | null
+          total_investments_eur: number | null
+          total_investments_orig: number | null
+          total_investments_usd: number | null
+          total_liabilities_and_total_equity_eur: number | null
+          total_liabilities_and_total_equity_orig: number | null
+          total_liabilities_and_total_equity_usd: number | null
+          total_liabilities_eur: number | null
+          total_liabilities_orig: number | null
+          total_liabilities_usd: number | null
+          total_non_current_assets_eur: number | null
+          total_non_current_assets_orig: number | null
+          total_non_current_assets_usd: number | null
+          total_non_current_liabilities_eur: number | null
+          total_non_current_liabilities_orig: number | null
+          total_non_current_liabilities_usd: number | null
+          total_payables_eur: number | null
+          total_payables_orig: number | null
+          total_payables_usd: number | null
+          total_stockholders_equity_eur: number | null
+          total_stockholders_equity_orig: number | null
+          total_stockholders_equity_usd: number | null
+          treasury_stock_eur: number | null
+          treasury_stock_orig: number | null
+          treasury_stock_usd: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          accepted_date?: string | null
+          account_payables_eur?: number | null
+          account_payables_orig?: number | null
+          account_payables_usd?: number | null
+          accounts_receivables_eur?: number | null
+          accounts_receivables_orig?: number | null
+          accounts_receivables_usd?: number | null
+          accrued_expenses_eur?: number | null
+          accrued_expenses_orig?: number | null
+          accrued_expenses_usd?: number | null
+          accumulated_other_comprehensive_income_loss_eur?: number | null
+          accumulated_other_comprehensive_income_loss_orig?: number | null
+          accumulated_other_comprehensive_income_loss_usd?: number | null
+          additional_paid_in_capital_eur?: number | null
+          additional_paid_in_capital_orig?: number | null
+          additional_paid_in_capital_usd?: number | null
+          capital_lease_obligations_current_eur?: number | null
+          capital_lease_obligations_current_orig?: number | null
+          capital_lease_obligations_current_usd?: number | null
+          capital_lease_obligations_eur?: number | null
+          capital_lease_obligations_non_current_eur?: number | null
+          capital_lease_obligations_non_current_orig?: number | null
+          capital_lease_obligations_non_current_usd?: number | null
+          capital_lease_obligations_orig?: number | null
+          capital_lease_obligations_usd?: number | null
+          cash_and_cash_equivalents_eur?: number | null
+          cash_and_cash_equivalents_orig?: number | null
+          cash_and_cash_equivalents_usd?: number | null
+          cash_and_short_term_investments_eur?: number | null
+          cash_and_short_term_investments_orig?: number | null
+          cash_and_short_term_investments_usd?: number | null
+          cik?: string | null
+          common_stock_eur?: number | null
+          common_stock_orig?: number | null
+          common_stock_usd?: number | null
+          created_at?: string | null
+          date: string
+          deferred_revenue_eur?: number | null
+          deferred_revenue_non_current_eur?: number | null
+          deferred_revenue_non_current_orig?: number | null
+          deferred_revenue_non_current_usd?: number | null
+          deferred_revenue_orig?: number | null
+          deferred_revenue_usd?: number | null
+          deferred_tax_liabilities_non_current_eur?: number | null
+          deferred_tax_liabilities_non_current_orig?: number | null
+          deferred_tax_liabilities_non_current_usd?: number | null
+          filing_date?: string | null
+          fiscal_year?: string | null
+          goodwill_and_intangible_assets_eur?: number | null
+          goodwill_and_intangible_assets_orig?: number | null
+          goodwill_and_intangible_assets_usd?: number | null
+          goodwill_eur?: number | null
+          goodwill_orig?: number | null
+          goodwill_usd?: number | null
+          id?: string
+          intangible_assets_eur?: number | null
+          intangible_assets_orig?: number | null
+          intangible_assets_usd?: number | null
+          inventory_eur?: number | null
+          inventory_orig?: number | null
+          inventory_usd?: number | null
+          long_term_debt_eur?: number | null
+          long_term_debt_orig?: number | null
+          long_term_debt_usd?: number | null
+          long_term_investments_eur?: number | null
+          long_term_investments_orig?: number | null
+          long_term_investments_usd?: number | null
+          minority_interest_eur?: number | null
+          minority_interest_orig?: number | null
+          minority_interest_usd?: number | null
+          net_debt_eur?: number | null
+          net_debt_orig?: number | null
+          net_debt_usd?: number | null
+          net_receivables_eur?: number | null
+          net_receivables_orig?: number | null
+          net_receivables_usd?: number | null
+          other_assets_eur?: number | null
+          other_assets_orig?: number | null
+          other_assets_usd?: number | null
+          other_current_assets_eur?: number | null
+          other_current_assets_orig?: number | null
+          other_current_assets_usd?: number | null
+          other_current_liabilities_eur?: number | null
+          other_current_liabilities_orig?: number | null
+          other_current_liabilities_usd?: number | null
+          other_liabilities_eur?: number | null
+          other_liabilities_orig?: number | null
+          other_liabilities_usd?: number | null
+          other_non_current_assets_eur?: number | null
+          other_non_current_assets_orig?: number | null
+          other_non_current_assets_usd?: number | null
+          other_non_current_liabilities_eur?: number | null
+          other_non_current_liabilities_orig?: number | null
+          other_non_current_liabilities_usd?: number | null
+          other_payables_eur?: number | null
+          other_payables_orig?: number | null
+          other_payables_usd?: number | null
+          other_receivables_eur?: number | null
+          other_receivables_orig?: number | null
+          other_receivables_usd?: number | null
+          other_total_stockholders_equity_eur?: number | null
+          other_total_stockholders_equity_orig?: number | null
+          other_total_stockholders_equity_usd?: number | null
+          period: string
+          preferred_stock_eur?: number | null
+          preferred_stock_orig?: number | null
+          preferred_stock_usd?: number | null
+          prepaids_eur?: number | null
+          prepaids_orig?: number | null
+          prepaids_usd?: number | null
+          property_plant_equipment_net_eur?: number | null
+          property_plant_equipment_net_orig?: number | null
+          property_plant_equipment_net_usd?: number | null
+          reported_currency: string
+          retained_earnings_eur?: number | null
+          retained_earnings_orig?: number | null
+          retained_earnings_usd?: number | null
+          short_term_debt_eur?: number | null
+          short_term_debt_orig?: number | null
+          short_term_debt_usd?: number | null
+          short_term_investments_eur?: number | null
+          short_term_investments_orig?: number | null
+          short_term_investments_usd?: number | null
+          symbol: string
+          tax_assets_eur?: number | null
+          tax_assets_orig?: number | null
+          tax_assets_usd?: number | null
+          tax_payables_eur?: number | null
+          tax_payables_orig?: number | null
+          tax_payables_usd?: number | null
+          total_assets_eur?: number | null
+          total_assets_orig?: number | null
+          total_assets_usd?: number | null
+          total_current_assets_eur?: number | null
+          total_current_assets_orig?: number | null
+          total_current_assets_usd?: number | null
+          total_current_liabilities_eur?: number | null
+          total_current_liabilities_orig?: number | null
+          total_current_liabilities_usd?: number | null
+          total_debt_eur?: number | null
+          total_debt_orig?: number | null
+          total_debt_usd?: number | null
+          total_equity_eur?: number | null
+          total_equity_orig?: number | null
+          total_equity_usd?: number | null
+          total_investments_eur?: number | null
+          total_investments_orig?: number | null
+          total_investments_usd?: number | null
+          total_liabilities_and_total_equity_eur?: number | null
+          total_liabilities_and_total_equity_orig?: number | null
+          total_liabilities_and_total_equity_usd?: number | null
+          total_liabilities_eur?: number | null
+          total_liabilities_orig?: number | null
+          total_liabilities_usd?: number | null
+          total_non_current_assets_eur?: number | null
+          total_non_current_assets_orig?: number | null
+          total_non_current_assets_usd?: number | null
+          total_non_current_liabilities_eur?: number | null
+          total_non_current_liabilities_orig?: number | null
+          total_non_current_liabilities_usd?: number | null
+          total_payables_eur?: number | null
+          total_payables_orig?: number | null
+          total_payables_usd?: number | null
+          total_stockholders_equity_eur?: number | null
+          total_stockholders_equity_orig?: number | null
+          total_stockholders_equity_usd?: number | null
+          treasury_stock_eur?: number | null
+          treasury_stock_orig?: number | null
+          treasury_stock_usd?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          accepted_date?: string | null
+          account_payables_eur?: number | null
+          account_payables_orig?: number | null
+          account_payables_usd?: number | null
+          accounts_receivables_eur?: number | null
+          accounts_receivables_orig?: number | null
+          accounts_receivables_usd?: number | null
+          accrued_expenses_eur?: number | null
+          accrued_expenses_orig?: number | null
+          accrued_expenses_usd?: number | null
+          accumulated_other_comprehensive_income_loss_eur?: number | null
+          accumulated_other_comprehensive_income_loss_orig?: number | null
+          accumulated_other_comprehensive_income_loss_usd?: number | null
+          additional_paid_in_capital_eur?: number | null
+          additional_paid_in_capital_orig?: number | null
+          additional_paid_in_capital_usd?: number | null
+          capital_lease_obligations_current_eur?: number | null
+          capital_lease_obligations_current_orig?: number | null
+          capital_lease_obligations_current_usd?: number | null
+          capital_lease_obligations_eur?: number | null
+          capital_lease_obligations_non_current_eur?: number | null
+          capital_lease_obligations_non_current_orig?: number | null
+          capital_lease_obligations_non_current_usd?: number | null
+          capital_lease_obligations_orig?: number | null
+          capital_lease_obligations_usd?: number | null
+          cash_and_cash_equivalents_eur?: number | null
+          cash_and_cash_equivalents_orig?: number | null
+          cash_and_cash_equivalents_usd?: number | null
+          cash_and_short_term_investments_eur?: number | null
+          cash_and_short_term_investments_orig?: number | null
+          cash_and_short_term_investments_usd?: number | null
+          cik?: string | null
+          common_stock_eur?: number | null
+          common_stock_orig?: number | null
+          common_stock_usd?: number | null
+          created_at?: string | null
+          date?: string
+          deferred_revenue_eur?: number | null
+          deferred_revenue_non_current_eur?: number | null
+          deferred_revenue_non_current_orig?: number | null
+          deferred_revenue_non_current_usd?: number | null
+          deferred_revenue_orig?: number | null
+          deferred_revenue_usd?: number | null
+          deferred_tax_liabilities_non_current_eur?: number | null
+          deferred_tax_liabilities_non_current_orig?: number | null
+          deferred_tax_liabilities_non_current_usd?: number | null
+          filing_date?: string | null
+          fiscal_year?: string | null
+          goodwill_and_intangible_assets_eur?: number | null
+          goodwill_and_intangible_assets_orig?: number | null
+          goodwill_and_intangible_assets_usd?: number | null
+          goodwill_eur?: number | null
+          goodwill_orig?: number | null
+          goodwill_usd?: number | null
+          id?: string
+          intangible_assets_eur?: number | null
+          intangible_assets_orig?: number | null
+          intangible_assets_usd?: number | null
+          inventory_eur?: number | null
+          inventory_orig?: number | null
+          inventory_usd?: number | null
+          long_term_debt_eur?: number | null
+          long_term_debt_orig?: number | null
+          long_term_debt_usd?: number | null
+          long_term_investments_eur?: number | null
+          long_term_investments_orig?: number | null
+          long_term_investments_usd?: number | null
+          minority_interest_eur?: number | null
+          minority_interest_orig?: number | null
+          minority_interest_usd?: number | null
+          net_debt_eur?: number | null
+          net_debt_orig?: number | null
+          net_debt_usd?: number | null
+          net_receivables_eur?: number | null
+          net_receivables_orig?: number | null
+          net_receivables_usd?: number | null
+          other_assets_eur?: number | null
+          other_assets_orig?: number | null
+          other_assets_usd?: number | null
+          other_current_assets_eur?: number | null
+          other_current_assets_orig?: number | null
+          other_current_assets_usd?: number | null
+          other_current_liabilities_eur?: number | null
+          other_current_liabilities_orig?: number | null
+          other_current_liabilities_usd?: number | null
+          other_liabilities_eur?: number | null
+          other_liabilities_orig?: number | null
+          other_liabilities_usd?: number | null
+          other_non_current_assets_eur?: number | null
+          other_non_current_assets_orig?: number | null
+          other_non_current_assets_usd?: number | null
+          other_non_current_liabilities_eur?: number | null
+          other_non_current_liabilities_orig?: number | null
+          other_non_current_liabilities_usd?: number | null
+          other_payables_eur?: number | null
+          other_payables_orig?: number | null
+          other_payables_usd?: number | null
+          other_receivables_eur?: number | null
+          other_receivables_orig?: number | null
+          other_receivables_usd?: number | null
+          other_total_stockholders_equity_eur?: number | null
+          other_total_stockholders_equity_orig?: number | null
+          other_total_stockholders_equity_usd?: number | null
+          period?: string
+          preferred_stock_eur?: number | null
+          preferred_stock_orig?: number | null
+          preferred_stock_usd?: number | null
+          prepaids_eur?: number | null
+          prepaids_orig?: number | null
+          prepaids_usd?: number | null
+          property_plant_equipment_net_eur?: number | null
+          property_plant_equipment_net_orig?: number | null
+          property_plant_equipment_net_usd?: number | null
+          reported_currency?: string
+          retained_earnings_eur?: number | null
+          retained_earnings_orig?: number | null
+          retained_earnings_usd?: number | null
+          short_term_debt_eur?: number | null
+          short_term_debt_orig?: number | null
+          short_term_debt_usd?: number | null
+          short_term_investments_eur?: number | null
+          short_term_investments_orig?: number | null
+          short_term_investments_usd?: number | null
+          symbol?: string
+          tax_assets_eur?: number | null
+          tax_assets_orig?: number | null
+          tax_assets_usd?: number | null
+          tax_payables_eur?: number | null
+          tax_payables_orig?: number | null
+          tax_payables_usd?: number | null
+          total_assets_eur?: number | null
+          total_assets_orig?: number | null
+          total_assets_usd?: number | null
+          total_current_assets_eur?: number | null
+          total_current_assets_orig?: number | null
+          total_current_assets_usd?: number | null
+          total_current_liabilities_eur?: number | null
+          total_current_liabilities_orig?: number | null
+          total_current_liabilities_usd?: number | null
+          total_debt_eur?: number | null
+          total_debt_orig?: number | null
+          total_debt_usd?: number | null
+          total_equity_eur?: number | null
+          total_equity_orig?: number | null
+          total_equity_usd?: number | null
+          total_investments_eur?: number | null
+          total_investments_orig?: number | null
+          total_investments_usd?: number | null
+          total_liabilities_and_total_equity_eur?: number | null
+          total_liabilities_and_total_equity_orig?: number | null
+          total_liabilities_and_total_equity_usd?: number | null
+          total_liabilities_eur?: number | null
+          total_liabilities_orig?: number | null
+          total_liabilities_usd?: number | null
+          total_non_current_assets_eur?: number | null
+          total_non_current_assets_orig?: number | null
+          total_non_current_assets_usd?: number | null
+          total_non_current_liabilities_eur?: number | null
+          total_non_current_liabilities_orig?: number | null
+          total_non_current_liabilities_usd?: number | null
+          total_payables_eur?: number | null
+          total_payables_orig?: number | null
+          total_payables_usd?: number | null
+          total_stockholders_equity_eur?: number | null
+          total_stockholders_equity_orig?: number | null
+          total_stockholders_equity_usd?: number | null
+          treasury_stock_eur?: number | null
+          treasury_stock_orig?: number | null
+          treasury_stock_usd?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cash_flow_statements: {
+        Row: {
+          accepted_date: string | null
+          accounts_payables_eur: number | null
+          accounts_payables_orig: number | null
+          accounts_payables_usd: number | null
+          accounts_receivables_eur: number | null
+          accounts_receivables_orig: number | null
+          accounts_receivables_usd: number | null
+          acquisitions_net_eur: number | null
+          acquisitions_net_orig: number | null
+          acquisitions_net_usd: number | null
+          capital_expenditure_eur: number | null
+          capital_expenditure_orig: number | null
+          capital_expenditure_usd: number | null
+          cash_at_beginning_of_period_eur: number | null
+          cash_at_beginning_of_period_orig: number | null
+          cash_at_beginning_of_period_usd: number | null
+          cash_at_end_of_period_eur: number | null
+          cash_at_end_of_period_orig: number | null
+          cash_at_end_of_period_usd: number | null
+          change_in_working_capital_eur: number | null
+          change_in_working_capital_orig: number | null
+          change_in_working_capital_usd: number | null
+          cik: string | null
+          common_dividends_paid_eur: number | null
+          common_dividends_paid_orig: number | null
+          common_dividends_paid_usd: number | null
+          common_stock_issuance_eur: number | null
+          common_stock_issuance_orig: number | null
+          common_stock_issuance_usd: number | null
+          common_stock_repurchased_eur: number | null
+          common_stock_repurchased_orig: number | null
+          common_stock_repurchased_usd: number | null
+          created_at: string | null
+          date: string
+          deferred_income_tax_eur: number | null
+          deferred_income_tax_orig: number | null
+          deferred_income_tax_usd: number | null
+          depreciation_and_amortization_eur: number | null
+          depreciation_and_amortization_orig: number | null
+          depreciation_and_amortization_usd: number | null
+          effect_of_forex_changes_on_cash_eur: number | null
+          effect_of_forex_changes_on_cash_orig: number | null
+          effect_of_forex_changes_on_cash_usd: number | null
+          filing_date: string | null
+          fiscal_year: string | null
+          free_cash_flow_eur: number | null
+          free_cash_flow_orig: number | null
+          free_cash_flow_usd: number | null
+          id: string
+          income_taxes_paid_eur: number | null
+          income_taxes_paid_orig: number | null
+          income_taxes_paid_usd: number | null
+          interest_paid_eur: number | null
+          interest_paid_orig: number | null
+          interest_paid_usd: number | null
+          inventory_eur: number | null
+          inventory_orig: number | null
+          inventory_usd: number | null
+          investments_in_property_plant_and_equipment_eur: number | null
+          investments_in_property_plant_and_equipment_orig: number | null
+          investments_in_property_plant_and_equipment_usd: number | null
+          long_term_net_debt_issuance_eur: number | null
+          long_term_net_debt_issuance_orig: number | null
+          long_term_net_debt_issuance_usd: number | null
+          net_cash_provided_by_financing_activities_eur: number | null
+          net_cash_provided_by_financing_activities_orig: number | null
+          net_cash_provided_by_financing_activities_usd: number | null
+          net_cash_provided_by_investing_activities_eur: number | null
+          net_cash_provided_by_investing_activities_orig: number | null
+          net_cash_provided_by_investing_activities_usd: number | null
+          net_cash_provided_by_operating_activities_eur: number | null
+          net_cash_provided_by_operating_activities_orig: number | null
+          net_cash_provided_by_operating_activities_usd: number | null
+          net_change_in_cash_eur: number | null
+          net_change_in_cash_orig: number | null
+          net_change_in_cash_usd: number | null
+          net_common_stock_issuance_eur: number | null
+          net_common_stock_issuance_orig: number | null
+          net_common_stock_issuance_usd: number | null
+          net_debt_issuance_eur: number | null
+          net_debt_issuance_orig: number | null
+          net_debt_issuance_usd: number | null
+          net_dividends_paid_eur: number | null
+          net_dividends_paid_orig: number | null
+          net_dividends_paid_usd: number | null
+          net_income_eur: number | null
+          net_income_orig: number | null
+          net_income_usd: number | null
+          net_preferred_stock_issuance_eur: number | null
+          net_preferred_stock_issuance_orig: number | null
+          net_preferred_stock_issuance_usd: number | null
+          net_stock_issuance_eur: number | null
+          net_stock_issuance_orig: number | null
+          net_stock_issuance_usd: number | null
+          operating_cash_flow_eur: number | null
+          operating_cash_flow_orig: number | null
+          operating_cash_flow_usd: number | null
+          other_financing_activities_eur: number | null
+          other_financing_activities_orig: number | null
+          other_financing_activities_usd: number | null
+          other_investing_activities_eur: number | null
+          other_investing_activities_orig: number | null
+          other_investing_activities_usd: number | null
+          other_non_cash_items_eur: number | null
+          other_non_cash_items_orig: number | null
+          other_non_cash_items_usd: number | null
+          other_working_capital_eur: number | null
+          other_working_capital_orig: number | null
+          other_working_capital_usd: number | null
+          period: string
+          preferred_dividends_paid_eur: number | null
+          preferred_dividends_paid_orig: number | null
+          preferred_dividends_paid_usd: number | null
+          purchases_of_investments_eur: number | null
+          purchases_of_investments_orig: number | null
+          purchases_of_investments_usd: number | null
+          reported_currency: string
+          sales_maturities_of_investments_eur: number | null
+          sales_maturities_of_investments_orig: number | null
+          sales_maturities_of_investments_usd: number | null
+          short_term_net_debt_issuance_eur: number | null
+          short_term_net_debt_issuance_orig: number | null
+          short_term_net_debt_issuance_usd: number | null
+          stock_based_compensation_eur: number | null
+          stock_based_compensation_orig: number | null
+          stock_based_compensation_usd: number | null
+          symbol: string
+          updated_at: string | null
+        }
+        Insert: {
+          accepted_date?: string | null
+          accounts_payables_eur?: number | null
+          accounts_payables_orig?: number | null
+          accounts_payables_usd?: number | null
+          accounts_receivables_eur?: number | null
+          accounts_receivables_orig?: number | null
+          accounts_receivables_usd?: number | null
+          acquisitions_net_eur?: number | null
+          acquisitions_net_orig?: number | null
+          acquisitions_net_usd?: number | null
+          capital_expenditure_eur?: number | null
+          capital_expenditure_orig?: number | null
+          capital_expenditure_usd?: number | null
+          cash_at_beginning_of_period_eur?: number | null
+          cash_at_beginning_of_period_orig?: number | null
+          cash_at_beginning_of_period_usd?: number | null
+          cash_at_end_of_period_eur?: number | null
+          cash_at_end_of_period_orig?: number | null
+          cash_at_end_of_period_usd?: number | null
+          change_in_working_capital_eur?: number | null
+          change_in_working_capital_orig?: number | null
+          change_in_working_capital_usd?: number | null
+          cik?: string | null
+          common_dividends_paid_eur?: number | null
+          common_dividends_paid_orig?: number | null
+          common_dividends_paid_usd?: number | null
+          common_stock_issuance_eur?: number | null
+          common_stock_issuance_orig?: number | null
+          common_stock_issuance_usd?: number | null
+          common_stock_repurchased_eur?: number | null
+          common_stock_repurchased_orig?: number | null
+          common_stock_repurchased_usd?: number | null
+          created_at?: string | null
+          date: string
+          deferred_income_tax_eur?: number | null
+          deferred_income_tax_orig?: number | null
+          deferred_income_tax_usd?: number | null
+          depreciation_and_amortization_eur?: number | null
+          depreciation_and_amortization_orig?: number | null
+          depreciation_and_amortization_usd?: number | null
+          effect_of_forex_changes_on_cash_eur?: number | null
+          effect_of_forex_changes_on_cash_orig?: number | null
+          effect_of_forex_changes_on_cash_usd?: number | null
+          filing_date?: string | null
+          fiscal_year?: string | null
+          free_cash_flow_eur?: number | null
+          free_cash_flow_orig?: number | null
+          free_cash_flow_usd?: number | null
+          id?: string
+          income_taxes_paid_eur?: number | null
+          income_taxes_paid_orig?: number | null
+          income_taxes_paid_usd?: number | null
+          interest_paid_eur?: number | null
+          interest_paid_orig?: number | null
+          interest_paid_usd?: number | null
+          inventory_eur?: number | null
+          inventory_orig?: number | null
+          inventory_usd?: number | null
+          investments_in_property_plant_and_equipment_eur?: number | null
+          investments_in_property_plant_and_equipment_orig?: number | null
+          investments_in_property_plant_and_equipment_usd?: number | null
+          long_term_net_debt_issuance_eur?: number | null
+          long_term_net_debt_issuance_orig?: number | null
+          long_term_net_debt_issuance_usd?: number | null
+          net_cash_provided_by_financing_activities_eur?: number | null
+          net_cash_provided_by_financing_activities_orig?: number | null
+          net_cash_provided_by_financing_activities_usd?: number | null
+          net_cash_provided_by_investing_activities_eur?: number | null
+          net_cash_provided_by_investing_activities_orig?: number | null
+          net_cash_provided_by_investing_activities_usd?: number | null
+          net_cash_provided_by_operating_activities_eur?: number | null
+          net_cash_provided_by_operating_activities_orig?: number | null
+          net_cash_provided_by_operating_activities_usd?: number | null
+          net_change_in_cash_eur?: number | null
+          net_change_in_cash_orig?: number | null
+          net_change_in_cash_usd?: number | null
+          net_common_stock_issuance_eur?: number | null
+          net_common_stock_issuance_orig?: number | null
+          net_common_stock_issuance_usd?: number | null
+          net_debt_issuance_eur?: number | null
+          net_debt_issuance_orig?: number | null
+          net_debt_issuance_usd?: number | null
+          net_dividends_paid_eur?: number | null
+          net_dividends_paid_orig?: number | null
+          net_dividends_paid_usd?: number | null
+          net_income_eur?: number | null
+          net_income_orig?: number | null
+          net_income_usd?: number | null
+          net_preferred_stock_issuance_eur?: number | null
+          net_preferred_stock_issuance_orig?: number | null
+          net_preferred_stock_issuance_usd?: number | null
+          net_stock_issuance_eur?: number | null
+          net_stock_issuance_orig?: number | null
+          net_stock_issuance_usd?: number | null
+          operating_cash_flow_eur?: number | null
+          operating_cash_flow_orig?: number | null
+          operating_cash_flow_usd?: number | null
+          other_financing_activities_eur?: number | null
+          other_financing_activities_orig?: number | null
+          other_financing_activities_usd?: number | null
+          other_investing_activities_eur?: number | null
+          other_investing_activities_orig?: number | null
+          other_investing_activities_usd?: number | null
+          other_non_cash_items_eur?: number | null
+          other_non_cash_items_orig?: number | null
+          other_non_cash_items_usd?: number | null
+          other_working_capital_eur?: number | null
+          other_working_capital_orig?: number | null
+          other_working_capital_usd?: number | null
+          period: string
+          preferred_dividends_paid_eur?: number | null
+          preferred_dividends_paid_orig?: number | null
+          preferred_dividends_paid_usd?: number | null
+          purchases_of_investments_eur?: number | null
+          purchases_of_investments_orig?: number | null
+          purchases_of_investments_usd?: number | null
+          reported_currency: string
+          sales_maturities_of_investments_eur?: number | null
+          sales_maturities_of_investments_orig?: number | null
+          sales_maturities_of_investments_usd?: number | null
+          short_term_net_debt_issuance_eur?: number | null
+          short_term_net_debt_issuance_orig?: number | null
+          short_term_net_debt_issuance_usd?: number | null
+          stock_based_compensation_eur?: number | null
+          stock_based_compensation_orig?: number | null
+          stock_based_compensation_usd?: number | null
+          symbol: string
+          updated_at?: string | null
+        }
+        Update: {
+          accepted_date?: string | null
+          accounts_payables_eur?: number | null
+          accounts_payables_orig?: number | null
+          accounts_payables_usd?: number | null
+          accounts_receivables_eur?: number | null
+          accounts_receivables_orig?: number | null
+          accounts_receivables_usd?: number | null
+          acquisitions_net_eur?: number | null
+          acquisitions_net_orig?: number | null
+          acquisitions_net_usd?: number | null
+          capital_expenditure_eur?: number | null
+          capital_expenditure_orig?: number | null
+          capital_expenditure_usd?: number | null
+          cash_at_beginning_of_period_eur?: number | null
+          cash_at_beginning_of_period_orig?: number | null
+          cash_at_beginning_of_period_usd?: number | null
+          cash_at_end_of_period_eur?: number | null
+          cash_at_end_of_period_orig?: number | null
+          cash_at_end_of_period_usd?: number | null
+          change_in_working_capital_eur?: number | null
+          change_in_working_capital_orig?: number | null
+          change_in_working_capital_usd?: number | null
+          cik?: string | null
+          common_dividends_paid_eur?: number | null
+          common_dividends_paid_orig?: number | null
+          common_dividends_paid_usd?: number | null
+          common_stock_issuance_eur?: number | null
+          common_stock_issuance_orig?: number | null
+          common_stock_issuance_usd?: number | null
+          common_stock_repurchased_eur?: number | null
+          common_stock_repurchased_orig?: number | null
+          common_stock_repurchased_usd?: number | null
+          created_at?: string | null
+          date?: string
+          deferred_income_tax_eur?: number | null
+          deferred_income_tax_orig?: number | null
+          deferred_income_tax_usd?: number | null
+          depreciation_and_amortization_eur?: number | null
+          depreciation_and_amortization_orig?: number | null
+          depreciation_and_amortization_usd?: number | null
+          effect_of_forex_changes_on_cash_eur?: number | null
+          effect_of_forex_changes_on_cash_orig?: number | null
+          effect_of_forex_changes_on_cash_usd?: number | null
+          filing_date?: string | null
+          fiscal_year?: string | null
+          free_cash_flow_eur?: number | null
+          free_cash_flow_orig?: number | null
+          free_cash_flow_usd?: number | null
+          id?: string
+          income_taxes_paid_eur?: number | null
+          income_taxes_paid_orig?: number | null
+          income_taxes_paid_usd?: number | null
+          interest_paid_eur?: number | null
+          interest_paid_orig?: number | null
+          interest_paid_usd?: number | null
+          inventory_eur?: number | null
+          inventory_orig?: number | null
+          inventory_usd?: number | null
+          investments_in_property_plant_and_equipment_eur?: number | null
+          investments_in_property_plant_and_equipment_orig?: number | null
+          investments_in_property_plant_and_equipment_usd?: number | null
+          long_term_net_debt_issuance_eur?: number | null
+          long_term_net_debt_issuance_orig?: number | null
+          long_term_net_debt_issuance_usd?: number | null
+          net_cash_provided_by_financing_activities_eur?: number | null
+          net_cash_provided_by_financing_activities_orig?: number | null
+          net_cash_provided_by_financing_activities_usd?: number | null
+          net_cash_provided_by_investing_activities_eur?: number | null
+          net_cash_provided_by_investing_activities_orig?: number | null
+          net_cash_provided_by_investing_activities_usd?: number | null
+          net_cash_provided_by_operating_activities_eur?: number | null
+          net_cash_provided_by_operating_activities_orig?: number | null
+          net_cash_provided_by_operating_activities_usd?: number | null
+          net_change_in_cash_eur?: number | null
+          net_change_in_cash_orig?: number | null
+          net_change_in_cash_usd?: number | null
+          net_common_stock_issuance_eur?: number | null
+          net_common_stock_issuance_orig?: number | null
+          net_common_stock_issuance_usd?: number | null
+          net_debt_issuance_eur?: number | null
+          net_debt_issuance_orig?: number | null
+          net_debt_issuance_usd?: number | null
+          net_dividends_paid_eur?: number | null
+          net_dividends_paid_orig?: number | null
+          net_dividends_paid_usd?: number | null
+          net_income_eur?: number | null
+          net_income_orig?: number | null
+          net_income_usd?: number | null
+          net_preferred_stock_issuance_eur?: number | null
+          net_preferred_stock_issuance_orig?: number | null
+          net_preferred_stock_issuance_usd?: number | null
+          net_stock_issuance_eur?: number | null
+          net_stock_issuance_orig?: number | null
+          net_stock_issuance_usd?: number | null
+          operating_cash_flow_eur?: number | null
+          operating_cash_flow_orig?: number | null
+          operating_cash_flow_usd?: number | null
+          other_financing_activities_eur?: number | null
+          other_financing_activities_orig?: number | null
+          other_financing_activities_usd?: number | null
+          other_investing_activities_eur?: number | null
+          other_investing_activities_orig?: number | null
+          other_investing_activities_usd?: number | null
+          other_non_cash_items_eur?: number | null
+          other_non_cash_items_orig?: number | null
+          other_non_cash_items_usd?: number | null
+          other_working_capital_eur?: number | null
+          other_working_capital_orig?: number | null
+          other_working_capital_usd?: number | null
+          period?: string
+          preferred_dividends_paid_eur?: number | null
+          preferred_dividends_paid_orig?: number | null
+          preferred_dividends_paid_usd?: number | null
+          purchases_of_investments_eur?: number | null
+          purchases_of_investments_orig?: number | null
+          purchases_of_investments_usd?: number | null
+          reported_currency?: string
+          sales_maturities_of_investments_eur?: number | null
+          sales_maturities_of_investments_orig?: number | null
+          sales_maturities_of_investments_usd?: number | null
+          short_term_net_debt_issuance_eur?: number | null
+          short_term_net_debt_issuance_orig?: number | null
+          short_term_net_debt_issuance_usd?: number | null
+          stock_based_compensation_eur?: number | null
+          stock_based_compensation_orig?: number | null
+          stock_based_compensation_usd?: number | null
+          symbol?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       company_profiles: {
         Row: {
           beta: number | null
@@ -857,1171 +1769,302 @@ export type Database = {
         }
         Relationships: []
       }
-      financial_statements: {
+      income_statements: {
         Row: {
           accepted_date: string | null
-          accounts_payable_eur: number | null
-          accounts_payable_orig: number | null
-          accounts_payable_usd: number | null
-          accounts_payables_change_eur: number | null
-          accounts_payables_change_orig: number | null
-          accounts_payables_change_usd: number | null
-          accounts_receivable_eur: number | null
-          accounts_receivable_orig: number | null
-          accounts_receivable_usd: number | null
-          accounts_receivables_change_eur: number | null
-          accounts_receivables_change_orig: number | null
-          accounts_receivables_change_usd: number | null
-          accumulated_other_comprehensive_income_loss_eur: number | null
-          accumulated_other_comprehensive_income_loss_orig: number | null
-          accumulated_other_comprehensive_income_loss_usd: number | null
-          acquisitions_net_eur: number | null
-          acquisitions_net_orig: number | null
-          acquisitions_net_usd: number | null
-          asset_turnover: number | null
-          beta: number | null
-          book_value_per_share: number | null
-          capex_per_share: number | null
-          capex_to_depreciation: number | null
-          capex_to_operating_cash_flow: number | null
-          capex_to_revenue: number | null
-          capital_expenditure: number | null
-          capital_expenditure_coverage_ratio: number | null
-          capital_expenditure_eur: number | null
-          capital_expenditure_orig: number | null
-          capital_expenditure_usd: number | null
-          cash_and_equivalents: number | null
-          cash_and_equivalents_eur: number | null
-          cash_and_equivalents_orig: number | null
-          cash_and_equivalents_usd: number | null
-          cash_and_short_term_investments_eur: number | null
-          cash_and_short_term_investments_orig: number | null
-          cash_and_short_term_investments_usd: number | null
-          cash_at_beginning_eur: number | null
-          cash_at_beginning_orig: number | null
-          cash_at_beginning_usd: number | null
-          cash_at_end_eur: number | null
-          cash_at_end_orig: number | null
-          cash_at_end_usd: number | null
-          cash_conversion_cycle: number | null
-          cash_flow_to_debt_ratio: number | null
-          cash_per_share_ratio: number | null
-          cash_ratio: number | null
-          change_in_working_capital_eur: number | null
-          change_in_working_capital_orig: number | null
-          change_in_working_capital_usd: number | null
+          bottom_line_net_income_eur: number | null
+          bottom_line_net_income_orig: number | null
+          bottom_line_net_income_usd: number | null
           cik: string | null
-          common_stock_eur: number | null
-          common_stock_issuance_eur: number | null
-          common_stock_issuance_orig: number | null
-          common_stock_issuance_usd: number | null
-          common_stock_orig: number | null
-          common_stock_repurchased_eur: number | null
-          common_stock_repurchased_orig: number | null
-          common_stock_repurchased_usd: number | null
-          common_stock_usd: number | null
-          company_equity_multiplier: number | null
+          cost_and_expenses_eur: number | null
+          cost_and_expenses_orig: number | null
+          cost_and_expenses_usd: number | null
           cost_of_revenue_eur: number | null
           cost_of_revenue_orig: number | null
           cost_of_revenue_usd: number | null
-          current_ratio: number | null
+          created_at: string | null
           date: string
-          days_inventory_outstanding: number | null
-          days_of_inventory_outstanding_ratio: number | null
-          days_of_payables_outstanding_ratio: number | null
-          days_of_sales_outstanding_ratio: number | null
-          days_payables_outstanding: number | null
-          days_sales_outstanding: number | null
-          debt_to_assets: number | null
-          debt_to_equity: number | null
-          debt_to_market_cap: number | null
-          deferred_income_tax_eur: number | null
-          deferred_income_tax_orig: number | null
-          deferred_income_tax_usd: number | null
-          deferred_revenue_current_eur: number | null
-          deferred_revenue_current_orig: number | null
-          deferred_revenue_current_usd: number | null
-          deferred_revenue_non_current_eur: number | null
-          deferred_revenue_non_current_orig: number | null
-          deferred_revenue_non_current_usd: number | null
-          depreciation_and_amortization_cf_eur: number | null
-          depreciation_and_amortization_cf_orig: number | null
-          depreciation_and_amortization_cf_usd: number | null
-          dividend_paid_and_capex_coverage_ratio: number | null
-          dividend_payments_coverage_ratio: number | null
-          dividend_per_share: number | null
-          dividend_yield: number | null
-          dividends_paid: number | null
-          dividends_paid_eur: number | null
-          dividends_paid_orig: number | null
-          dividends_paid_usd: number | null
-          earnings_yield: number | null
-          ebit: number | null
+          depreciation_and_amortization_eur: number | null
+          depreciation_and_amortization_orig: number | null
+          depreciation_and_amortization_usd: number | null
           ebit_eur: number | null
-          ebit_margin: number | null
           ebit_orig: number | null
-          ebit_per_revenue: number | null
           ebit_usd: number | null
-          ebitda: number | null
           ebitda_eur: number | null
-          ebitda_margin: number | null
           ebitda_orig: number | null
           ebitda_usd: number | null
-          effect_of_forex_changes_on_cash_eur: number | null
-          effect_of_forex_changes_on_cash_orig: number | null
-          effect_of_forex_changes_on_cash_usd: number | null
-          effective_tax_rate: number | null
-          enterprise_value_eur: number | null
-          enterprise_value_orig: number | null
-          enterprise_value_usd: number | null
-          eps_basic: number | null
+          eps: number | null
           eps_diluted: number | null
-          eps_diluted_eur: number | null
-          eps_diluted_orig: number | null
-          eps_diluted_usd: number | null
-          ev_to_ebitda: number | null
-          ev_to_operating_cash_flow: number | null
-          ev_to_sales: number | null
-          fcf_per_share: number | null
-          fcf_yield: number | null
           filing_date: string | null
           fiscal_year: string | null
-          fixed_asset_turnover: number | null
-          free_cash_flow: number | null
-          free_cash_flow_eur: number | null
-          free_cash_flow_operating_cash_flow_ratio: number | null
-          free_cash_flow_orig: number | null
-          free_cash_flow_per_share_ratio: number | null
-          free_cash_flow_usd: number | null
-          full_time_employees: number | null
-          goodwill_eur: number | null
-          goodwill_orig: number | null
-          goodwill_usd: number | null
-          graham_number_eur: number | null
-          graham_number_orig: number | null
-          graham_number_usd: number | null
+          general_and_administrative_expenses_eur: number | null
+          general_and_administrative_expenses_orig: number | null
+          general_and_administrative_expenses_usd: number | null
           gross_profit_eur: number | null
-          gross_profit_margin: number | null
           gross_profit_orig: number | null
           gross_profit_usd: number | null
-          id: number
-          income_before_tax: number | null
+          id: string
           income_before_tax_eur: number | null
           income_before_tax_orig: number | null
           income_before_tax_usd: number | null
-          income_tax_expense: number | null
           income_tax_expense_eur: number | null
           income_tax_expense_orig: number | null
           income_tax_expense_usd: number | null
-          income_taxes_paid_eur: number | null
-          income_taxes_paid_orig: number | null
-          income_taxes_paid_usd: number | null
-          intangible_assets_eur: number | null
-          intangible_assets_orig: number | null
-          intangible_assets_usd: number | null
-          intangibles_to_total_assets: number | null
-          interest_coverage: number | null
-          interest_debt_per_share: number | null
-          interest_expense: number | null
           interest_expense_eur: number | null
           interest_expense_orig: number | null
           interest_expense_usd: number | null
           interest_income_eur: number | null
           interest_income_orig: number | null
           interest_income_usd: number | null
-          interest_paid_eur: number | null
-          interest_paid_orig: number | null
-          interest_paid_usd: number | null
-          inventory_change_eur: number | null
-          inventory_change_orig: number | null
-          inventory_change_usd: number | null
-          inventory_eur: number | null
-          inventory_orig: number | null
-          inventory_period: number | null
-          inventory_turnover: number | null
-          inventory_usd: number | null
-          invested_capital_eur: number | null
-          invested_capital_orig: number | null
-          invested_capital_usd: number | null
-          investments_in_ppe_eur: number | null
-          investments_in_ppe_orig: number | null
-          investments_in_ppe_usd: number | null
-          long_term_debt_eur: number | null
-          long_term_debt_orig: number | null
-          long_term_debt_to_capitalization: number | null
-          long_term_debt_usd: number | null
-          long_term_investments_eur: number | null
-          long_term_investments_orig: number | null
-          long_term_investments_usd: number | null
-          long_term_net_debt_issuance_eur: number | null
-          long_term_net_debt_issuance_orig: number | null
-          long_term_net_debt_issuance_usd: number | null
-          market_cap: number | null
-          minority_interest_eur: number | null
-          minority_interest_orig: number | null
-          minority_interest_usd: number | null
-          name: string | null
-          net_change_in_cash_eur: number | null
-          net_change_in_cash_orig: number | null
-          net_change_in_cash_usd: number | null
-          net_common_stock_issuance_eur: number | null
-          net_common_stock_issuance_orig: number | null
-          net_common_stock_issuance_usd: number | null
-          net_debt_eur: number | null
-          net_debt_issuance_eur: number | null
-          net_debt_issuance_orig: number | null
-          net_debt_issuance_usd: number | null
-          net_debt_orig: number | null
-          net_debt_to_ebitda: number | null
-          net_debt_usd: number | null
-          net_income: number | null
+          net_income_deductions_eur: number | null
+          net_income_deductions_orig: number | null
+          net_income_deductions_usd: number | null
           net_income_eur: number | null
+          net_income_from_continuing_operations_eur: number | null
+          net_income_from_continuing_operations_orig: number | null
+          net_income_from_continuing_operations_usd: number | null
+          net_income_from_discontinued_operations_eur: number | null
+          net_income_from_discontinued_operations_orig: number | null
+          net_income_from_discontinued_operations_usd: number | null
           net_income_orig: number | null
-          net_income_per_share: number | null
           net_income_usd: number | null
           net_interest_income_eur: number | null
           net_interest_income_orig: number | null
           net_interest_income_usd: number | null
-          net_preferred_stock_issuance_eur: number | null
-          net_preferred_stock_issuance_orig: number | null
-          net_preferred_stock_issuance_usd: number | null
-          net_profit_margin: number | null
-          net_receivables_eur: number | null
-          net_receivables_orig: number | null
-          net_receivables_usd: number | null
-          operating_cash_flow: number | null
-          operating_cash_flow_eur: number | null
-          operating_cash_flow_orig: number | null
-          operating_cash_flow_per_share: number | null
-          operating_cash_flow_sales_ratio: number | null
-          operating_cash_flow_usd: number | null
-          operating_cycle: number | null
+          non_operating_income_excluding_interest_eur: number | null
+          non_operating_income_excluding_interest_orig: number | null
+          non_operating_income_excluding_interest_usd: number | null
           operating_expenses_eur: number | null
           operating_expenses_orig: number | null
           operating_expenses_usd: number | null
-          operating_profit_margin: number | null
-          other_adjustments_net_income: number | null
-          other_adjustments_net_income_eur: number | null
-          other_adjustments_net_income_orig: number | null
-          other_adjustments_net_income_usd: number | null
-          other_current_assets_eur: number | null
-          other_current_assets_orig: number | null
-          other_current_assets_usd: number | null
-          other_current_liabilities_eur: number | null
-          other_current_liabilities_orig: number | null
-          other_current_liabilities_usd: number | null
-          other_financing_activities_eur: number | null
-          other_financing_activities_orig: number | null
-          other_financing_activities_usd: number | null
-          other_investing_activities_eur: number | null
-          other_investing_activities_orig: number | null
-          other_investing_activities_usd: number | null
-          other_non_cash_items_eur: number | null
-          other_non_cash_items_orig: number | null
-          other_non_cash_items_usd: number | null
-          other_working_capital_change_eur: number | null
-          other_working_capital_change_orig: number | null
-          other_working_capital_change_usd: number | null
-          payables_period: number | null
-          payout_ratio: number | null
-          pb_ratio: number | null
-          pe_ratio: number | null
-          peg_ratio: number | null
+          operating_income_eur: number | null
+          operating_income_orig: number | null
+          operating_income_usd: number | null
+          other_adjustments_to_net_income_eur: number | null
+          other_adjustments_to_net_income_orig: number | null
+          other_adjustments_to_net_income_usd: number | null
+          other_expenses_eur: number | null
+          other_expenses_orig: number | null
+          other_expenses_usd: number | null
           period: string
-          pfcf_ratio: number | null
-          preferred_stock_eur: number | null
-          preferred_stock_orig: number | null
-          preferred_stock_usd: number | null
-          pretax_profit_margin: number | null
-          price_earnings_ratio: number | null
-          price_earnings_to_growth_ratio: number | null
-          price_fair_value: number | null
-          price_sales_ratio_ttm: number | null
-          price_to_book_ratio: number | null
-          price_to_free_cash_flows_ratio: number | null
-          price_to_operating_cash_flows_ratio: number | null
-          price_to_sales_ratio: number | null
-          property_plant_equipment_net_eur: number | null
-          property_plant_equipment_net_orig: number | null
-          property_plant_equipment_net_usd: number | null
-          ps_ratio: number | null
-          purchases_of_investments_eur: number | null
-          purchases_of_investments_orig: number | null
-          purchases_of_investments_usd: number | null
-          quick_ratio: number | null
-          raw_key_metrics: Json | null
-          raw_ratios: Json | null
-          receivables_period: number | null
-          receivables_turnover: number | null
-          reported_currency: string | null
+          reported_currency: string
           research_and_development_expenses_eur: number | null
           research_and_development_expenses_orig: number | null
           research_and_development_expenses_usd: number | null
-          research_and_development_to_revenue: number | null
-          retained_earnings_eur: number | null
-          retained_earnings_orig: number | null
-          retained_earnings_usd: number | null
-          return_on_capital_employed: number | null
-          return_on_invested_capital: number | null
-          revenue: number | null
           revenue_eur: number | null
           revenue_orig: number | null
-          revenue_per_share: number | null
           revenue_usd: number | null
-          roa: number | null
-          roce: number | null
-          roe: number | null
-          roic: number | null
-          sales_general_and_administrative_to_revenue: number | null
-          sales_maturities_of_investments_eur: number | null
-          sales_maturities_of_investments_orig: number | null
-          sales_maturities_of_investments_usd: number | null
+          selling_and_marketing_expenses_eur: number | null
+          selling_and_marketing_expenses_orig: number | null
+          selling_and_marketing_expenses_usd: number | null
           selling_general_and_administrative_expenses_eur: number | null
           selling_general_and_administrative_expenses_orig: number | null
           selling_general_and_administrative_expenses_usd: number | null
-          shareholders_equity_per_share: number | null
-          short_term_coverage_ratios: number | null
-          short_term_debt_eur: number | null
-          short_term_debt_orig: number | null
-          short_term_debt_usd: number | null
-          short_term_investments_eur: number | null
-          short_term_investments_orig: number | null
-          short_term_investments_usd: number | null
-          short_term_net_debt_issuance_eur: number | null
-          short_term_net_debt_issuance_orig: number | null
-          short_term_net_debt_issuance_usd: number | null
-          stock_based_compensation_eur: number | null
-          stock_based_compensation_orig: number | null
-          stock_based_compensation_to_revenue: number | null
-          stock_based_compensation_usd: number | null
-          stock_id: number | null
-          symbol: string | null
-          tangible_book_value_per_share: number | null
-          total_asset_turnover: number | null
-          total_assets: number | null
-          total_assets_eur: number | null
-          total_assets_orig: number | null
-          total_assets_usd: number | null
-          total_current_assets: number | null
-          total_current_assets_eur: number | null
-          total_current_assets_orig: number | null
-          total_current_assets_usd: number | null
-          total_current_liabilities: number | null
-          total_current_liabilities_eur: number | null
-          total_current_liabilities_orig: number | null
-          total_current_liabilities_usd: number | null
-          total_debt: number | null
-          total_debt_eur: number | null
-          total_debt_orig: number | null
-          total_debt_to_capitalization: number | null
-          total_debt_usd: number | null
-          total_investments_eur: number | null
-          total_investments_orig: number | null
-          total_investments_usd: number | null
-          total_liabilities_eur: number | null
-          total_liabilities_orig: number | null
-          total_liabilities_usd: number | null
-          total_non_current_assets_eur: number | null
-          total_non_current_assets_orig: number | null
-          total_non_current_assets_usd: number | null
-          total_non_current_liabilities_eur: number | null
-          total_non_current_liabilities_orig: number | null
-          total_non_current_liabilities_usd: number | null
+          symbol: string
           total_other_income_expenses_net_eur: number | null
           total_other_income_expenses_net_orig: number | null
           total_other_income_expenses_net_usd: number | null
-          total_stockholders_equity: number | null
-          total_stockholders_equity_eur: number | null
-          total_stockholders_equity_orig: number | null
-          total_stockholders_equity_usd: number | null
-          treasury_stock_eur: number | null
-          treasury_stock_orig: number | null
-          treasury_stock_usd: number | null
+          updated_at: string | null
           weighted_average_shs_out: number | null
-          weighted_avg_shares_dil: number | null
-          working_capital_eur: number | null
-          working_capital_orig: number | null
-          working_capital_usd: number | null
+          weighted_average_shs_out_dil: number | null
         }
         Insert: {
           accepted_date?: string | null
-          accounts_payable_eur?: number | null
-          accounts_payable_orig?: number | null
-          accounts_payable_usd?: number | null
-          accounts_payables_change_eur?: number | null
-          accounts_payables_change_orig?: number | null
-          accounts_payables_change_usd?: number | null
-          accounts_receivable_eur?: number | null
-          accounts_receivable_orig?: number | null
-          accounts_receivable_usd?: number | null
-          accounts_receivables_change_eur?: number | null
-          accounts_receivables_change_orig?: number | null
-          accounts_receivables_change_usd?: number | null
-          accumulated_other_comprehensive_income_loss_eur?: number | null
-          accumulated_other_comprehensive_income_loss_orig?: number | null
-          accumulated_other_comprehensive_income_loss_usd?: number | null
-          acquisitions_net_eur?: number | null
-          acquisitions_net_orig?: number | null
-          acquisitions_net_usd?: number | null
-          asset_turnover?: number | null
-          beta?: number | null
-          book_value_per_share?: number | null
-          capex_per_share?: number | null
-          capex_to_depreciation?: number | null
-          capex_to_operating_cash_flow?: number | null
-          capex_to_revenue?: number | null
-          capital_expenditure?: number | null
-          capital_expenditure_coverage_ratio?: number | null
-          capital_expenditure_eur?: number | null
-          capital_expenditure_orig?: number | null
-          capital_expenditure_usd?: number | null
-          cash_and_equivalents?: number | null
-          cash_and_equivalents_eur?: number | null
-          cash_and_equivalents_orig?: number | null
-          cash_and_equivalents_usd?: number | null
-          cash_and_short_term_investments_eur?: number | null
-          cash_and_short_term_investments_orig?: number | null
-          cash_and_short_term_investments_usd?: number | null
-          cash_at_beginning_eur?: number | null
-          cash_at_beginning_orig?: number | null
-          cash_at_beginning_usd?: number | null
-          cash_at_end_eur?: number | null
-          cash_at_end_orig?: number | null
-          cash_at_end_usd?: number | null
-          cash_conversion_cycle?: number | null
-          cash_flow_to_debt_ratio?: number | null
-          cash_per_share_ratio?: number | null
-          cash_ratio?: number | null
-          change_in_working_capital_eur?: number | null
-          change_in_working_capital_orig?: number | null
-          change_in_working_capital_usd?: number | null
+          bottom_line_net_income_eur?: number | null
+          bottom_line_net_income_orig?: number | null
+          bottom_line_net_income_usd?: number | null
           cik?: string | null
-          common_stock_eur?: number | null
-          common_stock_issuance_eur?: number | null
-          common_stock_issuance_orig?: number | null
-          common_stock_issuance_usd?: number | null
-          common_stock_orig?: number | null
-          common_stock_repurchased_eur?: number | null
-          common_stock_repurchased_orig?: number | null
-          common_stock_repurchased_usd?: number | null
-          common_stock_usd?: number | null
-          company_equity_multiplier?: number | null
+          cost_and_expenses_eur?: number | null
+          cost_and_expenses_orig?: number | null
+          cost_and_expenses_usd?: number | null
           cost_of_revenue_eur?: number | null
           cost_of_revenue_orig?: number | null
           cost_of_revenue_usd?: number | null
-          current_ratio?: number | null
+          created_at?: string | null
           date: string
-          days_inventory_outstanding?: number | null
-          days_of_inventory_outstanding_ratio?: number | null
-          days_of_payables_outstanding_ratio?: number | null
-          days_of_sales_outstanding_ratio?: number | null
-          days_payables_outstanding?: number | null
-          days_sales_outstanding?: number | null
-          debt_to_assets?: number | null
-          debt_to_equity?: number | null
-          debt_to_market_cap?: number | null
-          deferred_income_tax_eur?: number | null
-          deferred_income_tax_orig?: number | null
-          deferred_income_tax_usd?: number | null
-          deferred_revenue_current_eur?: number | null
-          deferred_revenue_current_orig?: number | null
-          deferred_revenue_current_usd?: number | null
-          deferred_revenue_non_current_eur?: number | null
-          deferred_revenue_non_current_orig?: number | null
-          deferred_revenue_non_current_usd?: number | null
-          depreciation_and_amortization_cf_eur?: number | null
-          depreciation_and_amortization_cf_orig?: number | null
-          depreciation_and_amortization_cf_usd?: number | null
-          dividend_paid_and_capex_coverage_ratio?: number | null
-          dividend_payments_coverage_ratio?: number | null
-          dividend_per_share?: number | null
-          dividend_yield?: number | null
-          dividends_paid?: number | null
-          dividends_paid_eur?: number | null
-          dividends_paid_orig?: number | null
-          dividends_paid_usd?: number | null
-          earnings_yield?: number | null
-          ebit?: number | null
+          depreciation_and_amortization_eur?: number | null
+          depreciation_and_amortization_orig?: number | null
+          depreciation_and_amortization_usd?: number | null
           ebit_eur?: number | null
-          ebit_margin?: number | null
           ebit_orig?: number | null
-          ebit_per_revenue?: number | null
           ebit_usd?: number | null
-          ebitda?: number | null
           ebitda_eur?: number | null
-          ebitda_margin?: number | null
           ebitda_orig?: number | null
           ebitda_usd?: number | null
-          effect_of_forex_changes_on_cash_eur?: number | null
-          effect_of_forex_changes_on_cash_orig?: number | null
-          effect_of_forex_changes_on_cash_usd?: number | null
-          effective_tax_rate?: number | null
-          enterprise_value_eur?: number | null
-          enterprise_value_orig?: number | null
-          enterprise_value_usd?: number | null
-          eps_basic?: number | null
+          eps?: number | null
           eps_diluted?: number | null
-          eps_diluted_eur?: number | null
-          eps_diluted_orig?: number | null
-          eps_diluted_usd?: number | null
-          ev_to_ebitda?: number | null
-          ev_to_operating_cash_flow?: number | null
-          ev_to_sales?: number | null
-          fcf_per_share?: number | null
-          fcf_yield?: number | null
           filing_date?: string | null
           fiscal_year?: string | null
-          fixed_asset_turnover?: number | null
-          free_cash_flow?: number | null
-          free_cash_flow_eur?: number | null
-          free_cash_flow_operating_cash_flow_ratio?: number | null
-          free_cash_flow_orig?: number | null
-          free_cash_flow_per_share_ratio?: number | null
-          free_cash_flow_usd?: number | null
-          full_time_employees?: number | null
-          goodwill_eur?: number | null
-          goodwill_orig?: number | null
-          goodwill_usd?: number | null
-          graham_number_eur?: number | null
-          graham_number_orig?: number | null
-          graham_number_usd?: number | null
+          general_and_administrative_expenses_eur?: number | null
+          general_and_administrative_expenses_orig?: number | null
+          general_and_administrative_expenses_usd?: number | null
           gross_profit_eur?: number | null
-          gross_profit_margin?: number | null
           gross_profit_orig?: number | null
           gross_profit_usd?: number | null
-          id?: number
-          income_before_tax?: number | null
+          id?: string
           income_before_tax_eur?: number | null
           income_before_tax_orig?: number | null
           income_before_tax_usd?: number | null
-          income_tax_expense?: number | null
           income_tax_expense_eur?: number | null
           income_tax_expense_orig?: number | null
           income_tax_expense_usd?: number | null
-          income_taxes_paid_eur?: number | null
-          income_taxes_paid_orig?: number | null
-          income_taxes_paid_usd?: number | null
-          intangible_assets_eur?: number | null
-          intangible_assets_orig?: number | null
-          intangible_assets_usd?: number | null
-          intangibles_to_total_assets?: number | null
-          interest_coverage?: number | null
-          interest_debt_per_share?: number | null
-          interest_expense?: number | null
           interest_expense_eur?: number | null
           interest_expense_orig?: number | null
           interest_expense_usd?: number | null
           interest_income_eur?: number | null
           interest_income_orig?: number | null
           interest_income_usd?: number | null
-          interest_paid_eur?: number | null
-          interest_paid_orig?: number | null
-          interest_paid_usd?: number | null
-          inventory_change_eur?: number | null
-          inventory_change_orig?: number | null
-          inventory_change_usd?: number | null
-          inventory_eur?: number | null
-          inventory_orig?: number | null
-          inventory_period?: number | null
-          inventory_turnover?: number | null
-          inventory_usd?: number | null
-          invested_capital_eur?: number | null
-          invested_capital_orig?: number | null
-          invested_capital_usd?: number | null
-          investments_in_ppe_eur?: number | null
-          investments_in_ppe_orig?: number | null
-          investments_in_ppe_usd?: number | null
-          long_term_debt_eur?: number | null
-          long_term_debt_orig?: number | null
-          long_term_debt_to_capitalization?: number | null
-          long_term_debt_usd?: number | null
-          long_term_investments_eur?: number | null
-          long_term_investments_orig?: number | null
-          long_term_investments_usd?: number | null
-          long_term_net_debt_issuance_eur?: number | null
-          long_term_net_debt_issuance_orig?: number | null
-          long_term_net_debt_issuance_usd?: number | null
-          market_cap?: number | null
-          minority_interest_eur?: number | null
-          minority_interest_orig?: number | null
-          minority_interest_usd?: number | null
-          name?: string | null
-          net_change_in_cash_eur?: number | null
-          net_change_in_cash_orig?: number | null
-          net_change_in_cash_usd?: number | null
-          net_common_stock_issuance_eur?: number | null
-          net_common_stock_issuance_orig?: number | null
-          net_common_stock_issuance_usd?: number | null
-          net_debt_eur?: number | null
-          net_debt_issuance_eur?: number | null
-          net_debt_issuance_orig?: number | null
-          net_debt_issuance_usd?: number | null
-          net_debt_orig?: number | null
-          net_debt_to_ebitda?: number | null
-          net_debt_usd?: number | null
-          net_income?: number | null
+          net_income_deductions_eur?: number | null
+          net_income_deductions_orig?: number | null
+          net_income_deductions_usd?: number | null
           net_income_eur?: number | null
+          net_income_from_continuing_operations_eur?: number | null
+          net_income_from_continuing_operations_orig?: number | null
+          net_income_from_continuing_operations_usd?: number | null
+          net_income_from_discontinued_operations_eur?: number | null
+          net_income_from_discontinued_operations_orig?: number | null
+          net_income_from_discontinued_operations_usd?: number | null
           net_income_orig?: number | null
-          net_income_per_share?: number | null
           net_income_usd?: number | null
           net_interest_income_eur?: number | null
           net_interest_income_orig?: number | null
           net_interest_income_usd?: number | null
-          net_preferred_stock_issuance_eur?: number | null
-          net_preferred_stock_issuance_orig?: number | null
-          net_preferred_stock_issuance_usd?: number | null
-          net_profit_margin?: number | null
-          net_receivables_eur?: number | null
-          net_receivables_orig?: number | null
-          net_receivables_usd?: number | null
-          operating_cash_flow?: number | null
-          operating_cash_flow_eur?: number | null
-          operating_cash_flow_orig?: number | null
-          operating_cash_flow_per_share?: number | null
-          operating_cash_flow_sales_ratio?: number | null
-          operating_cash_flow_usd?: number | null
-          operating_cycle?: number | null
+          non_operating_income_excluding_interest_eur?: number | null
+          non_operating_income_excluding_interest_orig?: number | null
+          non_operating_income_excluding_interest_usd?: number | null
           operating_expenses_eur?: number | null
           operating_expenses_orig?: number | null
           operating_expenses_usd?: number | null
-          operating_profit_margin?: number | null
-          other_adjustments_net_income?: number | null
-          other_adjustments_net_income_eur?: number | null
-          other_adjustments_net_income_orig?: number | null
-          other_adjustments_net_income_usd?: number | null
-          other_current_assets_eur?: number | null
-          other_current_assets_orig?: number | null
-          other_current_assets_usd?: number | null
-          other_current_liabilities_eur?: number | null
-          other_current_liabilities_orig?: number | null
-          other_current_liabilities_usd?: number | null
-          other_financing_activities_eur?: number | null
-          other_financing_activities_orig?: number | null
-          other_financing_activities_usd?: number | null
-          other_investing_activities_eur?: number | null
-          other_investing_activities_orig?: number | null
-          other_investing_activities_usd?: number | null
-          other_non_cash_items_eur?: number | null
-          other_non_cash_items_orig?: number | null
-          other_non_cash_items_usd?: number | null
-          other_working_capital_change_eur?: number | null
-          other_working_capital_change_orig?: number | null
-          other_working_capital_change_usd?: number | null
-          payables_period?: number | null
-          payout_ratio?: number | null
-          pb_ratio?: number | null
-          pe_ratio?: number | null
-          peg_ratio?: number | null
+          operating_income_eur?: number | null
+          operating_income_orig?: number | null
+          operating_income_usd?: number | null
+          other_adjustments_to_net_income_eur?: number | null
+          other_adjustments_to_net_income_orig?: number | null
+          other_adjustments_to_net_income_usd?: number | null
+          other_expenses_eur?: number | null
+          other_expenses_orig?: number | null
+          other_expenses_usd?: number | null
           period: string
-          pfcf_ratio?: number | null
-          preferred_stock_eur?: number | null
-          preferred_stock_orig?: number | null
-          preferred_stock_usd?: number | null
-          pretax_profit_margin?: number | null
-          price_earnings_ratio?: number | null
-          price_earnings_to_growth_ratio?: number | null
-          price_fair_value?: number | null
-          price_sales_ratio_ttm?: number | null
-          price_to_book_ratio?: number | null
-          price_to_free_cash_flows_ratio?: number | null
-          price_to_operating_cash_flows_ratio?: number | null
-          price_to_sales_ratio?: number | null
-          property_plant_equipment_net_eur?: number | null
-          property_plant_equipment_net_orig?: number | null
-          property_plant_equipment_net_usd?: number | null
-          ps_ratio?: number | null
-          purchases_of_investments_eur?: number | null
-          purchases_of_investments_orig?: number | null
-          purchases_of_investments_usd?: number | null
-          quick_ratio?: number | null
-          raw_key_metrics?: Json | null
-          raw_ratios?: Json | null
-          receivables_period?: number | null
-          receivables_turnover?: number | null
-          reported_currency?: string | null
+          reported_currency: string
           research_and_development_expenses_eur?: number | null
           research_and_development_expenses_orig?: number | null
           research_and_development_expenses_usd?: number | null
-          research_and_development_to_revenue?: number | null
-          retained_earnings_eur?: number | null
-          retained_earnings_orig?: number | null
-          retained_earnings_usd?: number | null
-          return_on_capital_employed?: number | null
-          return_on_invested_capital?: number | null
-          revenue?: number | null
           revenue_eur?: number | null
           revenue_orig?: number | null
-          revenue_per_share?: number | null
           revenue_usd?: number | null
-          roa?: number | null
-          roce?: number | null
-          roe?: number | null
-          roic?: number | null
-          sales_general_and_administrative_to_revenue?: number | null
-          sales_maturities_of_investments_eur?: number | null
-          sales_maturities_of_investments_orig?: number | null
-          sales_maturities_of_investments_usd?: number | null
+          selling_and_marketing_expenses_eur?: number | null
+          selling_and_marketing_expenses_orig?: number | null
+          selling_and_marketing_expenses_usd?: number | null
           selling_general_and_administrative_expenses_eur?: number | null
           selling_general_and_administrative_expenses_orig?: number | null
           selling_general_and_administrative_expenses_usd?: number | null
-          shareholders_equity_per_share?: number | null
-          short_term_coverage_ratios?: number | null
-          short_term_debt_eur?: number | null
-          short_term_debt_orig?: number | null
-          short_term_debt_usd?: number | null
-          short_term_investments_eur?: number | null
-          short_term_investments_orig?: number | null
-          short_term_investments_usd?: number | null
-          short_term_net_debt_issuance_eur?: number | null
-          short_term_net_debt_issuance_orig?: number | null
-          short_term_net_debt_issuance_usd?: number | null
-          stock_based_compensation_eur?: number | null
-          stock_based_compensation_orig?: number | null
-          stock_based_compensation_to_revenue?: number | null
-          stock_based_compensation_usd?: number | null
-          stock_id?: number | null
-          symbol?: string | null
-          tangible_book_value_per_share?: number | null
-          total_asset_turnover?: number | null
-          total_assets?: number | null
-          total_assets_eur?: number | null
-          total_assets_orig?: number | null
-          total_assets_usd?: number | null
-          total_current_assets?: number | null
-          total_current_assets_eur?: number | null
-          total_current_assets_orig?: number | null
-          total_current_assets_usd?: number | null
-          total_current_liabilities?: number | null
-          total_current_liabilities_eur?: number | null
-          total_current_liabilities_orig?: number | null
-          total_current_liabilities_usd?: number | null
-          total_debt?: number | null
-          total_debt_eur?: number | null
-          total_debt_orig?: number | null
-          total_debt_to_capitalization?: number | null
-          total_debt_usd?: number | null
-          total_investments_eur?: number | null
-          total_investments_orig?: number | null
-          total_investments_usd?: number | null
-          total_liabilities_eur?: number | null
-          total_liabilities_orig?: number | null
-          total_liabilities_usd?: number | null
-          total_non_current_assets_eur?: number | null
-          total_non_current_assets_orig?: number | null
-          total_non_current_assets_usd?: number | null
-          total_non_current_liabilities_eur?: number | null
-          total_non_current_liabilities_orig?: number | null
-          total_non_current_liabilities_usd?: number | null
+          symbol: string
           total_other_income_expenses_net_eur?: number | null
           total_other_income_expenses_net_orig?: number | null
           total_other_income_expenses_net_usd?: number | null
-          total_stockholders_equity?: number | null
-          total_stockholders_equity_eur?: number | null
-          total_stockholders_equity_orig?: number | null
-          total_stockholders_equity_usd?: number | null
-          treasury_stock_eur?: number | null
-          treasury_stock_orig?: number | null
-          treasury_stock_usd?: number | null
+          updated_at?: string | null
           weighted_average_shs_out?: number | null
-          weighted_avg_shares_dil?: number | null
-          working_capital_eur?: number | null
-          working_capital_orig?: number | null
-          working_capital_usd?: number | null
+          weighted_average_shs_out_dil?: number | null
         }
         Update: {
           accepted_date?: string | null
-          accounts_payable_eur?: number | null
-          accounts_payable_orig?: number | null
-          accounts_payable_usd?: number | null
-          accounts_payables_change_eur?: number | null
-          accounts_payables_change_orig?: number | null
-          accounts_payables_change_usd?: number | null
-          accounts_receivable_eur?: number | null
-          accounts_receivable_orig?: number | null
-          accounts_receivable_usd?: number | null
-          accounts_receivables_change_eur?: number | null
-          accounts_receivables_change_orig?: number | null
-          accounts_receivables_change_usd?: number | null
-          accumulated_other_comprehensive_income_loss_eur?: number | null
-          accumulated_other_comprehensive_income_loss_orig?: number | null
-          accumulated_other_comprehensive_income_loss_usd?: number | null
-          acquisitions_net_eur?: number | null
-          acquisitions_net_orig?: number | null
-          acquisitions_net_usd?: number | null
-          asset_turnover?: number | null
-          beta?: number | null
-          book_value_per_share?: number | null
-          capex_per_share?: number | null
-          capex_to_depreciation?: number | null
-          capex_to_operating_cash_flow?: number | null
-          capex_to_revenue?: number | null
-          capital_expenditure?: number | null
-          capital_expenditure_coverage_ratio?: number | null
-          capital_expenditure_eur?: number | null
-          capital_expenditure_orig?: number | null
-          capital_expenditure_usd?: number | null
-          cash_and_equivalents?: number | null
-          cash_and_equivalents_eur?: number | null
-          cash_and_equivalents_orig?: number | null
-          cash_and_equivalents_usd?: number | null
-          cash_and_short_term_investments_eur?: number | null
-          cash_and_short_term_investments_orig?: number | null
-          cash_and_short_term_investments_usd?: number | null
-          cash_at_beginning_eur?: number | null
-          cash_at_beginning_orig?: number | null
-          cash_at_beginning_usd?: number | null
-          cash_at_end_eur?: number | null
-          cash_at_end_orig?: number | null
-          cash_at_end_usd?: number | null
-          cash_conversion_cycle?: number | null
-          cash_flow_to_debt_ratio?: number | null
-          cash_per_share_ratio?: number | null
-          cash_ratio?: number | null
-          change_in_working_capital_eur?: number | null
-          change_in_working_capital_orig?: number | null
-          change_in_working_capital_usd?: number | null
+          bottom_line_net_income_eur?: number | null
+          bottom_line_net_income_orig?: number | null
+          bottom_line_net_income_usd?: number | null
           cik?: string | null
-          common_stock_eur?: number | null
-          common_stock_issuance_eur?: number | null
-          common_stock_issuance_orig?: number | null
-          common_stock_issuance_usd?: number | null
-          common_stock_orig?: number | null
-          common_stock_repurchased_eur?: number | null
-          common_stock_repurchased_orig?: number | null
-          common_stock_repurchased_usd?: number | null
-          common_stock_usd?: number | null
-          company_equity_multiplier?: number | null
+          cost_and_expenses_eur?: number | null
+          cost_and_expenses_orig?: number | null
+          cost_and_expenses_usd?: number | null
           cost_of_revenue_eur?: number | null
           cost_of_revenue_orig?: number | null
           cost_of_revenue_usd?: number | null
-          current_ratio?: number | null
+          created_at?: string | null
           date?: string
-          days_inventory_outstanding?: number | null
-          days_of_inventory_outstanding_ratio?: number | null
-          days_of_payables_outstanding_ratio?: number | null
-          days_of_sales_outstanding_ratio?: number | null
-          days_payables_outstanding?: number | null
-          days_sales_outstanding?: number | null
-          debt_to_assets?: number | null
-          debt_to_equity?: number | null
-          debt_to_market_cap?: number | null
-          deferred_income_tax_eur?: number | null
-          deferred_income_tax_orig?: number | null
-          deferred_income_tax_usd?: number | null
-          deferred_revenue_current_eur?: number | null
-          deferred_revenue_current_orig?: number | null
-          deferred_revenue_current_usd?: number | null
-          deferred_revenue_non_current_eur?: number | null
-          deferred_revenue_non_current_orig?: number | null
-          deferred_revenue_non_current_usd?: number | null
-          depreciation_and_amortization_cf_eur?: number | null
-          depreciation_and_amortization_cf_orig?: number | null
-          depreciation_and_amortization_cf_usd?: number | null
-          dividend_paid_and_capex_coverage_ratio?: number | null
-          dividend_payments_coverage_ratio?: number | null
-          dividend_per_share?: number | null
-          dividend_yield?: number | null
-          dividends_paid?: number | null
-          dividends_paid_eur?: number | null
-          dividends_paid_orig?: number | null
-          dividends_paid_usd?: number | null
-          earnings_yield?: number | null
-          ebit?: number | null
+          depreciation_and_amortization_eur?: number | null
+          depreciation_and_amortization_orig?: number | null
+          depreciation_and_amortization_usd?: number | null
           ebit_eur?: number | null
-          ebit_margin?: number | null
           ebit_orig?: number | null
-          ebit_per_revenue?: number | null
           ebit_usd?: number | null
-          ebitda?: number | null
           ebitda_eur?: number | null
-          ebitda_margin?: number | null
           ebitda_orig?: number | null
           ebitda_usd?: number | null
-          effect_of_forex_changes_on_cash_eur?: number | null
-          effect_of_forex_changes_on_cash_orig?: number | null
-          effect_of_forex_changes_on_cash_usd?: number | null
-          effective_tax_rate?: number | null
-          enterprise_value_eur?: number | null
-          enterprise_value_orig?: number | null
-          enterprise_value_usd?: number | null
-          eps_basic?: number | null
+          eps?: number | null
           eps_diluted?: number | null
-          eps_diluted_eur?: number | null
-          eps_diluted_orig?: number | null
-          eps_diluted_usd?: number | null
-          ev_to_ebitda?: number | null
-          ev_to_operating_cash_flow?: number | null
-          ev_to_sales?: number | null
-          fcf_per_share?: number | null
-          fcf_yield?: number | null
           filing_date?: string | null
           fiscal_year?: string | null
-          fixed_asset_turnover?: number | null
-          free_cash_flow?: number | null
-          free_cash_flow_eur?: number | null
-          free_cash_flow_operating_cash_flow_ratio?: number | null
-          free_cash_flow_orig?: number | null
-          free_cash_flow_per_share_ratio?: number | null
-          free_cash_flow_usd?: number | null
-          full_time_employees?: number | null
-          goodwill_eur?: number | null
-          goodwill_orig?: number | null
-          goodwill_usd?: number | null
-          graham_number_eur?: number | null
-          graham_number_orig?: number | null
-          graham_number_usd?: number | null
+          general_and_administrative_expenses_eur?: number | null
+          general_and_administrative_expenses_orig?: number | null
+          general_and_administrative_expenses_usd?: number | null
           gross_profit_eur?: number | null
-          gross_profit_margin?: number | null
           gross_profit_orig?: number | null
           gross_profit_usd?: number | null
-          id?: number
-          income_before_tax?: number | null
+          id?: string
           income_before_tax_eur?: number | null
           income_before_tax_orig?: number | null
           income_before_tax_usd?: number | null
-          income_tax_expense?: number | null
           income_tax_expense_eur?: number | null
           income_tax_expense_orig?: number | null
           income_tax_expense_usd?: number | null
-          income_taxes_paid_eur?: number | null
-          income_taxes_paid_orig?: number | null
-          income_taxes_paid_usd?: number | null
-          intangible_assets_eur?: number | null
-          intangible_assets_orig?: number | null
-          intangible_assets_usd?: number | null
-          intangibles_to_total_assets?: number | null
-          interest_coverage?: number | null
-          interest_debt_per_share?: number | null
-          interest_expense?: number | null
           interest_expense_eur?: number | null
           interest_expense_orig?: number | null
           interest_expense_usd?: number | null
           interest_income_eur?: number | null
           interest_income_orig?: number | null
           interest_income_usd?: number | null
-          interest_paid_eur?: number | null
-          interest_paid_orig?: number | null
-          interest_paid_usd?: number | null
-          inventory_change_eur?: number | null
-          inventory_change_orig?: number | null
-          inventory_change_usd?: number | null
-          inventory_eur?: number | null
-          inventory_orig?: number | null
-          inventory_period?: number | null
-          inventory_turnover?: number | null
-          inventory_usd?: number | null
-          invested_capital_eur?: number | null
-          invested_capital_orig?: number | null
-          invested_capital_usd?: number | null
-          investments_in_ppe_eur?: number | null
-          investments_in_ppe_orig?: number | null
-          investments_in_ppe_usd?: number | null
-          long_term_debt_eur?: number | null
-          long_term_debt_orig?: number | null
-          long_term_debt_to_capitalization?: number | null
-          long_term_debt_usd?: number | null
-          long_term_investments_eur?: number | null
-          long_term_investments_orig?: number | null
-          long_term_investments_usd?: number | null
-          long_term_net_debt_issuance_eur?: number | null
-          long_term_net_debt_issuance_orig?: number | null
-          long_term_net_debt_issuance_usd?: number | null
-          market_cap?: number | null
-          minority_interest_eur?: number | null
-          minority_interest_orig?: number | null
-          minority_interest_usd?: number | null
-          name?: string | null
-          net_change_in_cash_eur?: number | null
-          net_change_in_cash_orig?: number | null
-          net_change_in_cash_usd?: number | null
-          net_common_stock_issuance_eur?: number | null
-          net_common_stock_issuance_orig?: number | null
-          net_common_stock_issuance_usd?: number | null
-          net_debt_eur?: number | null
-          net_debt_issuance_eur?: number | null
-          net_debt_issuance_orig?: number | null
-          net_debt_issuance_usd?: number | null
-          net_debt_orig?: number | null
-          net_debt_to_ebitda?: number | null
-          net_debt_usd?: number | null
-          net_income?: number | null
+          net_income_deductions_eur?: number | null
+          net_income_deductions_orig?: number | null
+          net_income_deductions_usd?: number | null
           net_income_eur?: number | null
+          net_income_from_continuing_operations_eur?: number | null
+          net_income_from_continuing_operations_orig?: number | null
+          net_income_from_continuing_operations_usd?: number | null
+          net_income_from_discontinued_operations_eur?: number | null
+          net_income_from_discontinued_operations_orig?: number | null
+          net_income_from_discontinued_operations_usd?: number | null
           net_income_orig?: number | null
-          net_income_per_share?: number | null
           net_income_usd?: number | null
           net_interest_income_eur?: number | null
           net_interest_income_orig?: number | null
           net_interest_income_usd?: number | null
-          net_preferred_stock_issuance_eur?: number | null
-          net_preferred_stock_issuance_orig?: number | null
-          net_preferred_stock_issuance_usd?: number | null
-          net_profit_margin?: number | null
-          net_receivables_eur?: number | null
-          net_receivables_orig?: number | null
-          net_receivables_usd?: number | null
-          operating_cash_flow?: number | null
-          operating_cash_flow_eur?: number | null
-          operating_cash_flow_orig?: number | null
-          operating_cash_flow_per_share?: number | null
-          operating_cash_flow_sales_ratio?: number | null
-          operating_cash_flow_usd?: number | null
-          operating_cycle?: number | null
+          non_operating_income_excluding_interest_eur?: number | null
+          non_operating_income_excluding_interest_orig?: number | null
+          non_operating_income_excluding_interest_usd?: number | null
           operating_expenses_eur?: number | null
           operating_expenses_orig?: number | null
           operating_expenses_usd?: number | null
-          operating_profit_margin?: number | null
-          other_adjustments_net_income?: number | null
-          other_adjustments_net_income_eur?: number | null
-          other_adjustments_net_income_orig?: number | null
-          other_adjustments_net_income_usd?: number | null
-          other_current_assets_eur?: number | null
-          other_current_assets_orig?: number | null
-          other_current_assets_usd?: number | null
-          other_current_liabilities_eur?: number | null
-          other_current_liabilities_orig?: number | null
-          other_current_liabilities_usd?: number | null
-          other_financing_activities_eur?: number | null
-          other_financing_activities_orig?: number | null
-          other_financing_activities_usd?: number | null
-          other_investing_activities_eur?: number | null
-          other_investing_activities_orig?: number | null
-          other_investing_activities_usd?: number | null
-          other_non_cash_items_eur?: number | null
-          other_non_cash_items_orig?: number | null
-          other_non_cash_items_usd?: number | null
-          other_working_capital_change_eur?: number | null
-          other_working_capital_change_orig?: number | null
-          other_working_capital_change_usd?: number | null
-          payables_period?: number | null
-          payout_ratio?: number | null
-          pb_ratio?: number | null
-          pe_ratio?: number | null
-          peg_ratio?: number | null
+          operating_income_eur?: number | null
+          operating_income_orig?: number | null
+          operating_income_usd?: number | null
+          other_adjustments_to_net_income_eur?: number | null
+          other_adjustments_to_net_income_orig?: number | null
+          other_adjustments_to_net_income_usd?: number | null
+          other_expenses_eur?: number | null
+          other_expenses_orig?: number | null
+          other_expenses_usd?: number | null
           period?: string
-          pfcf_ratio?: number | null
-          preferred_stock_eur?: number | null
-          preferred_stock_orig?: number | null
-          preferred_stock_usd?: number | null
-          pretax_profit_margin?: number | null
-          price_earnings_ratio?: number | null
-          price_earnings_to_growth_ratio?: number | null
-          price_fair_value?: number | null
-          price_sales_ratio_ttm?: number | null
-          price_to_book_ratio?: number | null
-          price_to_free_cash_flows_ratio?: number | null
-          price_to_operating_cash_flows_ratio?: number | null
-          price_to_sales_ratio?: number | null
-          property_plant_equipment_net_eur?: number | null
-          property_plant_equipment_net_orig?: number | null
-          property_plant_equipment_net_usd?: number | null
-          ps_ratio?: number | null
-          purchases_of_investments_eur?: number | null
-          purchases_of_investments_orig?: number | null
-          purchases_of_investments_usd?: number | null
-          quick_ratio?: number | null
-          raw_key_metrics?: Json | null
-          raw_ratios?: Json | null
-          receivables_period?: number | null
-          receivables_turnover?: number | null
-          reported_currency?: string | null
+          reported_currency?: string
           research_and_development_expenses_eur?: number | null
           research_and_development_expenses_orig?: number | null
           research_and_development_expenses_usd?: number | null
-          research_and_development_to_revenue?: number | null
-          retained_earnings_eur?: number | null
-          retained_earnings_orig?: number | null
-          retained_earnings_usd?: number | null
-          return_on_capital_employed?: number | null
-          return_on_invested_capital?: number | null
-          revenue?: number | null
           revenue_eur?: number | null
           revenue_orig?: number | null
-          revenue_per_share?: number | null
           revenue_usd?: number | null
-          roa?: number | null
-          roce?: number | null
-          roe?: number | null
-          roic?: number | null
-          sales_general_and_administrative_to_revenue?: number | null
-          sales_maturities_of_investments_eur?: number | null
-          sales_maturities_of_investments_orig?: number | null
-          sales_maturities_of_investments_usd?: number | null
+          selling_and_marketing_expenses_eur?: number | null
+          selling_and_marketing_expenses_orig?: number | null
+          selling_and_marketing_expenses_usd?: number | null
           selling_general_and_administrative_expenses_eur?: number | null
           selling_general_and_administrative_expenses_orig?: number | null
           selling_general_and_administrative_expenses_usd?: number | null
-          shareholders_equity_per_share?: number | null
-          short_term_coverage_ratios?: number | null
-          short_term_debt_eur?: number | null
-          short_term_debt_orig?: number | null
-          short_term_debt_usd?: number | null
-          short_term_investments_eur?: number | null
-          short_term_investments_orig?: number | null
-          short_term_investments_usd?: number | null
-          short_term_net_debt_issuance_eur?: number | null
-          short_term_net_debt_issuance_orig?: number | null
-          short_term_net_debt_issuance_usd?: number | null
-          stock_based_compensation_eur?: number | null
-          stock_based_compensation_orig?: number | null
-          stock_based_compensation_to_revenue?: number | null
-          stock_based_compensation_usd?: number | null
-          stock_id?: number | null
-          symbol?: string | null
-          tangible_book_value_per_share?: number | null
-          total_asset_turnover?: number | null
-          total_assets?: number | null
-          total_assets_eur?: number | null
-          total_assets_orig?: number | null
-          total_assets_usd?: number | null
-          total_current_assets?: number | null
-          total_current_assets_eur?: number | null
-          total_current_assets_orig?: number | null
-          total_current_assets_usd?: number | null
-          total_current_liabilities?: number | null
-          total_current_liabilities_eur?: number | null
-          total_current_liabilities_orig?: number | null
-          total_current_liabilities_usd?: number | null
-          total_debt?: number | null
-          total_debt_eur?: number | null
-          total_debt_orig?: number | null
-          total_debt_to_capitalization?: number | null
-          total_debt_usd?: number | null
-          total_investments_eur?: number | null
-          total_investments_orig?: number | null
-          total_investments_usd?: number | null
-          total_liabilities_eur?: number | null
-          total_liabilities_orig?: number | null
-          total_liabilities_usd?: number | null
-          total_non_current_assets_eur?: number | null
-          total_non_current_assets_orig?: number | null
-          total_non_current_assets_usd?: number | null
-          total_non_current_liabilities_eur?: number | null
-          total_non_current_liabilities_orig?: number | null
-          total_non_current_liabilities_usd?: number | null
+          symbol?: string
           total_other_income_expenses_net_eur?: number | null
           total_other_income_expenses_net_orig?: number | null
           total_other_income_expenses_net_usd?: number | null
-          total_stockholders_equity?: number | null
-          total_stockholders_equity_eur?: number | null
-          total_stockholders_equity_orig?: number | null
-          total_stockholders_equity_usd?: number | null
-          treasury_stock_eur?: number | null
-          treasury_stock_orig?: number | null
-          treasury_stock_usd?: number | null
+          updated_at?: string | null
           weighted_average_shs_out?: number | null
-          weighted_avg_shares_dil?: number | null
-          working_capital_eur?: number | null
-          working_capital_orig?: number | null
-          working_capital_usd?: number | null
+          weighted_average_shs_out_dil?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "financial_statements_stock_id_fkey"
-            columns: ["stock_id"]
-            isOneToOne: false
-            referencedRelation: "stocks"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       industry_averages: {
         Row: {
