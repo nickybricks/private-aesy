@@ -74,10 +74,10 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
   const [hoveredSlice, setHoveredSlice] = useState<number | null>(null);
   const isMobile = useIsMobile();
   
-  // Dynamic values based on screen size (only radii, center comes from Recharts)
+  // Dynamic values based on screen size
   const chartConfig = isMobile 
-    ? { labelRadius: 70, outerRadius: 60 }
-    : { labelRadius: 90, outerRadius: 80 };
+    ? { cx: 120, cy: 90, labelRadius: 75, outerRadius: 65 }
+    : { cx: 150, cy: 100, labelRadius: 95, outerRadius: 85 };
   
   const containerHeight = isMobile ? 200 : 220;
   
@@ -132,9 +132,9 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
             <PolarAngleAxis 
               dataKey="criterion" 
             tick={(props: any) => {
-                const { payload, index, cx, cy } = props;
-                const centerX = cx;
-                const centerY = cy;
+                const { x, y, payload, index } = props;
+                const centerX = chartConfig.cx;
+                const centerY = chartConfig.cy;
                 
                 // Calculate angle for this label
                 const numSlices = data.length;
@@ -190,11 +190,11 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
               isAnimationActive={true}
               animationDuration={800}
               shape={(props: any) => {
-                const { points, cx, cy } = props;
+                const { points } = props;
                 if (!points || points.length === 0) return null;
                 
-                const centerX = cx;
-                const centerY = cy;
+                const centerX = chartConfig.cx;
+                const centerY = chartConfig.cy;
                 const outerRadius = chartConfig.outerRadius;
                 const numSlices = data.length;
                 const angleStep = (2 * Math.PI) / numSlices;
