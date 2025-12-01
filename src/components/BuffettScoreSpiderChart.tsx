@@ -121,8 +121,8 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
       <ResponsiveContainer width="100%" height={containerHeight}>
           <RadarChart 
             data={data}
-            cx="50%" 
-            cy="50%"
+            cx={chartConfig.cx}
+            cy={chartConfig.cy}
           >
             <PolarGrid 
               stroke="hsl(var(--border))" 
