@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Brain, User, LogOut, Settings, BarChart3, List, X, Briefcase } from 'lucide-react';
+import { Brain, User, LogOut, Settings, BarChart3, List, X, Briefcase, Menu } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -153,9 +153,9 @@ const AppHeader: React.FC = () => {
             <Button 
               variant="default" 
               size="icon" 
-              className="w-10 h-10 rounded-full bg-primary shrink-0 btn-no-mobile-full"
+              className="w-10 h-10 rounded-xl bg-primary shrink-0 btn-no-mobile-full"
             >
-              <User className="h-5 w-5 text-primary-foreground" />
+              <Menu className="h-5 w-5 text-primary-foreground" />
             </Button>
           </DrawerTrigger>
           
