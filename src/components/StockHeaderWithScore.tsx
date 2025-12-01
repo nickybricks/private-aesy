@@ -105,7 +105,7 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
         </div>
         
         {/* Right: Spider Chart with Score */}
-        <div className="flex flex-col items-center justify-start lg:w-[320px]">
+        <div className="flex flex-col items-center justify-start w-full lg:w-[320px]">
           {/* Aesy Score zentriert über dem Chart mit Hover */}
           <div className="text-center mb-3">
             <Popover>

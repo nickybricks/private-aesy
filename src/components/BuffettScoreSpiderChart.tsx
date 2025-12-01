@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CardScore {
   name: string;
@@ -71,6 +72,15 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
   aiAnalysisCards = []
 }) => {
   const [hoveredSlice, setHoveredSlice] = useState<number | null>(null);
+  const isMobile = useIsMobile();
+  
+  // Dynamic values based on screen size
+  const chartConfig = isMobile 
+    ? { cx: 120, cy: 90, labelRadius: 75, outerRadius: 65 }
+    : { cx: 150, cy: 100, labelRadius: 95, outerRadius: 85 };
+  
+  const containerHeight = isMobile ? 200 : 220;
+  
   // Real data for all criteria including KI Analysis
   const data = [
     { criterion: 'Profitabilität', score: profitabilityScore, tabValue: 'profitability', cards: profitabilityCards },
@@ -107,12 +117,12 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[220px]">
-      <ResponsiveContainer width="100%" height={200}>
+    <div className="relative w-full" style={{ height: `${containerHeight}px` }}>
+      <ResponsiveContainer width="100%" height={containerHeight}>
           <RadarChart 
             data={data}
-            cx={150} 
-            cy={100}
+            cx="50%" 
+            cy="50%"
           >
             <PolarGrid 
               stroke="hsl(var(--border))" 
@@ -121,10 +131,10 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
             
             <PolarAngleAxis 
               dataKey="criterion" 
-              tick={(props: any) => {
+            tick={(props: any) => {
                 const { x, y, payload, index } = props;
-                const centerX = 150;
-                const centerY = 100;
+                const centerX = chartConfig.cx;
+                const centerY = chartConfig.cy;
                 
                 // Calculate angle for this label
                 const numSlices = data.length;
@@ -133,7 +143,7 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
                 const angle = startAngle + (index * angleStep);
                 
                 // Position label further out (around the polar grid)
-                const labelRadius = 95; // Distance from center
+                const labelRadius = chartConfig.labelRadius;
                 const labelX = centerX + labelRadius * Math.cos(angle);
                 const labelY = centerY + labelRadius * Math.sin(angle);
                 
@@ -183,9 +193,9 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
                 const { points } = props;
                 if (!points || points.length === 0) return null;
                 
-                const centerX = 150;
-                const centerY = 100;
-                const outerRadius = 85; // Distance to outer grid
+                const centerX = chartConfig.cx;
+                const centerY = chartConfig.cy;
+                const outerRadius = chartConfig.outerRadius;
                 const numSlices = data.length;
                 const angleStep = (2 * Math.PI) / numSlices;
                 const startAngle = -Math.PI / 2; // Start at top (12 o'clock)
