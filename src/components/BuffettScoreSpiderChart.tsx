@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -73,13 +73,25 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
 }) => {
   const [hoveredSlice, setHoveredSlice] = useState<number | null>(null);
   const isMobile = useIsMobile();
+  const [isTablet, setIsTablet] = useState(false);
   
-  // Dynamic values based on screen size
+  useEffect(() => {
+    const checkTablet = () => {
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    };
+    checkTablet();
+    window.addEventListener('resize', checkTablet);
+    return () => window.removeEventListener('resize', checkTablet);
+  }, []);
+  
+  // Dynamic values based on screen size (mobile, tablet, desktop)
   const chartConfig = isMobile 
     ? { cx: 120, cy: 90, labelRadius: 75, outerRadius: 65 }
-    : { cx: 150, cy: 100, labelRadius: 95, outerRadius: 85 };
+    : isTablet
+      ? { cx: 140, cy: 95, labelRadius: 85, outerRadius: 75 }
+      : { cx: 150, cy: 100, labelRadius: 95, outerRadius: 85 };
   
-  const containerHeight = isMobile ? 200 : 220;
+  const containerHeight = isMobile ? 200 : isTablet ? 210 : 220;
   
   // Real data for all criteria including KI Analysis
   const data = [

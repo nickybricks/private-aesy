@@ -98,14 +98,14 @@ const StockHeaderWithScore: React.FC<StockHeaderWithScoreProps> = ({ onTabChange
 
   return (
     <Card className="p-4">
-      <div className="flex flex-col lg:flex-row items-start gap-6">
+      <div className="flex flex-col md:flex-row items-start gap-6">
         {/* Left: Stock Quote Header Content */}
         <div className="flex-1 w-full">
           <StockQuoteHeader />
         </div>
         
         {/* Right: Spider Chart with Score */}
-        <div className="flex flex-col items-center justify-start w-full lg:w-[320px]">
+        <div className="flex flex-col items-center justify-start w-full md:w-[280px] lg:w-[320px]">
           {/* Aesy Score zentriert über dem Chart mit Hover */}
           <div className="text-center mb-3">
             <Popover>
