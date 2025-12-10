@@ -145,7 +145,7 @@ const IndexContent: React.FC = () => {
             
             {/* Tab Navigation */}
             {stockInfo && (
-              <div className="mb-6 sm:mb-8 -mx-3 sm:mx-0">
+              <div className="mb-6 sm:mb-8 -mx-3 sm:mx-0 pb-3">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <div className="relative">
                     {/* Fade indicator am rechten Rand auf Mobil */}
@@ -196,14 +196,14 @@ const IndexContent: React.FC = () => {
                     </TabsList>
                   </div>
                   
-                  <TabsContent value="news" className="mt-4 sm:mt-6">
+                  <TabsContent value="news" className="mt-4 sm:mt-6 px-3 sm:px-0">
                     <NewsSection 
                       newsItems={newsItems} 
                       pressReleases={pressReleases}
                     />
                   </TabsContent>
                   
-                  <TabsContent value="profitability" className="mt-4 sm:mt-6">
+                  <TabsContent value="profitability" className="mt-4 sm:mt-6 px-3 sm:px-0">
                     <div className="space-y-4">
                       <ROECard 
                         currentValue={financialMetrics?.roe ?? null}
@@ -245,7 +245,7 @@ const IndexContent: React.FC = () => {
                     </div>
                   </TabsContent>
                   
-                  <TabsContent value="financial-strength" className="mt-4 sm:mt-6">
+                  <TabsContent value="financial-strength" className="mt-4 sm:mt-6 px-3 sm:px-0">
                     <div className="space-y-4">
                       <DebtToAssetsCard 
                         currentValue={financialMetrics?.debtToAssets ?? null}
@@ -274,7 +274,7 @@ const IndexContent: React.FC = () => {
                     </div>
                   </TabsContent>
                   
-                  <TabsContent value="valuation" className="mt-4 sm:mt-6">
+                  <TabsContent value="valuation" className="mt-4 sm:mt-6 px-3 sm:px-0">
                     <div className="space-y-4">
               {/* Price to Median P/S Chart - positioned at the top */}
               <PriceToMedianPSChart
@@ -376,7 +376,7 @@ const IndexContent: React.FC = () => {
                      </div>
                    </TabsContent>
                   
-                  <TabsContent value="growth-rank" className="mt-4 sm:mt-6">
+                  <TabsContent value="growth-rank" className="mt-4 sm:mt-6 px-3 sm:px-0">
                     <div className="space-y-6">
                       {financialMetrics?.historicalData?.revenue && (
                         <RevenueGrowthCard 
@@ -404,7 +404,7 @@ const IndexContent: React.FC = () => {
                     </div>
                   </TabsContent>
                   
-                  <TabsContent value="ai-analysis" className="mt-4 sm:mt-6">
+                  <TabsContent value="ai-analysis" className="mt-4 sm:mt-6 px-3 sm:px-0">
                     {qualitativeScores && deepResearchPerformed ? (
                       <QualitativeAnalysisTab qualitativeScores={qualitativeScores} />
                     ) : (
