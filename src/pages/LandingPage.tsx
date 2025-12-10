@@ -193,7 +193,6 @@ const LandingPage: React.FC = () => {
           </Link>
         </div>
       </section>
-      // Dann im JSX vor dem Footer einfügen:
       <HowItWorksSection className="container mx-auto px-4" />
       {/* Footer */}
       <footer className="border-t border-border py-12 px-6">
