@@ -11,6 +11,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
+import { useChartTooltipTrigger } from '@/hooks/useChartTooltipTrigger';
 
 interface PriceToMedianPSChartProps {
   ticker: string;
@@ -82,6 +83,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
   const [currentPS, setCurrentPS] = useState<number>(0);
   const [hasInsufficientData, setHasInsufficientData] = useState(false);
   const hasLoggedRef = useRef<string | null>(null);
+  const tooltipTrigger = useChartTooltipTrigger();
 
   // Fetch and calculate P/S data
   useEffect(() => {
@@ -675,6 +677,8 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
               width={60}
             />
             <RechartsTooltip
+              trigger={tooltipTrigger}
+              wrapperStyle={{ zIndex: 50, maxWidth: 'calc(100vw - 32px)' }}
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
                   const data = payload[0].payload as ChartDataPoint;
@@ -683,7 +687,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
                   if (data.priceAtMedianPS && data.rps && data.ps) {
                     const discountAtPoint = ((data.priceAtMedianPS - data.price) / data.priceAtMedianPS) * 100;
                     return (
-                      <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
+                      <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-3 max-w-[280px]">
                         <p className="text-xs font-semibold mb-1">
                           {new Date(data.date).toLocaleDateString('de-DE')}
                         </p>
@@ -703,7 +707,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
                           Median P/S: <span className="font-semibold">{medianPS.toFixed(2)}</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Discount: <span className={`font-bold ${discountAtPoint >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          Discount: <span className={`font-bold ${discountAtPoint >= 0 ? 'text-green-600' : 'text-destructive'}`}>
                             {discountAtPoint >= 0 ? '+' : ''}{discountAtPoint.toFixed(1)}%
                           </span>
                         </p>
@@ -713,7 +717,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
                   
                   // For daily price points without P/S data
                   return (
-                    <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
+                    <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-3 max-w-[280px]">
                       <p className="text-xs font-semibold mb-1">
                         {new Date(data.date).toLocaleDateString('de-DE')}
                       </p>

@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
+import { useChartTooltipTrigger } from '@/hooks/useChartTooltipTrigger';
 
 // Types for financial data
 interface QuarterlyData {
@@ -99,6 +100,7 @@ const PeterLynchChartNew: React.FC<Props> = ({
   const epsSource: 'without-nri' | 'gaap' = 'without-nri';
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const tooltipTrigger = useChartTooltipTrigger();
   
   const [quarterlyData, setQuarterlyData] = useState<QuarterlyData[]>([]);
   const [annualData, setAnnualData] = useState<AnnualData[]>([]);
@@ -403,6 +405,8 @@ const PeterLynchChartNew: React.FC<Props> = ({
                 tickFormatter={(value) => `${value.toFixed(0)} ${currency}`}
               />
               <Tooltip
+                trigger={tooltipTrigger}
+                wrapperStyle={{ zIndex: 50, maxWidth: 'calc(100vw - 32px)' }}
                 labelFormatter={(value) => new Date(value).toLocaleDateString('de-DE')}
                 formatter={(value: any, name: string) => {
                   if (name === 'price') return [`${value.toFixed(2)} ${currency}`, 'Kurs (Adjusted Close)'];
@@ -415,7 +419,7 @@ const PeterLynchChartNew: React.FC<Props> = ({
                   const data = payload[0].payload as LynchDataPoint;
                   
                   return (
-                    <div className="bg-background border rounded-lg p-3 shadow-lg">
+                    <div className="bg-popover text-popover-foreground border border-border rounded-lg p-3 shadow-lg max-w-[280px]">
                       <p className="font-semibold">{new Date(label as string).toLocaleDateString('de-DE')}</p>
                       <p>Kurs: {data.price.toFixed(2)} {currency}</p>
                       <p>EPS TTM: {data.epsTTM.toFixed(2)} {currency}</p>
@@ -424,7 +428,7 @@ const PeterLynchChartNew: React.FC<Props> = ({
                         <>
                           <p>Earnings-Line: {data.fairValue.toFixed(2)} {currency}</p>
                           {data.deviation !== undefined && (
-                            <p className={data.deviation > 0 ? "text-red-600" : "text-green-600"}>
+                            <p className={data.deviation > 0 ? "text-destructive" : "text-green-600"}>
                               Abweichung: {data.deviation > 0 ? '+' : ''}{data.deviation.toFixed(1)}%
                             </p>
                           )}
