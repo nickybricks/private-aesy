@@ -4,6 +4,7 @@ import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
 import { ScoreResult } from '@/context/StockContextTypes';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ROICCardProps {
   currentValue: number | null;
@@ -20,6 +21,7 @@ export const ROICCard: React.FC<ROICCardProps> = ({
   preset = 'Default',
   scoreFromBackend 
 }) => {
+  const isMobile = useIsMobile();
   console.log('ROICCard - WACC value:', wacc);
   console.log('ROICCard - Preset:', preset);
   console.log('ROICCard - Score from backend:', scoreFromBackend);
@@ -177,7 +179,7 @@ export const ROICCard: React.FC<ROICCardProps> = ({
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                 {tooltipContent}
               </TooltipContent>
             </Tooltip>
@@ -203,7 +205,7 @@ export const ROICCard: React.FC<ROICCardProps> = ({
               <TooltipTrigger asChild>
                 <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right">
+              <TooltipContent side={isMobile ? "top" : "right"}>
                 {getScoringTooltip()}
               </TooltipContent>
             </Tooltip>

@@ -4,6 +4,7 @@ import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
 import { ScoreResult } from '@/context/StockContextTypes';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface OperatingMarginCardProps {
   currentValue: number | null;
@@ -18,6 +19,7 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({
   preset = 'Default',
   scoreFromBackend 
 }) => {
+  const isMobile = useIsMobile();
   console.log('OperatingMarginCard - Preset:', preset);
   console.log('OperatingMarginCard - Score from backend:', scoreFromBackend);
 
@@ -157,7 +159,7 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                 {tooltipContent}
               </TooltipContent>
             </Tooltip>
@@ -182,7 +184,7 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({
             <TooltipTrigger asChild>
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent side={isMobile ? "top" : "right"}>
               {getScoringTooltip()}
             </TooltipContent>
           </Tooltip>
@@ -207,6 +209,8 @@ export const OperatingMarginCard: React.FC<OperatingMarginCardProps> = ({
                 domain={[0, 'auto']}
               />
               <RechartsTooltip
+                allowEscapeViewBox={{ x: false, y: false }}
+                wrapperStyle={{ zIndex: 50, maxWidth: 'calc(100vw - 32px)', overflow: 'hidden' }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (

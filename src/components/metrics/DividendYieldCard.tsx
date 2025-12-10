@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DividendYieldCardProps {
   currentPrice: number;
@@ -31,6 +32,7 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
   preset = 'Standard (Nicht-Finanz)',
   onScoreChange
 }) => {
+  const isMobile = useIsMobile();
   // Calculate current dividend yield
   const dividendYield = currentPrice > 0 && currentDividendPerShare > 0
     ? (currentDividendPerShare / currentPrice) * 100
@@ -201,7 +203,7 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="right" className="max-w-md">
+                <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                   {mainTooltipContent}
                 </TooltipContent>
               </Tooltip>
@@ -223,7 +225,7 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                 {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
@@ -253,7 +255,7 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
             <TooltipTrigger asChild>
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent side="right" className="max-w-md">
+            <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
               {scoringTooltip}
             </TooltipContent>
           </Tooltip>
@@ -312,6 +314,8 @@ export const DividendYieldCard: React.FC<DividendYieldCardProps> = ({
                 label={{ value: 'Dividende ($)', angle: 90, position: 'insideRight', style: { fontSize: 10 } }}
               />
               <RechartsTooltip
+                allowEscapeViewBox={{ x: false, y: false }}
+                wrapperStyle={{ zIndex: 50, maxWidth: 'calc(100vw - 32px)', overflow: 'hidden' }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PriceToCashFlowCardProps {
   currentPrice: number;
@@ -32,6 +33,7 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
   currency,
   sector = 'Default'
 }) => {
+  const isMobile = useIsMobile();
   const [selectedRange, setSelectedRange] = useState<TimeRange>('5Y');
   const hasLoggedRef = useRef<string | null>(null);
 
@@ -230,7 +232,7 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                 {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
@@ -254,7 +256,7 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                 {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
@@ -281,7 +283,7 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
             <TooltipTrigger asChild>
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent side={isMobile ? "top" : "right"}>
               {scoringTooltip}
             </TooltipContent>
           </Tooltip>
@@ -410,6 +412,8 @@ export const PriceToCashFlowCard: React.FC<PriceToCashFlowCardProps> = ({
                   tickFormatter={(value) => value.toFixed(1)}
                 />
                 <RechartsTooltip
+                  allowEscapeViewBox={{ x: false, y: false }}
+                  wrapperStyle={{ zIndex: 50, maxWidth: 'calc(100vw - 32px)', overflow: 'hidden' }}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;

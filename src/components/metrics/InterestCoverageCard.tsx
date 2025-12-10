@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ScoreResult {
   score: number;
@@ -17,6 +18,7 @@ interface InterestCoverageCardProps {
 }
 
 export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ currentValue, historicalData, preset, scoreFromBackend }) => {
+  const isMobile = useIsMobile();
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
@@ -213,7 +215,7 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                 {tooltipContent}
               </TooltipContent>
             </Tooltip>
@@ -243,7 +245,7 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
             <TooltipTrigger asChild>
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent side={isMobile ? "top" : "right"}>
               {scoringTooltip}
             </TooltipContent>
           </Tooltip>
@@ -268,6 +270,8 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
                 domain={[0, 'auto']}
               />
               <RechartsTooltip
+                allowEscapeViewBox={{ x: false, y: false }}
+                wrapperStyle={{ zIndex: 50, maxWidth: 'calc(100vw - 32px)', overflow: 'hidden' }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (

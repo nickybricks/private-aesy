@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
 import { HistoricalDataItem, ScoreResult } from '@/context/StockContextTypes';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ROACardProps {
   currentValue: number | null;
@@ -13,6 +14,7 @@ interface ROACardProps {
 }
 
 export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, preset = 'Default', scoreFromBackend }) => {
+  const isMobile = useIsMobile();
   // Calculate score based on ROA value
   const calculateScore = (value: number | null): number => {
     if (value === null) return 0;
@@ -194,7 +196,7 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="right" className="max-w-md">
+                <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                   {getTooltipContent()}
                 </TooltipContent>
               </Tooltip>
@@ -220,7 +222,7 @@ export const ROACard: React.FC<ROACardProps> = ({ currentValue, historicalData, 
               <TooltipTrigger asChild>
                 <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right">
+              <TooltipContent side={isMobile ? "top" : "right"}>
                 {getScoringTooltip()}
               </TooltipContent>
             </Tooltip>
