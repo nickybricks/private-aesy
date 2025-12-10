@@ -198,298 +198,130 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
               />
 
               {/* P/E Ratio */}
-              <div className="space-y-2">
-                <Label>KGV</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minPE}
-                    onChange={(e) => setFilters({ ...filters, minPE: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxPE}
-                    onChange={(e) => setFilters({ ...filters, maxPE: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="KGV"
+                minValue={filters.minPE}
+                maxValue={filters.maxPE}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minPE: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxPE: value })), [])}
+              />
 
               {/* ROIC */}
-              <div className="space-y-2">
-                <Label>ROIC (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minROIC}
-                    onChange={(e) => setFilters({ ...filters, minROIC: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxROIC}
-                    onChange={(e) => setFilters({ ...filters, maxROIC: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="ROIC (%)"
+                minValue={filters.minROIC}
+                maxValue={filters.maxROIC}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minROIC: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxROIC: value })), [])}
+              />
 
               {/* ROE */}
-              <div className="space-y-2">
-                <Label>ROE (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minROE}
-                    onChange={(e) => setFilters({ ...filters, minROE: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxROE}
-                    onChange={(e) => setFilters({ ...filters, maxROE: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="ROE (%)"
+                minValue={filters.minROE}
+                maxValue={filters.maxROE}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minROE: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxROE: value })), [])}
+              />
 
               {/* Dividend Yield */}
-              <div className="space-y-2">
-                <Label>Dividende (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minDividendYield}
-                    onChange={(e) => setFilters({ ...filters, minDividendYield: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxDividendYield}
-                    onChange={(e) => setFilters({ ...filters, maxDividendYield: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="Dividende (%)"
+                minValue={filters.minDividendYield}
+                maxValue={filters.maxDividendYield}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minDividendYield: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxDividendYield: value })), [])}
+              />
 
               {/* Revenue Growth */}
-              <div className="space-y-2">
-                <Label>Umsatz-Wachstum (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minRevenueGrowth}
-                    onChange={(e) => setFilters({ ...filters, minRevenueGrowth: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxRevenueGrowth}
-                    onChange={(e) => setFilters({ ...filters, maxRevenueGrowth: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="Umsatz-Wachstum (%)"
+                minValue={filters.minRevenueGrowth}
+                maxValue={filters.maxRevenueGrowth}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minRevenueGrowth: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxRevenueGrowth: value })), [])}
+              />
 
               {/* Years of Profitability */}
-              <div className="space-y-2">
-                <Label>Jahre profitabel</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minYearsProfit}
-                    onChange={(e) => setFilters({ ...filters, minYearsProfit: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxYearsProfit}
-                    onChange={(e) => setFilters({ ...filters, maxYearsProfit: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="Jahre profitabel"
+                minValue={filters.minYearsProfit}
+                maxValue={filters.maxYearsProfit}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minYearsProfit: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxYearsProfit: value })), [])}
+              />
 
               {/* EPS Growth 3Y */}
-              <div className="space-y-2">
-                <Label>EPS-Wachstum 3J (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minEpsGrowth3y}
-                    onChange={(e) => setFilters({ ...filters, minEpsGrowth3y: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxEpsGrowth3y}
-                    onChange={(e) => setFilters({ ...filters, maxEpsGrowth3y: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="EPS-Wachstum 3J (%)"
+                minValue={filters.minEpsGrowth3y}
+                maxValue={filters.maxEpsGrowth3y}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minEpsGrowth3y: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxEpsGrowth3y: value })), [])}
+              />
 
               {/* EPS Growth 5Y */}
-              <div className="space-y-2">
-                <Label>EPS-Wachstum 5J (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minEpsGrowth}
-                    onChange={(e) => setFilters({ ...filters, minEpsGrowth: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxEpsGrowth}
-                    onChange={(e) => setFilters({ ...filters, maxEpsGrowth: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="EPS-Wachstum 5J (%)"
+                minValue={filters.minEpsGrowth}
+                maxValue={filters.maxEpsGrowth}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minEpsGrowth: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxEpsGrowth: value })), [])}
+              />
 
               {/* EPS Growth 10Y */}
-              <div className="space-y-2">
-                <Label>EPS-Wachstum 10J (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minEpsGrowth10y}
-                    onChange={(e) => setFilters({ ...filters, minEpsGrowth10y: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxEpsGrowth10y}
-                    onChange={(e) => setFilters({ ...filters, maxEpsGrowth10y: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="EPS-Wachstum 10J (%)"
+                minValue={filters.minEpsGrowth10y}
+                maxValue={filters.maxEpsGrowth10y}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minEpsGrowth10y: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxEpsGrowth10y: value })), [])}
+              />
 
               {/* Revenue Growth 3Y */}
-              <div className="space-y-2">
-                <Label>Umsatz-Wachstum 3J (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minRevenueGrowth3y}
-                    onChange={(e) => setFilters({ ...filters, minRevenueGrowth3y: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxRevenueGrowth3y}
-                    onChange={(e) => setFilters({ ...filters, maxRevenueGrowth3y: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="Umsatz-Wachstum 3J (%)"
+                minValue={filters.minRevenueGrowth3y}
+                maxValue={filters.maxRevenueGrowth3y}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minRevenueGrowth3y: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxRevenueGrowth3y: value })), [])}
+              />
 
               {/* Revenue Growth 10Y */}
-              <div className="space-y-2">
-                <Label>Umsatz-Wachstum 10J (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minRevenueGrowth10y}
-                    onChange={(e) => setFilters({ ...filters, minRevenueGrowth10y: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxRevenueGrowth10y}
-                    onChange={(e) => setFilters({ ...filters, maxRevenueGrowth10y: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="Umsatz-Wachstum 10J (%)"
+                minValue={filters.minRevenueGrowth10y}
+                maxValue={filters.maxRevenueGrowth10y}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minRevenueGrowth10y: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxRevenueGrowth10y: value })), [])}
+              />
 
               {/* Net Debt to EBITDA */}
-              <div className="space-y-2">
-                <Label>Verschuldung (NetDebt/EBITDA)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minNetDebtToEbitda}
-                    onChange={(e) => setFilters({ ...filters, minNetDebtToEbitda: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxNetDebtToEbitda}
-                    onChange={(e) => setFilters({ ...filters, maxNetDebtToEbitda: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="Verschuldung (NetDebt/EBITDA)"
+                minValue={filters.minNetDebtToEbitda}
+                maxValue={filters.maxNetDebtToEbitda}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minNetDebtToEbitda: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxNetDebtToEbitda: value })), [])}
+              />
 
               {/* Net Margin */}
-              <div className="space-y-2">
-                <Label>Nettomarge (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minNetMargin}
-                    onChange={(e) => setFilters({ ...filters, minNetMargin: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxNetMargin}
-                    onChange={(e) => setFilters({ ...filters, maxNetMargin: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="Nettomarge (%)"
+                minValue={filters.minNetMargin}
+                maxValue={filters.maxNetMargin}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minNetMargin: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxNetMargin: value })), [])}
+              />
 
               {/* FCF Margin */}
-              <div className="space-y-2">
-                <Label>FCF-Marge (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minFcfMargin}
-                    onChange={(e) => setFilters({ ...filters, minFcfMargin: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxFcfMargin}
-                    onChange={(e) => setFilters({ ...filters, maxFcfMargin: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="FCF-Marge (%)"
+                minValue={filters.minFcfMargin}
+                maxValue={filters.maxFcfMargin}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minFcfMargin: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxFcfMargin: value })), [])}
+              />
             </div>
           </CollapsibleContent>
         </Card>
