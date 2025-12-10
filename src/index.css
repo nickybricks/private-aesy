@@ -244,3 +244,10 @@
     display: none;
   }
 }
+
+/* Full-width buttons on mobile (<480px) */
+.recharts-surface {
+  @media (max-width: 479px) {
+    margin-left: -20px;
+  }
+}
