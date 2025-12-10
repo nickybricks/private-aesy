@@ -241,8 +241,16 @@ export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({
               </TooltipTrigger>
               <TooltipContent
                 side={isMobile ? "top" : "right"}
-                align={isMobile ? "center" : undefined}
-                className="z-50 max-w-[calc(100vw-32px)] break-words"
+                align={isMobile ? "center" : "start"}
+                sideOffset={12} // Abstand vom Trigger
+                alignOffset={-10} // optional: leicht nach links/rechts verschieben
+                className={cn(
+                  "z-50 overflow-hidden rounded-lg border bg-popover px-4 py-3 text-sm shadow-lg",
+                  // Mobile: schöner Randabstand + nie am Rand kleben
+                  isMobile && "max-w-[92vw] mx-auto", // 4vw Abstand links + rechts → 8vw insgesamt
+                  // oder noch eleganter:
+                  // isMobile && "max-w-[calc(100vw-2rem)] mx-4"
+                )}
               >
                 {tooltipContent}
               </TooltipContent>
