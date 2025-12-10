@@ -240,9 +240,11 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
                         <Popover key={`slice-${index}`} open={hoveredSlice === index}>
                           <PopoverTrigger asChild>{sliceElement}</PopoverTrigger>
                           <PopoverContent
-                            className="w-72 p-3"
-                            side="right"
+                            className={isMobile ? "w-64 p-2" : "w-72 p-3"}
+                            side={isMobile ? "top" : "right"}
                             align="center"
+                            sideOffset={8}
+                            collisionPadding={16}
                             onOpenAutoFocus={(e) => e.preventDefault()}
                           >
                             <div className="space-y-2">
