@@ -21,6 +21,8 @@ const StockQuoteHeader: React.FC = () => {
   const [watchlistDialogOpen, setWatchlistDialogOpen] = useState(false);
   const [selectedWatchlistId, setSelectedWatchlistId] = useState<string>("");
   const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
+  const [showNewWatchlistInput, setShowNewWatchlistInput] = useState(false);
+  const [newWatchlistName, setNewWatchlistName] = useState("");
   const [translatedDescription, setTranslatedDescription] = useState<string>("");
   const [isTranslating, setIsTranslating] = useState(false);
 
@@ -236,16 +238,74 @@ const StockQuoteHeader: React.FC = () => {
     }
   };
 
-  const handleCreateAndSelect = async () => {
-    if (!stockInfo) return;
+  const handleCreateAndAddToWatchlist = async () => {
+    if (!stockInfo || !newWatchlistName.trim()) return;
+    
+    setIsAddingToWatchlist(true);
     try {
-      const newWatchlist = await createWatchlist(`${stockInfo.name} Watchlist`);
+      const newWatchlist = await createWatchlist(newWatchlistName.trim());
       if (newWatchlist) {
-        setSelectedWatchlistId(newWatchlist.id);
+        // Check if stock already exists
+        const { data: existingStock } = await supabase
+          .from("user_stocks")
+          .select("id")
+          .eq("user_id", user!.id)
+          .eq("watchlist_id", newWatchlist.id)
+          .eq("symbol", stockInfo.ticker)
+          .maybeSingle();
+
+        if (!existingStock) {
+          const analysisSnapshot = {
+            price: stockInfo.price,
+            currency: stockInfo.currency,
+            marketCap: stockInfo.marketCap,
+            intrinsicValue: stockInfo.intrinsicValue,
+            changePercent: 0,
+            sinceAddedPercent: 0,
+            buffettCriteria: buffettCriteria ? JSON.parse(JSON.stringify(buffettCriteria)) : null,
+            financialMetrics: financialMetrics ? JSON.parse(JSON.stringify(financialMetrics)) : null,
+            overallRating: overallRating ? JSON.parse(JSON.stringify(overallRating)) : null,
+            analysisDate: new Date().toISOString(),
+          };
+
+          await supabase.from("user_stocks").insert({
+            user_id: user!.id,
+            watchlist_id: newWatchlist.id,
+            symbol: stockInfo.ticker,
+            company_name: stockInfo.name,
+            analysis_data: analysisSnapshot as any,
+            buffett_score: overallRating?.buffettScore || null,
+            last_analysis_date: new Date().toISOString(),
+          });
+        }
+
+        toast({
+          title: "Aktie hinzugefügt",
+          description: `${stockInfo.name} wurde zur neuen Watchlist "${newWatchlistName}" hinzugefügt.`,
+        });
+
+        setWatchlistDialogOpen(false);
+        setNewWatchlistName("");
+        setShowNewWatchlistInput(false);
+        setSelectedWatchlistId("");
       }
-    } catch (error) {
-      // Error is handled in createWatchlist
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Fehler",
+        description: error.message,
+      });
+    } finally {
+      setIsAddingToWatchlist(false);
     }
+  };
+
+  // Reset dialog state when opened
+  const handleOpenWatchlistDialog = () => {
+    setShowNewWatchlistInput(false);
+    setNewWatchlistName("");
+    setSelectedWatchlistId("");
+    setWatchlistDialogOpen(true);
   };
 
   return (
@@ -289,7 +349,7 @@ const StockQuoteHeader: React.FC = () => {
                       });
                       return;
                     }
-                    setWatchlistDialogOpen(true);
+                    handleOpenWatchlistDialog();
                   }}
                   variant="default"
                   size="sm"
@@ -501,35 +561,69 @@ const StockQuoteHeader: React.FC = () => {
             </DialogHeader>
 
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Watchlist auswählen</label>
-                <Select value={selectedWatchlistId} onValueChange={setSelectedWatchlistId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Watchlist auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {watchlists.map((watchlist) => (
-                      <SelectItem key={watchlist.id} value={watchlist.id}>
-                        {watchlist.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {!showNewWatchlistInput ? (
+                <>
+                  {/* Select existing watchlist */}
+                  <div>
+                    <label className="text-sm font-medium">Watchlist auswählen</label>
+                    <Select value={selectedWatchlistId} onValueChange={setSelectedWatchlistId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Watchlist auswählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {watchlists.map((watchlist) => (
+                          <SelectItem key={watchlist.id} value={watchlist.id}>
+                            {watchlist.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              {watchlists.length === 0 && (
-                <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground mb-2">Sie haben noch keine Watchlists erstellt.</p>
+                  {/* Button to create new watchlist - always visible */}
                   <Button
+                    type="button"
                     variant="outline"
-                    onClick={handleCreateAndSelect}
-                    className="flex items-center gap-2"
-                    size="sm"
+                    onClick={() => setShowNewWatchlistInput(true)}
+                    className="w-full flex items-center gap-2"
                   >
                     <Plus size={16} />
                     Neue Watchlist erstellen
                   </Button>
-                </div>
+                </>
+              ) : (
+                <>
+                  {/* New watchlist name input */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Name der neuen Watchlist</label>
+                    <input
+                      type="text"
+                      value={newWatchlistName}
+                      onChange={(e) => setNewWatchlistName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newWatchlistName.trim()) {
+                          handleCreateAndAddToWatchlist();
+                        }
+                      }}
+                      placeholder="z.B. Tech-Aktien, Dividenden..."
+                      autoFocus
+                      className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+
+                  {/* Back to selection */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowNewWatchlistInput(false);
+                      setNewWatchlistName("");
+                    }}
+                    className="w-full"
+                  >
+                    Zurück zur Auswahl
+                  </Button>
+                </>
               )}
             </div>
 
@@ -537,9 +631,18 @@ const StockQuoteHeader: React.FC = () => {
               <Button variant="outline" onClick={() => setWatchlistDialogOpen(false)}>
                 Abbrechen
               </Button>
-              <Button onClick={handleAddToWatchlist} disabled={!selectedWatchlistId || isAddingToWatchlist}>
-                {isAddingToWatchlist ? "Wird hinzugefügt..." : "Hinzufügen"}
-              </Button>
+              {showNewWatchlistInput ? (
+                <Button 
+                  onClick={handleCreateAndAddToWatchlist} 
+                  disabled={!newWatchlistName.trim() || isAddingToWatchlist}
+                >
+                  {isAddingToWatchlist ? "Wird erstellt..." : "Erstellen & Hinzufügen"}
+                </Button>
+              ) : (
+                <Button onClick={handleAddToWatchlist} disabled={!selectedWatchlistId || isAddingToWatchlist}>
+                  {isAddingToWatchlist ? "Wird hinzugefügt..." : "Hinzufügen"}
+                </Button>
+              )}
             </div>
           </DialogContent>
         </Dialog>
