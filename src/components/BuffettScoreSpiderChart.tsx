@@ -240,9 +240,12 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
                         <Popover key={`slice-${index}`} open={hoveredSlice === index}>
                           <PopoverTrigger asChild>{sliceElement}</PopoverTrigger>
                           <PopoverContent
-                            className="w-72 p-3"
+                            // Füge Tailwind-Klassen hinzu, um den Viewport-Rand zu respektieren
+                            className="w-72 p-3 max-w-[calc(100vw-1rem)] m-2"
                             side="right"
                             align="center"
+                            // Füge einen sideOffset hinzu, um mehr Platz zum Ausweichen zu geben
+                            sideOffset={10}
                             onOpenAutoFocus={(e) => e.preventDefault()}
                           >
                             <div className="space-y-2">
