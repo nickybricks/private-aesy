@@ -246,8 +246,8 @@
 }
 
 /* Full-width buttons on mobile (<480px) */
-.recharts-surface:not(.StockChart) {
-  @media (max-width: 479px) {
-    margin-left: -20px;
-  }
-}
+/*.recharts-surface:not(.StockChart) {*/
+/*@media (max-width: 479px) {*/
+/*margin-left: -20px;*/
+/*}*/
+/*}*/
