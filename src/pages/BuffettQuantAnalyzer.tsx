@@ -53,11 +53,6 @@ const BuffettQuantAnalyzer = () => {
           <div className="flex items-center gap-2 mb-6">
             <Database className="h-6 w-6 text-buffett-blue" />
             <h1 className="text-2xl font-semibold">Screener</h1>
-            {cacheStats && (
-              <span className="text-sm text-muted-foreground">
-                ({cacheStats.total} Aktien)
-              </span>
-            )}
           </div>
 
           {isLoadingCache ? (
