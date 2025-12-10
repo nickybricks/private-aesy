@@ -16,7 +16,7 @@ import { ChartContainer } from '@/components/ui/chart';
 import { Button } from '@/components/ui/button';
 import { convertCurrency, needsCurrencyConversion, normalizeCurrencyCode } from '@/utils/currencyConverter';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
-import { useChartTooltipTrigger } from '@/hooks/useChartTooltipTrigger';
+
 
 interface StockChartProps {
   symbol: string;
@@ -54,7 +54,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
   const [selectedRange, setSelectedRange] = useState<typeof TIME_RANGES[number]['value']>('1Y');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const tooltipTrigger = useChartTooltipTrigger();
+  
 
   useEffect(() => {
     const fetchHistoricalData = async () => {
@@ -505,7 +505,7 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, currency, intrinsicValu
                 }}
               />
               <Tooltip
-                trigger={tooltipTrigger}
+                trigger="hover"
                 wrapperStyle={{ zIndex: 50, maxWidth: 'calc(100vw - 32px)' }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length > 0) {
