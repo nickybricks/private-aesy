@@ -249,8 +249,9 @@ export function EpsWoNriGrowthCard({ historicalEpsWoNri }: EpsWoNriGrowthCardPro
               </TooltipTrigger>
               <TooltipContent
                 side={isMobile ? "top" : "right"}
-                align={isMobile ? "center" : undefined}
-                className="z-50 max-w-[calc(100vw-32px)] break-words"
+                align={isMobile ? "center" : "start"}
+                sideOffset={12}
+                className="z-50 max-w-[min(420px,calc(100vw-40px))] mx-auto"
               >
                 {mainTooltipContent}
               </TooltipContent>
