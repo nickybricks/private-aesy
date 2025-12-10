@@ -3,6 +3,7 @@ import { QualitativeCriterionCard } from "@/components/metrics/QualitativeCriter
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Brain } from "lucide-react";
+import { StartDeepResearchButton } from "@/components/StartDeepResearchButton";
 
 interface QualitativeAnalysisTabProps {
   qualitativeScores: QualitativeScores;
@@ -38,6 +39,9 @@ export const QualitativeAnalysisTab = ({ qualitativeScores }: QualitativeAnalysi
 
   return (
     <div className="space-y-6">
+      {/* Start Analysis Button */}
+      <StartDeepResearchButton compact />
+      
       {/* Overall Score Card */}
       <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader>
