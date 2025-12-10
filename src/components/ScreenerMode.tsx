@@ -1,520 +1,420 @@
 import { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
 import { QuantAnalysisResult } from '@/api/quantAnalyzerApi';
-import { Filter, ChevronDown } from 'lucide-react';
+import { Plus, X, Minus, Search } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ScreenerModeProps {
   cachedStocks: QuantAnalysisResult[];
 }
 
+// Define all available filters with their configurations
+const AVAILABLE_FILTERS = [
+  { key: 'searchQuery', label: 'Suche (Symbol/Name)', type: 'search' as const },
+  { key: 'sector', label: 'Sektor', type: 'select' as const },
+  { key: 'exchange', label: 'Börse', type: 'select' as const },
+  { key: 'aesyScore', label: 'Aesy Score', type: 'range' as const, presets: ['0', '5', '8', '10', '12', '14'] },
+  { key: 'pe', label: 'KGV', type: 'range' as const, presets: ['5', '10', '15', '20', '25', '30'] },
+  { key: 'roic', label: 'ROIC (%)', type: 'range' as const, presets: ['5', '10', '12', '15', '20', '25'] },
+  { key: 'roe', label: 'ROE (%)', type: 'range' as const, presets: ['5', '10', '15', '20', '25', '30'] },
+  { key: 'dividendYield', label: 'Dividende (%)', type: 'range' as const, presets: ['0', '1', '2', '3', '4', '5'] },
+  { key: 'yearsProfit', label: 'Jahre profitabel', type: 'range' as const, presets: ['3', '5', '6', '8', '10'] },
+  { key: 'epsGrowth3y', label: 'EPS-Wachstum 3J (%)', type: 'range' as const, presets: ['-10', '0', '5', '10', '15', '20'] },
+  { key: 'epsGrowth', label: 'EPS-Wachstum 5J (%)', type: 'range' as const, presets: ['-10', '0', '5', '10', '15', '20'] },
+  { key: 'epsGrowth10y', label: 'EPS-Wachstum 10J (%)', type: 'range' as const, presets: ['-5', '0', '5', '10', '15'] },
+  { key: 'revenueGrowth3y', label: 'Umsatz-Wachstum 3J (%)', type: 'range' as const, presets: ['-10', '0', '5', '10', '15', '20'] },
+  { key: 'revenueGrowth', label: 'Umsatz-Wachstum 5J (%)', type: 'range' as const, presets: ['-10', '0', '5', '10', '15', '20'] },
+  { key: 'revenueGrowth10y', label: 'Umsatz-Wachstum 10J (%)', type: 'range' as const, presets: ['-5', '0', '5', '10', '15'] },
+  { key: 'netDebtToEbitda', label: 'Verschuldung (NetDebt/EBITDA)', type: 'range' as const, presets: ['-1', '0', '1', '2', '3', '5'] },
+  { key: 'netMargin', label: 'Nettomarge (%)', type: 'range' as const, presets: ['0', '5', '10', '15', '20', '25'] },
+  { key: 'fcfMargin', label: 'FCF-Marge (%)', type: 'range' as const, presets: ['0', '5', '10', '15', '20', '25'] },
+] as const;
+
+type FilterKey = typeof AVAILABLE_FILTERS[number]['key'];
+
+interface FilterValues {
+  [key: string]: {
+    min?: string;
+    max?: string;
+    value?: string;
+  };
+}
+
 export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    minAesyScore: '',
-    maxAesyScore: '',
-    minYearsProfit: '',
-    maxYearsProfit: '',
-    minPE: '',
-    maxPE: '',
-    minROIC: '',
-    maxROIC: '',
-    minROE: '',
-    maxROE: '',
-    minDividendYield: '',
-    maxDividendYield: '',
-    minEpsGrowth3y: '',
-    maxEpsGrowth3y: '',
-    minEpsGrowth: '',
-    maxEpsGrowth: '',
-    minEpsGrowth10y: '',
-    maxEpsGrowth10y: '',
-    minRevenueGrowth3y: '',
-    maxRevenueGrowth3y: '',
-    minRevenueGrowth: '',
-    maxRevenueGrowth: '',
-    minRevenueGrowth10y: '',
-    maxRevenueGrowth10y: '',
-    minNetDebtToEbitda: '',
-    maxNetDebtToEbitda: '',
-    minNetMargin: '',
-    maxNetMargin: '',
-    minFcfMargin: '',
-    maxFcfMargin: '',
-    sector: 'all',
-    exchange: 'all',
-    searchQuery: ''
-  });
+  const isMobile = useIsMobile();
+  const [isFilterSelectorOpen, setIsFilterSelectorOpen] = useState(false);
+  const [filterSearch, setFilterSearch] = useState('');
+  const [activeFilters, setActiveFilters] = useState<FilterKey[]>([]);
+  const [filterValues, setFilterValues] = useState<FilterValues>({});
 
-  const filteredStocks = useMemo(() => {
-    return cachedStocks.filter(stock => {
-      // Aesy Score filter
-      if (filters.minAesyScore !== '' && stock.buffettScore < parseFloat(filters.minAesyScore)) return false;
-      if (filters.maxAesyScore !== '' && stock.buffettScore > parseFloat(filters.maxAesyScore)) return false;
-      
-      // Years of Profitability filter
-      if (filters.minYearsProfit !== '' && stock.criteria.yearsOfProfitability.value != null && stock.criteria.yearsOfProfitability.value < parseFloat(filters.minYearsProfit)) return false;
-      if (filters.maxYearsProfit !== '' && stock.criteria.yearsOfProfitability.value != null && stock.criteria.yearsOfProfitability.value > parseFloat(filters.maxYearsProfit)) return false;
-      
-      // PE filter
-      if (filters.minPE !== '' && stock.criteria.pe.value != null && stock.criteria.pe.value < parseFloat(filters.minPE)) return false;
-      if (filters.maxPE !== '' && stock.criteria.pe.value != null && stock.criteria.pe.value > parseFloat(filters.maxPE)) return false;
-      
-      // ROIC filter
-      if (filters.minROIC !== '' && stock.criteria.roic.value != null && stock.criteria.roic.value < parseFloat(filters.minROIC)) return false;
-      if (filters.maxROIC !== '' && stock.criteria.roic.value != null && stock.criteria.roic.value > parseFloat(filters.maxROIC)) return false;
-      
-      // ROE filter
-      if (filters.minROE !== '' && stock.criteria.roe.value != null && stock.criteria.roe.value < parseFloat(filters.minROE)) return false;
-      if (filters.maxROE !== '' && stock.criteria.roe.value != null && stock.criteria.roe.value > parseFloat(filters.maxROE)) return false;
-      
-      // Dividend Yield filter
-      if (filters.minDividendYield !== '' && stock.criteria.dividendYield.value != null && stock.criteria.dividendYield.value < parseFloat(filters.minDividendYield)) return false;
-      if (filters.maxDividendYield !== '' && stock.criteria.dividendYield.value != null && stock.criteria.dividendYield.value > parseFloat(filters.maxDividendYield)) return false;
-      
-      // EPS Growth 3Y filter
-      if (filters.minEpsGrowth3y !== '' && stock.criteria.epsGrowth.cagr3y != null && stock.criteria.epsGrowth.cagr3y < parseFloat(filters.minEpsGrowth3y)) return false;
-      if (filters.maxEpsGrowth3y !== '' && stock.criteria.epsGrowth.cagr3y != null && stock.criteria.epsGrowth.cagr3y > parseFloat(filters.maxEpsGrowth3y)) return false;
-      
-      // EPS Growth 5Y filter
-      if (filters.minEpsGrowth !== '' && stock.criteria.epsGrowth.value != null && stock.criteria.epsGrowth.value < parseFloat(filters.minEpsGrowth)) return false;
-      if (filters.maxEpsGrowth !== '' && stock.criteria.epsGrowth.value != null && stock.criteria.epsGrowth.value > parseFloat(filters.maxEpsGrowth)) return false;
-      
-      // EPS Growth 10Y filter
-      if (filters.minEpsGrowth10y !== '' && stock.criteria.epsGrowth.cagr10y != null && stock.criteria.epsGrowth.cagr10y < parseFloat(filters.minEpsGrowth10y)) return false;
-      if (filters.maxEpsGrowth10y !== '' && stock.criteria.epsGrowth.cagr10y != null && stock.criteria.epsGrowth.cagr10y > parseFloat(filters.maxEpsGrowth10y)) return false;
-      
-      // Revenue Growth 3Y filter
-      if (filters.minRevenueGrowth3y !== '' && stock.criteria.revenueGrowth.cagr3y != null && stock.criteria.revenueGrowth.cagr3y < parseFloat(filters.minRevenueGrowth3y)) return false;
-      if (filters.maxRevenueGrowth3y !== '' && stock.criteria.revenueGrowth.cagr3y != null && stock.criteria.revenueGrowth.cagr3y > parseFloat(filters.maxRevenueGrowth3y)) return false;
-      
-      // Revenue Growth 5Y filter
-      if (filters.minRevenueGrowth !== '' && stock.criteria.revenueGrowth.value != null && stock.criteria.revenueGrowth.value < parseFloat(filters.minRevenueGrowth)) return false;
-      if (filters.maxRevenueGrowth !== '' && stock.criteria.revenueGrowth.value != null && stock.criteria.revenueGrowth.value > parseFloat(filters.maxRevenueGrowth)) return false;
-      
-      // Revenue Growth 10Y filter
-      if (filters.minRevenueGrowth10y !== '' && stock.criteria.revenueGrowth.cagr10y != null && stock.criteria.revenueGrowth.cagr10y < parseFloat(filters.minRevenueGrowth10y)) return false;
-      if (filters.maxRevenueGrowth10y !== '' && stock.criteria.revenueGrowth.cagr10y != null && stock.criteria.revenueGrowth.cagr10y > parseFloat(filters.maxRevenueGrowth10y)) return false;
-      
-      // Net Debt to EBITDA filter
-      if (filters.minNetDebtToEbitda !== '' && stock.criteria.netDebtToEbitda.value != null && stock.criteria.netDebtToEbitda.value < parseFloat(filters.minNetDebtToEbitda)) return false;
-      if (filters.maxNetDebtToEbitda !== '' && stock.criteria.netDebtToEbitda.value != null && stock.criteria.netDebtToEbitda.value > parseFloat(filters.maxNetDebtToEbitda)) return false;
-      
-      // Net Margin filter
-      if (filters.minNetMargin !== '' && stock.criteria.netMargin.value != null && stock.criteria.netMargin.value < parseFloat(filters.minNetMargin)) return false;
-      if (filters.maxNetMargin !== '' && stock.criteria.netMargin.value != null && stock.criteria.netMargin.value > parseFloat(filters.maxNetMargin)) return false;
-      
-      // FCF Margin filter
-      if (filters.minFcfMargin !== '' && stock.criteria.fcfMargin.value != null && stock.criteria.fcfMargin.value < parseFloat(filters.minFcfMargin)) return false;
-      if (filters.maxFcfMargin !== '' && stock.criteria.fcfMargin.value != null && stock.criteria.fcfMargin.value > parseFloat(filters.maxFcfMargin)) return false;
-      
-      // Sector filter
-      if (filters.sector !== 'all' && stock.sector !== filters.sector) return false;
-      
-      // Exchange filter
-      if (filters.exchange !== 'all' && stock.exchange !== filters.exchange) return false;
-      
-      // Search filter
-      if (filters.searchQuery && !stock.symbol.toLowerCase().includes(filters.searchQuery.toLowerCase()) &&
-          !stock.name.toLowerCase().includes(filters.searchQuery.toLowerCase())) return false;
-      
-      return true;
-    });
-  }, [cachedStocks, filters]);
-
+  // Extract unique sectors and exchanges from data
   const sectors = useMemo(() => {
-    const uniqueSectors = new Set(cachedStocks.map(s => s.sector));
+    const uniqueSectors = new Set(cachedStocks.map(s => s.sector).filter(Boolean));
     return Array.from(uniqueSectors).sort();
   }, [cachedStocks]);
 
   const exchanges = useMemo(() => {
-    const uniqueExchanges = new Set(cachedStocks.map(s => s.exchange));
+    const uniqueExchanges = new Set(cachedStocks.map(s => s.exchange).filter(Boolean));
     return Array.from(uniqueExchanges).sort();
   }, [cachedStocks]);
 
+  // Filter the available filters based on search
+  const filteredAvailableFilters = useMemo(() => {
+    if (!filterSearch) return AVAILABLE_FILTERS;
+    return AVAILABLE_FILTERS.filter(f => 
+      f.label.toLowerCase().includes(filterSearch.toLowerCase())
+    );
+  }, [filterSearch]);
+
+  // Apply filters to stocks
+  const filteredStocks = useMemo(() => {
+    return cachedStocks.filter(stock => {
+      for (const filterKey of activeFilters) {
+        const values = filterValues[filterKey];
+        if (!values) continue;
+
+        switch (filterKey) {
+          case 'searchQuery':
+            if (values.value && 
+                !stock.symbol.toLowerCase().includes(values.value.toLowerCase()) &&
+                !stock.name.toLowerCase().includes(values.value.toLowerCase())) {
+              return false;
+            }
+            break;
+          case 'sector':
+            if (values.value && values.value !== 'all' && stock.sector !== values.value) {
+              return false;
+            }
+            break;
+          case 'exchange':
+            if (values.value && values.value !== 'all' && stock.exchange !== values.value) {
+              return false;
+            }
+            break;
+          case 'aesyScore':
+            if (values.min !== '' && values.min !== undefined && stock.buffettScore < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.buffettScore > parseFloat(values.max)) return false;
+            break;
+          case 'pe':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.pe.value != null && stock.criteria.pe.value < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.pe.value != null && stock.criteria.pe.value > parseFloat(values.max)) return false;
+            break;
+          case 'roic':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.roic.value != null && stock.criteria.roic.value < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.roic.value != null && stock.criteria.roic.value > parseFloat(values.max)) return false;
+            break;
+          case 'roe':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.roe.value != null && stock.criteria.roe.value < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.roe.value != null && stock.criteria.roe.value > parseFloat(values.max)) return false;
+            break;
+          case 'dividendYield':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.dividendYield.value != null && stock.criteria.dividendYield.value < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.dividendYield.value != null && stock.criteria.dividendYield.value > parseFloat(values.max)) return false;
+            break;
+          case 'yearsProfit':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.yearsOfProfitability.value != null && stock.criteria.yearsOfProfitability.value < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.yearsOfProfitability.value != null && stock.criteria.yearsOfProfitability.value > parseFloat(values.max)) return false;
+            break;
+          case 'epsGrowth3y':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.epsGrowth.cagr3y != null && stock.criteria.epsGrowth.cagr3y < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.epsGrowth.cagr3y != null && stock.criteria.epsGrowth.cagr3y > parseFloat(values.max)) return false;
+            break;
+          case 'epsGrowth':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.epsGrowth.value != null && stock.criteria.epsGrowth.value < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.epsGrowth.value != null && stock.criteria.epsGrowth.value > parseFloat(values.max)) return false;
+            break;
+          case 'epsGrowth10y':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.epsGrowth.cagr10y != null && stock.criteria.epsGrowth.cagr10y < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.epsGrowth.cagr10y != null && stock.criteria.epsGrowth.cagr10y > parseFloat(values.max)) return false;
+            break;
+          case 'revenueGrowth3y':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.revenueGrowth.cagr3y != null && stock.criteria.revenueGrowth.cagr3y < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.revenueGrowth.cagr3y != null && stock.criteria.revenueGrowth.cagr3y > parseFloat(values.max)) return false;
+            break;
+          case 'revenueGrowth':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.revenueGrowth.value != null && stock.criteria.revenueGrowth.value < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.revenueGrowth.value != null && stock.criteria.revenueGrowth.value > parseFloat(values.max)) return false;
+            break;
+          case 'revenueGrowth10y':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.revenueGrowth.cagr10y != null && stock.criteria.revenueGrowth.cagr10y < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.revenueGrowth.cagr10y != null && stock.criteria.revenueGrowth.cagr10y > parseFloat(values.max)) return false;
+            break;
+          case 'netDebtToEbitda':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.netDebtToEbitda.value != null && stock.criteria.netDebtToEbitda.value < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.netDebtToEbitda.value != null && stock.criteria.netDebtToEbitda.value > parseFloat(values.max)) return false;
+            break;
+          case 'netMargin':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.netMargin.value != null && stock.criteria.netMargin.value < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.netMargin.value != null && stock.criteria.netMargin.value > parseFloat(values.max)) return false;
+            break;
+          case 'fcfMargin':
+            if (values.min !== '' && values.min !== undefined && stock.criteria.fcfMargin.value != null && stock.criteria.fcfMargin.value < parseFloat(values.min)) return false;
+            if (values.max !== '' && values.max !== undefined && stock.criteria.fcfMargin.value != null && stock.criteria.fcfMargin.value > parseFloat(values.max)) return false;
+            break;
+        }
+      }
+      return true;
+    });
+  }, [cachedStocks, activeFilters, filterValues]);
+
+  // Toggle filter selection
+  const toggleFilter = (filterKey: FilterKey) => {
+    setActiveFilters(prev => {
+      if (prev.includes(filterKey)) {
+        return prev.filter(k => k !== filterKey);
+      } else {
+        return [...prev, filterKey];
+      }
+    });
+  };
+
+  // Remove filter completely
+  const removeFilter = (filterKey: FilterKey) => {
+    setActiveFilters(prev => prev.filter(k => k !== filterKey));
+    setFilterValues(prev => {
+      const newValues = { ...prev };
+      delete newValues[filterKey];
+      return newValues;
+    });
+  };
+
+  // Reset filter values (keep filter active but clear values)
+  const resetFilterValues = (filterKey: FilterKey) => {
+    setFilterValues(prev => ({
+      ...prev,
+      [filterKey]: {}
+    }));
+  };
+
+  // Update filter value
+  const updateFilterValue = (filterKey: FilterKey, field: 'min' | 'max' | 'value', newValue: string) => {
+    setFilterValues(prev => ({
+      ...prev,
+      [filterKey]: {
+        ...prev[filterKey],
+        [field]: newValue
+      }
+    }));
+  };
+
+  // Get filter config
+  const getFilterConfig = (key: FilterKey) => {
+    return AVAILABLE_FILTERS.find(f => f.key === key);
+  };
+
+  // Render filter chip
+  const renderFilterChip = (filterKey: FilterKey) => {
+    const config = getFilterConfig(filterKey);
+    if (!config) return null;
+
+    const values = filterValues[filterKey] || {};
+
+    return (
+      <div 
+        key={filterKey}
+        className="flex items-center gap-2 bg-muted/50 border border-border rounded-lg px-3 py-2 flex-wrap sm:flex-nowrap"
+      >
+        <span className="text-sm font-medium text-foreground whitespace-nowrap">{config.label}</span>
+        
+        {config.type === 'search' && (
+          <Input
+            type="text"
+            placeholder="z.B. AAPL"
+            value={values.value || ''}
+            onChange={(e) => updateFilterValue(filterKey, 'value', e.target.value)}
+            className="h-8 w-32 sm:w-40 text-base bg-background"
+          />
+        )}
+
+        {config.type === 'select' && (
+          <Select 
+            value={values.value || 'all'} 
+            onValueChange={(val) => updateFilterValue(filterKey, 'value', val)}
+          >
+            <SelectTrigger className="h-8 w-32 sm:w-40 text-base bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border border-border z-50">
+              <SelectItem value="all">Alle</SelectItem>
+              {filterKey === 'sector' && sectors.map(sector => (
+                <SelectItem key={sector} value={sector}>{sector}</SelectItem>
+              ))}
+              {filterKey === 'exchange' && exchanges.map(exchange => (
+                <SelectItem key={exchange} value={exchange}>{exchange}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {config.type === 'range' && (
+          <div className="flex items-center gap-1">
+            <Select 
+              value={values.min || ''} 
+              onValueChange={(val) => updateFilterValue(filterKey, 'min', val === 'none' ? '' : val)}
+            >
+              <SelectTrigger className="h-8 w-20 text-base bg-background">
+                <SelectValue placeholder="Min" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border border-border z-50">
+                <SelectItem value="none">Min</SelectItem>
+                {config.presets.map(preset => (
+                  <SelectItem key={preset} value={preset}>{preset}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-muted-foreground">–</span>
+            <Select 
+              value={values.max || ''} 
+              onValueChange={(val) => updateFilterValue(filterKey, 'max', val === 'none' ? '' : val)}
+            >
+              <SelectTrigger className="h-8 w-20 text-base bg-background">
+                <SelectValue placeholder="Max" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border border-border z-50">
+                <SelectItem value="none">Max</SelectItem>
+                {config.presets.map(preset => (
+                  <SelectItem key={preset} value={preset}>{preset}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Reset button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+          onClick={() => resetFilterValues(filterKey)}
+          title="Filter zurücksetzen"
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+
+        {/* Remove button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+          onClick={() => removeFilter(filterKey)}
+          title="Filter entfernen"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  };
+
+  // Filter selector content (shared between dialog and drawer)
+  const filterSelectorContent = (
+    <div className="space-y-4">
+      {/* Search input */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Filter suchen..."
+          value={filterSearch}
+          onChange={(e) => setFilterSearch(e.target.value)}
+          className="pl-10 text-base"
+        />
+      </div>
+
+      {/* Filter list */}
+      <ScrollArea className="h-[300px] sm:h-[400px]">
+        <div className="space-y-1 pr-4">
+          {filteredAvailableFilters.map(filter => (
+            <div 
+              key={filter.key}
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+              onClick={() => toggleFilter(filter.key)}
+            >
+              <Checkbox 
+                checked={activeFilters.includes(filter.key)}
+                onCheckedChange={() => toggleFilter(filter.key)}
+              />
+              <span className="text-sm">{filter.label}</span>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+
+      {/* Close button */}
+      <Button 
+        className="w-full"
+        onClick={() => setIsFilterSelectorOpen(false)}
+      >
+        Fertig ({activeFilters.length} Filter aktiv)
+      </Button>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Filter Panel */}
-      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <Card className="p-6">
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between cursor-pointer">
-              <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-lg font-semibold">Filter</h3>
-                <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
-              </div>
+      <Card className="p-4 sm:p-6">
+        <div className="space-y-4">
+          {/* Add Filter Button */}
+          {isMobile ? (
+            <Drawer open={isFilterSelectorOpen} onOpenChange={setIsFilterSelectorOpen}>
+              <DrawerTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto h-11 text-base">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Filter hinzufügen
+                  {activeFilters.length > 0 && (
+                    <span className="ml-2 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
+                      {activeFilters.length}
+                    </span>
+                  )}
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent className="bg-background">
+                <DrawerHeader>
+                  <DrawerTitle>Filter auswählen</DrawerTitle>
+                </DrawerHeader>
+                <div className="px-4 pb-6">
+                  {filterSelectorContent}
+                </div>
+              </DrawerContent>
+            </Drawer>
+          ) : (
+            <Dialog open={isFilterSelectorOpen} onOpenChange={setIsFilterSelectorOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="h-10">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Filter hinzufügen
+                  {activeFilters.length > 0 && (
+                    <span className="ml-2 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
+                      {activeFilters.length}
+                    </span>
+                  )}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md bg-background">
+                <DialogHeader>
+                  <DialogTitle>Filter auswählen</DialogTitle>
+                </DialogHeader>
+                {filterSelectorContent}
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Active Filters */}
+          {activeFilters.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {activeFilters.map(filterKey => renderFilterChip(filterKey))}
             </div>
-          </CollapsibleTrigger>
-
-          <CollapsibleContent className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-              {/* Search */}
-              <div className="space-y-2">
-                <Label>Suche (Symbol/Name)</Label>
-                <Input
-                  placeholder="z.B. AAPL"
-                  value={filters.searchQuery}
-                  onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                />
-              </div>
-
-              {/* Sector */}
-              <div className="space-y-2">
-                <Label>Sektor</Label>
-                <Select value={filters.sector} onValueChange={(value) => setFilters({ ...filters, sector: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Sektoren</SelectItem>
-                    {sectors.map(sector => (
-                      <SelectItem key={sector} value={sector}>{sector}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Exchange */}
-              <div className="space-y-2">
-                <Label>Börse</Label>
-                <Select value={filters.exchange} onValueChange={(value) => setFilters({ ...filters, exchange: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Alle Börsen</SelectItem>
-                    {exchanges.map(exchange => (
-                      <SelectItem key={exchange} value={exchange}>{exchange}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Aesy Score */}
-              <div className="space-y-2">
-                <Label>Aesy Score (0-14)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minAesyScore}
-                    onChange={(e) => setFilters({ ...filters, minAesyScore: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxAesyScore}
-                    onChange={(e) => setFilters({ ...filters, maxAesyScore: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* P/E Ratio */}
-              <div className="space-y-2">
-                <Label>KGV</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minPE}
-                    onChange={(e) => setFilters({ ...filters, minPE: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxPE}
-                    onChange={(e) => setFilters({ ...filters, maxPE: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* ROIC */}
-              <div className="space-y-2">
-                <Label>ROIC (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minROIC}
-                    onChange={(e) => setFilters({ ...filters, minROIC: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxROIC}
-                    onChange={(e) => setFilters({ ...filters, maxROIC: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* ROE */}
-              <div className="space-y-2">
-                <Label>ROE (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minROE}
-                    onChange={(e) => setFilters({ ...filters, minROE: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxROE}
-                    onChange={(e) => setFilters({ ...filters, maxROE: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Dividend Yield */}
-              <div className="space-y-2">
-                <Label>Dividende (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minDividendYield}
-                    onChange={(e) => setFilters({ ...filters, minDividendYield: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxDividendYield}
-                    onChange={(e) => setFilters({ ...filters, maxDividendYield: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Revenue Growth */}
-              <div className="space-y-2">
-                <Label>Umsatz-Wachstum (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minRevenueGrowth}
-                    onChange={(e) => setFilters({ ...filters, minRevenueGrowth: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxRevenueGrowth}
-                    onChange={(e) => setFilters({ ...filters, maxRevenueGrowth: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Years of Profitability */}
-              <div className="space-y-2">
-                <Label>Jahre profitabel</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minYearsProfit}
-                    onChange={(e) => setFilters({ ...filters, minYearsProfit: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxYearsProfit}
-                    onChange={(e) => setFilters({ ...filters, maxYearsProfit: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* EPS Growth 3Y */}
-              <div className="space-y-2">
-                <Label>EPS-Wachstum 3J (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minEpsGrowth3y}
-                    onChange={(e) => setFilters({ ...filters, minEpsGrowth3y: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxEpsGrowth3y}
-                    onChange={(e) => setFilters({ ...filters, maxEpsGrowth3y: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* EPS Growth 5Y */}
-              <div className="space-y-2">
-                <Label>EPS-Wachstum 5J (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minEpsGrowth}
-                    onChange={(e) => setFilters({ ...filters, minEpsGrowth: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxEpsGrowth}
-                    onChange={(e) => setFilters({ ...filters, maxEpsGrowth: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* EPS Growth 10Y */}
-              <div className="space-y-2">
-                <Label>EPS-Wachstum 10J (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minEpsGrowth10y}
-                    onChange={(e) => setFilters({ ...filters, minEpsGrowth10y: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxEpsGrowth10y}
-                    onChange={(e) => setFilters({ ...filters, maxEpsGrowth10y: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Revenue Growth 3Y */}
-              <div className="space-y-2">
-                <Label>Umsatz-Wachstum 3J (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minRevenueGrowth3y}
-                    onChange={(e) => setFilters({ ...filters, minRevenueGrowth3y: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxRevenueGrowth3y}
-                    onChange={(e) => setFilters({ ...filters, maxRevenueGrowth3y: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Revenue Growth 10Y */}
-              <div className="space-y-2">
-                <Label>Umsatz-Wachstum 10J (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minRevenueGrowth10y}
-                    onChange={(e) => setFilters({ ...filters, minRevenueGrowth10y: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxRevenueGrowth10y}
-                    onChange={(e) => setFilters({ ...filters, maxRevenueGrowth10y: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Net Debt to EBITDA */}
-              <div className="space-y-2">
-                <Label>Verschuldung (NetDebt/EBITDA)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minNetDebtToEbitda}
-                    onChange={(e) => setFilters({ ...filters, minNetDebtToEbitda: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxNetDebtToEbitda}
-                    onChange={(e) => setFilters({ ...filters, maxNetDebtToEbitda: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Net Margin */}
-              <div className="space-y-2">
-                <Label>Nettomarge (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minNetMargin}
-                    onChange={(e) => setFilters({ ...filters, minNetMargin: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxNetMargin}
-                    onChange={(e) => setFilters({ ...filters, maxNetMargin: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* FCF Margin */}
-              <div className="space-y-2">
-                <Label>FCF-Marge (%)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minFcfMargin}
-                    onChange={(e) => setFilters({ ...filters, minFcfMargin: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxFcfMargin}
-                    onChange={(e) => setFilters({ ...filters, maxFcfMargin: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+          )}
+        </div>
+      </Card>
 
       {/* Results Table */}
       {filteredStocks.length > 0 ? (
