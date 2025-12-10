@@ -418,11 +418,31 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
     if (!selectedStock || !newWatchlistName.trim()) return;
 
     try {
-      await createWatchlist(newWatchlistName.trim());
-      toast({
-        title: "Watchlist erstellt",
-        description: `Neue Watchlist "${newWatchlistName}" wurde erstellt.`,
-      });
+      const newWatchlist = await createWatchlist(newWatchlistName.trim());
+      
+      if (newWatchlist) {
+        // Add the stock to the newly created watchlist
+        await addStockToWatchlist(
+          {
+            symbol: selectedStock.symbol,
+            name: selectedStock.name,
+            price: selectedStock.price,
+            currency: selectedStock.currency,
+          },
+          newWatchlist.id
+        );
+        
+        toast({
+          title: "Aktie hinzugefügt",
+          description: `${selectedStock.symbol} wurde zur neuen Watchlist "${newWatchlistName}" hinzugefügt.`,
+        });
+      } else {
+        toast({
+          title: "Watchlist erstellt",
+          description: `Neue Watchlist "${newWatchlistName}" wurde erstellt.`,
+        });
+      }
+      
       setShowNewWatchlistDialog(false);
       setNewWatchlistName('');
       setSelectedStock(null);
