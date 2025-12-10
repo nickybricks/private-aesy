@@ -112,6 +112,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const { error } = await supabase.auth.signOut();
+      
+      // Explicitly reset state after logout
+      setUser(null);
+      setSession(null);
+      
       if (error) {
         toast({
           variant: "destructive",

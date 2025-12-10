@@ -38,6 +38,12 @@ const AppHeader: React.FC = () => {
     setMobileMenuOpen(false);
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    setMobileMenuOpen(false);
+    navigate('/auth');
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-18 bg-background border-b border-border">
       {/* Desktop Layout */}
@@ -115,7 +121,7 @@ const AppHeader: React.FC = () => {
               </Badge>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()}>
+            <DropdownMenuItem onClick={handleSignOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Abmelden
             </DropdownMenuItem>
@@ -207,10 +213,7 @@ const AppHeader: React.FC = () => {
                 {/* Logout Button */}
                 <Button
                   variant="ghost"
-                  onClick={() => {
-                    signOut();
-                    setMobileMenuOpen(false);
-                  }}
+                  onClick={handleSignOut}
                   className="w-full justify-start text-lg h-14 text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   <LogOut className="mr-3 h-5 w-5" />
