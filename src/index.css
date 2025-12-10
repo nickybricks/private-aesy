@@ -211,11 +211,11 @@
 /* Responsive styles for mobile */
 @layer utilities {
   /* Full-width buttons on mobile (<480px) */
-  @media (max-width: 479px) {
+  /*@media (max-width: 479px) {
     .btn-mobile-full,
     button:not(.btn-no-mobile-full) {
       width: 100% !important;
-    }
+    }*/
     
     /* Quick access buttons responsiveness */
     .quick-access-buttons {
