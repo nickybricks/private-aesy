@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-type ConditionType = 'any' | 'over' | 'under' | 'between' | 'exactly' | 'notZero' | 'zero';
+type ConditionType = 'any' | 'over' | 'under' | 'between' | 'exactly';
 
 interface RangeFilterDropdownProps {
   label: string;
@@ -20,8 +20,6 @@ const conditionLabels: Record<ConditionType, string> = {
   under: 'Unter',
   between: 'Zwischen',
   exactly: 'Genau',
-  notZero: 'Nicht Null',
-  zero: 'Null',
 };
 
 export function RangeFilterDropdown({
@@ -62,14 +60,6 @@ export function RangeFilterDropdown({
         onMinChange(value1);
         onMaxChange(value1);
         break;
-      case 'notZero':
-        onMinChange('0.01');
-        onMaxChange('');
-        break;
-      case 'zero':
-        onMinChange('0');
-        onMaxChange('0');
-        break;
     }
   }, [condition, value1, value2, onMinChange, onMaxChange]);
 
@@ -88,8 +78,6 @@ export function RangeFilterDropdown({
 
   const getDisplayValue = () => {
     if (condition === 'any') return 'Beliebig';
-    if (condition === 'zero') return 'Null';
-    if (condition === 'notZero') return 'Nicht Null';
     if (condition === 'between' && value1 && value2) return `${value1} - ${value2}`;
     if (condition === 'over' && value1) return `> ${value1}`;
     if (condition === 'under' && value1) return `< ${value1}`;
@@ -100,7 +88,7 @@ export function RangeFilterDropdown({
   const handleConditionSelect = (newCondition: ConditionType) => {
     setCondition(newCondition);
     setConditionDropdownOpen(false);
-    if (newCondition === 'any' || newCondition === 'zero' || newCondition === 'notZero') {
+    if (newCondition === 'any') {
       setValue1('');
       setValue2('');
     }
