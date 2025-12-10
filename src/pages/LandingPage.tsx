@@ -1,9 +1,10 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Shield, Search, BarChart3, Target, CheckCircle } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { TrendingUp, Shield, Search, BarChart3, Target, CheckCircle } from "lucide-react";
+import { HowItWorksSection } from "@/components/HowItWorksSection";
 
 const LandingPage: React.FC = () => {
   return (
@@ -25,19 +26,16 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </header>
-
       {/* Hero Section */}
       <section className="py-20 px-6">
         <div className="w-full text-center">
           <Badge variant="secondary" className="mb-4">
             Basierend auf Warren Buffetts Prinzipien
           </Badge>
-          <h2 className="text-5xl font-bold text-foreground mb-6">
-            Bewerte Aktien wie Warren Buffett
-          </h2>
+          <h2 className="text-5xl font-bold text-foreground mb-6">Bewerte Aktien wie Warren Buffett</h2>
           <p className="text-xl text-muted-foreground mb-8 w-full text-center">
-            Nutze bewährte Investmentprinzipien des erfolgreichsten Investors der Welt. 
-            Analysiere Aktien systematisch nach Quality, Valuation und Margin of Safety.
+            Nutze bewährte Investmentprinzipien des erfolgreichsten Investors der Welt. Analysiere Aktien systematisch
+            nach Quality, Valuation und Margin of Safety.
           </p>
           <div className="flex items-center justify-center space-x-4">
             <Link to="/analyzer">
@@ -51,14 +49,11 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
-
       {/* Features Section */}
       <section className="py-20 px-6 bg-muted/30">
         <div className="w-full">
           <div className="text-center mb-16">
-            <h3 className="text-3xl font-bold text-foreground mb-4">
-              Aesy
-            </h3>
+            <h3 className="text-3xl font-bold text-foreground mb-4">Aesy</h3>
             <p className="text-muted-foreground w-full text-center">
               Alle wichtigen Kennzahlen und Analysen nach bewährten Methoden
             </p>
@@ -69,9 +64,7 @@ const LandingPage: React.FC = () => {
               <CardHeader>
                 <Shield className="h-12 w-12 text-primary mb-4" />
                 <CardTitle>Quality Analyse</CardTitle>
-                <CardDescription>
-                  ROE, Debt-to-Equity, Current Ratio und weitere Qualitäts-Metriken
-                </CardDescription>
+                <CardDescription>ROE, Debt-to-Equity, Current Ratio und weitere Qualitäts-Metriken</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
@@ -95,9 +88,7 @@ const LandingPage: React.FC = () => {
               <CardHeader>
                 <BarChart3 className="h-12 w-12 text-primary mb-4" />
                 <CardTitle>Valuation Metriken</CardTitle>
-                <CardDescription>
-                  P/E Ratio, P/B Ratio, DCF Analyse und Bewertungs-Kennzahlen
-                </CardDescription>
+                <CardDescription>P/E Ratio, P/B Ratio, DCF Analyse und Bewertungs-Kennzahlen</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
@@ -145,17 +136,12 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
-
       {/* How it works */}
       <section className="py-20 px-6">
         <div className="w-full">
           <div className="text-center mb-16">
-            <h3 className="text-3xl font-bold text-foreground mb-4">
-              So funktioniert's
-            </h3>
-            <p className="text-muted-foreground">
-              In 3 einfachen Schritten zur professionellen Aktienanalyse
-            </p>
+            <h3 className="text-3xl font-bold text-foreground mb-4">So funktioniert's</h3>
+            <p className="text-muted-foreground">In 3 einfachen Schritten zur professionellen Aktienanalyse</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -191,7 +177,6 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
-
       {/* CTA Section */}
       <section className="py-20 px-6 bg-primary">
         <div className="w-full text-center">
@@ -208,7 +193,8 @@ const LandingPage: React.FC = () => {
           </Link>
         </div>
       </section>
-
+      // Dann im JSX vor dem Footer einfügen:
+      <HowItWorksSection className="container mx-auto px-4" />
       {/* Footer */}
       <footer className="border-t border-border py-12 px-6">
         <div className="w-full">
@@ -218,36 +204,58 @@ const LandingPage: React.FC = () => {
                 <TrendingUp className="h-6 w-6 text-primary" />
                 <span className="font-bold text-foreground">Aesy</span>
               </div>
-              <p className="text-muted-foreground text-sm">
-                Professionelle Aktienanalyse nach bewährten Prinzipien
-              </p>
+              <p className="text-muted-foreground text-sm">Professionelle Aktienanalyse nach bewährten Prinzipien</p>
             </div>
-            
+
             <div>
               <h4 className="font-semibold text-foreground mb-4">Produkt</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/analyzer" className="hover:text-foreground">Buffett Tool</Link></li>
-                <li><Link to="/watchlists" className="hover:text-foreground">Watchlists</Link></li>
+                <li>
+                  <Link to="/analyzer" className="hover:text-foreground">
+                    Buffett Tool
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/watchlists" className="hover:text-foreground">
+                    Watchlists
+                  </Link>
+                </li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-semibold text-foreground mb-4">Unternehmen</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Über uns</a></li>
-                <li><a href="#" className="hover:text-foreground">Kontakt</a></li>
+                <li>
+                  <a href="#" className="hover:text-foreground">
+                    Über uns
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground">
+                    Kontakt
+                  </a>
+                </li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-semibold text-foreground mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Datenschutz</a></li>
-                <li><a href="#" className="hover:text-foreground">Impressum</a></li>
+                <li>
+                  <a href="#" className="hover:text-foreground">
+                    Datenschutz
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground">
+                    Impressum
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t border-border pt-8 mt-8 text-center text-sm text-muted-foreground">
             © 2024 Aesy. Alle Rechte vorbehalten.
           </div>
