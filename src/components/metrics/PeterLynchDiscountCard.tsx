@@ -20,7 +20,7 @@ interface QuarterlyData {
   netIncome: number;
   eps: number;
   weightedAverageShsOutDil: number;
-  epsWithoutNRI?: number;<TooltipContent side={isMobile ? "top" : "right"} align={isMobile ? "center" : undefined} className="z-50 max-w-[calc(100vw-32px)] break-words">
+  epsWithoutNRI?: number;<TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
 
 }
 
