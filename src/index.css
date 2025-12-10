@@ -216,7 +216,7 @@
   /* Full-width buttons on mobile (<480px) */
   @media (max-width: 479px) {
     .btn-mobile-full,
-    button:not(.btn-no-mobile-full) {
+    button:not(.btn-no-mobile-full, button#deep-research-mobile) {
       width: 100% !important;
     }
 
