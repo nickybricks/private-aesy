@@ -245,6 +245,11 @@
   }
 }
 
+section.py-12.md\:py-16.mb-8 {
+  padding-top: 0px !important;
+  padding-buttom: 0px !important;
+}
+
 /* Full-width buttons on mobile (<480px) */
 /*.recharts-surface:not(.StockChart) {*/
 /*@media (max-width: 479px) {*/
