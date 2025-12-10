@@ -68,10 +68,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (error) {
+        let message = error.message;
+        // Check for already registered user
+        if (error.message.includes('already registered') || 
+            error.message.includes('User already registered') ||
+            error.code === 'user_already_exists') {
+          message = "Diese E-Mail ist bereits registriert. Bitte melde dich an oder setze dein Passwort zurück.";
+        }
         toast({
           variant: "destructive",
           title: "Registrierung fehlgeschlagen",
-          description: error.message
+          description: message
         });
       } else {
         toast({
