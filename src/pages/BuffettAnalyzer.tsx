@@ -106,7 +106,10 @@ const IndexContent: React.FC = () => {
 
           <ErrorAlert />
 
-          {/* Stock Header with Score and Stock Chart Grid */}
+          {/* Show HowItWorksSection when no stock is being analyzed */}
+          {!stockInfo && !isLoading && (
+            <HowItWorksSection className="mb-8" />
+          )}
           {stockInfo && (
             <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] items-start gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
               {/* Stock Header with Score Section */}
