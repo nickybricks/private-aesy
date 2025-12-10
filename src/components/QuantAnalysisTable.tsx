@@ -441,10 +441,13 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
         <Table className="text-xs">
           <TableHeader className="sticky top-0 z-20 bg-background shadow-sm">
             <TableRow className="h-10">
-              <TableHead className="min-w-[250px] px-4 py-2 h-10 sticky left-0 z-40 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+              <TableHead className="min-w-[140px] px-4 py-2 h-10 sticky left-0 z-40 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                <span className="font-medium text-muted-foreground text-left text-xs whitespace-nowrap">Symbol</span>
+              </TableHead>
+              <TableHead className="min-w-[200px] px-4 py-2 h-10">
                 <SortableHeader 
                   field="name" 
-                  name="Unternehmen" 
+                  name="Name" 
                   sortField={sortField}
                   sortDirection={sortDirection}
                   setSortField={setSortField}
@@ -651,7 +654,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={18} className="text-center py-8">
+                <TableCell colSpan={19} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <div className="w-8 h-8 border-4 border-t-blue-500 rounded-full animate-spin mb-2"></div>
                     <span>Analyse läuft...</span>
@@ -660,7 +663,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
               </TableRow>
             ) : paginatedResults.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={18} className="text-center py-8">
+                <TableCell colSpan={19} className="text-center py-8">
                   Keine Ergebnisse gefunden
                 </TableCell>
               </TableRow>
@@ -702,9 +705,19 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                           </DropdownMenuSub>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      <span className="text-lg">{getCountryFlag(stock.country)}</span>
-                      <span>{stock.name} ({stock.symbol})</span>
+                      <img 
+                        src={`https://financialmodelingprep.com/image-stock/${stock.symbol}.png`}
+                        alt={stock.symbol}
+                        className="w-6 h-6 rounded object-contain bg-white"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                      <span className="font-medium">{stock.symbol}</span>
                     </div>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <span className="truncate max-w-[200px] block">{stock.name}</span>
                   </TableCell>
                   <TableCell className="py-1">{stock.exchange}</TableCell>
                   <TableCell className="py-1">{stock.sector}</TableCell>
