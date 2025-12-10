@@ -20,7 +20,8 @@ interface QuarterlyData {
   netIncome: number;
   eps: number;
   weightedAverageShsOutDil: number;
-  epsWithoutNRI?: number;
+  epsWithoutNRI?: number;<TooltipContent side={isMobile ? "top" : "right"} align={isMobile ? "center" : undefined} className="z-50 max-w-[calc(100vw-32px)] break-words">
+
 }
 
 interface AnnualData {
@@ -403,7 +404,7 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
+                <TooltipContent side={isMobile ? "top" : "right"} align={isMobile ? "center" : undefined} className="z-50 max-w-[calc(100vw-32px)] break-words">
                   {mainTooltipContent}
                 </TooltipContent>
               </Tooltip>
@@ -431,7 +432,7 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} align={isMobile ? "center" : undefined} className="z-50 max-w-[calc(100vw-32px)] break-words">
                 {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
