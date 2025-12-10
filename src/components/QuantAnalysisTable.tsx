@@ -437,32 +437,6 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
 
   return (
     <Card className="w-full overflow-hidden">
-      <div className="p-4 bg-white border-b">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-semibold">Aesy Aktienbewertung</h2>
-          
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={() => exportToExcel(sortedResults)}
-              variant="outline"
-              size="sm"
-              disabled={sortedResults.length === 0}
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Excel Export
-            </Button>
-          </div>
-        </div>
-        
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <div className="flex items-center gap-2">
-            <span>Gesamt: {sortedResults.length}</span>
-          </div>
-          <span>Seite {currentPage} von {totalPages}</span>
-        </div>
-      </div>
-      
       <div className="overflow-x-auto" style={{ overscrollBehaviorX: 'contain', touchAction: 'pan-x pan-y' }}>
         <Table className="text-xs">
           <TableHeader className="sticky top-0 z-20 bg-background shadow-sm">

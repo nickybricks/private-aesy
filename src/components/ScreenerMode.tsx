@@ -155,16 +155,6 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
 
           <CollapsibleContent className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-              {/* Search */}
-              <div className="space-y-2">
-                <Label>Suche (Symbol/Name)</Label>
-                <Input
-                  placeholder="z.B. AAPL"
-                  value={filters.searchQuery}
-                  onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                />
-              </div>
-
               {/* Sector */}
               <div className="space-y-2">
                 <Label>Sektor</Label>
@@ -515,6 +505,17 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
           </CollapsibleContent>
         </Card>
       </Collapsible>
+
+      {/* Header with count and search */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold">{filteredStocks.length} Aktien</h2>
+        <Input
+          placeholder="Suche (Symbol/Name)"
+          value={filters.searchQuery}
+          onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
+          className="max-w-md"
+        />
+      </div>
 
       {/* Results Table */}
       {filteredStocks.length > 0 ? (
