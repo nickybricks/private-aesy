@@ -11,6 +11,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useStock } from '@/context/StockContext';
 import { HistoricalDataItem } from '@/context/StockContextTypes';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type TimeRange = '3Y' | '5Y' | '10Y' | 'MAX';
 
@@ -50,6 +51,7 @@ const getBgColorByScore = (score: number, maxScore: number): string => {
 
 export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historicalRevenue }) => {
   const { stockCurrency } = useStock();
+  const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = useState<TimeRange>('MAX');
   const maxScore = 4;
 
@@ -165,7 +167,7 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                 {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
@@ -189,7 +191,7 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                 {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
@@ -216,7 +218,7 @@ export const RevenueGrowthCard: React.FC<RevenueGrowthCardProps> = ({ historical
             <TooltipTrigger asChild>
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent side={isMobile ? "top" : "right"}>
               {scoringTooltip}
             </TooltipContent>
           </Tooltip>

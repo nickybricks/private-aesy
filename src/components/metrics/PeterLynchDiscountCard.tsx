@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import axios from 'axios';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface QuarterlyData {
   date: string;
@@ -76,6 +77,7 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
   currency,
   sector = 'Technology'
 }) => {
+  const isMobile = useIsMobile();
   const [selectedRange, setSelectedRange] = useState<TimeRange>('1Y');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -401,7 +403,7 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="right" className="max-w-md">
+                <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                   {mainTooltipContent}
                 </TooltipContent>
               </Tooltip>
@@ -429,7 +431,7 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                 {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
@@ -456,7 +458,7 @@ export const PeterLynchDiscountCard: React.FC<PeterLynchDiscountCardProps> = ({
             <TooltipTrigger asChild>
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent side={isMobile ? "top" : "right"}>
               {scoringTooltip}
             </TooltipContent>
           </Tooltip>

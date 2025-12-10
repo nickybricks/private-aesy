@@ -84,6 +84,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
   const [hasInsufficientData, setHasInsufficientData] = useState(false);
   const hasLoggedRef = useRef<string | null>(null);
   const tooltipTrigger = useChartTooltipTrigger();
+  const isMobile = useIsMobile();
 
   // Fetch and calculate P/S data
   useEffect(() => {
@@ -513,7 +514,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                 {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
@@ -540,7 +541,7 @@ export const PriceToMedianPSChart: React.FC<PriceToMedianPSChartProps> = ({
             <TooltipTrigger asChild>
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent side={isMobile ? "top" : "right"}>
               {scoringTooltip}
             </TooltipContent>
           </Tooltip>

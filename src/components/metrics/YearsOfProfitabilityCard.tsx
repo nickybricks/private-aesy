@@ -4,6 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Info } from 'lucide-react';
 import { HistoricalDataItem, ScoreResult } from '@/context/StockContextTypes';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip, Cell } from 'recharts';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface YearsOfProfitabilityCardProps {
   historicalNetIncome?: HistoricalDataItem[];
@@ -18,6 +19,7 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
   scoreFromBackend,
   displayCurrency = 'USD'
 }) => {
+  const isMobile = useIsMobile();
   // Calculate profitable years count
   const profitableYears = historicalNetIncome.filter(item => item.isProfitable).length;
   const totalYears = historicalNetIncome.length;
@@ -183,7 +185,7 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-md">
+              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
                 {getTooltipContent()}
               </TooltipContent>
             </Tooltip>
@@ -208,7 +210,7 @@ export const YearsOfProfitabilityCard: React.FC<YearsOfProfitabilityCardProps> =
             <TooltipTrigger asChild>
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent side={isMobile ? "top" : "right"}>
               {getScoringTooltip()}
             </TooltipContent>
           </Tooltip>
