@@ -194,7 +194,12 @@ export const EbitdaGrowthCard: React.FC<EbitdaGrowthCardProps> = ({ historicalEb
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
+              <TooltipContent
+                side={isMobile ? "top" : "right"}
+                align={isMobile ? "center" : "start"}
+                sideOffset={12}
+                className="z-50 max-w-[min(420px,calc(100vw-40px))] mx-auto"
+              >
                 {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
