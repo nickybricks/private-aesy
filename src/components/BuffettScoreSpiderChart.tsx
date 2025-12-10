@@ -240,14 +240,9 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
                         <Popover key={`slice-${index}`} open={hoveredSlice === index}>
                           <PopoverTrigger asChild>{sliceElement}</PopoverTrigger>
                           <PopoverContent
-                            className="w-72 p-3 max-w-[calc(100vw-1rem)] m-2"
+                            className="w-72 p-3"
                             side="right"
                             align="center"
-                            sideOffset={10}
-                            // Füge 'forceMount' hinzu, um sicherzustellen, dass es gerendert wird, wenn offen
-                            forceMount
-                            // Füge 'avoidCollisions' hinzu (oft Standard, aber sicher ist sicher)
-                            avoidCollisions={true}
                             onOpenAutoFocus={(e) => e.preventDefault()}
                           >
                             <div className="space-y-2">
