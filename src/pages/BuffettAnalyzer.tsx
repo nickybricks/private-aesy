@@ -41,6 +41,7 @@ import { EbitdaGrowthCard } from "@/components/metrics/EbitdaGrowthCard";
 import { EpsWoNriGrowthCard } from "@/components/metrics/EpsWoNriGrowthCard";
 import { FcfGrowthCard } from "@/components/metrics/FcfGrowthCard";
 import { QualitativeAnalysisTab } from "@/components/QualitativeAnalysisTab";
+import { HowItWorksSection } from "@/components/HowItWorksSection";
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
