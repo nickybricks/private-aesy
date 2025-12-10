@@ -41,11 +41,6 @@ import { EbitdaGrowthCard } from "@/components/metrics/EbitdaGrowthCard";
 import { EpsWoNriGrowthCard } from "@/components/metrics/EpsWoNriGrowthCard";
 import { FcfGrowthCard } from "@/components/metrics/FcfGrowthCard";
 import { QualitativeAnalysisTab } from "@/components/QualitativeAnalysisTab";
-import { HowItWorksSection } from "@/components/HowItWorksSection";
-// Im leeren Zustand anzeigen:
-{
-  !selectedStock && <HowItWorksSection className="max-w-4xl mx-auto" />;
-}
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
