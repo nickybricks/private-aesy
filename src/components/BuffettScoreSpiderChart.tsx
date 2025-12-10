@@ -76,7 +76,7 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
 
   // Dynamic values based on screen size
   const chartConfig = isMobile
-    ? { cx: 120, cy: 90, labelRadius: 85, outerRadius: 65 }
+    ? { cx: 150, cy: 90, labelRadius: 85, outerRadius: 65 }
     : { cx: 150, cy: 100, labelRadius: 95, outerRadius: 85 };
 
   const containerHeight = isMobile ? 200 : 220;
