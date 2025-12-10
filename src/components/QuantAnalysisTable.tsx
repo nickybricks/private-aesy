@@ -668,7 +668,7 @@ const QuantAnalysisTable: React.FC<QuantAnalysisTableProps> = ({
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedResults.map((stock) => (
+              paginatedResults.filter((stock) => stock && stock.criteria).map((stock) => (
                 <TableRow key={stock.symbol} className="h-10">
                   <TableCell className="py-1 sticky left-0 z-20 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                     <div className="flex items-center gap-2">
