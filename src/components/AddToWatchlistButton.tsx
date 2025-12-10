@@ -242,11 +242,20 @@ export const AddToWatchlistButton: React.FC<AddToWatchlistButtonProps> = ({
                   <Label htmlFor="new-watchlist-name">Name der neuen Watchlist</Label>
                   <Input
                     id="new-watchlist-name"
+                    type="text"
+                    inputMode="text"
                     value={newWatchlistName}
                     onChange={(e) => setNewWatchlistName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newWatchlistName.trim()) {
+                        handleSubmit();
+                      }
+                    }}
                     placeholder="z.B. Tech-Aktien, Dividenden..."
                     autoFocus
-                    className="text-base"
+                    autoComplete="off"
+                    autoCapitalize="words"
+                    className="text-base h-12"
                   />
                 </div>
 
