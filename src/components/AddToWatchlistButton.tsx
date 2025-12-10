@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/drawer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useWatchlists, Watchlist } from '@/hooks/useWatchlists';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +42,7 @@ export const AddToWatchlistButton: React.FC<AddToWatchlistButtonProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedWatchlistId, setSelectedWatchlistId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [showNewWatchlistInput, setShowNewWatchlistInput] = useState(false);
   const [newWatchlistName, setNewWatchlistName] = useState('');
   const { watchlists, createWatchlist, refetch } = useWatchlists();
   const { user } = useAuth();
@@ -50,20 +51,19 @@ export const AddToWatchlistButton: React.FC<AddToWatchlistButtonProps> = ({
   // Reset state when drawer opens
   useEffect(() => {
     if (isOpen) {
-      setIsCreatingNew(false);
+      setShowNewWatchlistInput(false);
       setNewWatchlistName('');
-      // Don't auto-select - let user choose
       setSelectedWatchlistId('');
     }
   }, [isOpen]);
 
-  const handleAddToWatchlist = async () => {
+  const handleSubmit = async () => {
     if (!user || !stockInfo.price) {
       return;
     }
 
-    // If creating new watchlist
-    if (isCreatingNew) {
+    // Creating new watchlist
+    if (showNewWatchlistInput) {
       if (!newWatchlistName.trim()) {
         toast({
           variant: "destructive",
@@ -147,7 +147,7 @@ export const AddToWatchlistButton: React.FC<AddToWatchlistButtonProps> = ({
         analysisDate: new Date().toISOString(),
       };
 
-      // Add stock to watchlist with complete analysis data
+      // Add stock to watchlist
       const { error } = await supabase
         .from('user_stocks')
         .insert({
@@ -168,9 +168,6 @@ export const AddToWatchlistButton: React.FC<AddToWatchlistButtonProps> = ({
       });
 
       setIsOpen(false);
-      setSelectedWatchlistId('');
-      setIsCreatingNew(false);
-      setNewWatchlistName('');
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -196,23 +193,26 @@ export const AddToWatchlistButton: React.FC<AddToWatchlistButtonProps> = ({
       </Button>
 
       <Drawer open={isOpen} onOpenChange={setIsOpen}>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader className="text-left">
+        <DrawerContent className="px-4 pb-6">
+          <DrawerHeader className="text-left px-0">
             <DrawerTitle>Aktie zu Watchlist hinzufügen</DrawerTitle>
             <DrawerDescription>
-              Füge {stockInfo.name} ({stockInfo.ticker}) zu einer Watchlist hinzu.
+              {stockInfo.name} ({stockInfo.ticker})
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="px-4 pb-4 space-y-4">
-            {!isCreatingNew ? (
+          <div className="space-y-4">
+            {!showNewWatchlistInput ? (
               <>
-                {/* Existing watchlist selection */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Watchlist auswählen</label>
-                  <Select value={selectedWatchlistId} onValueChange={setSelectedWatchlistId}>
+                {/* Select existing watchlist */}
+                <div className="space-y-2">
+                  <Label>Watchlist auswählen</Label>
+                  <Select 
+                    value={selectedWatchlistId} 
+                    onValueChange={setSelectedWatchlistId}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Watchlist auswählen..." />
+                      <SelectValue placeholder="Watchlist wählen..." />
                     </SelectTrigger>
                     <SelectContent>
                       {watchlists.map((watchlist: Watchlist) => (
@@ -224,37 +224,38 @@ export const AddToWatchlistButton: React.FC<AddToWatchlistButtonProps> = ({
                   </Select>
                 </div>
 
-                {/* Create new watchlist option - always visible */}
-                <div className="pt-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsCreatingNew(true)}
-                    className="w-full flex items-center gap-2"
-                  >
-                    <Plus size={16} />
-                    Neue Watchlist erstellen
-                  </Button>
-                </div>
+                {/* Button to create new watchlist */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowNewWatchlistInput(true)}
+                  className="w-full"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Neue Watchlist erstellen
+                </Button>
               </>
             ) : (
               <>
                 {/* New watchlist name input */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Name der neuen Watchlist</label>
+                <div className="space-y-2">
+                  <Label htmlFor="new-watchlist-name">Name der neuen Watchlist</Label>
                   <Input
+                    id="new-watchlist-name"
                     value={newWatchlistName}
                     onChange={(e) => setNewWatchlistName(e.target.value)}
                     placeholder="z.B. Tech-Aktien, Dividenden..."
                     autoFocus
-                    className="text-base" // Prevents zoom on iOS
+                    className="text-base"
                   />
                 </div>
 
-                {/* Back button */}
+                {/* Back to selection */}
                 <Button
+                  type="button"
                   variant="ghost"
                   onClick={() => {
-                    setIsCreatingNew(false);
+                    setShowNewWatchlistInput(false);
                     setNewWatchlistName('');
                   }}
                   className="w-full"
@@ -265,22 +266,30 @@ export const AddToWatchlistButton: React.FC<AddToWatchlistButtonProps> = ({
             )}
           </div>
 
-          <DrawerFooter className="pt-2">
+          <DrawerFooter className="px-0 pt-4">
             <Button
-              onClick={handleAddToWatchlist}
-              disabled={isLoading || (!isCreatingNew && !selectedWatchlistId) || (isCreatingNew && !newWatchlistName.trim())}
-              className="w-full flex items-center justify-center gap-2"
+              onClick={handleSubmit}
+              disabled={
+                isLoading || 
+                (!showNewWatchlistInput && !selectedWatchlistId) || 
+                (showNewWatchlistInput && !newWatchlistName.trim())
+              }
+              className="w-full"
             >
               {isLoading ? (
                 "Wird hinzugefügt..."
               ) : (
                 <>
-                  <BookmarkPlus size={16} />
-                  {isCreatingNew ? 'Erstellen & Hinzufügen' : 'Hinzufügen'}
+                  <BookmarkPlus className="mr-2 h-4 w-4" />
+                  {showNewWatchlistInput ? 'Erstellen & Hinzufügen' : 'Hinzufügen'}
                 </>
               )}
             </Button>
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="w-full">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsOpen(false)} 
+              className="w-full"
+            >
               Abbrechen
             </Button>
           </DrawerFooter>
