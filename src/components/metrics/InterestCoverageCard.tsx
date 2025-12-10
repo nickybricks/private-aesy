@@ -1,9 +1,18 @@
-import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Info } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Tooltip as RechartsTooltip } from 'recharts';
-import { useIsMobile } from '@/hooks/use-mobile';
+import React from "react";
+import { Card } from "@/components/ui/card";
+import { Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  ReferenceLine,
+  Tooltip as RechartsTooltip,
+} from "recharts";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ScoreResult {
   score: number;
@@ -17,57 +26,62 @@ interface InterestCoverageCardProps {
   scoreFromBackend?: ScoreResult;
 }
 
-export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ currentValue, historicalData, preset, scoreFromBackend }) => {
+export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({
+  currentValue,
+  historicalData,
+  preset,
+  scoreFromBackend,
+}) => {
   const isMobile = useIsMobile();
   // Calculate median from historical data
   const calculateMedian = (data: Array<{ year: string; value: number }>) => {
     if (!data || data.length === 0) return null;
-    const values = data.map(d => d.value).sort((a, b) => a - b);
+    const values = data.map((d) => d.value).sort((a, b) => a - b);
     const mid = Math.floor(values.length / 2);
     const median = values.length % 2 === 0 ? (values[mid - 1] + values[mid]) / 2 : values[mid];
-    console.log('InterestCoverage - calculateMedian:', { 
-      inputLength: data.length, 
-      values: values.map(v => v.toFixed(2)),
-      median: median.toFixed(2)
+    console.log("InterestCoverage - calculateMedian:", {
+      inputLength: data.length,
+      values: values.map((v) => v.toFixed(2)),
+      median: median.toFixed(2),
     });
     return median;
   };
 
   // Determine which timeframe to use (10Y > 5Y > 3Y > current)
   let displayValue = currentValue;
-  let displayLabel = 'Aktuell';
+  let displayLabel = "Aktuell";
   let chartData = historicalData || [];
 
-  console.log('InterestCoverage - Initial values:', {
+  console.log("InterestCoverage - Initial values:", {
     currentValue: currentValue?.toFixed(2),
     historicalDataLength: historicalData?.length || 0,
-    historicalData: historicalData?.map(d => ({ year: d.year, value: d.value.toFixed(2) }))
+    historicalData: historicalData?.map((d) => ({ year: d.year, value: d.value.toFixed(2) })),
   });
 
   if (historicalData && historicalData.length >= 10) {
     const last10Years = historicalData.slice(-10);
     displayValue = calculateMedian(last10Years);
-    displayLabel = '10-Jahres-Median';
+    displayLabel = "10-Jahres-Median";
     chartData = last10Years;
-    console.log('InterestCoverage - Using 10-year median:', displayValue?.toFixed(2));
+    console.log("InterestCoverage - Using 10-year median:", displayValue?.toFixed(2));
   } else if (historicalData && historicalData.length >= 5) {
     const last5Years = historicalData.slice(-5);
     displayValue = calculateMedian(last5Years);
-    displayLabel = '5-Jahres-Median';
+    displayLabel = "5-Jahres-Median";
     chartData = last5Years;
-    console.log('InterestCoverage - Using 5-year median:', displayValue?.toFixed(2));
+    console.log("InterestCoverage - Using 5-year median:", displayValue?.toFixed(2));
   } else if (historicalData && historicalData.length >= 3) {
     const last3Years = historicalData.slice(-3);
     displayValue = calculateMedian(last3Years);
-    displayLabel = '3-Jahres-Median';
+    displayLabel = "3-Jahres-Median";
     chartData = last3Years;
-    console.log('InterestCoverage - Using 3-year median:', displayValue?.toFixed(2));
+    console.log("InterestCoverage - Using 3-year median:", displayValue?.toFixed(2));
   }
 
   // Check if trend is improving (increasing coverage over time)
   const isImprovingTrend = () => {
     if (!chartData || chartData.length < 3) {
-      console.log('InterestCoverage - Trend check: insufficient data', { dataLength: chartData?.length || 0 });
+      console.log("InterestCoverage - Trend check: insufficient data", { dataLength: chartData?.length || 0 });
       return false;
     }
     const firstThird = chartData.slice(0, Math.ceil(chartData.length / 3));
@@ -75,18 +89,18 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
     const avgFirst = firstThird.reduce((sum, d) => sum + d.value, 0) / firstThird.length;
     const avgLast = lastThird.reduce((sum, d) => sum + d.value, 0) / lastThird.length;
     const improving = avgLast > avgFirst; // Higher is better for interest coverage
-    
-    console.log('InterestCoverage - Trend analysis:', {
+
+    console.log("InterestCoverage - Trend analysis:", {
       chartDataLength: chartData.length,
-      firstThirdYears: firstThird.map(d => d.year),
-      lastThirdYears: lastThird.map(d => d.year),
+      firstThirdYears: firstThird.map((d) => d.year),
+      lastThirdYears: lastThird.map((d) => d.year),
       avgFirst: avgFirst.toFixed(2),
       avgLast: avgLast.toFixed(2),
       difference: (avgLast - avgFirst).toFixed(2),
       improving,
-      interpretation: improving ? 'steigend (gut)' : 'fallend/stabil (schlecht)'
+      interpretation: improving ? "steigend (gut)" : "fallend/stabil (schlecht)",
     });
-    
+
     return improving;
   };
 
@@ -96,52 +110,52 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
   const getScore = (value: number | null): { score: number; maxScore: number } => {
     // Use backend score if available
     if (scoreFromBackend) {
-      console.log('InterestCoverage - Using backend score:', scoreFromBackend);
+      console.log("InterestCoverage - Using backend score:", scoreFromBackend);
       return scoreFromBackend;
     }
 
     // Fallback to default scoring
-    console.log('InterestCoverage - Score calculation start:', {
+    console.log("InterestCoverage - Score calculation start:", {
       value: value?.toFixed(2),
       displayLabel,
       trendImproving,
-      chartDataLength: chartData.length
+      chartDataLength: chartData.length,
     });
-    
+
     if (value === null) {
-      console.log('InterestCoverage - No value, returning 0/6');
+      console.log("InterestCoverage - No value, returning 0/6");
       return { score: 0, maxScore: 6 };
     }
-    
+
     let baseScore = 0;
-    let scoreReason = '';
-    
+    let scoreReason = "";
+
     // Scoring: ≥12× = 6 points, ≥8-<12× = 5 points, ≥5-<8× = 3 points, ≥3-<5× = 1 point, <3× = 0 points
     if (value >= 12) {
       baseScore = 6;
-      scoreReason = '≥ 12× (exzellent)';
+      scoreReason = "≥ 12× (exzellent)";
     } else if (value >= 8) {
       baseScore = 5;
-      scoreReason = '≥ 8-<12× (stark)';
+      scoreReason = "≥ 8-<12× (stark)";
     } else if (value >= 5) {
       baseScore = 3;
-      scoreReason = '≥ 5-<8× (ok)';
+      scoreReason = "≥ 5-<8× (ok)";
     } else if (value >= 3) {
       baseScore = 1;
-      scoreReason = '≥ 3-<5× (beobachten)';
+      scoreReason = "≥ 3-<5× (beobachten)";
     } else {
       baseScore = 0;
-      scoreReason = '< 3× (riskant)';
+      scoreReason = "< 3× (riskant)";
     }
-    
-    console.log('InterestCoverage - Final score:', {
-      value: value.toFixed(2) + '×',
+
+    console.log("InterestCoverage - Final score:", {
+      value: value.toFixed(2) + "×",
       baseScore,
       scoreReason,
       maxScore: 6,
-      trendNote: trendImproving ? 'Trend verbessert sich' : 'Trend verschlechtert sich oder stabil'
+      trendNote: trendImproving ? "Trend verbessert sich" : "Trend verschlechtert sich oder stabil",
     });
-    
+
     return { score: baseScore, maxScore: 6 };
   };
 
@@ -150,17 +164,17 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
   // Get color based on score ratio
   const getColorByRatio = (score: number, maxScore: number): string => {
     const ratio = score / maxScore;
-    if (ratio >= 0.67) return 'text-green-600'; // 4-6 points
-    if (ratio >= 0.33) return 'text-yellow-600'; // 2-3 points
-    return 'text-red-600'; // 0-1 points
+    if (ratio >= 0.67) return "text-green-600"; // 4-6 points
+    if (ratio >= 0.33) return "text-yellow-600"; // 2-3 points
+    return "text-red-600"; // 0-1 points
   };
 
   const getBgColorByRatio = (score: number, maxScore: number): string => {
-    if (maxScore === 0) return 'bg-gray-100 border-gray-300';
+    if (maxScore === 0) return "bg-gray-100 border-gray-300";
     const ratio = score / maxScore;
-    if (ratio >= 0.67) return 'bg-green-50 border-green-200';
-    if (ratio >= 0.33) return 'bg-yellow-50 border-yellow-200';
-    return 'bg-red-50 border-red-200';
+    if (ratio >= 0.67) return "bg-green-50 border-green-200";
+    if (ratio >= 0.33) return "bg-yellow-50 border-yellow-200";
+    return "bg-red-50 border-red-200";
   };
 
   const tooltipContent = (
@@ -168,7 +182,8 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
       <p className="font-semibold">Zinsdeckungsgrad = EBIT / Zinsaufwand</p>
       <p className="text-sm text-muted-foreground">(Interest Coverage Ratio)</p>
       <p className="text-sm">
-        Er zeigt, <strong>wie oft</strong> das operative Ergebnis (vor Zinsen & Steuern) die <strong>jährlichen Zinsen</strong> deckt.
+        Er zeigt, <strong>wie oft</strong> das operative Ergebnis (vor Zinsen & Steuern) die{" "}
+        <strong>jährlichen Zinsen</strong> deckt.
       </p>
       <div className="space-y-1">
         <p className="text-sm">
@@ -178,9 +193,15 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
       <div className="space-y-1">
         <p className="font-medium text-sm">Warum wichtig?</p>
         <ul className="text-sm space-y-1 list-disc list-inside">
-          <li><strong>Sicherheitsmarge:</strong> Je höher, desto <strong>mehr Puffer</strong> bei Gegenwind.</li>
-          <li><strong>Zinsrisiko:</strong> Zeigt, ob steigende Zinsen/Refinanzierungen <strong>verkraftbar</strong> sind.</li>
-          <li><strong>Kreditqualität:</strong> Banken & Anleihemärkte achten stark darauf.</li>
+          <li>
+            <strong>Sicherheitsmarge:</strong> Je höher, desto <strong>mehr Puffer</strong> bei Gegenwind.
+          </li>
+          <li>
+            <strong>Zinsrisiko:</strong> Zeigt, ob steigende Zinsen/Refinanzierungen <strong>verkraftbar</strong> sind.
+          </li>
+          <li>
+            <strong>Kreditqualität:</strong> Banken & Anleihemärkte achten stark darauf.
+          </li>
         </ul>
       </div>
     </div>
@@ -194,14 +215,22 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
         </p>
       )}
       <p className="font-medium text-sm">Bewertung (0-6 Punkte):</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 6 Punkte: ≥ 12× (exzellent)</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 5 Punkte: ≥ 8-&lt;12× (stark, Buffett-kompatibel)</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 3 Punkte: ≥ 5-&lt;8× (ok, beobachten)</p>
-      <p className="text-sm"><span className="text-orange-600">●</span> 1 Punkt: ≥ 3-&lt;5× (beobachten)</p>
-      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: &lt; 3× (riskant)</p>
-      <p className="text-xs text-muted-foreground mt-2">
-        Steigender Trend = gut, fallender Trend = Warnsignal
+      <p className="text-sm">
+        <span className="text-green-600">●</span> 6 Punkte: ≥ 12× (exzellent)
       </p>
+      <p className="text-sm">
+        <span className="text-green-600">●</span> 5 Punkte: ≥ 8-&lt;12× (stark, Buffett-kompatibel)
+      </p>
+      <p className="text-sm">
+        <span className="text-yellow-600">●</span> 3 Punkte: ≥ 5-&lt;8× (ok, beobachten)
+      </p>
+      <p className="text-sm">
+        <span className="text-orange-600">●</span> 1 Punkt: ≥ 3-&lt;5× (beobachten)
+      </p>
+      <p className="text-sm">
+        <span className="text-red-600">●</span> 0 Punkte: &lt; 3× (riskant)
+      </p>
+      <p className="text-xs text-muted-foreground mt-2">Steigender Trend = gut, fallender Trend = Warnsignal</p>
     </div>
   );
 
@@ -215,7 +244,12 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
+              <TooltipContent
+                side={isMobile ? "top" : "right"}
+                align={isMobile ? "center" : "start"}
+                sideOffset={12}
+                className="z-50 max-w-[min(420px,calc(100vw-40px))] mx-auto"
+              >
                 {tooltipContent}
               </TooltipContent>
             </Tooltip>
@@ -223,7 +257,7 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
         </div>
         <div className="text-right">
           <div className={`text-2xl font-bold ${getColorByRatio(score, maxScore)}`}>
-            {displayValue !== null ? `${displayValue.toFixed(1)}×` : 'N/A'}
+            {displayValue !== null ? `${displayValue.toFixed(1)}×` : "N/A"}
           </div>
           <div className="text-xs text-muted-foreground">{displayLabel}</div>
         </div>
@@ -245,9 +279,7 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
             <TooltipTrigger asChild>
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent side={isMobile ? "top" : "right"}>
-              {scoringTooltip}
-            </TooltipContent>
+            <TooltipContent side={isMobile ? "top" : "right"}>{scoringTooltip}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
@@ -259,19 +291,11 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
           <ResponsiveContainer width="100%" height={120}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                dataKey="year" 
-                tick={{ fontSize: 10 }}
-                stroke="#9ca3af"
-              />
-              <YAxis 
-                tick={{ fontSize: 10 }}
-                stroke="#9ca3af"
-                domain={[0, 'auto']}
-              />
+              <XAxis dataKey="year" tick={{ fontSize: 10 }} stroke="#9ca3af" />
+              <YAxis tick={{ fontSize: 10 }} stroke="#9ca3af" domain={[0, "auto"]} />
               <RechartsTooltip
                 allowEscapeViewBox={{ x: false, y: false }}
-                wrapperStyle={{ zIndex: 50, maxWidth: 'calc(100vw - 32px)', overflow: 'hidden' }}
+                wrapperStyle={{ zIndex: 50, maxWidth: "calc(100vw - 32px)", overflow: "hidden" }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (
@@ -288,18 +312,16 @@ export const InterestCoverageCard: React.FC<InterestCoverageCardProps> = ({ curr
               />
               <ReferenceLine y={8} stroke="#16a34a" strokeDasharray="3 3" />
               <ReferenceLine y={3} stroke="#dc2626" strokeDasharray="3 3" />
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke="#2563eb" 
-                strokeWidth={2}
-                dot={{ fill: '#2563eb', r: 3 }}
-              />
+              <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{ fill: "#2563eb", r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
           <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
-            <span><span className="text-green-600">---</span> 8× (Buffett-Schwelle)</span>
-            <span><span className="text-red-600">---</span> 3× (Risikogrenze)</span>
+            <span>
+              <span className="text-green-600">---</span> 8× (Buffett-Schwelle)
+            </span>
+            <span>
+              <span className="text-red-600">---</span> 3× (Risikogrenze)
+            </span>
           </div>
         </div>
       )}

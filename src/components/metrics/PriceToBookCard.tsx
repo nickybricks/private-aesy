@@ -1,16 +1,20 @@
-import React, { useState, useMemo } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Info, TrendingUp, TrendingDown } from 'lucide-react';
+import React, { useState, useMemo } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Info, TrendingUp, TrendingDown } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { format } from 'date-fns';
-import { useIsMobile } from '@/hooks/use-mobile';
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
+import { format } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PriceToBookCardProps {
   currentPrice: number;
@@ -21,7 +25,7 @@ interface PriceToBookCardProps {
   sector?: string;
 }
 
-type TimeRange = '1M' | '6M' | 'YTD' | '1Y' | '5Y' | '10Y' | '25Y' | 'MAX';
+type TimeRange = "1M" | "6M" | "YTD" | "1Y" | "5Y" | "10Y" | "25Y" | "MAX";
 
 export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
   currentPrice,
@@ -29,10 +33,10 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
   historicalPrices = [],
   historicalBookValue = [],
   currency,
-  sector = 'Default'
+  sector = "Default",
 }) => {
   const isMobile = useIsMobile();
-  const [selectedRange, setSelectedRange] = useState<TimeRange>('5Y');
+  const [selectedRange, setSelectedRange] = useState<TimeRange>("5Y");
 
   // Calculate P/B ratio
   const priceToBook = useMemo(() => {
@@ -41,20 +45,20 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
   }, [currentPrice, bookValuePerShare]);
 
   // Logging for debugging
-  console.info('📊 PriceToBookCard:', {
+  console.info("📊 PriceToBookCard:", {
     currentPrice,
     bookValuePerShare,
     priceToBook,
     currency,
     sector,
     hasHistoricalPrices: historicalPrices.length > 0,
-    hasHistoricalBookValue: historicalBookValue.length > 0
+    hasHistoricalBookValue: historicalBookValue.length > 0,
   });
 
   // Calculate score based on P/B ratio
   const getScore = (pb: number | null): number => {
     if (pb === null || !bookValuePerShare || bookValuePerShare <= 0) return 0;
-    
+
     if (pb <= 1.5) return 3;
     if (pb <= 2.5) return 2;
     if (pb <= 3.5) return 1;
@@ -66,18 +70,18 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
 
   // Get colors based on score
   const getColorByScore = (score: number): string => {
-    if (score === 3) return 'text-green-600';
-    if (score === 2) return 'text-yellow-600';
-    if (score === 1) return 'text-orange-600';
-    return 'text-red-600';
+    if (score === 3) return "text-green-600";
+    if (score === 2) return "text-yellow-600";
+    if (score === 1) return "text-orange-600";
+    return "text-red-600";
   };
 
   const getBgColorByScore = (score: number): string => {
-    if (!bookValuePerShare || bookValuePerShare <= 0) return 'bg-gray-100 border-gray-300';
-    if (score === 3) return 'bg-green-50 border-green-200';
-    if (score === 2) return 'bg-yellow-50 border-yellow-200';
-    if (score === 1) return 'bg-orange-50 border-orange-200';
-    return 'bg-red-50 border-red-200';
+    if (!bookValuePerShare || bookValuePerShare <= 0) return "bg-gray-100 border-gray-300";
+    if (score === 3) return "bg-green-50 border-green-200";
+    if (score === 2) return "bg-yellow-50 border-yellow-200";
+    if (score === 1) return "bg-orange-50 border-orange-200";
+    return "bg-red-50 border-red-200";
   };
 
   // Calculate percentage deviation from ideal P/B of 1.0
@@ -91,71 +95,68 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
     if (!historicalBookValue.length) {
       // Use current book value for all historical data points
       if (!bookValuePerShare || bookValuePerShare <= 0) return [];
-      
-      return historicalPrices
-        .map(price => ({
-          date: price.date,
-          price: price.close,
-          pb: price.close / bookValuePerShare,
-          bookValue: bookValuePerShare
-        }));
+
+      return historicalPrices.map((price) => ({
+        date: price.date,
+        price: price.close,
+        pb: price.close / bookValuePerShare,
+        bookValue: bookValuePerShare,
+      }));
     }
 
-    const bookValueMap = new Map(
-      historicalBookValue.map(item => [item.date, item.bookValuePerShare])
-    );
+    const bookValueMap = new Map(historicalBookValue.map((item) => [item.date, item.bookValuePerShare]));
 
     return historicalPrices
-      .map(price => {
+      .map((price) => {
         const bvps = bookValueMap.get(price.date);
         if (!bvps || bvps <= 0) return null;
-        
+
         return {
           date: price.date,
           price: price.close,
           pb: price.close / bvps,
-          bookValue: bvps
+          bookValue: bvps,
         };
       })
-      .filter(item => item !== null);
+      .filter((item) => item !== null);
   }, [historicalPrices, historicalBookValue, bookValuePerShare]);
 
   // Filter data by selected range
   const filterDataByRange = (data: any[], range: TimeRange) => {
     if (!data.length) return [];
-    
+
     const now = new Date();
     const cutoffDate = new Date();
-    
+
     switch (range) {
-      case '1M':
+      case "1M":
         cutoffDate.setMonth(now.getMonth() - 1);
         break;
-      case '6M':
+      case "6M":
         cutoffDate.setMonth(now.getMonth() - 6);
         break;
-      case 'YTD':
+      case "YTD":
         cutoffDate.setMonth(0, 1);
         break;
-      case '1Y':
+      case "1Y":
         cutoffDate.setFullYear(now.getFullYear() - 1);
         break;
-      case '5Y':
+      case "5Y":
         cutoffDate.setFullYear(now.getFullYear() - 5);
         break;
-      case '10Y':
+      case "10Y":
         cutoffDate.setFullYear(now.getFullYear() - 10);
         break;
-      case '25Y':
+      case "25Y":
         cutoffDate.setFullYear(now.getFullYear() - 25);
         break;
-      case 'MAX':
+      case "MAX":
         return data;
       default:
         cutoffDate.setFullYear(now.getFullYear() - 5);
     }
-    
-    return data.filter(item => new Date(item.date) >= cutoffDate);
+
+    return data.filter((item) => new Date(item.date) >= cutoffDate);
   };
 
   const filteredData = filterDataByRange(chartData, selectedRange);
@@ -174,16 +175,24 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
           Beispiel: Kurs 30 €, Buchwert/Aktie 20 € ⇒ <strong>P/B 1,5</strong>.
         </p>
         <p className="text-sm mt-2 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded">
-          <strong>Wichtig:</strong> Bei Firmen mit vielen immateriellen Vermögenswerten (Marken, Software, Goodwill) sagt der Buchwert oft wenig über den wahren Wert.
+          <strong>Wichtig:</strong> Bei Firmen mit vielen immateriellen Vermögenswerten (Marken, Software, Goodwill)
+          sagt der Buchwert oft wenig über den wahren Wert.
         </p>
       </div>
-      
+
       <div className="pt-2 border-t">
         <p className="font-semibold text-sm mb-1">Warum wichtig?</p>
         <ul className="text-sm space-y-1 list-disc list-inside">
-          <li><strong>Schneller Preis-Check</strong> für „substanzlastige" Firmen (Banken, Versicherer, Industrie).</li>
-          <li><strong>Sicherheitsmarge:</strong> Niedriges P/B <strong>kann</strong> Unterbewertung bedeuten.</li>
-          <li><strong>Qualitätsbezug:</strong> Hohe <strong>ROE</strong> (Eigenkapitalrendite) kann <strong>höheres</strong> P/B rechtfertigen.</li>
+          <li>
+            <strong>Schneller Preis-Check</strong> für „substanzlastige" Firmen (Banken, Versicherer, Industrie).
+          </li>
+          <li>
+            <strong>Sicherheitsmarge:</strong> Niedriges P/B <strong>kann</strong> Unterbewertung bedeuten.
+          </li>
+          <li>
+            <strong>Qualitätsbezug:</strong> Hohe <strong>ROE</strong> (Eigenkapitalrendite) kann{" "}
+            <strong>höheres</strong> P/B rechtfertigen.
+          </li>
         </ul>
       </div>
     </div>
@@ -192,10 +201,18 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
   const scoringTooltip = (
     <div className="space-y-1">
       <p className="font-medium text-sm">Bewertungssystem (0-3 Punkte):</p>
-      <p className="text-sm"><span className="text-green-600">●</span> 3 Punkte: P/B ≤ 1.5</p>
-      <p className="text-sm"><span className="text-yellow-600">●</span> 2 Punkte: P/B 1.5-2.5</p>
-      <p className="text-sm"><span className="text-orange-600">●</span> 1 Punkt: P/B 2.5-3.5</p>
-      <p className="text-sm"><span className="text-red-600">●</span> 0 Punkte: P/B &gt; 3.5 oder EK ≤ 0</p>
+      <p className="text-sm">
+        <span className="text-green-600">●</span> 3 Punkte: P/B ≤ 1.5
+      </p>
+      <p className="text-sm">
+        <span className="text-yellow-600">●</span> 2 Punkte: P/B 1.5-2.5
+      </p>
+      <p className="text-sm">
+        <span className="text-orange-600">●</span> 1 Punkt: P/B 2.5-3.5
+      </p>
+      <p className="text-sm">
+        <span className="text-red-600">●</span> 0 Punkte: P/B &gt; 3.5 oder EK ≤ 0
+      </p>
     </div>
   );
 
@@ -209,15 +226,18 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
+              <TooltipContent
+                side={isMobile ? "top" : "right"}
+                align={isMobile ? "center" : "start"}
+                sideOffset={12}
+                className="z-50 max-w-[min(420px,calc(100vw-40px))] mx-auto"
+              >
                 {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Buchwert je Aktie nicht verfügbar oder Eigenkapital ≤ 0
-        </p>
+        <p className="text-sm text-muted-foreground">Buchwert je Aktie nicht verfügbar oder Eigenkapital ≤ 0</p>
       </Card>
     );
   }
@@ -233,18 +253,21 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side={isMobile ? "top" : "right"} className="max-w-md">
+              <TooltipContent
+                side={isMobile ? "top" : "right"}
+                align={isMobile ? "center" : "start"}
+                sideOffset={12}
+                className="z-50 max-w-[min(420px,calc(100vw-40px))] mx-auto"
+              >
                 {mainTooltipContent}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
         <div className="text-right">
-          <div className={`text-2xl font-bold ${getColorByScore(score)}`}>
-            {priceToBook?.toFixed(2) || 'N/A'}
-          </div>
+          <div className={`text-2xl font-bold ${getColorByScore(score)}`}>{priceToBook?.toFixed(2) || "N/A"}</div>
           <div className="text-xs text-muted-foreground">
-            {score === 3 ? 'Attraktiv' : score === 2 ? 'Moderat' : score === 1 ? 'Hoch' : 'Sehr hoch'}
+            {score === 3 ? "Attraktiv" : score === 2 ? "Moderat" : score === 1 ? "Hoch" : "Sehr hoch"}
           </div>
         </div>
       </div>
@@ -260,9 +283,7 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
             <TooltipTrigger asChild>
               <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent side={isMobile ? "top" : "right"}>
-              {scoringTooltip}
-            </TooltipContent>
+            <TooltipContent side={isMobile ? "top" : "right"}>{scoringTooltip}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
@@ -271,25 +292,30 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
       <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
         <div>
           <p className="text-xs text-muted-foreground">Aktueller Kurs</p>
-          <p className="font-semibold">{currentPrice.toFixed(2)} {currency}</p>
+          <p className="font-semibold">
+            {currentPrice.toFixed(2)} {currency}
+          </p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Buchwert/Aktie</p>
-          <p className="font-semibold">{bookValuePerShare.toFixed(2)} {currency}</p>
+          <p className="font-semibold">
+            {bookValuePerShare.toFixed(2)} {currency}
+          </p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">P/B Verhältnis</p>
-          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
-            score === 3 ? 'bg-green-100 text-green-700' :
-            score === 2 ? 'bg-yellow-100 text-yellow-700' :
-            score === 1 ? 'bg-orange-100 text-orange-700' :
-            'bg-red-100 text-red-700'
-          }`}>
-            {priceToBook && priceToBook < 1 ? (
-              <TrendingDown className="h-3 w-3" />
-            ) : (
-              <TrendingUp className="h-3 w-3" />
-            )}
+          <div
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
+              score === 3
+                ? "bg-green-100 text-green-700"
+                : score === 2
+                  ? "bg-yellow-100 text-yellow-700"
+                  : score === 1
+                    ? "bg-orange-100 text-orange-700"
+                    : "bg-red-100 text-red-700"
+            }`}
+          >
+            {priceToBook && priceToBook < 1 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
             {priceToBook?.toFixed(2)}
           </div>
         </div>
@@ -301,9 +327,7 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="cursor-help">
-                P/B <span className={`font-bold ${getColorByScore(score)}`}>
-                  {priceToBook?.toFixed(2) || 'N/A'}
-                </span>
+                P/B <span className={`font-bold ${getColorByScore(score)}`}>{priceToBook?.toFixed(2) || "N/A"}</span>
               </span>
             </TooltipTrigger>
             <TooltipContent>
@@ -311,14 +335,17 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        
+
         <span>•</span>
-        
+
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="cursor-help">
-                Buchwert <span className="font-bold">{bookValuePerShare.toFixed(2)} {currency}</span>
+                Buchwert{" "}
+                <span className="font-bold">
+                  {bookValuePerShare.toFixed(2)} {currency}
+                </span>
               </span>
             </TooltipTrigger>
             <TooltipContent>
@@ -326,17 +353,17 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        
+
         <span>•</span>
-        
+
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="cursor-help">
-                Abweichung von 1.0 <span className={`font-bold ${
-                  deviation >= 0 ? 'text-red-600' : 'text-green-600'
-                }`}>
-                  {deviation >= 0 ? '+' : ''}{deviation.toFixed(1)}%
+                Abweichung von 1.0{" "}
+                <span className={`font-bold ${deviation >= 0 ? "text-red-600" : "text-green-600"}`}>
+                  {deviation >= 0 ? "+" : ""}
+                  {deviation.toFixed(1)}%
                 </span>
               </span>
             </TooltipTrigger>
@@ -351,15 +378,15 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
       {filteredData.length > 0 && (
         <>
           <div className="flex justify-end gap-1 mb-3 overflow-x-auto pb-1">
-            {(['1M', '6M', 'YTD', '1Y', '5Y', '10Y', '25Y', 'MAX'] as TimeRange[]).map(range => (
+            {(["1M", "6M", "YTD", "1Y", "5Y", "10Y", "25Y", "MAX"] as TimeRange[]).map((range) => (
               <Button
                 key={range}
-                variant={selectedRange === range ? 'default' : 'outline'}
+                variant={selectedRange === range ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedRange(range)}
                 className="text-xs h-7 px-2.5 whitespace-nowrap"
               >
-                {range === 'YTD' ? range : range.replace('Y', 'J')}
+                {range === "YTD" ? range : range.replace("Y", "J")}
               </Button>
             ))}
           </div>
@@ -369,29 +396,22 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={filteredData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
+                <XAxis
                   dataKey="date"
-                  tickFormatter={(value) => format(new Date(value), 'MM/yy')}
+                  tickFormatter={(value) => format(new Date(value), "MM/yy")}
                   fontSize={11}
                   stroke="#6b7280"
                 />
-                <YAxis 
-                  fontSize={11}
-                  stroke="#6b7280"
-                  width={60}
-                  tickFormatter={(value) => value.toFixed(1)}
-                />
+                <YAxis fontSize={11} stroke="#6b7280" width={60} tickFormatter={(value) => value.toFixed(1)} />
                 <RechartsTooltip
                   allowEscapeViewBox={{ x: false, y: false }}
-                  wrapperStyle={{ zIndex: 50, maxWidth: 'calc(100vw - 32px)', overflow: 'hidden' }}
+                  wrapperStyle={{ zIndex: 50, maxWidth: "calc(100vw - 32px)", overflow: "hidden" }}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
                         <div className="bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg p-3">
-                          <p className="text-xs font-medium mb-2">
-                            {format(new Date(data.date), 'dd.MM.yyyy')}
-                          </p>
+                          <p className="text-xs font-medium mb-2">{format(new Date(data.date), "dd.MM.yyyy")}</p>
                           <div className="space-y-1">
                             <p className="text-xs">
                               <span className="text-muted-foreground">P/B: </span>
@@ -399,11 +419,15 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
                             </p>
                             <p className="text-xs">
                               <span className="text-muted-foreground">Kurs: </span>
-                              <span className="font-semibold">{data.price.toFixed(2)} {currency}</span>
+                              <span className="font-semibold">
+                                {data.price.toFixed(2)} {currency}
+                              </span>
                             </p>
                             <p className="text-xs">
                               <span className="text-muted-foreground">Buchwert: </span>
-                              <span className="font-semibold">{data.bookValue.toFixed(2)} {currency}</span>
+                              <span className="font-semibold">
+                                {data.bookValue.toFixed(2)} {currency}
+                              </span>
                             </p>
                           </div>
                         </div>
@@ -424,19 +448,19 @@ export const PriceToBookCard: React.FC<PriceToBookCardProps> = ({
                   y={1.5}
                   stroke="hsl(142, 76%, 36%)"
                   strokeDasharray="3 3"
-                  label={{ value: 'Ziel: 1.5', position: 'right', fontSize: 11, fill: '#6b7280' }}
+                  label={{ value: "Ziel: 1.5", position: "right", fontSize: 11, fill: "#6b7280" }}
                 />
                 <ReferenceLine
                   y={2.5}
                   stroke="hsl(45, 93%, 47%)"
                   strokeDasharray="3 3"
-                  label={{ value: '2.5', position: 'right', fontSize: 11, fill: '#6b7280' }}
+                  label={{ value: "2.5", position: "right", fontSize: 11, fill: "#6b7280" }}
                 />
                 <ReferenceLine
                   y={3.5}
                   stroke="hsl(25, 95%, 53%)"
                   strokeDasharray="3 3"
-                  label={{ value: '3.5', position: 'right', fontSize: 11, fill: '#6b7280' }}
+                  label={{ value: "3.5", position: "right", fontSize: 11, fill: "#6b7280" }}
                 />
               </LineChart>
             </ResponsiveContainer>
