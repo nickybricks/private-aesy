@@ -189,7 +189,7 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
 
               const centerX = chartConfig.cx;
               const centerY = chartConfig.cy;
-              const outerRadius = chartConfig.outerRadius;
+              const hoverRadius = chartConfig.outerRadius;
               const numSlices = data.length;
               const angleStep = (2 * Math.PI) / numSlices;
               const startAngle = -Math.PI / 2; // Start at top (12 o'clock)
@@ -205,18 +205,18 @@ const BuffettScoreSpiderChart: React.FC<BuffettScoreSpiderChartProps> = ({
                     const sliceEndAngle = baseAngle + angleStep / 2;
 
                     // Calculate outer points
-                    const startX = centerX + outerRadius * Math.cos(sliceStartAngle);
-                    const startY = centerY + outerRadius * Math.sin(sliceStartAngle);
-                    const endX = centerX + outerRadius * Math.cos(sliceEndAngle);
-                    const endY = centerY + outerRadius * Math.sin(sliceEndAngle);
+                    const startX = centerX + hoverRadius * Math.cos(sliceStartAngle);
+                    const startY = centerY + hoverRadius * Math.sin(sliceStartAngle);
+                    const endX = centerX + hoverRadius * Math.cos(sliceEndAngle);
+                    const endY = centerY + hoverRadius * Math.sin(sliceEndAngle);
 
                     // Create arc path for pizza slice
                     const pathData = `
-                        M ${centerX},${centerY}
-                        L ${startX},${startY}
-                        A ${outerRadius} ${outerRadius} 0 0 1 ${endX},${endY}
-                        Z
-                      `;
+                      M ${centerX},${centerY}
+                      L ${startX},${startY}
+                      A ${hoverRadius} ${hoverRadius} 0 0 1 ${endX},${endY}
+                      Z
+                    `;
 
                     const hasCards = item.cards && item.cards.length > 0;
 
