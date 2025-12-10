@@ -242,8 +242,8 @@ export const CurrentRatioCard: React.FC<CurrentRatioCardProps> = ({
               <TooltipContent
                 side={isMobile ? "top" : "right"}
                 align={isMobile ? "center" : "start"}
-                sideOffset={12} // Abstand vom Trigger
-                className="z-50 max-w-[calc(100vw-2rem)] mx-4"
+                sideOffset={12}
+                className="z-50 max-w-[min(420px,calc(100vw-40px))] mx-auto"
               >
                 {tooltipContent}
               </TooltipContent>
