@@ -217,7 +217,7 @@
   @media (max-width: 479px) {
     .btn-mobile-full,
     button:not(.btn-no-mobile-full) {
-      width: 100% !important;
+      width: 13% !important;
     }
 
     /* Quick access buttons responsiveness */
