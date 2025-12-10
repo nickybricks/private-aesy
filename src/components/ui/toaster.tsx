@@ -19,7 +19,7 @@ export function Toaster() {
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
-                <ToastDescription>{description}</ToastDescription>
+                <ToastDescription>{description}</Description>
               )}
             </div>
             {action}
@@ -27,7 +27,11 @@ export function Toaster() {
           </Toast>
         )
       })}
-      <ToastViewport />
+      
+      {/* HIER die Änderung */}
+      <ToastViewport 
+        className="fixed bottom-0 right-0 z-[100] flex max-h-screen w-full flex-col p-4 gap-2 md:max-w-[420px]"
+      />
     </ToastProvider>
   )
 }
