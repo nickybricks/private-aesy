@@ -56,7 +56,7 @@ const getBgColorByScore = (score: number, maxScore: number): string => {
 export const EbitdaGrowthCard: React.FC<EbitdaGrowthCardProps> = ({ historicalEbitda }) => {
   const { stockCurrency } = useStock();
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = useState<TimeRange>("MAX");
+  const [timeRange, setTimeRange] = useState<TimeRange>("10Y");
   const maxScore = 4;
 
   // Calculate CAGRs for different periods
@@ -417,27 +417,31 @@ export const EbitdaGrowthCard: React.FC<EbitdaGrowthCardProps> = ({ historicalEb
         </ResponsiveContainer>
 
         {/* Legend */}
-        <div className="flex justify-center gap-4 mt-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-0.5 bg-blue-600 rounded"></span>
-            EBITDA (Mio. {stockCurrency})
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-0.5 bg-green-600 rounded"></span>
-            Wachstum (%)
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="text-green-600">---</span>
-            12% (Exzellent)
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="text-yellow-600">---</span>
-            8% (Gut)
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="text-orange-600">---</span>
-            6% (Akzeptabel)
-          </span>
+        <div className="flex flex-col items-center gap-2 mt-3 text-xs text-muted-foreground">
+          <div className="flex justify-center gap-4 flex-wrap">
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-0.5 bg-blue-600 rounded"></span>
+              EBITDA (Mio. {stockCurrency})
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-3 h-0.5 bg-green-600 rounded"></span>
+              Wachstum (%)
+            </span>
+          </div>
+          <div className="flex justify-center gap-4 flex-wrap">
+            <span className="flex items-center gap-1">
+              <span className="text-green-600">---</span>
+              12% (Exzellent)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="text-yellow-600">---</span>
+              8% (Gut)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="text-orange-600">---</span>
+              6% (Akzeptabel)
+            </span>
+          </div>
         </div>
       </div>
     </Card>
