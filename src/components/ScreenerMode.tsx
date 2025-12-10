@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import QuantAnalysisTable from '@/components/QuantAnalysisTable';
 import { QuantAnalysisResult } from '@/api/quantAnalyzerApi';
 import { Filter, ChevronDown } from 'lucide-react';
+import { RangeFilterDropdown } from '@/components/ui/range-filter-dropdown';
 
 interface ScreenerModeProps {
   cachedStocks: QuantAnalysisResult[];
@@ -188,25 +189,13 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
               </div>
 
               {/* Aesy Score */}
-              <div className="space-y-2">
-                <Label>Aesy Score (0-14)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minAesyScore}
-                    onChange={(e) => setFilters({ ...filters, minAesyScore: e.target.value })}
-                    className="w-full"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxAesyScore}
-                    onChange={(e) => setFilters({ ...filters, maxAesyScore: e.target.value })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <RangeFilterDropdown
+                label="Aesy Score (0-14)"
+                minValue={filters.minAesyScore}
+                maxValue={filters.maxAesyScore}
+                onMinChange={useCallback((value: string) => setFilters(prev => ({ ...prev, minAesyScore: value })), [])}
+                onMaxChange={useCallback((value: string) => setFilters(prev => ({ ...prev, maxAesyScore: value })), [])}
+              />
 
               {/* P/E Ratio */}
               <div className="space-y-2">
