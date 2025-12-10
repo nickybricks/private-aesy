@@ -10,7 +10,7 @@ const LoadingSection: React.FC = () => {
   }
 
   return (
-    <div className="md:flex md:items-center md:justify-center md:py-12 fixed md:relative bottom-0 left-0 right-0 md:bottom-auto md:left-auto md:right-auto bg-background md:bg-transparent border-t md:border-t-0 border-border p-4 md:p-0 z-50 md:z-auto">
+    <div className="flex items-center justify-center py-6 md:py-12">
       <div className="text-center max-w-md w-full">
         {/* Animated Wave Graph */}
         <div className="mb-3 md:mb-6 flex justify-center">
