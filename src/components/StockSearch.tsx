@@ -820,6 +820,29 @@ const StockSearch: React.FC<StockSearchProps> = ({
                     </>
                   )}
                 </CommandList>
+                
+                {/* Mobile: Deep Research Toggle im Dropdown */}
+                {mobileMode && (
+                  <div className="border-t border-border px-3 py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">AI Analyse</span>
+                      </div>
+                      <Switch
+                        id="deep-research-mobile"
+                        checked={enableDeepResearch}
+                        onCheckedChange={setEnableDeepResearch}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    {enableDeepResearch && (
+                      <p className="text-xs text-muted-foreground mt-1.5">
+                        Erweiterte Analyse mit aktuellen Marktdaten
+                      </p>
+                    )}
+                  </div>
+                )}
               </Command>
             </PopoverContent>
           </Popover>

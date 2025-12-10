@@ -143,6 +143,8 @@ const AppHeader: React.FC = () => {
               isLoading={isLoading} 
               compact 
               mobileMode
+              enableDeepResearch={enableDeepResearch}
+              onDeepResearchChange={setEnableDeepResearch}
             />
           </div>
         </div>
