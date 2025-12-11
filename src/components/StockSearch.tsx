@@ -203,10 +203,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
   }, []);
 
   useEffect(() => {
-    if (searchQuery.length >= 1) {
-      setOpen(true);
-    }
-    
+    // Only check for ISIN, don't auto-open popover
     if (checkAndHandleIsin(searchQuery)) {
       console.log("ISIN pattern detected in searchQuery effect:", searchQuery);
     } else {
@@ -893,11 +890,6 @@ const StockSearch: React.FC<StockSearchProps> = ({
                 align="start" 
                 sideOffset={5}
                 onOpenAutoFocus={(e) => e.preventDefault()}
-                onInteractOutside={(e) => {
-                  if (isinResults) {
-                    e.preventDefault();
-                  }
-                }}
               >
                 <SearchContent />
               </PopoverContent>
