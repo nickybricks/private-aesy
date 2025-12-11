@@ -861,8 +861,9 @@ const StockSearch: React.FC<StockSearchProps> = ({
           ) : (
             /* Desktop: Use Popover */
             <Popover open={open} onOpenChange={(newState) => {
-              if (!forceKeepOpen || newState) {
-                setOpen(newState);
+              setOpen(newState);
+              if (!newState) {
+                setForceKeepOpen(false);
               }
             }}>
               <PopoverTrigger asChild>
