@@ -216,7 +216,7 @@
   /* Full-width buttons on mobile (<480px) */
   @media (max-width: 479px) {
     .btn-mobile-full,
-    button:not(.btn-no-mobile-full, #deep-research-mobile, button[id^="radix-"]) {
+    button:not(.btn-no-mobile-full, #deep-research-mobile, button[id^="radix-"], button#deep-research-drawer) {
       width: 100% !important;
     }
 
