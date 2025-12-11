@@ -164,7 +164,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
   const [suggestions, setSuggestions] = useState<StockSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isinResults, setIsinResults] = useState<StockSuggestion | null>(null);
-  const [forceKeepOpen, setForceKeepOpen] = useState(false);
+  
   const { toast } = useToast();
 
   // Load recent searches from localStorage on mount
@@ -551,7 +551,6 @@ const StockSearch: React.FC<StockSearchProps> = ({
       setShowAppleCorrection(false);
       onSearch(ticker.trim().toUpperCase(), enableDeepResearch);
       setOpen(false);
-      setForceKeepOpen(false);
     }
   };
 
@@ -570,7 +569,6 @@ const StockSearch: React.FC<StockSearchProps> = ({
     
     onSearch(stock.symbol, enableDeepResearch);
     setOpen(false);
-    setForceKeepOpen(false);
     setMobileDrawerOpen(false);
   };
 
@@ -604,7 +602,6 @@ const StockSearch: React.FC<StockSearchProps> = ({
         setSuggestions(fallbackStocks.slice(0, 6));
       }
     } else {
-      setForceKeepOpen(true);
       setOpen(true);
       
       if (!searchQuery.trim()) {
@@ -613,11 +610,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
     }
   };
 
-  useEffect(() => {
-    if (forceKeepOpen) {
-      setOpen(true);
-    }
-  }, [forceKeepOpen]);
+  // Remove forceKeepOpen effect - no longer needed
 
   // Stock logo component with fallback (max 25px)
   const StockLogo = ({ symbol, name }: { symbol: string; name: string }) => {
@@ -654,7 +647,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
           setTicker(value);
           checkAndHandleIsin(value);
         }}
-        onFocus={() => !inDrawer && setForceKeepOpen(true)}
+        onFocus={() => !inDrawer && setOpen(true)}
         autoFocus
       />
       
@@ -860,12 +853,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
             </>
           ) : (
             /* Desktop: Use Popover */
-            <Popover open={open} onOpenChange={(newState) => {
-              setOpen(newState);
-              if (!newState) {
-                setForceKeepOpen(false);
-              }
-            }}>
+            <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <div className="relative w-full">
                   <Input
@@ -880,7 +868,6 @@ const StockSearch: React.FC<StockSearchProps> = ({
                       
                       if (newValue.length >= 1) {
                         setOpen(true);
-                        setForceKeepOpen(true);
                       }
                     }}
                     onFocus={handleInputFocus}
@@ -905,12 +892,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
                 onInteractOutside={(e) => {
                   if (isinResults) {
                     e.preventDefault();
-                  } else {
-                    setForceKeepOpen(false);
                   }
-                }}
-                onEscapeKeyDown={() => {
-                  setForceKeepOpen(false);
                 }}
               >
                 <SearchContent />
