@@ -54,65 +54,68 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
 
   const filteredStocks = useMemo(() => {
     return cachedStocks.filter(stock => {
+      // Skip stocks without valid criteria
+      if (!stock?.criteria) return false;
+      
       // Aesy Score filter
       if (filters.minAesyScore !== '' && stock.buffettScore < parseFloat(filters.minAesyScore)) return false;
       if (filters.maxAesyScore !== '' && stock.buffettScore > parseFloat(filters.maxAesyScore)) return false;
       
       // Years of Profitability filter
-      if (filters.minYearsProfit !== '' && stock.criteria.yearsOfProfitability.value != null && stock.criteria.yearsOfProfitability.value < parseFloat(filters.minYearsProfit)) return false;
-      if (filters.maxYearsProfit !== '' && stock.criteria.yearsOfProfitability.value != null && stock.criteria.yearsOfProfitability.value > parseFloat(filters.maxYearsProfit)) return false;
+      if (filters.minYearsProfit !== '' && stock.criteria.yearsOfProfitability?.value != null && stock.criteria.yearsOfProfitability.value < parseFloat(filters.minYearsProfit)) return false;
+      if (filters.maxYearsProfit !== '' && stock.criteria.yearsOfProfitability?.value != null && stock.criteria.yearsOfProfitability.value > parseFloat(filters.maxYearsProfit)) return false;
       
       // PE filter
-      if (filters.minPE !== '' && stock.criteria.pe.value != null && stock.criteria.pe.value < parseFloat(filters.minPE)) return false;
-      if (filters.maxPE !== '' && stock.criteria.pe.value != null && stock.criteria.pe.value > parseFloat(filters.maxPE)) return false;
+      if (filters.minPE !== '' && stock.criteria.pe?.value != null && stock.criteria.pe.value < parseFloat(filters.minPE)) return false;
+      if (filters.maxPE !== '' && stock.criteria.pe?.value != null && stock.criteria.pe.value > parseFloat(filters.maxPE)) return false;
       
       // ROIC filter
-      if (filters.minROIC !== '' && stock.criteria.roic.value != null && stock.criteria.roic.value < parseFloat(filters.minROIC)) return false;
-      if (filters.maxROIC !== '' && stock.criteria.roic.value != null && stock.criteria.roic.value > parseFloat(filters.maxROIC)) return false;
+      if (filters.minROIC !== '' && stock.criteria.roic?.value != null && stock.criteria.roic.value < parseFloat(filters.minROIC)) return false;
+      if (filters.maxROIC !== '' && stock.criteria.roic?.value != null && stock.criteria.roic.value > parseFloat(filters.maxROIC)) return false;
       
       // ROE filter
-      if (filters.minROE !== '' && stock.criteria.roe.value != null && stock.criteria.roe.value < parseFloat(filters.minROE)) return false;
-      if (filters.maxROE !== '' && stock.criteria.roe.value != null && stock.criteria.roe.value > parseFloat(filters.maxROE)) return false;
+      if (filters.minROE !== '' && stock.criteria.roe?.value != null && stock.criteria.roe.value < parseFloat(filters.minROE)) return false;
+      if (filters.maxROE !== '' && stock.criteria.roe?.value != null && stock.criteria.roe.value > parseFloat(filters.maxROE)) return false;
       
       // Dividend Yield filter
-      if (filters.minDividendYield !== '' && stock.criteria.dividendYield.value != null && stock.criteria.dividendYield.value < parseFloat(filters.minDividendYield)) return false;
-      if (filters.maxDividendYield !== '' && stock.criteria.dividendYield.value != null && stock.criteria.dividendYield.value > parseFloat(filters.maxDividendYield)) return false;
+      if (filters.minDividendYield !== '' && stock.criteria.dividendYield?.value != null && stock.criteria.dividendYield.value < parseFloat(filters.minDividendYield)) return false;
+      if (filters.maxDividendYield !== '' && stock.criteria.dividendYield?.value != null && stock.criteria.dividendYield.value > parseFloat(filters.maxDividendYield)) return false;
       
       // EPS Growth 3Y filter
-      if (filters.minEpsGrowth3y !== '' && stock.criteria.epsGrowth.cagr3y != null && stock.criteria.epsGrowth.cagr3y < parseFloat(filters.minEpsGrowth3y)) return false;
-      if (filters.maxEpsGrowth3y !== '' && stock.criteria.epsGrowth.cagr3y != null && stock.criteria.epsGrowth.cagr3y > parseFloat(filters.maxEpsGrowth3y)) return false;
+      if (filters.minEpsGrowth3y !== '' && stock.criteria.epsGrowth?.cagr3y != null && stock.criteria.epsGrowth.cagr3y < parseFloat(filters.minEpsGrowth3y)) return false;
+      if (filters.maxEpsGrowth3y !== '' && stock.criteria.epsGrowth?.cagr3y != null && stock.criteria.epsGrowth.cagr3y > parseFloat(filters.maxEpsGrowth3y)) return false;
       
       // EPS Growth 5Y filter
-      if (filters.minEpsGrowth !== '' && stock.criteria.epsGrowth.value != null && stock.criteria.epsGrowth.value < parseFloat(filters.minEpsGrowth)) return false;
-      if (filters.maxEpsGrowth !== '' && stock.criteria.epsGrowth.value != null && stock.criteria.epsGrowth.value > parseFloat(filters.maxEpsGrowth)) return false;
+      if (filters.minEpsGrowth !== '' && stock.criteria.epsGrowth?.value != null && stock.criteria.epsGrowth.value < parseFloat(filters.minEpsGrowth)) return false;
+      if (filters.maxEpsGrowth !== '' && stock.criteria.epsGrowth?.value != null && stock.criteria.epsGrowth.value > parseFloat(filters.maxEpsGrowth)) return false;
       
       // EPS Growth 10Y filter
-      if (filters.minEpsGrowth10y !== '' && stock.criteria.epsGrowth.cagr10y != null && stock.criteria.epsGrowth.cagr10y < parseFloat(filters.minEpsGrowth10y)) return false;
-      if (filters.maxEpsGrowth10y !== '' && stock.criteria.epsGrowth.cagr10y != null && stock.criteria.epsGrowth.cagr10y > parseFloat(filters.maxEpsGrowth10y)) return false;
+      if (filters.minEpsGrowth10y !== '' && stock.criteria.epsGrowth?.cagr10y != null && stock.criteria.epsGrowth.cagr10y < parseFloat(filters.minEpsGrowth10y)) return false;
+      if (filters.maxEpsGrowth10y !== '' && stock.criteria.epsGrowth?.cagr10y != null && stock.criteria.epsGrowth.cagr10y > parseFloat(filters.maxEpsGrowth10y)) return false;
       
       // Revenue Growth 3Y filter
-      if (filters.minRevenueGrowth3y !== '' && stock.criteria.revenueGrowth.cagr3y != null && stock.criteria.revenueGrowth.cagr3y < parseFloat(filters.minRevenueGrowth3y)) return false;
-      if (filters.maxRevenueGrowth3y !== '' && stock.criteria.revenueGrowth.cagr3y != null && stock.criteria.revenueGrowth.cagr3y > parseFloat(filters.maxRevenueGrowth3y)) return false;
+      if (filters.minRevenueGrowth3y !== '' && stock.criteria.revenueGrowth?.cagr3y != null && stock.criteria.revenueGrowth.cagr3y < parseFloat(filters.minRevenueGrowth3y)) return false;
+      if (filters.maxRevenueGrowth3y !== '' && stock.criteria.revenueGrowth?.cagr3y != null && stock.criteria.revenueGrowth.cagr3y > parseFloat(filters.maxRevenueGrowth3y)) return false;
       
       // Revenue Growth 5Y filter
-      if (filters.minRevenueGrowth !== '' && stock.criteria.revenueGrowth.value != null && stock.criteria.revenueGrowth.value < parseFloat(filters.minRevenueGrowth)) return false;
-      if (filters.maxRevenueGrowth !== '' && stock.criteria.revenueGrowth.value != null && stock.criteria.revenueGrowth.value > parseFloat(filters.maxRevenueGrowth)) return false;
+      if (filters.minRevenueGrowth !== '' && stock.criteria.revenueGrowth?.value != null && stock.criteria.revenueGrowth.value < parseFloat(filters.minRevenueGrowth)) return false;
+      if (filters.maxRevenueGrowth !== '' && stock.criteria.revenueGrowth?.value != null && stock.criteria.revenueGrowth.value > parseFloat(filters.maxRevenueGrowth)) return false;
       
       // Revenue Growth 10Y filter
-      if (filters.minRevenueGrowth10y !== '' && stock.criteria.revenueGrowth.cagr10y != null && stock.criteria.revenueGrowth.cagr10y < parseFloat(filters.minRevenueGrowth10y)) return false;
-      if (filters.maxRevenueGrowth10y !== '' && stock.criteria.revenueGrowth.cagr10y != null && stock.criteria.revenueGrowth.cagr10y > parseFloat(filters.maxRevenueGrowth10y)) return false;
+      if (filters.minRevenueGrowth10y !== '' && stock.criteria.revenueGrowth?.cagr10y != null && stock.criteria.revenueGrowth.cagr10y < parseFloat(filters.minRevenueGrowth10y)) return false;
+      if (filters.maxRevenueGrowth10y !== '' && stock.criteria.revenueGrowth?.cagr10y != null && stock.criteria.revenueGrowth.cagr10y > parseFloat(filters.maxRevenueGrowth10y)) return false;
       
       // Net Debt to EBITDA filter
-      if (filters.minNetDebtToEbitda !== '' && stock.criteria.netDebtToEbitda.value != null && stock.criteria.netDebtToEbitda.value < parseFloat(filters.minNetDebtToEbitda)) return false;
-      if (filters.maxNetDebtToEbitda !== '' && stock.criteria.netDebtToEbitda.value != null && stock.criteria.netDebtToEbitda.value > parseFloat(filters.maxNetDebtToEbitda)) return false;
+      if (filters.minNetDebtToEbitda !== '' && stock.criteria.netDebtToEbitda?.value != null && stock.criteria.netDebtToEbitda.value < parseFloat(filters.minNetDebtToEbitda)) return false;
+      if (filters.maxNetDebtToEbitda !== '' && stock.criteria.netDebtToEbitda?.value != null && stock.criteria.netDebtToEbitda.value > parseFloat(filters.maxNetDebtToEbitda)) return false;
       
       // Net Margin filter
-      if (filters.minNetMargin !== '' && stock.criteria.netMargin.value != null && stock.criteria.netMargin.value < parseFloat(filters.minNetMargin)) return false;
-      if (filters.maxNetMargin !== '' && stock.criteria.netMargin.value != null && stock.criteria.netMargin.value > parseFloat(filters.maxNetMargin)) return false;
+      if (filters.minNetMargin !== '' && stock.criteria.netMargin?.value != null && stock.criteria.netMargin.value < parseFloat(filters.minNetMargin)) return false;
+      if (filters.maxNetMargin !== '' && stock.criteria.netMargin?.value != null && stock.criteria.netMargin.value > parseFloat(filters.maxNetMargin)) return false;
       
       // FCF Margin filter
-      if (filters.minFcfMargin !== '' && stock.criteria.fcfMargin.value != null && stock.criteria.fcfMargin.value < parseFloat(filters.minFcfMargin)) return false;
-      if (filters.maxFcfMargin !== '' && stock.criteria.fcfMargin.value != null && stock.criteria.fcfMargin.value > parseFloat(filters.maxFcfMargin)) return false;
+      if (filters.minFcfMargin !== '' && stock.criteria.fcfMargin?.value != null && stock.criteria.fcfMargin.value < parseFloat(filters.minFcfMargin)) return false;
+      if (filters.maxFcfMargin !== '' && stock.criteria.fcfMargin?.value != null && stock.criteria.fcfMargin.value > parseFloat(filters.maxFcfMargin)) return false;
       
       // Sector filter
       if (filters.sector !== 'all' && stock.sector !== filters.sector) return false;
@@ -121,8 +124,8 @@ export const ScreenerMode = ({ cachedStocks }: ScreenerModeProps) => {
       if (filters.exchange !== 'all' && stock.exchange !== filters.exchange) return false;
       
       // Search filter
-      if (filters.searchQuery && !stock.symbol.toLowerCase().includes(filters.searchQuery.toLowerCase()) &&
-          !stock.name.toLowerCase().includes(filters.searchQuery.toLowerCase())) return false;
+      if (filters.searchQuery && !stock.symbol?.toLowerCase().includes(filters.searchQuery.toLowerCase()) &&
+          !stock.name?.toLowerCase().includes(filters.searchQuery.toLowerCase())) return false;
       
       return true;
     });
