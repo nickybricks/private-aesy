@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Info, Brain } from 'lucide-react';
+import { Search, Info, Brain, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -13,10 +13,19 @@ import {
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+// Helper to get stock logo URL
+const getStockLogoUrl = (symbol: string): string => {
+  // Clean symbol for logo lookup (remove exchange suffix like .DE)
+  const cleanSymbol = symbol.split('.')[0].toUpperCase();
+  return `https://financialmodelingprep.com/image-stock/${cleanSymbol}.png`;
+};
 
 interface StockSearchProps {
   onSearch: (ticker: string, enableDeepResearch?: boolean) => void;
@@ -144,6 +153,8 @@ const StockSearch: React.FC<StockSearchProps> = ({
   const [showAppleCorrection, setShowAppleCorrection] = useState(false);
   const [internalEnableDeepResearch, setInternalEnableDeepResearch] = useState(false);
   const [recentSearches, setRecentSearches] = useState<StockSuggestion[]>([]);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   // Use external state if provided, otherwise use internal state
   const enableDeepResearch = externalEnableDeepResearch ?? internalEnableDeepResearch;
@@ -560,6 +571,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
     onSearch(stock.symbol, enableDeepResearch);
     setOpen(false);
     setForceKeepOpen(false);
+    setMobileDrawerOpen(false);
   };
 
   const selectQuickAccessStock = (symbol: string) => {
@@ -586,11 +598,18 @@ const StockSearch: React.FC<StockSearchProps> = ({
   };
 
   const handleInputFocus = () => {
-    setForceKeepOpen(true);
-    setOpen(true);
-    
-    if (!searchQuery.trim()) {
-      setSuggestions(fallbackStocks.slice(0, 6));
+    if (isMobile) {
+      setMobileDrawerOpen(true);
+      if (!searchQuery.trim()) {
+        setSuggestions(fallbackStocks.slice(0, 6));
+      }
+    } else {
+      setForceKeepOpen(true);
+      setOpen(true);
+      
+      if (!searchQuery.trim()) {
+        setSuggestions(fallbackStocks.slice(0, 6));
+      }
     }
   };
 
@@ -599,6 +618,192 @@ const StockSearch: React.FC<StockSearchProps> = ({
       setOpen(true);
     }
   }, [forceKeepOpen]);
+
+  // Stock logo component with fallback
+  const StockLogo = ({ symbol, name }: { symbol: string; name: string }) => {
+    const [hasError, setHasError] = useState(false);
+    
+    if (hasError) {
+      return (
+        <div className="w-8 h-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
+          <span className="text-xs font-medium text-muted-foreground">
+            {name.charAt(0).toUpperCase()}
+          </span>
+        </div>
+      );
+    }
+    
+    return (
+      <img
+        src={getStockLogoUrl(symbol)}
+        alt={`${name} logo`}
+        className="w-8 h-8 max-h-8 rounded object-contain flex-shrink-0"
+        onError={() => setHasError(true)}
+      />
+    );
+  };
+
+  // Shared search content component
+  const SearchContent = ({ inDrawer = false }: { inDrawer?: boolean }) => (
+    <Command className={inDrawer ? "flex-1 flex flex-col" : ""}>
+      <CommandInput 
+        placeholder="Suche nach Aktien..." 
+        value={searchQuery}
+        onValueChange={(value) => {
+          setSearchQuery(value);
+          setTicker(value);
+          checkAndHandleIsin(value);
+        }}
+        onFocus={() => !inDrawer && setForceKeepOpen(true)}
+        autoFocus
+      />
+      
+      {/* Deep Research Toggle */}
+      <div className="border-b border-border px-3 py-2.5">
+        <div className="flex items-center gap-3">
+          <Brain className="h-4 w-4 text-primary flex-shrink-0" />
+          <span className="text-sm font-medium">AI Analyse</span>
+          <Switch
+            id={inDrawer ? "deep-research-drawer" : "deep-research-popover"}
+            checked={enableDeepResearch}
+            onCheckedChange={setEnableDeepResearch}
+            disabled={isLoading}
+            className="ml-auto"
+          />
+        </div>
+      </div>
+      
+      <CommandList className={inDrawer ? "flex-1 max-h-none" : ""}>
+        {isSearching ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            Suche nach Unternehmen...
+          </div>
+        ) : (
+          <>
+            <CommandEmpty>
+              {searchQuery && searchQuery.length >= 2 ? (
+                <div className="py-6 text-center">
+                  <p>Keine passenden Aktien gefunden</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Versuchen Sie einen anderen Suchbegriff oder geben Sie das Symbol direkt ein
+                  </p>
+                </div>
+              ) : (
+                <div className="py-6 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    Beliebte Aktien werden angezeigt
+                  </p>
+                </div>
+              )}
+            </CommandEmpty>
+            
+            {isinResults && (
+              <CommandGroup heading="ISIN Ergebnis">
+                <CommandItem
+                  key={`isin-${isinResults.symbol}`}
+                  value={`${isinResults.name} ${isinResults.symbol}`}
+                  onSelect={() => {
+                    console.log("ISIN result selected:", isinResults);
+                    selectStock(isinResults);
+                  }}
+                  className="flex items-center gap-3 bg-blue-50 dark:bg-blue-950/20 font-medium"
+                >
+                  <StockLogo symbol={isinResults.symbol} name={isinResults.name} />
+                  <div className="flex-1 truncate">
+                    <span className="font-medium">{isinResults.name}</span>
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      ({isinResults.symbol})
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground whitespace-nowrap">
+                    {isinResults.exchangeShortName && <span>{isinResults.exchangeShortName}</span>}
+                  </div>
+                </CommandItem>
+              </CommandGroup>
+            )}
+            
+            {(!searchQuery || searchQuery.length < 2) ? (
+              <>
+                {recentSearches.length > 0 && (
+                  <CommandGroup heading="Zuletzt gesucht">
+                    {recentSearches.map((stock) => {
+                      const display = formatStockDisplay(stock);
+                      return (
+                        <CommandItem 
+                          key={stock.symbol} 
+                          value={`${stock.name} ${stock.symbol}`}
+                          onSelect={() => selectStock(stock)}
+                          className="flex items-center gap-3"
+                        >
+                          <StockLogo symbol={stock.symbol} name={stock.name} />
+                          <div className="flex-1 truncate">
+                            <span className="font-medium">{display.name}</span>
+                            <span className="ml-2 text-sm text-muted-foreground">
+                              ({display.symbol})
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground whitespace-nowrap">
+                            {display.exchange && <span>{display.exchange}</span>}
+                          </div>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                )}
+                
+                <CommandGroup heading="Beliebte Aktien">
+                  {fallbackStocks.slice(0, 6).map((stock) => {
+                    const display = formatStockDisplay(stock);
+                    return (
+                      <CommandItem 
+                        key={stock.symbol} 
+                        value={`${stock.name} ${stock.symbol}`}
+                        onSelect={() => selectStock(stock)}
+                        className="flex items-center gap-3"
+                      >
+                        <StockLogo symbol={stock.symbol} name={stock.name} />
+                        <div className="flex-1 truncate">
+                          <span className="font-medium">{display.name}</span>
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            ({display.symbol})
+                          </span>
+                        </div>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              </>
+            ) : (
+              <CommandGroup heading="Vorschläge">
+                {suggestions.map((stock) => {
+                  const display = formatStockDisplay(stock);
+                  return (
+                    <CommandItem 
+                      key={stock.symbol} 
+                      value={`${stock.name} ${stock.symbol}`}
+                      onSelect={() => selectStock(stock)}
+                      className="flex items-center gap-3"
+                    >
+                      <StockLogo symbol={stock.symbol} name={stock.name} />
+                      <div className="flex-1 truncate">
+                        <span className="font-medium">{display.name}</span>
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          ({display.symbol})
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground whitespace-nowrap">
+                        {display.exchange && <span>{display.exchange}</span>}
+                      </div>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            )}
+          </>
+        )}
+      </CommandList>
+    </Command>
+  );
 
   return (
     <div className={compact ? "" : "buffett-card mb-6 animate-fade-in"}>
@@ -630,221 +835,99 @@ const StockSearch: React.FC<StockSearchProps> = ({
       
       <form onSubmit={handleSubmit} className={mobileMode ? "w-full" : (compact ? "flex flex-col sm:flex-row gap-2" : "flex flex-col xs:flex-row gap-2")}>
         <div className="relative flex-1 min-w-0">
-          <Popover open={open} onOpenChange={(newState) => {
-            if (!forceKeepOpen || newState) {
-              setOpen(newState);
-            }
-          }}>
-            <PopoverTrigger asChild>
-              <div className="relative w-full">
+          {/* Mobile: Use Drawer */}
+          {isMobile ? (
+            <>
+              <div className="relative w-full" onClick={handleInputFocus}>
                 <Input
                   type="text"
                   value={ticker}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    setTicker(newValue);
-                    setSearchQuery(newValue);
-                    
-                    checkAndHandleIsin(newValue);
-                    
-                    if (newValue.length >= 1) {
-                      setOpen(true);
-                      setForceKeepOpen(true);
-                    }
-                  }}
-                  onFocus={handleInputFocus}
-                  onClick={handleInputFocus}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && ticker.trim()) {
-                      e.preventDefault();
-                      handleSubmit(e as any);
-                    }
-                  }}
+                  readOnly
                   placeholder={compact ? "Aktie suchen..." : "Aktienname, Symbol oder ISIN eingeben..."}
-                  className={compact ? "h-9 pl-9 text-sm" : "apple-input pl-10"}
+                  className={compact ? "h-9 pl-9 text-sm cursor-pointer" : "apple-input pl-10 cursor-pointer"}
                   disabled={disabled || isLoading}
                 />
                 <Search className={compact ? "absolute left-2.5 top-2.5 text-gray-400" : "absolute left-3 top-3 text-gray-400"} size={compact ? 16 : 20} />
               </div>
-            </PopoverTrigger>
-            <PopoverContent 
-              className="p-0 w-[calc(100vw-2rem)] sm:w-[400px] md:w-[500px] max-w-[500px] z-50" 
-              align="start" 
-              sideOffset={5}
-              onInteractOutside={(e) => {
-                if (isinResults) {
-                  e.preventDefault();
-                } else {
-                  setForceKeepOpen(false);
-                }
-              }}
-              onEscapeKeyDown={() => {
-                setForceKeepOpen(false);
-              }}
-            >
-              <Command>
-                <CommandInput 
-                  placeholder="Suche nach Aktien..." 
-                  value={searchQuery}
-                  onValueChange={(value) => {
-                    setSearchQuery(value);
-                    setTicker(value);
-                    
-                    checkAndHandleIsin(value);
-                  }}
-                  onFocus={() => setForceKeepOpen(true)}
-                  autoFocus
-                />
-                
-                {/* Mobile: Deep Research Toggle - direkt unter Eingabefeld */}
-                {mobileMode && (
-                  <div className="border-b border-border px-3 py-2.5">
-                    <div className="flex items-center gap-3">
-                      <Brain className="h-4 w-4 text-primary flex-shrink-0" />
-                      <span className="text-sm font-medium">AI Analyse</span>
-                      <Switch
-                        id="deep-research-mobile"
-                        checked={enableDeepResearch}
-                        onCheckedChange={setEnableDeepResearch}
-                        disabled={isLoading}
-                        className="ml-auto"
-                      />
-                    </div>
+              
+              <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
+                <DrawerContent className="h-[100dvh] max-h-[100dvh] flex flex-col">
+                  <DrawerHeader className="flex items-center justify-between px-4 py-3 border-b shrink-0">
+                    <DrawerTitle className="text-lg font-semibold">Aktie suchen</DrawerTitle>
+                    <DrawerClose asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <X size={20} />
+                      </Button>
+                    </DrawerClose>
+                  </DrawerHeader>
+                  <div className="flex-1 overflow-hidden flex flex-col">
+                    <SearchContent inDrawer />
                   </div>
-                )}
-                
-                <CommandList>
-                  {isSearching ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
-                      Suche nach Unternehmen...
-                    </div>
-                  ) : (
-                    <>
-                      <CommandEmpty>
-                        {searchQuery && searchQuery.length >= 2 ? (
-                          <div className="py-6 text-center">
-                            <p>Keine passenden Aktien gefunden</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Versuchen Sie einen anderen Suchbegriff oder geben Sie das Symbol direkt ein
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="py-6 text-center">
-                            <p className="text-xs text-muted-foreground">
-                              Beliebte Aktien werden angezeigt
-                            </p>
-                          </div>
-                        )}
-                      </CommandEmpty>
+                </DrawerContent>
+              </Drawer>
+            </>
+          ) : (
+            /* Desktop: Use Popover */
+            <Popover open={open} onOpenChange={(newState) => {
+              if (!forceKeepOpen || newState) {
+                setOpen(newState);
+              }
+            }}>
+              <PopoverTrigger asChild>
+                <div className="relative w-full">
+                  <Input
+                    type="text"
+                    value={ticker}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setTicker(newValue);
+                      setSearchQuery(newValue);
                       
-                      {isinResults && (
-                        <CommandGroup heading="ISIN Ergebnis">
-                          <CommandItem
-                            key={`isin-${isinResults.symbol}`}
-                            value={`${isinResults.name} ${isinResults.symbol}`}
-                            onSelect={() => {
-                              console.log("ISIN result selected:", isinResults);
-                              selectStock(isinResults);
-                            }}
-                            className="flex justify-between bg-blue-50 font-medium"
-                          >
-                            <div className="flex-1 truncate">
-                              <span className="font-medium">{isinResults.name}</span>
-                              <span className="ml-2 text-sm text-muted-foreground">
-                                ({isinResults.symbol})
-                              </span>
-                            </div>
-                            <div className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
-                              {isinResults.exchangeShortName && <span>{isinResults.exchangeShortName}</span>}
-                            </div>
-                          </CommandItem>
-                        </CommandGroup>
-                      )}
+                      checkAndHandleIsin(newValue);
                       
-                      {(!searchQuery || searchQuery.length < 2) ? (
-                        <>
-                          {recentSearches.length > 0 && (
-                            <CommandGroup heading="Zuletzt gesucht">
-                              {recentSearches.map((stock) => {
-                                const display = formatStockDisplay(stock);
-                                return (
-                                  <CommandItem 
-                                    key={stock.symbol} 
-                                    value={`${stock.name} ${stock.symbol}`}
-                                    onSelect={() => selectStock(stock)}
-                                    className="flex justify-between"
-                                  >
-                                    <div className="flex-1 truncate">
-                                      <span className="font-medium">{display.name}</span>
-                                      <span className="ml-2 text-sm text-muted-foreground">
-                                        ({display.symbol})
-                                      </span>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
-                                      {display.exchange && <span>{display.exchange}</span>}
-                                    </div>
-                                  </CommandItem>
-                                );
-                              })}
-                            </CommandGroup>
-                          )}
-                          
-                          <CommandGroup heading="Beliebte Aktien">
-                            {fallbackStocks.slice(0, 6).map((stock) => {
-                              const display = formatStockDisplay(stock);
-                              return (
-                                <CommandItem 
-                                  key={stock.symbol} 
-                                  value={`${stock.name} ${stock.symbol}`}
-                                  onSelect={() => selectStock(stock)}
-                                  className="flex justify-between"
-                                >
-                                  <div className="flex-1 truncate">
-                                    <span className="font-medium">{display.name}</span>
-                                    <span className="ml-2 text-sm text-muted-foreground">
-                                      ({display.symbol})
-                                    </span>
-                                  </div>
-                                </CommandItem>
-                              );
-                            })}
-                          </CommandGroup>
-                        </>
-                      ) : (
-                        <CommandGroup heading="Vorschläge">
-                          {suggestions.map((stock) => {
-                            const display = formatStockDisplay(stock);
-                            return (
-                              <CommandItem 
-                                key={stock.symbol} 
-                                value={`${stock.name} ${stock.symbol}`}
-                                onSelect={() => selectStock(stock)}
-                                className="flex justify-between"
-                              >
-                                <div className="flex-1 truncate">
-                                  <span className="font-medium">{display.name}</span>
-                                  <span className="ml-2 text-sm text-muted-foreground">
-                                    ({display.symbol})
-                                  </span>
-                                </div>
-                                <div className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
-                                  {display.exchange && <span>{display.exchange}</span>}
-                                </div>
-                              </CommandItem>
-                            );
-                          })}
-                        </CommandGroup>
-                      )}
-                    </>
-                  )}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+                      if (newValue.length >= 1) {
+                        setOpen(true);
+                        setForceKeepOpen(true);
+                      }
+                    }}
+                    onFocus={handleInputFocus}
+                    onClick={handleInputFocus}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && ticker.trim()) {
+                        e.preventDefault();
+                        handleSubmit(e as any);
+                      }
+                    }}
+                    placeholder={compact ? "Aktie suchen..." : "Aktienname, Symbol oder ISIN eingeben..."}
+                    className={compact ? "h-9 pl-9 text-sm" : "apple-input pl-10"}
+                    disabled={disabled || isLoading}
+                  />
+                  <Search className={compact ? "absolute left-2.5 top-2.5 text-gray-400" : "absolute left-3 top-3 text-gray-400"} size={compact ? 16 : 20} />
+                </div>
+              </PopoverTrigger>
+              <PopoverContent 
+                className="p-0 w-[calc(100vw-2rem)] sm:w-[400px] md:w-[500px] max-w-[500px] z-50" 
+                align="start" 
+                sideOffset={5}
+                onInteractOutside={(e) => {
+                  if (isinResults) {
+                    e.preventDefault();
+                  } else {
+                    setForceKeepOpen(false);
+                  }
+                }}
+                onEscapeKeyDown={() => {
+                  setForceKeepOpen(false);
+                }}
+              >
+                <SearchContent />
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
         
         {/* Desktop: Deep Research AI Analyse Toggle + Button */}
-        {!mobileMode && (
+        {!mobileMode && !isMobile && (
           <>
             {compact && (
               <div className="flex items-center gap-2 shrink-0 justify-between sm:justify-start">
@@ -875,8 +958,8 @@ const StockSearch: React.FC<StockSearchProps> = ({
         )}
       </form>
 
-      {/* Deep Research AI Analyse Toggle - Full version */}
-      {!compact && (
+      {/* Deep Research AI Analyse Toggle - Full version (Desktop only) */}
+      {!compact && !isMobile && (
         <div className="mt-3 p-2 bg-muted/30 rounded border">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
