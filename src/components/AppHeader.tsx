@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Drawer, DrawerClose, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import StockSearch from "./StockSearch";
 import { useStock } from "@/context/StockContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -170,9 +170,7 @@ const AppHeader: React.FC = () => {
             </Button>
           </DrawerTrigger>
 
-          <DrawerContent className="h-[100vh]">
-            {/* Fullscreen Menü mit Wischgeste */}
-            <DrawerHeader className="relative border-b"></DrawerHeader>
+          <DrawerContent className="h-[100vh]" showHandle>
 
             <div className="flex-1 overflow-y-auto p-6">
               {/* Menüpunkte */}
