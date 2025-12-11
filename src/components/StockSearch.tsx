@@ -852,52 +852,50 @@ const StockSearch: React.FC<StockSearchProps> = ({
               </Drawer>
             </>
           ) : (
-            /* Desktop: Use Popover */
+            /* Desktop: Use Popover without trigger - controlled manually */
             <Popover open={open} onOpenChange={setOpen} modal={false}>
               <PopoverTrigger asChild>
-                <div className="relative w-full">
-                  <Input
-                    type="text"
-                    value={ticker}
-                    onChange={(e) => {
-                      const newValue = e.target.value;
-                      setTicker(newValue);
-                      setSearchQuery(newValue);
-                      
-                      checkAndHandleIsin(newValue);
-                      
-                      if (newValue.length >= 1) {
-                        setOpen(true);
-                      }
-                    }}
-                    onFocus={() => setOpen(true)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && ticker.trim()) {
-                        e.preventDefault();
-                        handleSubmit(e as any);
-                      }
-                      if (e.key === 'Escape') {
-                        setOpen(false);
-                        (e.target as HTMLInputElement).blur();
-                      }
-                    }}
-                    placeholder={compact ? "Aktie suchen..." : "Aktienname, Symbol oder ISIN eingeben..."}
-                    className={compact ? "h-9 pl-9 text-sm" : "apple-input pl-10"}
-                    disabled={disabled || isLoading}
-                  />
-                  <Search className={compact ? "absolute left-2.5 top-2.5 text-gray-400" : "absolute left-3 top-3 text-gray-400"} size={compact ? 16 : 20} />
-                </div>
+                <div className="sr-only" aria-hidden="true" />
               </PopoverTrigger>
+              <div className="relative w-full">
+                <Input
+                  type="text"
+                  value={ticker}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setTicker(newValue);
+                    setSearchQuery(newValue);
+                    
+                    checkAndHandleIsin(newValue);
+                    
+                    if (newValue.length >= 1) {
+                      setOpen(true);
+                    }
+                  }}
+                  onFocus={() => setOpen(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && ticker.trim()) {
+                      e.preventDefault();
+                      handleSubmit(e as any);
+                    }
+                    if (e.key === 'Escape') {
+                      setOpen(false);
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
+                  placeholder={compact ? "Aktie suchen..." : "Aktienname, Symbol oder ISIN eingeben..."}
+                  className={compact ? "h-9 pl-9 text-sm" : "apple-input pl-10"}
+                  disabled={disabled || isLoading}
+                />
+                <Search className={compact ? "absolute left-2.5 top-2.5 text-gray-400" : "absolute left-3 top-3 text-gray-400"} size={compact ? 16 : 20} />
+              </div>
               <PopoverContent 
                 className="p-0 w-[calc(100vw-2rem)] sm:w-[400px] md:w-[500px] max-w-[500px] z-50" 
                 align="start" 
                 sideOffset={5}
                 onOpenAutoFocus={(e) => e.preventDefault()}
-                onInteractOutside={(e) => {
-                  if (isinResults) {
-                    e.preventDefault();
-                  }
-                }}
+                onInteractOutside={() => setOpen(false)}
+                onEscapeKeyDown={() => setOpen(false)}
               >
                 <SearchContent />
               </PopoverContent>
