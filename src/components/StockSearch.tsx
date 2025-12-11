@@ -853,7 +853,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
             </>
           ) : (
             /* Desktop: Use Popover */
-            <Popover open={open} onOpenChange={setOpen}>
+            <Popover open={open} onOpenChange={setOpen} modal={false}>
               <PopoverTrigger asChild>
                 <div className="relative w-full">
                   <Input
@@ -870,12 +870,15 @@ const StockSearch: React.FC<StockSearchProps> = ({
                         setOpen(true);
                       }
                     }}
-                    onFocus={handleInputFocus}
-                    onClick={handleInputFocus}
+                    onFocus={() => setOpen(true)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && ticker.trim()) {
                         e.preventDefault();
                         handleSubmit(e as any);
+                      }
+                      if (e.key === 'Escape') {
+                        setOpen(false);
+                        (e.target as HTMLInputElement).blur();
                       }
                     }}
                     placeholder={compact ? "Aktie suchen..." : "Aktienname, Symbol oder ISIN eingeben..."}
@@ -889,6 +892,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
                 className="p-0 w-[calc(100vw-2rem)] sm:w-[400px] md:w-[500px] max-w-[500px] z-50" 
                 align="start" 
                 sideOffset={5}
+                onOpenAutoFocus={(e) => e.preventDefault()}
                 onInteractOutside={(e) => {
                   if (isinResults) {
                     e.preventDefault();
