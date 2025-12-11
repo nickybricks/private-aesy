@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Info, Brain, X } from 'lucide-react';
+import { Search, Info, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -13,7 +13,7 @@ import {
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
+import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { DEFAULT_FMP_API_KEY } from '@/components/ApiKeyInput';
@@ -619,14 +619,14 @@ const StockSearch: React.FC<StockSearchProps> = ({
     }
   }, [forceKeepOpen]);
 
-  // Stock logo component with fallback
+  // Stock logo component with fallback (max 25px)
   const StockLogo = ({ symbol, name }: { symbol: string; name: string }) => {
     const [hasError, setHasError] = useState(false);
     
     if (hasError) {
       return (
-        <div className="w-8 h-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
-          <span className="text-xs font-medium text-muted-foreground">
+        <div className="w-[25px] h-[25px] rounded bg-muted flex items-center justify-center flex-shrink-0">
+          <span className="text-[10px] font-medium text-muted-foreground">
             {name.charAt(0).toUpperCase()}
           </span>
         </div>
@@ -637,7 +637,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
       <img
         src={getStockLogoUrl(symbol)}
         alt={`${name} logo`}
-        className="w-8 h-8 max-h-8 rounded object-contain flex-shrink-0"
+        className="w-[25px] h-[25px] max-h-[25px] rounded object-contain flex-shrink-0"
         onError={() => setHasError(true)}
       />
     );
@@ -851,16 +851,8 @@ const StockSearch: React.FC<StockSearchProps> = ({
               </div>
               
               <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
-                <DrawerContent className="h-[100dvh] max-h-[100dvh] flex flex-col">
-                  <DrawerHeader className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-                    <DrawerTitle className="text-lg font-semibold">Aktie suchen</DrawerTitle>
-                    <DrawerClose asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <X size={20} />
-                      </Button>
-                    </DrawerClose>
-                  </DrawerHeader>
-                  <div className="flex-1 overflow-hidden flex flex-col">
+                <DrawerContent className="h-[100dvh] max-h-[100dvh] flex flex-col" showHandle>
+                  <div className="flex-1 overflow-hidden flex flex-col pt-2">
                     <SearchContent inDrawer />
                   </div>
                 </DrawerContent>
