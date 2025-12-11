@@ -59,6 +59,7 @@ export function StockProvider({ children }: StockProviderProps) {
     dividendYield?: { score: number; maxScore: number };
     priceToMedianPS?: { score: number; maxScore: number };
   }>({});
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   useEffect(() => {
     const hasGpt = checkHasGptAvailable();
@@ -611,12 +612,14 @@ export function StockProvider({ children }: StockProviderProps) {
       valuationScores,
       growthScores,
       qualitativeScores,
+      showAnalysis,
       setActiveTab,
       setLoadingProgress,
       handleSearch,
       loadSavedAnalysis,
       triggerDeepResearch,
-      setValuationCardScore
+      setValuationCardScore,
+      setShowAnalysis
     }}>
       {children}
     </StockContext.Provider>
