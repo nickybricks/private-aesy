@@ -41,7 +41,7 @@ const AppHeader: React.FC = () => {
   const handleSignOut = async () => {
     await signOut();
     setMobileMenuOpen(false);
-    navigate('/auth');
+    navigate("/auth");
   };
 
   return (
@@ -129,7 +129,7 @@ const AppHeader: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button variant="ghost" onClick={() => navigate('/auth')}>
+          <Button variant="ghost" onClick={() => navigate("/auth")}>
             Anmelden
           </Button>
         )}
@@ -170,7 +170,7 @@ const AppHeader: React.FC = () => {
             </Button>
           </DrawerTrigger>
 
-          <DrawerContent className="h-[90vh]">
+          <DrawerContent className="h-[100vh]">
             {/* Fullscreen Menü mit Wischgeste */}
             <DrawerHeader className="relative border-b">
               <DrawerTitle className="text-left">Menü</DrawerTitle>
@@ -229,7 +229,7 @@ const AppHeader: React.FC = () => {
                 ) : (
                   <Button
                     variant="ghost"
-                    onClick={() => handleMobileNavigation('/auth')}
+                    onClick={() => handleMobileNavigation("/auth")}
                     className="w-full justify-start text-lg h-14"
                   >
                     <User className="mr-3 h-5 w-5" />
