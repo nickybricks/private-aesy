@@ -22,36 +22,23 @@ const LoadingProgressCircle: React.FC<LoadingProgressCircleProps> = ({
   
   useEffect(() => {
     if (isComplete) {
-      // When loading is complete, animate to 100%
+      // When loading is complete, immediately set to 100% and show green
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
       
-      // Quick animation to 100%
-      const currentProgress = progress;
-      const remainingProgress = 100 - currentProgress;
-      const steps = 10;
-      const stepSize = remainingProgress / steps;
-      let step = 0;
+      // Immediately set to 100% and show complete state
+      setProgress(100);
+      setShowComplete(true);
       
-      const completeInterval = setInterval(() => {
-        step++;
-        setProgress(Math.min(currentProgress + stepSize * step, 100));
-        
-        if (step >= steps) {
-          clearInterval(completeInterval);
-          setShowComplete(true);
-          
-          // Wait for glow animation, then transition
-          setTimeout(() => {
-            onAnimationComplete?.();
-          }, 800);
-        }
-      }, 30);
+      // Short delay for user to see the green state, then transition
+      const timer = setTimeout(() => {
+        onAnimationComplete?.();
+      }, 400);
       
-      return () => clearInterval(completeInterval);
+      return () => clearTimeout(timer);
     }
-  }, [isComplete, progress, onAnimationComplete]);
+  }, [isComplete, onAnimationComplete]);
   
   useEffect(() => {
     if (isComplete) return;
