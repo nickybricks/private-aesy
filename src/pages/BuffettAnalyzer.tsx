@@ -65,6 +65,7 @@ const IndexContent: React.FC = () => {
     stockCurrency,
     deepResearchPerformed,
     setValuationCardScore,
+    showAnalysis,
   } = useStock();
   const { toast } = useToast();
 
@@ -97,7 +98,7 @@ const IndexContent: React.FC = () => {
         <div className="p-3 sm:p-4 md:p-6 w-full max-w-screen-xl mx-auto">
           <KiAvailabilityAlert gptAvailable={gptAvailable} />
 
-          {stockInfo &&
+          {showAnalysis && stockInfo &&
             stockInfo.currency &&
             stockInfo.reportedCurrency &&
             needsCurrencyConversion(stockInfo.reportedCurrency, stockInfo.currency) && (
@@ -110,7 +111,12 @@ const IndexContent: React.FC = () => {
           {!stockInfo && !isLoading && (
             <HowItWorksSection className="mb-8" />
           )}
-          {stockInfo && (
+
+          {/* Loading Section - shows during analysis */}
+          <LoadingSection />
+
+          {/* Analysis content - only show when showAnalysis is true */}
+          {showAnalysis && stockInfo && (
             <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] items-start gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4">
               {/* Stock Header with Score Section */}
               <StockHeaderWithScore onTabChange={setActiveTab} />
@@ -129,7 +135,7 @@ const IndexContent: React.FC = () => {
           )}
 
           {/* Hidden Score Pre-Loaders - Calculate scores immediately */}
-          {stockInfo && financialMetrics && (
+          {showAnalysis && stockInfo && financialMetrics && (
             <div className="hidden" aria-hidden="true">
               <PriceToMedianPSChart
                 ticker={stockInfo.ticker}
@@ -145,7 +151,7 @@ const IndexContent: React.FC = () => {
           )}
 
           {/* Tab Navigation */}
-          {stockInfo && (
+          {showAnalysis && stockInfo && (
             <div className="mb-6 sm:mb-8 -mx-3 sm:mx-0 pb-3">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="relative">
@@ -425,11 +431,9 @@ const IndexContent: React.FC = () => {
             </div>
           )}
 
-          {!stockInfo && <RatingSection />}
+          {!showAnalysis && !stockInfo && !isLoading && <RatingSection />}
 
-          <LoadingSection />
-
-          {!isLoading && (
+          {!isLoading && showAnalysis && (
             <>
               <DataMissingAlert />
             </>

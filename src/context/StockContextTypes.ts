@@ -255,12 +255,14 @@ export interface StockContextType {
   valuationScores: ValuationScores | null;
   growthScores: GrowthScores | null;
   qualitativeScores: QualitativeScores | null;
+  showAnalysis: boolean;
   setActiveTab: (tab: string) => void;
   setLoadingProgress: (progress: number) => void;
   handleSearch: (ticker: string, enableDeepResearch?: boolean) => Promise<void>;
   loadSavedAnalysis: (analysisData: any) => void;
   triggerDeepResearch: (ticker: string) => Promise<void>;
   setValuationCardScore: (name: 'peRatio' | 'dividendYield' | 'priceToMedianPS', score: number, maxScore: number) => void;
+  setShowAnalysis: (show: boolean) => void;
 }
 
 export interface StockProviderProps {
