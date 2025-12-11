@@ -172,9 +172,7 @@ const AppHeader: React.FC = () => {
 
           <DrawerContent className="h-[100vh]">
             {/* Fullscreen Menü mit Wischgeste */}
-            <DrawerHeader className="relative border-b">
-              <DrawerTitle className="text-left">Menü</DrawerTitle>
-            </DrawerHeader>
+            <DrawerHeader className="relative border-b"></DrawerHeader>
 
             <div className="flex-1 overflow-y-auto p-6">
               {/* Menüpunkte */}
