@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import AppHeader from "./components/AppHeader";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
@@ -30,6 +31,9 @@ const App = () => {
   const AppContent = () => {
     const location = useLocation();
     const isAuthPage = location.pathname === "/auth";
+    
+    // Initialize analytics and track page views
+    useAnalytics();
     
     return (
       <div className="min-h-screen bg-background flex flex-col w-full">
