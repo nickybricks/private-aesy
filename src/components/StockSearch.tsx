@@ -53,12 +53,8 @@ const fallbackStocks = [
   { name: "Johnson & Johnson", symbol: "JNJ" },
   { name: "Procter & Gamble", symbol: "PG" },
   { name: "UnitedHealth Group", symbol: "UNH" },
-  { name: "Adidas", symbol: "ADS.DE" },
-  { name: "BASF", symbol: "BAS.DE" },
-  { name: "BMW", symbol: "BMW.DE" },
-  { name: "Deutsche Telekom", symbol: "DTE.DE" },
-  { name: "SAP", symbol: "SAP.DE" },
-  { name: "Siemens", symbol: "SIE.DE" },
+  { name: "Shopify", symbol: "SHOP.TO" },
+  { name: "Royal Bank of Canada", symbol: "RY.TO" },
 ];
 
 const quickAccessStocks = [
@@ -67,7 +63,7 @@ const quickAccessStocks = [
   { name: "Amazon", symbol: "AMZN" },
   { name: "Alphabet", symbol: "GOOGL" },
   { name: "Tesla", symbol: "TSLA" },
-  { name: "Adidas", symbol: "ADS.DE" },
+  { name: "Shopify", symbol: "SHOP.TO" },
 ];
 
 const isinPattern = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
@@ -102,6 +98,17 @@ const excludedAssetTypes = [
 ];
 
 const cryptoKeywords = ["bitcoin", "ethereum", "crypto", "token", "coin", "blockchain", "defi", "nft"];
+
+// Allowed exchanges for US, UK, and CA
+const allowedExchanges = [
+  // US exchanges
+  "AMEX", "CBOE", "NASDAQ", "NYSE", "OTC", "PNK",
+  // UK exchanges  
+  "AQS", "IOB", "LSE",
+  // CA exchanges
+  "CNQ", "NEO", "TSX", "TSXV"
+];
+
 const cryptoSymbolPatterns = [
   /^[A-Z0-9]{3,4}-[A-Z]{3}$/,
   /^[A-Z0-9]{1,5}USDT$/,
@@ -508,6 +515,12 @@ const StockSearch: React.FC<StockSearchProps> = ({
         if (response.data && Array.isArray(response.data)) {
           const stocksOnly = response.data.filter((item: any) => {
             if (!item.name || !item.symbol) return false;
+
+            // Filter by allowed exchanges (US, UK, CA only)
+            const exchange = item.exchangeShortName || item.exchange || "";
+            if (!allowedExchanges.includes(exchange)) {
+              return false;
+            }
 
             if (isCryptoAsset(item)) {
               return false;
