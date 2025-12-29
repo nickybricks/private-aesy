@@ -104,6 +104,12 @@
     @apply border-border;
   }
 
+  html {
+    /* Prevent iOS keyboard from pushing content */
+    height: 100%;
+    overflow: hidden;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, Inter, sans-serif;
@@ -113,8 +119,11 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     width: 100%;
+    height: 100%;
     margin: 0;
     padding: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

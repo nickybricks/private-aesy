@@ -688,7 +688,9 @@ const StockSearch: React.FC<StockSearchProps> = ({
           setTicker(value);
           checkAndHandleIsin(value);
         }}
-        autoFocus
+        autoFocus={!inDrawer}
+        inputMode="search"
+        enterKeyHint="search"
       />
 
       {/* Deep Research Toggle */}
@@ -880,8 +882,27 @@ const StockSearch: React.FC<StockSearchProps> = ({
                 />
               </div>
 
-              <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
-                <DrawerContent className="h-[100dvh] max-h-[100dvh] flex flex-col" showHandle>
+              <Drawer 
+                open={mobileDrawerOpen} 
+                onOpenChange={setMobileDrawerOpen}
+                dismissible
+                handleOnly={false}
+              >
+                <DrawerContent 
+                  className="h-[85vh] max-h-[85vh] flex flex-col fixed bottom-0" 
+                  showHandle
+                  onOpenAutoFocus={(e) => {
+                    // Prevent auto-focus to avoid immediate keyboard popup
+                    e.preventDefault();
+                    // Focus the input after a short delay for smooth animation
+                    setTimeout(() => {
+                      const input = document.querySelector('[cmdk-input]') as HTMLInputElement;
+                      if (input) {
+                        input.focus({ preventScroll: true });
+                      }
+                    }, 100);
+                  }}
+                >
                   <div className="flex-1 overflow-hidden flex flex-col pt-2">
                     <SearchContent inDrawer />
                   </div>
