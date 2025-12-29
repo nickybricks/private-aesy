@@ -889,18 +889,16 @@ const StockSearch: React.FC<StockSearchProps> = ({
                 handleOnly={false}
               >
                 <DrawerContent 
-                  className="h-[85vh] max-h-[85vh] flex flex-col fixed bottom-0" 
+                  className="h-[100dvh] max-h-[100dvh] flex flex-col" 
                   showHandle
                   onOpenAutoFocus={(e) => {
-                    // Prevent auto-focus to avoid immediate keyboard popup
                     e.preventDefault();
-                    // Focus the input after a short delay for smooth animation
                     setTimeout(() => {
                       const input = document.querySelector('[cmdk-input]') as HTMLInputElement;
                       if (input) {
                         input.focus({ preventScroll: true });
                       }
-                    }, 100);
+                    }, 150);
                   }}
                 >
                   <div className="flex-1 overflow-hidden flex flex-col pt-2">
