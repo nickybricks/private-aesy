@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Search, Info, Brain } from "lucide-react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Search, Info, Brain, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -8,7 +8,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { DEFAULT_FMP_API_KEY } from "@/components/ApiKeyInput";
@@ -158,6 +157,245 @@ const isCryptoAsset = (stock: StockSuggestion): boolean => {
   }
 
   return false;
+};
+
+// Mobile Search Overlay Component - Prevents layout shifting and keyboard issues
+interface MobileSearchOverlayProps {
+  isOpen: boolean;
+  onClose: () => void;
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  setTicker: (value: string) => void;
+  checkAndHandleIsin: (value: string) => boolean;
+  enableDeepResearch: boolean;
+  setEnableDeepResearch: (value: boolean) => void;
+  isLoading: boolean;
+  isSearching: boolean;
+  isinResults: StockSuggestion | null;
+  recentSearches: StockSuggestion[];
+  suggestions: StockSuggestion[];
+  selectStock: (stock: StockSuggestion) => void;
+  formatStockDisplay: (stock: StockSuggestion) => { name: string; symbol: string; exchange: string; currency: string };
+  StockLogo: React.FC<{ symbol: string; name: string }>;
+}
+
+const MobileSearchOverlay: React.FC<MobileSearchOverlayProps> = ({
+  isOpen,
+  onClose,
+  searchQuery,
+  setSearchQuery,
+  setTicker,
+  checkAndHandleIsin,
+  enableDeepResearch,
+  setEnableDeepResearch,
+  isLoading,
+  isSearching,
+  isinResults,
+  recentSearches,
+  suggestions,
+  selectStock,
+  formatStockDisplay,
+  StockLogo,
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [viewportHeight, setViewportHeight] = useState<number>(window.innerHeight);
+
+  // Handle visual viewport changes (keyboard open/close)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleResize = () => {
+      // Use visualViewport if available for accurate keyboard detection
+      const vv = window.visualViewport;
+      if (vv) {
+        setViewportHeight(vv.height);
+      } else {
+        setViewportHeight(window.innerHeight);
+      }
+    };
+
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener('resize', handleResize);
+      vv.addEventListener('scroll', handleResize);
+      handleResize();
+    }
+
+    // Focus input after overlay opens
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+
+    // Prevent body scroll when overlay is open
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.top = `-${window.scrollY}px`;
+
+    return () => {
+      if (vv) {
+        vv.removeEventListener('resize', handleResize);
+        vv.removeEventListener('scroll', handleResize);
+      }
+      // Restore body scroll
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 z-[100] bg-background"
+      style={{ height: viewportHeight }}
+    >
+      {/* Header with close button */}
+      <div className="flex items-center gap-3 p-4 border-b border-border bg-background">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="shrink-0 h-10 w-10"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+        <div className="flex-1 relative">
+          <Input
+            ref={inputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchQuery(value);
+              setTicker(value);
+              checkAndHandleIsin(value);
+            }}
+            placeholder="Aktie suchen..."
+            className="h-11 pl-10 text-base"
+            autoFocus
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+          />
+          <Search className="absolute left-3 top-3.5 text-muted-foreground h-4 w-4" />
+        </div>
+      </div>
+
+      {/* Deep Research Toggle */}
+      <div className="border-b border-border px-4 py-3 bg-background">
+        <div className="flex items-center gap-3">
+          <Brain className="h-4 w-4 text-primary flex-shrink-0" />
+          <span className="text-sm font-medium">AI Analyse</span>
+          <Switch
+            id="deep-research-mobile-overlay"
+            checked={enableDeepResearch}
+            onCheckedChange={setEnableDeepResearch}
+            disabled={isLoading}
+            className="ml-auto"
+          />
+        </div>
+      </div>
+
+      {/* Scrollable results area */}
+      <div 
+        className="overflow-y-auto bg-background"
+        style={{ height: `calc(${viewportHeight}px - 120px)` }}
+      >
+        {isSearching ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            Suche nach Unternehmen...
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {/* ISIN Results */}
+            {isinResults && (
+              <div className="p-4">
+                <p className="text-xs font-medium text-muted-foreground mb-2">ISIN Ergebnis</p>
+                <button
+                  onClick={() => selectStock(isinResults)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors text-left"
+                >
+                  <StockLogo symbol={isinResults.symbol} name={isinResults.name} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{isinResults.name}</p>
+                    <p className="text-sm text-muted-foreground">{isinResults.symbol}</p>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {/* Recent Searches */}
+            {(!searchQuery || searchQuery.length < 2) && recentSearches.length > 0 && (
+              <div className="p-4">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Zuletzt gesucht</p>
+                <div className="space-y-1">
+                  {recentSearches.map((stock) => {
+                    const display = formatStockDisplay(stock);
+                    return (
+                      <button
+                        key={stock.symbol}
+                        onClick={() => selectStock(stock)}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <StockLogo symbol={stock.symbol} name={stock.name} />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{display.name}</p>
+                          <p className="text-sm text-muted-foreground">{display.symbol}</p>
+                        </div>
+                        {display.exchange && (
+                          <span className="text-xs text-muted-foreground">{display.exchange}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Suggestions / Popular */}
+            <div className="p-4">
+              <p className="text-xs font-medium text-muted-foreground mb-2">
+                {searchQuery && searchQuery.length >= 2 ? 'Vorschläge' : 'Beliebte Aktien'}
+              </p>
+              <div className="space-y-1">
+                {(searchQuery && searchQuery.length >= 2 ? suggestions : suggestions.slice(0, 8)).map((stock) => {
+                  const display = formatStockDisplay(stock);
+                  return (
+                    <button
+                      key={stock.symbol}
+                      onClick={() => selectStock(stock)}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <StockLogo symbol={stock.symbol} name={stock.name} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{display.name}</p>
+                        <p className="text-sm text-muted-foreground">{display.symbol}</p>
+                      </div>
+                      {display.exchange && (
+                        <span className="text-xs text-muted-foreground">{display.exchange}</span>
+                      )}
+                    </button>
+                  );
+                })}
+                {searchQuery && searchQuery.length >= 2 && suggestions.length === 0 && (
+                  <div className="py-6 text-center text-muted-foreground">
+                    <p>Keine passenden Aktien gefunden</p>
+                    <p className="text-xs mt-1">Versuchen Sie einen anderen Suchbegriff</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 const StockSearch: React.FC<StockSearchProps> = ({
@@ -678,9 +916,10 @@ const StockSearch: React.FC<StockSearchProps> = ({
   };
 
   // Shared search content component
-  const SearchContent = ({ inDrawer = false }: { inDrawer?: boolean }) => (
+  const SearchContent = ({ inDrawer = false, inputRef }: { inDrawer?: boolean; inputRef?: React.RefObject<HTMLInputElement> }) => (
     <Command className={inDrawer ? "flex-1 flex flex-col" : ""}>
       <CommandInput
+        ref={inputRef}
         placeholder="Suche nach Aktien..."
         value={searchQuery}
         onValueChange={(value) => {
@@ -688,7 +927,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
           setTicker(value);
           checkAndHandleIsin(value);
         }}
-        autoFocus
+        autoFocus={!inDrawer}
       />
 
       {/* Deep Research Toggle */}
@@ -860,7 +1099,7 @@ const StockSearch: React.FC<StockSearchProps> = ({
         }
       >
         <div className="relative flex-1 min-w-0">
-          {/* Mobile: Use Drawer */}
+          {/* Mobile: Use fixed fullscreen overlay */}
           {isMobile ? (
             <>
               <div className="relative w-full" onClick={handleInputFocus}>
@@ -880,13 +1119,27 @@ const StockSearch: React.FC<StockSearchProps> = ({
                 />
               </div>
 
-              <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
-                <DrawerContent className="h-[100dvh] max-h-[100dvh] flex flex-col" showHandle>
-                  <div className="flex-1 overflow-hidden flex flex-col pt-2">
-                    <SearchContent inDrawer />
-                  </div>
-                </DrawerContent>
-              </Drawer>
+              {/* Mobile Search Overlay - Fixed position to prevent layout shift */}
+              {mobileDrawerOpen && (
+                <MobileSearchOverlay
+                  isOpen={mobileDrawerOpen}
+                  onClose={() => setMobileDrawerOpen(false)}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  setTicker={setTicker}
+                  checkAndHandleIsin={checkAndHandleIsin}
+                  enableDeepResearch={enableDeepResearch}
+                  setEnableDeepResearch={setEnableDeepResearch}
+                  isLoading={isLoading}
+                  isSearching={isSearching}
+                  isinResults={isinResults}
+                  recentSearches={recentSearches}
+                  suggestions={suggestions}
+                  selectStock={selectStock}
+                  formatStockDisplay={formatStockDisplay}
+                  StockLogo={StockLogo}
+                />
+              )}
             </>
           ) : (
             /* Desktop: Use Popover */
