@@ -42,10 +42,12 @@ import { EpsWoNriGrowthCard } from "@/components/metrics/EpsWoNriGrowthCard";
 import { FcfGrowthCard } from "@/components/metrics/FcfGrowthCard";
 import { QualitativeAnalysisTab } from "@/components/QualitativeAnalysisTab";
 import { HowItWorksSection } from "@/components/HowItWorksSection";
+import { useTranslation } from "@/context/LanguageContext";
 
 const IndexContent: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("news");
+  const { t } = useTranslation();
   const {
     isLoading,
     handleSearch,
@@ -169,37 +171,37 @@ const IndexContent: React.FC = () => {
                       value="news"
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
-                      News
+                      {t('tabs.news')}
                     </TabsTrigger>
                     <TabsTrigger
                       value="profitability"
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
-                      1. Profitabilität
+                      {t('tabs.profitability')}
                     </TabsTrigger>
                     <TabsTrigger
                       value="financial-strength"
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
-                      2. Finanzielle Stärke
+                      {t('tabs.financialStrength')}
                     </TabsTrigger>
                     <TabsTrigger
                       value="valuation"
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
-                      3. Bewertung / Innerer Wert
+                      {t('tabs.valuation')}
                     </TabsTrigger>
                     <TabsTrigger
                       value="growth-rank"
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
-                      4. Growth Rank
+                      {t('tabs.growthRank')}
                     </TabsTrigger>
                     <TabsTrigger
                       value="ai-analysis"
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 sm:px-4 md:px-6 whitespace-nowrap text-sm flex-shrink-0 grow-0 basis-auto w-auto max-w-max"
                     >
-                      5. Qual. KI Analyse
+                      {t('tabs.aiAnalysis')}
                     </TabsTrigger>
                   </TabsList>
                 </div>

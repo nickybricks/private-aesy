@@ -23,6 +23,7 @@ import AdminRoute from "./components/AdminRoute";
 import ImpersonationBanner from "./components/ImpersonationBanner";
 import { AuthProvider } from "./context/AuthContext";
 import { StockProvider } from "./context/StockContext";
+import { LanguageProvider } from "./context/LanguageContext";
 
 const queryClient = new QueryClient();
 
@@ -80,16 +81,18 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <StockProvider>
-          <TooltipProvider>
-            <Toaster />
-            <BrowserRouter>
-              <AppContent />
-            </BrowserRouter>
-          </TooltipProvider>
-        </StockProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <StockProvider>
+            <TooltipProvider>
+              <Toaster />
+              <BrowserRouter>
+                <AppContent />
+              </BrowserRouter>
+            </TooltipProvider>
+          </StockProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 };

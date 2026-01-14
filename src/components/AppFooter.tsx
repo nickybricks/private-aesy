@@ -1,17 +1,19 @@
-
 import React from 'react';
+import { useTranslation } from '@/context/LanguageContext';
 
 const AppFooter: React.FC = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="mt-12 pt-8 border-t border-gray-200 text-buffett-subtext text-sm text-center">
       <p className="mb-2">
-        Aesy - Analysieren Sie Aktien nach bewährten Investmentprinzipien
+        {t('footer.tagline')}
       </p>
       <p className="mb-2">
-        Dieses Tool analysiert Aktien in Echtzeit mit aktuellen Finanzdaten.
+        {t('footer.realTimeAnalysis')}
       </p>
       <p>
-        Dieses Tool bietet keine Anlageberatung. Alle Analysen dienen nur zu Informationszwecken.
+        {t('footer.disclaimer')}
       </p>
     </footer>
   );
