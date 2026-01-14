@@ -65,29 +65,39 @@ const AppHeader: React.FC = () => {
               {t('nav.analyzer')}
             </Button>
           </Link>
-          <Link to="/quant">
-            <Button variant={isActive("/quant") ? "secondary" : "ghost"} size="sm">
-              {t('nav.boersenAnalyzer')}
-            </Button>
-          </Link>
-          <Link to="/watchlists">
-            <Button variant={isActive("/watchlists") ? "secondary" : "ghost"} size="sm">
-              {t('nav.watchlists')}
-            </Button>
-          </Link>
-          <Link to="/portfolios">
-            <Button
-              variant={isActive("/portfolios") ? "secondary" : "ghost"}
-              size="sm"
-              disabled
-              className="relative opacity-50"
-            >
-              {t('nav.portfolios')}
-              <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
-                {t('common.soon')}
-              </Badge>
-            </Button>
-          </Link>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled
+            className="relative opacity-50"
+          >
+            {t('nav.boersenAnalyzer')}
+            <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
+              {t('common.soon')}
+            </Badge>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled
+            className="relative opacity-50"
+          >
+            {t('nav.watchlists')}
+            <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
+              {t('common.soon')}
+            </Badge>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled
+            className="relative opacity-50"
+          >
+            {t('nav.portfolios')}
+            <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
+              {t('common.soon')}
+            </Badge>
+          </Button>
         </nav>
 
         {/* Search Field - Centered */}
@@ -112,9 +122,12 @@ const AppHeader: React.FC = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => navigate("/watchlists")}>
+              <DropdownMenuItem disabled className="opacity-50">
                 <List className="h-4 w-4 mr-2" />
                 {t('nav.watchlists')}
+                <Badge variant="secondary" className="ml-auto text-[10px]">
+                  {t('common.soon')}
+                </Badge>
               </DropdownMenuItem>
               <DropdownMenuItem disabled className="opacity-50">
                 <Briefcase className="h-4 w-4 mr-2" />
@@ -186,22 +199,20 @@ const AppHeader: React.FC = () => {
                   {t('nav.analyzer')}
                 </Button>
 
-                <Button
-                  variant="ghost"
-                  onClick={() => handleMobileNavigation("/quant")}
-                  className="w-full justify-start text-lg h-14"
-                >
+                <Button variant="ghost" disabled className="w-full justify-start text-lg h-14 opacity-50">
                   <BarChart3 className="mr-3 h-5 w-5" />
                   {t('nav.boersenAnalyzer')}
+                  <Badge variant="secondary" className="ml-auto">
+                    {t('common.soon')}
+                  </Badge>
                 </Button>
 
-                <Button
-                  variant="ghost"
-                  onClick={() => handleMobileNavigation("/watchlists")}
-                  className="w-full justify-start text-lg h-14"
-                >
+                <Button variant="ghost" disabled className="w-full justify-start text-lg h-14 opacity-50">
                   <List className="mr-3 h-5 w-5" />
                   {t('nav.watchlists')}
+                  <Badge variant="secondary" className="ml-auto">
+                    {t('common.soon')}
+                  </Badge>
                 </Button>
 
                 <Button variant="ghost" disabled className="w-full justify-start text-lg h-14 opacity-50">
