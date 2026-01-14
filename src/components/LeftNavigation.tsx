@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { NavItem } from '@/components/ui/nav-item';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/context/LanguageContext';
 import { 
   Sidebar, 
   SidebarContent, 
@@ -31,6 +32,7 @@ interface LeftNavigationProps {
 const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
   const location = useLocation();
   const { user, signOut, isAdmin, userRole } = useAuth();
+  const { t } = useTranslation();
   const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
@@ -40,60 +42,60 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
 
   const navigationItems = [
     {
-      title: 'Navigation',
+      title: t('sections.navigation'),
       items: [
         {
-          name: 'Home',
+          name: t('nav.home'),
           path: '/',
           icon: Home,
-          description: 'Übersicht und Dashboard',
-          badge: 'Soon'
+          description: t('navDesc.home'),
+          badge: t('common.soon')
         }
       ]
     },
     {
-      title: 'Tools',
+      title: t('sections.tools'),
       items: [
         {
-          name: 'Analyzer',
+          name: t('nav.analyzer'),
           path: '/analyzer',
           icon: BarChart3,
-          description: 'Aktienanalyse nach bewährten Prinzipien'
+          description: t('navDesc.analyzer')
         },
         {
-          name: 'Boersen Analyzer',
+          name: t('nav.boersenAnalyzer'),
           path: '/quant',
           icon: BarChart3,
-          description: 'Erweiterte quantitative Analyse'
+          description: t('navDesc.boersenAnalyzer')
         }
       ]
     },
     {
-      title: 'Watchlists',
+      title: t('sections.watchlists'),
       items: [
         {
-          name: 'Watchlists',
+          name: t('nav.watchlists'),
           path: '/watchlists',
           icon: Bookmark,
-          description: 'Verwalte deine Aktien-Watchlists'
+          description: t('navDesc.watchlists')
         }
       ]
     },
     {
-      title: 'Einstellungen',
+      title: t('sections.settings'),
       items: [
         {
-          name: 'Design System',
+          name: t('nav.designSystem'),
           path: '/design-system',
           icon: Palette,
-          description: 'Designmerkmale und Richtlinien'
+          description: t('navDesc.designSystem')
         },
         {
-          name: 'Profil',
+          name: t('nav.profile'),
           path: '/profile',
           icon: User,
-          description: 'API-Keys und Einstellungen',
-          badge: 'Soon'
+          description: t('navDesc.profile'),
+          badge: t('common.soon')
         }
       ]
     }
@@ -102,13 +104,13 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
   // Add admin section if user is admin
   if (isAdmin) {
     navigationItems.push({
-      title: 'Administration',
+      title: t('sections.administration'),
       items: [
         {
-          name: 'Admin Dashboard',
+          name: t('nav.adminDashboard'),
           path: '/admin',
           icon: Shield,
-          description: 'Benutzer und System verwalten'
+          description: t('navDesc.adminDashboard')
         }
       ]
     });
@@ -183,7 +185,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ onMobileClose }) => {
                 size="icon"
                 onClick={handleSignOut}
                 className="h-8 w-8 shrink-0"
-                title="Abmelden"
+                title={t('nav.signOut')}
               >
                 <LogOut className="h-4 w-4" />
               </Button>

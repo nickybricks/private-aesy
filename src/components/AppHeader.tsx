@@ -17,10 +17,12 @@ import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import StockSearch from "./StockSearch";
 import { useStock } from "@/context/StockContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/context/LanguageContext";
 
 const AppHeader: React.FC = () => {
   const { handleSearch, isLoading } = useStock();
   const { user, signOut } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [enableDeepResearch, setEnableDeepResearch] = useState(false);
@@ -60,17 +62,17 @@ const AppHeader: React.FC = () => {
         <nav className="flex items-center gap-1">
           <Link to="/analyzer">
             <Button variant={isActive("/analyzer") ? "secondary" : "ghost"} size="sm">
-              Analyzer
+              {t('nav.analyzer')}
             </Button>
           </Link>
           <Link to="/quant">
             <Button variant={isActive("/quant") ? "secondary" : "ghost"} size="sm">
-              Boersen Analyzer
+              {t('nav.boersenAnalyzer')}
             </Button>
           </Link>
           <Link to="/watchlists">
             <Button variant={isActive("/watchlists") ? "secondary" : "ghost"} size="sm">
-              Watchlists
+              {t('nav.watchlists')}
             </Button>
           </Link>
           <Link to="/portfolios">
@@ -80,9 +82,9 @@ const AppHeader: React.FC = () => {
               disabled
               className="relative opacity-50"
             >
-              Portfolios
+              {t('nav.portfolios')}
               <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
-                Soon
+                {t('common.soon')}
               </Badge>
             </Button>
           </Link>
@@ -112,25 +114,25 @@ const AppHeader: React.FC = () => {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem onClick={() => navigate("/watchlists")}>
                 <List className="h-4 w-4 mr-2" />
-                Watchlists
+                {t('nav.watchlists')}
               </DropdownMenuItem>
               <DropdownMenuItem disabled className="opacity-50">
                 <Briefcase className="h-4 w-4 mr-2" />
-                Portfolios
+                {t('nav.portfolios')}
                 <Badge variant="secondary" className="ml-auto text-[10px]">
-                  Soon
+                  {t('common.soon')}
                 </Badge>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="h-4 w-4 mr-2" />
-                Abmelden
+                {t('nav.signOut')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
           <Button variant="ghost" onClick={() => navigate("/auth")}>
-            Anmelden
+            {t('nav.signIn')}
           </Button>
         )}
       </div>
@@ -181,7 +183,7 @@ const AppHeader: React.FC = () => {
                   className="w-full justify-start text-lg h-14"
                 >
                   <BarChart3 className="mr-3 h-5 w-5" />
-                  Analyzer
+                  {t('nav.analyzer')}
                 </Button>
 
                 <Button
@@ -190,7 +192,7 @@ const AppHeader: React.FC = () => {
                   className="w-full justify-start text-lg h-14"
                 >
                   <BarChart3 className="mr-3 h-5 w-5" />
-                  Boersen Analyzer
+                  {t('nav.boersenAnalyzer')}
                 </Button>
 
                 <Button
@@ -199,14 +201,14 @@ const AppHeader: React.FC = () => {
                   className="w-full justify-start text-lg h-14"
                 >
                   <List className="mr-3 h-5 w-5" />
-                  Watchlists
+                  {t('nav.watchlists')}
                 </Button>
 
                 <Button variant="ghost" disabled className="w-full justify-start text-lg h-14 opacity-50">
                   <Briefcase className="mr-3 h-5 w-5" />
-                  Portfolios
+                  {t('nav.portfolios')}
                   <Badge variant="secondary" className="ml-auto">
-                    Soon
+                    {t('common.soon')}
                   </Badge>
                 </Button>
 
@@ -220,7 +222,7 @@ const AppHeader: React.FC = () => {
                     className="w-full justify-start text-lg h-14 text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
                     <LogOut className="mr-3 h-5 w-5" />
-                    Abmelden
+                    {t('nav.signOut')}
                   </Button>
                 ) : (
                   <Button
@@ -229,7 +231,7 @@ const AppHeader: React.FC = () => {
                     className="w-full justify-start text-lg h-14"
                   >
                     <User className="mr-3 h-5 w-5" />
-                    Anmelden
+                    {t('nav.signIn')}
                   </Button>
                 )}
               </nav>
